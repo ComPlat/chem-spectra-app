@@ -15,6 +15,8 @@ class SpectraPeaker():
         self.target_idx = self.__index_target()
         self.block_count = self.__count_block()
         self.threshold = self.__thres()
+        self.obs_freq = self.__set_obs_freq()
+        self.x_unit = self.__set_x_unit()
         self.y = self.__read_y()
         self.x = self.__read_x()
         self.boundary = self.__find_boundary()
@@ -85,6 +87,10 @@ class SpectraPeaker():
 
         num_pt = self.y.shape[0]
         x = np.linspace(beg_pt, end_pt, num=num_pt, endpoint=True)
+
+        if self.x_unit == 'HZ':
+            x = x / self.obs_freq
+
         return x
 
 
@@ -130,6 +136,33 @@ class SpectraPeaker():
             pass
 
         return { 'x': 'PPM', 'y': 'ARBITRARY' }
+
+
+    def __set_obs_freq(self):
+        obs_freq = None
+        try:
+            obs_freq = float(self.dic['.OBSERVEFREQUENCY'][0])
+        except:
+            pass
+
+        try:
+            if obs_freq is None:
+                obs_freq = float(self.dic['$SFO1'][0])
+        except:
+            pass
+
+        return obs_freq
+
+
+    def __set_x_unit(self):
+        x_unit = None
+
+        try:
+            x_unit = self.dic['XUNITS'][0].upper()
+        except:
+            pass
+
+        return x_unit
 
 
     def pick_peak(self):
