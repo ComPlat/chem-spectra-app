@@ -12,23 +12,67 @@ from chem_spectra.lib.spectra.writer import (
 
 
 target_dir = './tests/fixtures/'
-file_jdx = '13C-DEPT135.dx'
-another_jdx = 'IR.dx'
-result_jdx = 'result.jdx'
-result_png = 'result.png'
-result_meta = 'result_meta.jdx'
+source_dir = 'source/'
+result_dir = 'result/'
+
+IR_dx = 'IR.dx'
+H1_dx = '1H.dx'
+C13_CPD_dx = '13C-CPD.dx'
+C13_DEPT135_dx = '13C-DEPT135.dx'
+SVS_790A_13C_jdx = 'SVS-790A_13C.jdx'
+
+meta_IR_dx = 'meta_IR'
+meta_H1_dx = 'meta_1H'
+meta_C13_CPD_dx = 'meta_13C-CPD'
+meta_C13_DEPT135_dx = 'meta_13C-DEPT135'
+meta_SVS_790A_13C_jdx = 'meta_SVS-790A_13C'
+
 separator = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS ALL ==='
 
 
-def test_meta_jcamp():
-    with open(target_dir + file_jdx, 'rb') as f:
+def __generated_peaks_meta(orig_filename):
+    with open(target_dir + source_dir + orig_filename, 'rb') as f:
         file = FileStorage(f)
         spPeaker, origin = get_jcamp_with_peaks(file)
         meta_jcamp = gen_jcamp_meta(spPeaker, origin)
 
     meta_content = ''.join(meta_jcamp).split(separator)[1]
-    meta_target = open(target_dir + result_meta, 'rb')
-    assert meta_content == meta_target.read().decode('utf-8')
+    return meta_content
+
+
+def __target_peaks_meta(filename):
+    meta_target = open(target_dir + result_dir + filename, 'rb')
+    return meta_target.read().decode('utf-8')
+
+
+def test_meta_IR():
+    meta_content = __generated_peaks_meta(IR_dx)
+    meta_target = __target_peaks_meta(meta_IR_dx)
+    assert meta_content == meta_target
+
+
+def test_meta_1H():
+    meta_content = __generated_peaks_meta(H1_dx)
+    meta_target = __target_peaks_meta(meta_H1_dx)
+    assert meta_content == meta_target
+
+
+def test_meta_13C_CPD_dx():
+    meta_content = __generated_peaks_meta(C13_CPD_dx)
+    meta_target = __target_peaks_meta(meta_C13_CPD_dx)
+    assert meta_content == meta_target
+
+
+def test_meta_13C_DEPT135():
+    meta_content = __generated_peaks_meta(C13_DEPT135_dx)
+    meta_target = __target_peaks_meta(meta_C13_DEPT135_dx)
+    assert meta_content == meta_target
+
+
+def test_meta_SVS_790A_13C_jdx():
+    meta_content = __generated_peaks_meta(SVS_790A_13C_jdx)
+    meta_target = __target_peaks_meta(meta_SVS_790A_13C_jdx)
+    assert meta_content == meta_target
 
 
 # def test_convert2jcamp():

@@ -2,11 +2,12 @@ import pytest
 import io
 
 target_dir = './tests/fixtures/'
+source_dir = 'source/'
 file_jdx = '13C-DEPT135.dx'
 
 
 def test_peak_zip_jcamp_n_img(client):
-    with open(target_dir + file_jdx, 'rb') as f:
+    with open(target_dir + source_dir + file_jdx, 'rb') as f:
         file_content = f.read()
     data = dict(
         file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
@@ -22,7 +23,7 @@ def test_peak_zip_jcamp_n_img(client):
 
 
 def test_peak_in_jcamp(client):
-    with open(target_dir + file_jdx, 'rb') as f:
+    with open(target_dir + source_dir + file_jdx, 'rb') as f:
         file_content = f.read()
     data = dict(
         file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
@@ -38,7 +39,7 @@ def test_peak_in_jcamp(client):
 
 
 def test_peak_in_image(client):
-    with open(target_dir + file_jdx, 'rb') as f:
+    with open(target_dir + source_dir + file_jdx, 'rb') as f:
         file_content = f.read()
     data = dict(
         file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
