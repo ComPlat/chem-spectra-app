@@ -32,8 +32,8 @@ $$ $$ /opt/topspin3.5pl6/data/complat/nmr/data/PH/nmr/PH-771/33/audita.txt
 $$ ##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
 (   1,<2018-07-10 08:26:16.930 +0200>,<nmr>,<ibg-4-babsi>,<go4>,<TopSpin 3.5.6>,
       <created by zg
-	started at 2018-07-10 08:11:28.486 +0200,
-	POWCHK enabled, PULCHK disabled,
+      started at 2018-07-10 08:11:28.486 +0200,
+      POWCHK enabled, PULCHK disabled,
        configuration hash MD5:
        40 53 6C 46 18 DA EE D3 1B 86 22 DD 91 B5 2B 72
        data hash MD5: 64K
@@ -87,56 +87,56 @@ $$ ED_ENTRY        ACQU
 $$ ORDER           FILE
 $$
 $$
-$$ HEADER		"F2 - Acquisition Parameters"
-$$ T_NAME		Date_
-$$ 		TYPE	R64
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 50000000
-$$ 		REL	"Date_=itodate(DATE)"
-$$ 		INV_REL	"DATE=datetoi(Date_,DATE)"
-$$ 		FORMAT	"%14.0f"
-$$ 		TEXT	" "
+$$ HEADER         "F2 - Acquisition Parameters"
+$$ T_NAME         Date_
+$$          TYPE  R64
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 50000000
+$$          REL   "Date_=itodate(DATE)"
+$$          INV_REL     "DATE=datetoi(Date_,DATE)"
+$$          FORMAT      "%14.0f"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		Time
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1000000
-$$ 		REL	"Time=itotime(DATE)"
-$$ 		INV_REL	"DATE=timetoi(Time,DATE)"
-$$ 		FORMAT	"%14.2f h"
-$$ 		TEXT	" "
+$$ T_NAME         Time
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1000000
+$$          REL   "Time=itotime(DATE)"
+$$          INV_REL     "DATE=timetoi(Time,DATE)"
+$$          FORMAT      "%14.2f h"
+$$          TEXT  " "
 $$ END
-$$ NAME		INSTRUM
-$$ 		TEXT	" "
+$$ NAME           INSTRUM
+$$          TEXT  " "
 $$ END
-$$ NAME		PROBHD
-$$ 		FORMAT	"%14.14s"
-$$ 		TEXT	" "
+$$ NAME           PROBHD
+$$          FORMAT      "%14.14s"
+$$          TEXT  " "
 $$ END
-$$ NAME		PULPROG
-$$ 		TEXT	" "
+$$ NAME           PULPROG
+$$          TEXT  " "
 $$ END
-$$ NAME		TD
-$$ 		TEXT	" "
+$$ NAME           TD
+$$          TEXT  " "
 $$ END
-$$ NAME		SOLVENT
-$$ 		TEXT	" "
+$$ NAME           SOLVENT
+$$          TEXT  " "
 $$ END
-$$ NAME		NS
-$$ 		TEXT	" "
+$$ NAME           NS
+$$          TEXT  " "
 $$ END
-$$ NAME		DS
-$$ 		TEXT	" "
+$$ NAME           DS
+$$          TEXT  " "
 $$ END
-$$ T_NAME		SWH
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1e8
-$$ 		REL	"SWH=SW*SFO1"
-$$ 		INV_REL "SW=SWH/SFO1"
-$$ 		UNIT	"Hz"
-$$ 		FORMAT	"%14.3f Hz"
-$$ 		TEXT	" "
+$$ T_NAME         SWH
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1e8
+$$          REL   "SWH=SW*SFO1"
+$$          INV_REL "SW=SWH/SFO1"
+$$          UNIT  "Hz"
+$$          FORMAT      "%14.3f Hz"
+$$          TEXT  " "
 $$ END
 $$ T_NAME          FIDRES
 $$                 TYPE    R32
@@ -144,218 +144,218 @@ $$                 CLASS   ACQU
 $$                 SUBRANGE 0.0 100000
 $$                 REL     "FIDRES=2*SW*SFO1/TD"
 $$                 INV_REL "TD = nextpow(2*SW*SFO1/FIDRES)"
-$$ 		UNIT	"Hz"
-$$ 		FORMAT	"%14.6f Hz"
-$$ 		TEXT	" "
+$$          UNIT  "Hz"
+$$          FORMAT      "%14.6f Hz"
+$$          TEXT  " "
 $$ END
 $$ T_NAME          AQ
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1000
-$$ 		REL	"AQ=aqcalc(SW,SFO1,TD,DIGTYP)"
-$$ 		INV_REL	"TD=tdcalc(SW,SFO1,1.0e6*AQ,DIGTYP)"
-$$ 		UNIT	"sec"
-$$ 		FORMAT	"%14.7f sec"
-$$ 		TEXT	" "
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1000
+$$          REL   "AQ=aqcalc(SW,SFO1,TD,DIGTYP)"
+$$          INV_REL     "TD=tdcalc(SW,SFO1,1.0e6*AQ,DIGTYP)"
+$$          UNIT  "sec"
+$$          FORMAT      "%14.7f sec"
+$$          TEXT  " "
 $$ END
-$$ NAME		RG
-$$ 		TEXT	" "
+$$ NAME           RG
+$$          TEXT  " "
 $$ END
 $$ T_NAME          DW
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1000000
-$$ 		REL	"DW=1/(2*SW*SFO1)"
-$$ 		INV_REL	"SW=1000000/(2*(0.005+DW)*SFO1)"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.3lf usec"
-$$ 		TEXT	" "
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1000000
+$$          REL   "DW=1/(2*SW*SFO1)"
+$$          INV_REL     "SW=1000000/(2*(0.005+DW)*SFO1)"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.3lf usec"
+$$          TEXT  " "
 $$ END
-$$ NAME		DE
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ NAME           DE
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ NAME		TE
-$$ 		FORMAT	"%14.1f K"
-$$ 		TEXT	" "
+$$ NAME           TE
+$$          FORMAT      "%14.1f K"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		CNST2
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE -1e38 1e38
-$$ 		REL	"CNST2=CNST[2]"
-$$ 		INV_REL	"CNST[2]=CNST2"
-$$ 		FORMAT	"%14.7f"
-$$ 		TEXT	" "
+$$ T_NAME         CNST2
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE -1e38 1e38
+$$          REL   "CNST2=CNST[2]"
+$$          INV_REL     "CNST[2]=CNST2"
+$$          FORMAT      "%14.7f"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		D1
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1e38
-$$ 		REL	"D1=D[1]"
-$$ 		INV_REL	"D[1]=D1"
-$$ 		UNIT	"sec"
-$$ 		FORMAT	"%14.8f sec"
-$$ 		TEXT	" "
+$$ T_NAME         D1
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1e38
+$$          REL   "D1=D[1]"
+$$          INV_REL     "D[1]=D1"
+$$          UNIT  "sec"
+$$          FORMAT      "%14.8f sec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		D2
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1e38
-$$ 		REL	"D2=D[2]"
-$$ 		INV_REL	"D[2]=D2"
-$$ 		UNIT	"sec"
-$$ 		FORMAT	"%14.8f sec"
-$$ 		TEXT	" "
+$$ T_NAME         D2
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1e38
+$$          REL   "D2=D[2]"
+$$          INV_REL     "D[2]=D2"
+$$          UNIT  "sec"
+$$          FORMAT      "%14.8f sec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		D12
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1e38
-$$ 		REL	"D12=D[12]"
-$$ 		INV_REL	"D[12]=D12"
-$$ 		UNIT	"sec"
-$$ 		FORMAT	"%14.8f sec"
-$$ 		TEXT	" "
+$$ T_NAME         D12
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1e38
+$$          REL   "D12=D[12]"
+$$          INV_REL     "D[12]=D12"
+$$          UNIT  "sec"
+$$          FORMAT      "%14.8f sec"
+$$          TEXT  " "
 $$ END
-$$ NAME		TD0
-$$ 		TEXT	" "
+$$ NAME           TD0
+$$          TEXT  " "
 $$ END
-$$ NAME		SFO1
-$$ 		FORMAT	"%14.7f MHz"
-$$ 		TEXT	" "
+$$ NAME           SFO1
+$$          FORMAT      "%14.7f MHz"
+$$          TEXT  " "
 $$ END
-$$ NAME		NUC1
-$$ 		NONEDIT
-$$ 		TEXT	" "
+$$ NAME           NUC1
+$$          NONEDIT
+$$          TEXT  " "
 $$ END
-$$ T_NAME		P1
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1.0e10
-$$ 		REL	"P1=P[1]"
-$$ 		INV_REL	"P[1]=P1"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ T_NAME         P1
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1.0e10
+$$          REL   "P1=P[1]"
+$$          INV_REL     "P[1]=P1"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		P13
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1.0e10
-$$ 		REL	"P13=P[13]"
-$$ 		INV_REL	"P[13]=P13"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ T_NAME         P13
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1.0e10
+$$          REL   "P13=P[13]"
+$$          INV_REL     "P[13]=P13"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		PLW0
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		REL	"PLW0=PLW[0]"
-$$ 		INV_REL	"PLW[0]=PLW0"
-$$ 		UNIT	"W"
-$$ 		FORMAT	"%14.8f W"
-$$ 		TEXT	"power PLW0 "
+$$ T_NAME         PLW0
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          REL   "PLW0=PLW[0]"
+$$          INV_REL     "PLW[0]=PLW0"
+$$          UNIT  "W"
+$$          FORMAT      "%14.8f W"
+$$          TEXT  "power PLW0 "
 $$ END
-$$ T_NAME		PLW1
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		REL	"PLW1=PLW[1]"
-$$ 		INV_REL	"PLW[1]=PLW1"
-$$ 		UNIT	"W"
-$$ 		FORMAT	"%14.8f W"
-$$ 		TEXT	"power PLW1 "
+$$ T_NAME         PLW1
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          REL   "PLW1=PLW[1]"
+$$          INV_REL     "PLW[1]=PLW1"
+$$          UNIT  "W"
+$$          FORMAT      "%14.8f W"
+$$          TEXT  "power PLW1 "
 $$ END
-$$ NAME		SPNAM[5]
-$$ 		TEXT	" "
+$$ NAME           SPNAM[5]
+$$          TEXT  " "
 $$ END
-$$ T_NAME		SPOAL5
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE -1.0 1.0
-$$ 		REL	"SPOAL5=SPOAL[5]"
-$$ 		INV_REL	"SPOAL[5]=SPOAL5"
-$$ 		FORMAT	"%14.3f"
-$$ 		TEXT	" "
+$$ T_NAME         SPOAL5
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE -1.0 1.0
+$$          REL   "SPOAL5=SPOAL[5]"
+$$          INV_REL     "SPOAL[5]=SPOAL5"
+$$          FORMAT      "%14.3f"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		SPOFFS5
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE -1e38 1e38
-$$ 		REL	"SPOFFS5=SPOFFS[5]"
-$$ 		INV_REL	"SPOFFS[0]=SPOFFS0"
-$$ 		UNIT	"Hz"
-$$ 		FORMAT	"%14.2f Hz"
-$$ 		TEXT	" "
+$$ T_NAME         SPOFFS5
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE -1e38 1e38
+$$          REL   "SPOFFS5=SPOFFS[5]"
+$$          INV_REL     "SPOFFS[0]=SPOFFS0"
+$$          UNIT  "Hz"
+$$          FORMAT      "%14.2f Hz"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		SPW5
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		REL	"SPW5=SPW[5]"
-$$ 		INV_REL	"SPW[5]=SPW5"
-$$ 		UNIT	"W"
-$$ 		FORMAT	"%14.8f W"
-$$ 		TEXT	"shaped pulse power SPW5"
+$$ T_NAME         SPW5
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          REL   "SPW5=SPW[5]"
+$$          INV_REL     "SPW[5]=SPW5"
+$$          UNIT  "W"
+$$          FORMAT      "%14.8f W"
+$$          TEXT  "shaped pulse power SPW5"
 $$ END
-$$ NAME		SFO2
-$$ 		FORMAT	"%14.7f MHz"
-$$ 		TEXT	" "
+$$ NAME           SFO2
+$$          FORMAT      "%14.7f MHz"
+$$          TEXT  " "
 $$ END
-$$ NAME		NUC2
-$$ 		NONEDIT
-$$ 		TEXT	" "
+$$ NAME           NUC2
+$$          NONEDIT
+$$          TEXT  " "
 $$ END
-$$ NAME		CPDPRG[2]
-$$ 		TEXT	" "
+$$ NAME           CPDPRG[2]
+$$          TEXT  " "
 $$ END
-$$ T_NAME		P3
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1.0e10
-$$ 		REL	"P3=P[3]"
-$$ 		INV_REL	"P[3]=P3"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ T_NAME         P3
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1.0e10
+$$          REL   "P3=P[3]"
+$$          INV_REL     "P[3]=P3"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		P4
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1.0e10
-$$ 		REL	"P4=P[4]"
-$$ 		INV_REL	"P[4]=P4"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ T_NAME         P4
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1.0e10
+$$          REL   "P4=P[4]"
+$$          INV_REL     "P[4]=P4"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		PCPD2
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0 1e38
-$$ 		REL	"PCPD2=PCPD[2]"
-$$ 		INV_REL	"PCPD[2]=PCPD2"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ T_NAME         PCPD2
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0 1e38
+$$          REL   "PCPD2=PCPD[2]"
+$$          INV_REL     "PCPD[2]=PCPD2"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		PLW2
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		REL	"PLW2=PLW[2]"
-$$ 		INV_REL	"PLW[2]=PLW2"
-$$ 		UNIT	"W"
-$$ 		FORMAT	"%14.8f W"
-$$ 		TEXT	"power PLW2 "
+$$ T_NAME         PLW2
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          REL   "PLW2=PLW[2]"
+$$          INV_REL     "PLW[2]=PLW2"
+$$          UNIT  "W"
+$$          FORMAT      "%14.8f W"
+$$          TEXT  "power PLW2 "
 $$ END
-$$ T_NAME		PLW12
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		REL	"PLW12=PLW[12]"
-$$ 		INV_REL	"PLW[12]=PLW12"
-$$ 		UNIT	"W"
-$$ 		FORMAT	"%14.8f W"
-$$ 		TEXT	"power PLW12 "
+$$ T_NAME         PLW12
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          REL   "PLW12=PLW[12]"
+$$          INV_REL     "PLW[12]=PLW12"
+$$          UNIT  "W"
+$$          FORMAT      "%14.8f W"
+$$          TEXT  "power PLW12 "
 $$ END
 ##$RELAX=
 ##$BRUKER FILE EXP=fq1list
@@ -877,7 +877,7 @@ $$  2000000
 $$ ##TITLE= Parameter file, TopSpin 3.5 pl 6
 $$ ##JCAMPDX= 5.0
 $$ ##DATATYPE= Parameter Values
-$$ ##NPOINTS= 1	$$ modification sequence number
+$$ ##NPOINTS= 1   $$ modification sequence number
 $$ ##ORIGIN= Bruker BioSpin GmbH
 $$ ##OWNER= nmr
 $$ $$ 2018-07-10 08:11:28.316 +0200  nmr@ibg-4-babsi
@@ -5135,54 +5135,54 @@ $$ #$$SHIMID=292722
 $$ #
 $$ # Active Shim Gradients
 $$ #
-$$ Z           		-10354
-$$ Z2          		2179
-$$ Z3          		-311
-$$ Z4          		-1695
-$$ Z5          		519
-$$ Z6          		2192
-$$ Z7          		-2289
-$$ Z8          		-117
-$$ X           		3251
-$$ XZ          		-698
-$$ XZ2         		2438
-$$ XZ3         		-169
-$$ XZ4         		-555
-$$ XZ5         		1731
-$$ Y           		420
-$$ YZ          		-1082
-$$ YZ2         		-180
-$$ YZ3         		-929
-$$ YZ4         		233
-$$ YZ5         		3803
-$$ XY          		-1633
-$$ XYZ         		1468
-$$ XYZ2        		-417
-$$ XYZ3        		494
-$$ XYZ4        		263
-$$ XYZ5        		0
-$$ (X2-Y2)     		-1669
-$$ (X2-Y2)Z    		-1275
-$$ (X2-Y2)Z2   		976
-$$ (X2-Y2)Z3   		361
-$$ (X2-Y2)Z4   		-678
-$$ (X2-Y2)Z5   		0
-$$ X3          		2782
-$$ X3Z         		-52
-$$ Y3          		-133
-$$ Y3Z         		647
+$$ Z                    -10354
+$$ Z2                   2179
+$$ Z3                   -311
+$$ Z4                   -1695
+$$ Z5                   519
+$$ Z6                   2192
+$$ Z7                   -2289
+$$ Z8                   -117
+$$ X                    3251
+$$ XZ                   -698
+$$ XZ2                  2438
+$$ XZ3                  -169
+$$ XZ4                  -555
+$$ XZ5                  1731
+$$ Y                    420
+$$ YZ                   -1082
+$$ YZ2                  -180
+$$ YZ3                  -929
+$$ YZ4                  233
+$$ YZ5                  3803
+$$ XY                   -1633
+$$ XYZ                  1468
+$$ XYZ2                 -417
+$$ XYZ3                 494
+$$ XYZ4                 263
+$$ XYZ5                 0
+$$ (X2-Y2)              -1669
+$$ (X2-Y2)Z             -1275
+$$ (X2-Y2)Z2            976
+$$ (X2-Y2)Z3            361
+$$ (X2-Y2)Z4            -678
+$$ (X2-Y2)Z5            0
+$$ X3                   2782
+$$ X3Z                  -52
+$$ Y3                   -133
+$$ Y3Z                  647
 $$ #
 $$ # Lock Parameter
 $$ #
-$$ FIELD		4932.831
-$$ LOCKPHASE		103.600
-$$ LOCKPOWER		-20.000
-$$ LOCKGAIN		99.468
-$$ LOCKDC		-75.000
-$$ LOCKSHIFT		2.490
-$$ LOOPGAIN		5.000
-$$ LOOPTIME		0.250
-$$ LOOPFILTER		500.000
+$$ FIELD          4932.831
+$$ LOCKPHASE            103.600
+$$ LOCKPOWER            -20.000
+$$ LOCKGAIN       99.468
+$$ LOCKDC         -75.000
+$$ LOCKSHIFT            2.490
+$$ LOOPGAIN       5.000
+$$ LOOPTIME       0.250
+$$ LOOPFILTER           500.000
 $$ #
 $$ IEEE64_VERSION_CODE 1
 $$ #
@@ -5233,7 +5233,7 @@ $$ SHIM_SETTING [40]  0.00000000
 $$ ##TITLE= Parameter file, TopSpin 3.5 pl 6
 $$ ##JCAMPDX= 5.0
 $$ ##DATATYPE= Parameter Values
-$$ ##NPOINTS= 33	$$ modification sequence number
+$$ ##NPOINTS= 33  $$ modification sequence number
 $$ ##ORIGIN= Bruker BioSpin GmbH
 $$ ##OWNER= nmrsu
 $$ $$ 2017-08-18 15:18:49.179 +0200  nmr@ibg-4-babsi
@@ -6453,7 +6453,7 @@ $$ --------------------------
 ##$XDIM= 0
 ##$YMAX_p= 0
 ##$YMIN_p= 0
-##$CURPLOT= <*	Ա*	*	>
+##$CURPLOT= <*    *     *     >
 ##$CURPRIN= <$1#1#0#1#1#1#1#1#0#-1#-1#1#-1>
 ##$DFORMAT= <normdp>
 ##$LAYOUT= <+/1D_X.xwp>
@@ -10509,8 +10509,8 @@ $$ $$ /opt/topspin3.5pl6/data/complat/nmr/data/PH/nmr/PH-771/33/pdata/1/auditp.t
 $$ ##AUDIT TRAIL=  $$ (NUMBER, WHEN, WHO, WHERE, PROCESS, VERSION, WHAT)
 (   1,<2018-07-10 08:26:16.930 +0200>,<nmr>,<ibg-4-babsi>,<go4>,<TopSpin 3.5.6>,
       <created by zg
-	started at 2018-07-10 08:11:28.486 +0200,
-	POWCHK enabled, PULCHK disabled,
+      started at 2018-07-10 08:11:28.486 +0200,
+      POWCHK enabled, PULCHK disabled,
        configuration hash MD5:
        40 53 6C 46 18 DA EE D3 1B 86 22 DD 91 B5 2B 72
        data hash MD5: 64K
@@ -10569,56 +10569,56 @@ $$ ED_ENTRY        ACQU
 $$ ORDER           FILE
 $$
 $$
-$$ HEADER		"F2 - Acquisition Parameters"
-$$ T_NAME		Date_
-$$ 		TYPE	R64
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 50000000
-$$ 		REL	"Date_=itodate(DATE)"
-$$ 		INV_REL	"DATE=datetoi(Date_,DATE)"
-$$ 		FORMAT	"%14.0f"
-$$ 		TEXT	" "
+$$ HEADER         "F2 - Acquisition Parameters"
+$$ T_NAME         Date_
+$$          TYPE  R64
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 50000000
+$$          REL   "Date_=itodate(DATE)"
+$$          INV_REL     "DATE=datetoi(Date_,DATE)"
+$$          FORMAT      "%14.0f"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		Time
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1000000
-$$ 		REL	"Time=itotime(DATE)"
-$$ 		INV_REL	"DATE=timetoi(Time,DATE)"
-$$ 		FORMAT	"%14.2f h"
-$$ 		TEXT	" "
+$$ T_NAME         Time
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1000000
+$$          REL   "Time=itotime(DATE)"
+$$          INV_REL     "DATE=timetoi(Time,DATE)"
+$$          FORMAT      "%14.2f h"
+$$          TEXT  " "
 $$ END
-$$ NAME		INSTRUM
-$$ 		TEXT	" "
+$$ NAME           INSTRUM
+$$          TEXT  " "
 $$ END
-$$ NAME		PROBHD
-$$ 		FORMAT	"%14.14s"
-$$ 		TEXT	" "
+$$ NAME           PROBHD
+$$          FORMAT      "%14.14s"
+$$          TEXT  " "
 $$ END
-$$ NAME		PULPROG
-$$ 		TEXT	" "
+$$ NAME           PULPROG
+$$          TEXT  " "
 $$ END
-$$ NAME		TD
-$$ 		TEXT	" "
+$$ NAME           TD
+$$          TEXT  " "
 $$ END
-$$ NAME		SOLVENT
-$$ 		TEXT	" "
+$$ NAME           SOLVENT
+$$          TEXT  " "
 $$ END
-$$ NAME		NS
-$$ 		TEXT	" "
+$$ NAME           NS
+$$          TEXT  " "
 $$ END
-$$ NAME		DS
-$$ 		TEXT	" "
+$$ NAME           DS
+$$          TEXT  " "
 $$ END
-$$ T_NAME		SWH
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1e8
-$$ 		REL	"SWH=SW*SFO1"
-$$ 		INV_REL "SW=SWH/SFO1"
-$$ 		UNIT	"Hz"
-$$ 		FORMAT	"%14.3f Hz"
-$$ 		TEXT	" "
+$$ T_NAME         SWH
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1e8
+$$          REL   "SWH=SW*SFO1"
+$$          INV_REL "SW=SWH/SFO1"
+$$          UNIT  "Hz"
+$$          FORMAT      "%14.3f Hz"
+$$          TEXT  " "
 $$ END
 $$ T_NAME          FIDRES
 $$                 TYPE    R32
@@ -10626,218 +10626,218 @@ $$                 CLASS   ACQU
 $$                 SUBRANGE 0.0 100000
 $$                 REL     "FIDRES=2*SW*SFO1/TD"
 $$                 INV_REL "TD = nextpow(2*SW*SFO1/FIDRES)"
-$$ 		UNIT	"Hz"
-$$ 		FORMAT	"%14.6f Hz"
-$$ 		TEXT	" "
+$$          UNIT  "Hz"
+$$          FORMAT      "%14.6f Hz"
+$$          TEXT  " "
 $$ END
 $$ T_NAME          AQ
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1000
-$$ 		REL	"AQ=aqcalc(SW,SFO1,TD,DIGTYP)"
-$$ 		INV_REL	"TD=tdcalc(SW,SFO1,1.0e6*AQ,DIGTYP)"
-$$ 		UNIT	"sec"
-$$ 		FORMAT	"%14.7f sec"
-$$ 		TEXT	" "
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1000
+$$          REL   "AQ=aqcalc(SW,SFO1,TD,DIGTYP)"
+$$          INV_REL     "TD=tdcalc(SW,SFO1,1.0e6*AQ,DIGTYP)"
+$$          UNIT  "sec"
+$$          FORMAT      "%14.7f sec"
+$$          TEXT  " "
 $$ END
-$$ NAME		RG
-$$ 		TEXT	" "
+$$ NAME           RG
+$$          TEXT  " "
 $$ END
 $$ T_NAME          DW
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1000000
-$$ 		REL	"DW=1/(2*SW*SFO1)"
-$$ 		INV_REL	"SW=1000000/(2*(0.005+DW)*SFO1)"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.3lf usec"
-$$ 		TEXT	" "
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1000000
+$$          REL   "DW=1/(2*SW*SFO1)"
+$$          INV_REL     "SW=1000000/(2*(0.005+DW)*SFO1)"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.3lf usec"
+$$          TEXT  " "
 $$ END
-$$ NAME		DE
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ NAME           DE
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ NAME		TE
-$$ 		FORMAT	"%14.1f K"
-$$ 		TEXT	" "
+$$ NAME           TE
+$$          FORMAT      "%14.1f K"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		CNST2
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE -1e38 1e38
-$$ 		REL	"CNST2=CNST[2]"
-$$ 		INV_REL	"CNST[2]=CNST2"
-$$ 		FORMAT	"%14.7f"
-$$ 		TEXT	" "
+$$ T_NAME         CNST2
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE -1e38 1e38
+$$          REL   "CNST2=CNST[2]"
+$$          INV_REL     "CNST[2]=CNST2"
+$$          FORMAT      "%14.7f"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		D1
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1e38
-$$ 		REL	"D1=D[1]"
-$$ 		INV_REL	"D[1]=D1"
-$$ 		UNIT	"sec"
-$$ 		FORMAT	"%14.8f sec"
-$$ 		TEXT	" "
+$$ T_NAME         D1
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1e38
+$$          REL   "D1=D[1]"
+$$          INV_REL     "D[1]=D1"
+$$          UNIT  "sec"
+$$          FORMAT      "%14.8f sec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		D2
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1e38
-$$ 		REL	"D2=D[2]"
-$$ 		INV_REL	"D[2]=D2"
-$$ 		UNIT	"sec"
-$$ 		FORMAT	"%14.8f sec"
-$$ 		TEXT	" "
+$$ T_NAME         D2
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1e38
+$$          REL   "D2=D[2]"
+$$          INV_REL     "D[2]=D2"
+$$          UNIT  "sec"
+$$          FORMAT      "%14.8f sec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		D12
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1e38
-$$ 		REL	"D12=D[12]"
-$$ 		INV_REL	"D[12]=D12"
-$$ 		UNIT	"sec"
-$$ 		FORMAT	"%14.8f sec"
-$$ 		TEXT	" "
+$$ T_NAME         D12
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1e38
+$$          REL   "D12=D[12]"
+$$          INV_REL     "D[12]=D12"
+$$          UNIT  "sec"
+$$          FORMAT      "%14.8f sec"
+$$          TEXT  " "
 $$ END
-$$ NAME		TD0
-$$ 		TEXT	" "
+$$ NAME           TD0
+$$          TEXT  " "
 $$ END
-$$ NAME		SFO1
-$$ 		FORMAT	"%14.7f MHz"
-$$ 		TEXT	" "
+$$ NAME           SFO1
+$$          FORMAT      "%14.7f MHz"
+$$          TEXT  " "
 $$ END
-$$ NAME		NUC1
-$$ 		NONEDIT
-$$ 		TEXT	" "
+$$ NAME           NUC1
+$$          NONEDIT
+$$          TEXT  " "
 $$ END
-$$ T_NAME		P1
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1.0e10
-$$ 		REL	"P1=P[1]"
-$$ 		INV_REL	"P[1]=P1"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ T_NAME         P1
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1.0e10
+$$          REL   "P1=P[1]"
+$$          INV_REL     "P[1]=P1"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		P13
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1.0e10
-$$ 		REL	"P13=P[13]"
-$$ 		INV_REL	"P[13]=P13"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ T_NAME         P13
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1.0e10
+$$          REL   "P13=P[13]"
+$$          INV_REL     "P[13]=P13"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		PLW0
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		REL	"PLW0=PLW[0]"
-$$ 		INV_REL	"PLW[0]=PLW0"
-$$ 		UNIT	"W"
-$$ 		FORMAT	"%14.8f W"
-$$ 		TEXT	"power PLW0 "
+$$ T_NAME         PLW0
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          REL   "PLW0=PLW[0]"
+$$          INV_REL     "PLW[0]=PLW0"
+$$          UNIT  "W"
+$$          FORMAT      "%14.8f W"
+$$          TEXT  "power PLW0 "
 $$ END
-$$ T_NAME		PLW1
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		REL	"PLW1=PLW[1]"
-$$ 		INV_REL	"PLW[1]=PLW1"
-$$ 		UNIT	"W"
-$$ 		FORMAT	"%14.8f W"
-$$ 		TEXT	"power PLW1 "
+$$ T_NAME         PLW1
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          REL   "PLW1=PLW[1]"
+$$          INV_REL     "PLW[1]=PLW1"
+$$          UNIT  "W"
+$$          FORMAT      "%14.8f W"
+$$          TEXT  "power PLW1 "
 $$ END
-$$ NAME		SPNAM[5]
-$$ 		TEXT	" "
+$$ NAME           SPNAM[5]
+$$          TEXT  " "
 $$ END
-$$ T_NAME		SPOAL5
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE -1.0 1.0
-$$ 		REL	"SPOAL5=SPOAL[5]"
-$$ 		INV_REL	"SPOAL[5]=SPOAL5"
-$$ 		FORMAT	"%14.3f"
-$$ 		TEXT	" "
+$$ T_NAME         SPOAL5
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE -1.0 1.0
+$$          REL   "SPOAL5=SPOAL[5]"
+$$          INV_REL     "SPOAL[5]=SPOAL5"
+$$          FORMAT      "%14.3f"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		SPOFFS5
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE -1e38 1e38
-$$ 		REL	"SPOFFS5=SPOFFS[5]"
-$$ 		INV_REL	"SPOFFS[0]=SPOFFS0"
-$$ 		UNIT	"Hz"
-$$ 		FORMAT	"%14.2f Hz"
-$$ 		TEXT	" "
+$$ T_NAME         SPOFFS5
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE -1e38 1e38
+$$          REL   "SPOFFS5=SPOFFS[5]"
+$$          INV_REL     "SPOFFS[0]=SPOFFS0"
+$$          UNIT  "Hz"
+$$          FORMAT      "%14.2f Hz"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		SPW5
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		REL	"SPW5=SPW[5]"
-$$ 		INV_REL	"SPW[5]=SPW5"
-$$ 		UNIT	"W"
-$$ 		FORMAT	"%14.8f W"
-$$ 		TEXT	"shaped pulse power SPW5"
+$$ T_NAME         SPW5
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          REL   "SPW5=SPW[5]"
+$$          INV_REL     "SPW[5]=SPW5"
+$$          UNIT  "W"
+$$          FORMAT      "%14.8f W"
+$$          TEXT  "shaped pulse power SPW5"
 $$ END
-$$ NAME		SFO2
-$$ 		FORMAT	"%14.7f MHz"
-$$ 		TEXT	" "
+$$ NAME           SFO2
+$$          FORMAT      "%14.7f MHz"
+$$          TEXT  " "
 $$ END
-$$ NAME		NUC2
-$$ 		NONEDIT
-$$ 		TEXT	" "
+$$ NAME           NUC2
+$$          NONEDIT
+$$          TEXT  " "
 $$ END
-$$ NAME		CPDPRG[2]
-$$ 		TEXT	" "
+$$ NAME           CPDPRG[2]
+$$          TEXT  " "
 $$ END
-$$ T_NAME		P3
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1.0e10
-$$ 		REL	"P3=P[3]"
-$$ 		INV_REL	"P[3]=P3"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ T_NAME         P3
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1.0e10
+$$          REL   "P3=P[3]"
+$$          INV_REL     "P[3]=P3"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		P4
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0.0 1.0e10
-$$ 		REL	"P4=P[4]"
-$$ 		INV_REL	"P[4]=P4"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ T_NAME         P4
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0.0 1.0e10
+$$          REL   "P4=P[4]"
+$$          INV_REL     "P[4]=P4"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		PCPD2
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		SUBRANGE 0 1e38
-$$ 		REL	"PCPD2=PCPD[2]"
-$$ 		INV_REL	"PCPD[2]=PCPD2"
-$$ 		UNIT	"usec"
-$$ 		FORMAT	"%14.2f usec"
-$$ 		TEXT	" "
+$$ T_NAME         PCPD2
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          SUBRANGE 0 1e38
+$$          REL   "PCPD2=PCPD[2]"
+$$          INV_REL     "PCPD[2]=PCPD2"
+$$          UNIT  "usec"
+$$          FORMAT      "%14.2f usec"
+$$          TEXT  " "
 $$ END
-$$ T_NAME		PLW2
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		REL	"PLW2=PLW[2]"
-$$ 		INV_REL	"PLW[2]=PLW2"
-$$ 		UNIT	"W"
-$$ 		FORMAT	"%14.8f W"
-$$ 		TEXT	"power PLW2 "
+$$ T_NAME         PLW2
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          REL   "PLW2=PLW[2]"
+$$          INV_REL     "PLW[2]=PLW2"
+$$          UNIT  "W"
+$$          FORMAT      "%14.8f W"
+$$          TEXT  "power PLW2 "
 $$ END
-$$ T_NAME		PLW12
-$$ 		TYPE	R32
-$$ 		CLASS	ACQU
-$$ 		REL	"PLW12=PLW[12]"
-$$ 		INV_REL	"PLW[12]=PLW12"
-$$ 		UNIT	"W"
-$$ 		FORMAT	"%14.8f W"
-$$ 		TEXT	"power PLW12 "
+$$ T_NAME         PLW12
+$$          TYPE  R32
+$$          CLASS ACQU
+$$          REL   "PLW12=PLW[12]"
+$$          INV_REL     "PLW[12]=PLW12"
+$$          UNIT  "W"
+$$          FORMAT      "%14.8f W"
+$$          TEXT  "power PLW12 "
 $$ END
 ##$RELAX=
 ##$BRUKER FILE EXP=fq1list
@@ -11359,7 +11359,7 @@ $$  2000000
 $$ ##TITLE= Parameter file, TopSpin 3.5 pl 6
 $$ ##JCAMPDX= 5.0
 $$ ##DATATYPE= Parameter Values
-$$ ##NPOINTS= 1	$$ modification sequence number
+$$ ##NPOINTS= 1   $$ modification sequence number
 $$ ##ORIGIN= Bruker BioSpin GmbH
 $$ ##OWNER= nmr
 $$ $$ 2018-07-10 08:11:28.316 +0200  nmr@ibg-4-babsi
@@ -15617,54 +15617,54 @@ $$ #$$SHIMID=292722
 $$ #
 $$ # Active Shim Gradients
 $$ #
-$$ Z           		-10354
-$$ Z2          		2179
-$$ Z3          		-311
-$$ Z4          		-1695
-$$ Z5          		519
-$$ Z6          		2192
-$$ Z7          		-2289
-$$ Z8          		-117
-$$ X           		3251
-$$ XZ          		-698
-$$ XZ2         		2438
-$$ XZ3         		-169
-$$ XZ4         		-555
-$$ XZ5         		1731
-$$ Y           		420
-$$ YZ          		-1082
-$$ YZ2         		-180
-$$ YZ3         		-929
-$$ YZ4         		233
-$$ YZ5         		3803
-$$ XY          		-1633
-$$ XYZ         		1468
-$$ XYZ2        		-417
-$$ XYZ3        		494
-$$ XYZ4        		263
-$$ XYZ5        		0
-$$ (X2-Y2)     		-1669
-$$ (X2-Y2)Z    		-1275
-$$ (X2-Y2)Z2   		976
-$$ (X2-Y2)Z3   		361
-$$ (X2-Y2)Z4   		-678
-$$ (X2-Y2)Z5   		0
-$$ X3          		2782
-$$ X3Z         		-52
-$$ Y3          		-133
-$$ Y3Z         		647
+$$ Z                    -10354
+$$ Z2                   2179
+$$ Z3                   -311
+$$ Z4                   -1695
+$$ Z5                   519
+$$ Z6                   2192
+$$ Z7                   -2289
+$$ Z8                   -117
+$$ X                    3251
+$$ XZ                   -698
+$$ XZ2                  2438
+$$ XZ3                  -169
+$$ XZ4                  -555
+$$ XZ5                  1731
+$$ Y                    420
+$$ YZ                   -1082
+$$ YZ2                  -180
+$$ YZ3                  -929
+$$ YZ4                  233
+$$ YZ5                  3803
+$$ XY                   -1633
+$$ XYZ                  1468
+$$ XYZ2                 -417
+$$ XYZ3                 494
+$$ XYZ4                 263
+$$ XYZ5                 0
+$$ (X2-Y2)              -1669
+$$ (X2-Y2)Z             -1275
+$$ (X2-Y2)Z2            976
+$$ (X2-Y2)Z3            361
+$$ (X2-Y2)Z4            -678
+$$ (X2-Y2)Z5            0
+$$ X3                   2782
+$$ X3Z                  -52
+$$ Y3                   -133
+$$ Y3Z                  647
 $$ #
 $$ # Lock Parameter
 $$ #
-$$ FIELD		4932.831
-$$ LOCKPHASE		103.600
-$$ LOCKPOWER		-20.000
-$$ LOCKGAIN		99.468
-$$ LOCKDC		-75.000
-$$ LOCKSHIFT		2.490
-$$ LOOPGAIN		5.000
-$$ LOOPTIME		0.250
-$$ LOOPFILTER		500.000
+$$ FIELD          4932.831
+$$ LOCKPHASE            103.600
+$$ LOCKPOWER            -20.000
+$$ LOCKGAIN       99.468
+$$ LOCKDC         -75.000
+$$ LOCKSHIFT            2.490
+$$ LOOPGAIN       5.000
+$$ LOOPTIME       0.250
+$$ LOOPFILTER           500.000
 $$ #
 $$ IEEE64_VERSION_CODE 1
 $$ #
@@ -15715,7 +15715,7 @@ $$ SHIM_SETTING [40]  0.00000000
 $$ ##TITLE= Parameter file, TopSpin 3.5 pl 6
 $$ ##JCAMPDX= 5.0
 $$ ##DATATYPE= Parameter Values
-$$ ##NPOINTS= 33	$$ modification sequence number
+$$ ##NPOINTS= 33  $$ modification sequence number
 $$ ##ORIGIN= Bruker BioSpin GmbH
 $$ ##OWNER= nmrsu
 $$ $$ 2017-08-18 15:18:49.179 +0200  nmr@ibg-4-babsi
@@ -16933,7 +16933,7 @@ $$ --------------------------
 ##$XDIM= 32768
 ##$YMAX_p= 266635237
 ##$YMIN_p= -283555411
-##$CURPLOT= <*	Ա*	*	>
+##$CURPLOT= <*    *     *     >
 ##$CURPRIN= <$1#1#0#1#1#1#1#1#0#-1#-1#1#-1>
 ##$DFORMAT= <normdp>
 ##$LAYOUT= <+/1D_X.xwp>
@@ -23704,17 +23704,17 @@ $$
 $$ end of block 2
 $$
 
-$$ === CHEMSPECTRA PEAK ASSIGNMENTS ALL ===
+$$ === CHEMSPECTRA PEAK ASSIGNMENTS AUTO ===
 ##TITLE=dept135p DMSO /opt/topspin3.5pl6/data/complat/nmr PH 44_PEAK_ASSIGNMENTS
 ##JCAMP-DX=5.00
 ##DATA TYPE=PEAK ASSIGNMENTS
 ##DATA CLASS=ASSIGNMENTS
-##NPOINTS=33
 ##THRESHOLD=0.02
 ##MAXX=235.4936
 ##MAXY=266635237.0
 ##MINX=-15.458417214338084
 ##MINY=-283555411.0
+##NPOINTS=33
 ##PEAK ASSIGNMENTS=(XYA)
 (203.42670049511906, 5554580.0, <1>)
 (168.16613079832615, 5355235.0, <2>)
@@ -23762,6 +23762,10 @@ $$ === CHEMSPECTRA PEAK ASSIGNMENTS EDIT ===
 ##MAXY=266635237.0
 ##MINX=-15.458417214338084
 ##MINY=-283555411.0
+##NPOINTS=2
+##PEAK ASSIGNMENTS=(XYA)
+(5.5, 5.552, <1>)
+(6.6, 6.664, <2>)
 ##END=
 
 ##END=
