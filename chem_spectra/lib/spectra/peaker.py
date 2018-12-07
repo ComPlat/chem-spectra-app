@@ -20,9 +20,8 @@ class SpectraPeaker():
         self.y = self.__read_y()
         self.x = self.__read_x()
         self.boundary = self.__find_boundary()
-        self.peaks = None
-        self.peak_idxs = None
         self.label = self.__set_label()
+        self.auto_peaks = None
         self.edit_peaks = None
 
 
@@ -165,7 +164,69 @@ class SpectraPeaker():
         return x_unit
 
 
-    def pick_peak(self):
+    def __set_auto_peaks(self, peak_idxs):
+        auto_x = []
+        auto_y = []
+        for idx in peak_idxs:
+            auto_x.append(self.x[idx])
+            auto_y.append(self.y[idx])
+        if len(auto_x) == 0:
+            return
+        self.auto_peaks = { 'x': auto_x, 'y': auto_y }
+
+
+    def __read_auto_peaks(self):
+        try:
+            auto_x = []
+            auto_y = []
+            pas_list = self.dic['PEAKASSIGNMENTS']
+            pas_idx = len(pas_list) - 2
+            pas_idx = 0 if pas_idx < 0 else pas_idx
+            pas_target = pas_list[pas_idx]
+
+            pas = pas_target.split('\n')[1:]
+            for pa in pas:
+                info = pa.replace('(', '').replace(')', '').replace(' ', '').split(',')
+                auto_x.append(float(info[0]))
+                auto_y.append(float(info[1]))
+            if len(auto_x) == 0:
+                return
+            self.auto_peaks = { 'x': auto_x, 'y': auto_y }
+        except:
+            pass
+
+
+    def __read_edit_peaks(self):
+        try:
+            edit_x = []
+            edit_y = []
+            pas = self.dic['PEAKASSIGNMENTS'][-1].split('\n')[1:]
+            for pa in pas:
+                info = pa.replace('(', '').replace(')', '').replace(' ', '').split(',')
+                edit_x.append(float(info[0]))
+                edit_y.append(float(info[1]))
+            if len(edit_x) == 0:
+                return
+            self.edit_peaks = { 'x': edit_x, 'y': edit_y }
+        except:
+            pass
+
+
+    def __parse_edit(self, peaks_str):
+        edit_x = []
+        edit_y = []
+        for p in peaks_str.split('#'):
+            info = p.split(',')
+            edit_x.append(float(info[0]))
+            edit_y.append(float(info[1]))
+        if len(edit_x) == 0:
+            return
+        self.edit_peaks = { 'x': edit_x, 'y': edit_y }
+
+
+    def __run_pick_peak(self):
+        self.__read_auto_peaks()
+        self.__read_edit_peaks()
         max_y = np.max(self.y)
         height = self.threshold * max_y
 
@@ -175,23 +236,29 @@ class SpectraPeaker():
             corr_data_ys = 1 - self.y
             corr_height = 1 - height
 
-        self.peaks = signal.find_peaks(corr_data_ys, height=corr_height)
-        self.peak_idxs = self.peaks[0]
+        peaks = signal.find_peaks(corr_data_ys, height=corr_height)
+        peak_idxs = peaks[0]
+        self.__set_auto_peaks(peak_idxs)
 
 
-    def read_edit_peak(self):
+    def pick_peak(self):
+        self.__read_auto_peaks()
+        self.__read_edit_peaks()
+
+        if (not self.auto_peaks) and (not self.edit_peaks):
+            self.__run_pick_peak()
+
+
+    def write_edit_peak(self, peaks_str):
         err = True
         try:
-            edit_x = []
-            edit_y = []
-            pas = self.dic['PEAKASSIGNMENTS'][-1].split('\n')[1:]
-            for pa in pas:
-                info = pa.replace('(', '').replace(')', '').replace(' ', '').split(',')
-                edit_x.append(float(info[0]))
-                edit_y.append(float(info[1]))
-            self.edit_peaks = { 'x': edit_x, 'y': edit_y }
+            self.__read_auto_peaks()
+            self.__parse_edit(peaks_str)
             err = False
         except:
             pass
+
+        if (not self.auto_peaks) and (not self.edit_peaks):
+            err = True
 
         return err

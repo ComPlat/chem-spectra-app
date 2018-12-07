@@ -40,8 +40,8 @@ def convert_to_img(spPeaker):
         )
     else:
         plt.plot(
-            spPeaker.x[spPeaker.peak_idxs],
-            spPeaker.y[spPeaker.peak_idxs],
+            spPeaker.auto_peaks['x'],
+            spPeaker.auto_peaks['y'],
             'rd'
         )
 
@@ -58,19 +58,29 @@ def convert_to_img(spPeaker):
     return tf_img
 
 
-def get_jcamp_with_peaks(file, edit=False):
+def get_jcamp_with_peaks(file, peaks_str=False):
     tf = store_in_tmp(file)
     # identify peaks
     spPeaker = SpectraPeaker(tf.name)
     err = False
-    if edit:
-        err = spPeaker.read_edit_peak()
-    if err or not edit:
+    if peaks_str:
+        err = spPeaker.write_edit_peak(peaks_str)
+    if err or not peaks_str:
         spPeaker.pick_peak()
     # write jcamp
     origin = gen_origin(tf.name)
     tf.close()
     return spPeaker, origin
+
+
+def convert2jcamp_img(file, peaks_str=False):
+    if peaks_str:
+        spPeaker, origin = get_jcamp_with_peaks(file, peaks_str)
+    else:
+        spPeaker, origin = get_jcamp_with_peaks(file)
+    tf_jcamp = gen_jcamp_temp(spPeaker, origin)
+    tf_img = convert_to_img(spPeaker)
+    return tf_jcamp, tf_img
 
 
 def convert2jcamp(file):
@@ -80,14 +90,6 @@ def convert2jcamp(file):
 
 
 def convert2img(file):
-    edit = True
-    spPeaker, origin = get_jcamp_with_peaks(file, edit)
+    spPeaker, origin = get_jcamp_with_peaks(file)
     tf_img = convert_to_img(spPeaker)
     return tf_img
-
-
-def convert2jcamp_img(file):
-    spPeaker, origin = get_jcamp_with_peaks(file)
-    tf_jcamp = gen_jcamp_temp(spPeaker, origin)
-    tf_img = convert_to_img(spPeaker)
-    return tf_jcamp, tf_img

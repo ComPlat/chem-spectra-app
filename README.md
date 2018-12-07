@@ -17,6 +17,13 @@ see [LICENSE][LICENSE]
 see [INSTALL.md][INSTALL]
 
 
+### Run Production
+
+```
+$ waitress-serve --port=2412 --call 'chem_spectra:create_app'
+```
+
+
 ### Run test
 
 ```
