@@ -48,7 +48,7 @@ def convert_to_img(spPeaker):
     # PLOT label
     plt.xlabel("X ({})".format(spPeaker.label['x']), fontsize=18)
     plt.ylabel("Y ({})".format(spPeaker.label['y']), fontsize=18)
-    plt.grid(True)
+    plt.grid(False)
     # Save
     tf_img = tempfile.NamedTemporaryFile(suffix='.png')
     plt.savefig(tf_img, format='png')
