@@ -3,7 +3,7 @@ import numpy as np
 from scipy import signal
 
 
-THRESHOLD_IR = 0.8
+THRESHOLD_IR = 0.93
 THRESHOLD_NMR = 0.02
 
 
