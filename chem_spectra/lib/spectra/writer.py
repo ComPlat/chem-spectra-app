@@ -34,7 +34,10 @@ def gen_headers_peakassignments_auto(sp):
         '##MAXX={}\n'.format(sp.boundary['x']['max']),
         '##MAXY={}\n'.format(sp.boundary['y']['max']),
         '##MINX={}\n'.format(sp.boundary['x']['min']),
-        '##MINY={}\n'.format(sp.boundary['y']['min'])
+        '##MINY={}\n'.format(sp.boundary['y']['min']),
+        '##.SOLVENT REFERENCE={}\n'.format(''),
+        '##SOURCE REFERENCE={}\n'.format(''),
+        '##CROSS REFERENCE={}\n'.format(sp.target_idx + 1)
     ]
 
 
@@ -50,7 +53,10 @@ def gen_headers_peakassignments_edit(sp):
         '##MAXX={}\n'.format(sp.boundary['x']['max']),
         '##MAXY={}\n'.format(sp.boundary['y']['max']),
         '##MINX={}\n'.format(sp.boundary['x']['min']),
-        '##MINY={}\n'.format(sp.boundary['y']['min'])
+        '##MINY={}\n'.format(sp.boundary['y']['min']),
+        '##.SOLVENT REFERENCE={}\n'.format(''),
+        '##SOURCE REFERENCE={}\n'.format(''),
+        '##CROSS REFERENCE={}\n'.format(sp.target_idx + 1)
     ]
 
 
