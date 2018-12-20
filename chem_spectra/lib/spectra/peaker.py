@@ -15,6 +15,8 @@ class SpectraPeaker():
         self.target_idx = self.__index_target()
         self.block_count = self.__count_block()
         self.threshold = self.__thres()
+        self.typ = self.__typ()
+        self.ncl = self.__ncl()
         self.obs_freq = self.__set_obs_freq()
         self.x_unit = self.__set_x_unit()
         self.y = self.__read_y()
@@ -36,6 +38,29 @@ class SpectraPeaker():
         elif 'INFRARED SPECTRUM' in dts:
             return THRESHOLD_IR
         return 0.5
+
+
+    def __typ(self):
+        dts = self.datatype
+        if 'NMR SPECTRUM' in dts:
+            return 'NMR'
+        elif 'INFRARED SPECTRUM' in dts:
+            return 'INFRARED'
+        return ''
+
+
+    def __ncl(self):
+        try:
+            ncls = self.dic['.OBSERVENUCLEUS']
+            if '^1H' in ncls:
+                return '1H'
+            elif '^13C' in ncls:
+                return '13C'
+            elif '^19F' in ncls:
+                return '19F'
+        except:
+            pass
+        return ''
 
 
     def __index_target(self):
