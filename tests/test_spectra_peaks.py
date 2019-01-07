@@ -3,10 +3,10 @@ import io
 
 from werkzeug.datastructures import FileStorage
 from chem_spectra.lib.spectra.helper import (
-    convert2jcamp_img, get_jcamp_with_peaks
+    convert2jcamp_img, create_sp_carrier
 )
 from chem_spectra.lib.spectra.writer import (
-    gen_jcamp_meta
+    build_block_meta
 )
 
 
@@ -29,11 +29,11 @@ meta_SVS_790A_13C_jdx = 'meta_SVS-790A_13C'
 separator = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS AUTO ==='
 
 
-def __generated_peaks_meta(orig_filename, peaks_str=False):
+def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
         file = FileStorage(f)
-        spPeaker, origin = get_jcamp_with_peaks(file, peaks_str)
-        meta_jcamp = gen_jcamp_meta(spPeaker, origin)
+        sp_carrier = create_sp_carrier(file, params)
+        meta_jcamp = build_block_meta(sp_carrier)
 
     parts = ''.join(meta_jcamp).split(separator)
     assert len(parts) == 2
@@ -110,23 +110,24 @@ def test_edit_meta_13C_DEPT135():
 # edit peaks + origin files
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-peaks_str = '1.1,1.112#2.2,2.224#3.3,3.336'
+params_1 = {
+    'peaks_str': '1.1,1.112#2.2,2.224#3.3,3.336',
+}
 
-
-def test_peaks_str_meta_IR_dx():
-    ps_meta_content = __generated_peaks_meta(IR_dx, peaks_str)
+def test_params_meta_IR_dx():
+    ps_meta_content = __generated_peaks_meta(IR_dx, params_1)
     meta_target = __target_peaks_meta('ps/ps_' + meta_IR_dx)
     assert ps_meta_content == meta_target
 
 
-def test_peaks_str_meta_1H():
-    ps_meta_content = __generated_peaks_meta(H1_dx, peaks_str)
+def test_params_meta_1H():
+    ps_meta_content = __generated_peaks_meta(H1_dx, params_1)
     meta_target = __target_peaks_meta('ps/ps_' + meta_H1_dx)
     assert ps_meta_content == meta_target
 
 
-def test_peaks_str_meta_13C_DEPT135():
-    ps_meta_content = __generated_peaks_meta(C13_DEPT135_dx, peaks_str)
+def test_params_meta_13C_DEPT135():
+    ps_meta_content = __generated_peaks_meta(C13_DEPT135_dx, params_1)
     meta_target = __target_peaks_meta('ps/ps_' + meta_C13_DEPT135_dx)
     assert ps_meta_content == meta_target
 
@@ -136,20 +137,20 @@ def test_peaks_str_meta_13C_DEPT135():
 # edit peaks + auto files
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-def test_auto_peaks_str_meta_IR_dx():
-    auto_meta_content = __generated_peaks_meta('auto/auto_' + IR_dx, peaks_str)
+def test_auto_params_meta_IR_dx():
+    auto_meta_content = __generated_peaks_meta('auto/auto_' + IR_dx, params_1)
     meta_target = __target_peaks_meta('auto/auto_ps_' + meta_IR_dx)
     assert auto_meta_content == meta_target
 
 
-def test_auto_peaks_str_meta_1H():
-    auto_meta_content = __generated_peaks_meta('auto/auto_' + H1_dx, peaks_str)
+def test_auto_params_meta_1H():
+    auto_meta_content = __generated_peaks_meta('auto/auto_' + H1_dx, params_1)
     meta_target = __target_peaks_meta('auto/auto_ps_' + meta_H1_dx)
     assert auto_meta_content == meta_target
 
 
-def test_auto_peaks_str_auto_meta_13C_DEPT135():
-    auto_meta_content = __generated_peaks_meta('auto/auto_' + C13_DEPT135_dx, peaks_str)
+def test_auto_params_auto_meta_13C_DEPT135():
+    auto_meta_content = __generated_peaks_meta('auto/auto_' + C13_DEPT135_dx, params_1)
     meta_target = __target_peaks_meta('auto/auto_ps_' + meta_C13_DEPT135_dx)
     assert auto_meta_content == meta_target
 
@@ -159,20 +160,20 @@ def test_auto_peaks_str_auto_meta_13C_DEPT135():
 # edit peaks + edit files
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-def test_edit_peaks_str_meta_IR_dx():
-    edit_meta_content = __generated_peaks_meta('edit/edit_' + IR_dx, peaks_str)
+def test_edit_params_meta_IR_dx():
+    edit_meta_content = __generated_peaks_meta('edit/edit_' + IR_dx, params_1)
     meta_target = __target_peaks_meta('auto/auto_ps_' + meta_IR_dx)
     assert edit_meta_content == meta_target
 
 
-def test_auto_peaks_str_meta_1H():
-    auto_meta_content = __generated_peaks_meta('edit/edit_' + H1_dx, peaks_str)
+def test_auto_params_meta_1H():
+    auto_meta_content = __generated_peaks_meta('edit/edit_' + H1_dx, params_1)
     meta_target = __target_peaks_meta('auto/auto_ps_' + meta_H1_dx)
     assert auto_meta_content == meta_target
 
 
-def test_auto_peaks_str_auto_meta_13C_DEPT135():
-    auto_meta_content = __generated_peaks_meta('edit/edit_' + C13_DEPT135_dx, peaks_str)
+def test_auto_params_auto_meta_13C_DEPT135():
+    auto_meta_content = __generated_peaks_meta('edit/edit_' + C13_DEPT135_dx, params_1)
     meta_target = __target_peaks_meta('auto/auto_ps_' + meta_C13_DEPT135_dx)
     assert auto_meta_content == meta_target
 
@@ -182,65 +183,50 @@ def test_auto_peaks_str_auto_meta_13C_DEPT135():
 # given EMPTY peaks string
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-empty_peaks_str = ''
+empty_params = {
+    'peaks_str': '',
+}
 
 
-def test_empty_peaks_str_meta_IR_dx():
-    empty_meta_content = __generated_peaks_meta(IR_dx, empty_peaks_str)
+def test_empty_params_meta_IR_dx():
+    empty_meta_content = __generated_peaks_meta(IR_dx, empty_params)
     meta_target = __target_peaks_meta(meta_IR_dx)
     assert empty_meta_content == meta_target
 
 
-def test_empty_peaks_str_meta_1H():
-    empty_meta_content = __generated_peaks_meta(H1_dx, empty_peaks_str)
+def test_empty_params_meta_1H():
+    empty_meta_content = __generated_peaks_meta(H1_dx, empty_params)
     meta_target = __target_peaks_meta(meta_H1_dx)
     assert empty_meta_content == meta_target
 
 
-def test_empty_peaks_str_meta_13C_DEPT135():
-    empty_meta_content = __generated_peaks_meta(C13_DEPT135_dx, empty_peaks_str)
+def test_empty_params_meta_13C_DEPT135():
+    empty_meta_content = __generated_peaks_meta(C13_DEPT135_dx, empty_params)
     meta_target = __target_peaks_meta(meta_C13_DEPT135_dx)
     assert empty_meta_content == meta_target
 
 
-# # def test_convert2jcamp():
-# #     with open(target_dir + file_jdx, 'rb') as f:
-# #         file = FileStorage(f)
-# #         tf_jcamp = convert2jcamp(file)
-
-# #     f_jdx = open(target_dir + result_jdx, 'rb')
-
-# #     assert tf_jcamp.read() == f_jdx.read()
-
-
-# # def test_convert2img():
-# #     with open(target_dir + file_jdx, 'rb') as f:
-# #         file = FileStorage(f)
-# #         tf_img = convert2img(file)
-
-# #     f_png = open(target_dir + result_png, 'rb')
-
-# #     assert tf_img.read() == f_png.read()
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# edit peaks / shift + edit files
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+params_2 = {
+    'peaks_str': '1.1,1.112#2.2,2.224#3.3,3.336',
+    'select_x': '40.0',
+    'ref_name': 'Actic acid-d4 (s)',
+    'ref_value': '160.0',
+}
 
 
-# # def test_convert2jcamp_img():
-# #     with open(target_dir + file_jdx, 'rb') as f:
-# #         file = FileStorage(f)
-# #         tf_jcamp, tf_img = convert2jcamp_img(file)
+def test_shift_edit_params_meta_1H():
+    auto_meta_content = __generated_peaks_meta('edit/edit_' + H1_dx, params_2)
+    meta_target = __target_peaks_meta('shift/shift_edit_' + meta_H1_dx)
+    assert auto_meta_content == meta_target
 
-# #     f_jdx = open(target_dir + result_jdx, 'rb')
-# #     f_png = open(target_dir + result_png, 'rb')
 
-# #     assert tf_jcamp.read() == f_jdx.read()
-# #     assert tf_img.read() == f_png.read()
+# def test_auto_params_auto_meta_13C_DEPT135():
+#     auto_meta_content = __generated_peaks_meta('edit/edit_' + C13_DEPT135_dx, params)
+#     meta_target = __target_peaks_meta('shift/shift_edit_' + meta_C13_DEPT135_dx)
+#     assert auto_meta_content == meta_target
 
-# #     # - - - - -
-# #     with open(target_dir + another_jdx, 'rb') as f:
-# #         file = FileStorage(f)
-# #         tf_jcamp, tf_img = convert2jcamp_img(file)
-
-# #     f_jdx = open(target_dir + result_jdx, 'rb')
-# #     f_png = open(target_dir + result_png, 'rb')
-
-# #     assert tf_jcamp.read() != f_jdx.read()
-# #     assert tf_img.read() != f_png.read()
