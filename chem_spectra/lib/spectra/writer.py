@@ -1,6 +1,8 @@
 import tempfile
 
-
+TEXT_SPECTRUM_ORIG = '$$ === CHEMSPECTRA SPECTRUM ORIG ===\n'
+TEXT_SPECTRUM_EDIT = '$$ === CHEMSPECTRA SPECTRUM EDIT ===\n'
+TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'
 TEXT_ASSIGN_AUTO = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS AUTO ===\n'
 TEXT_ASSIGN_EDIT = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS EDIT ===\n'
 TEXT_PEAK_ASSIGN = '##PEAK ASSIGNMENTS=(XYA)\n'
@@ -12,21 +14,71 @@ def calc_npoints(peaks):
     return 0
 
 
+def extrac_sp(sp, key):
+    query = sp.dic.get(key, '')
+    if type(query) is list:
+        return query[0]
+    return query
+
+
+
 def gen_headers_root(sp):
     return [
-        '##TITLE={}_ROOT\n'.format(sp.title),
+        '##TITLE={}\n'.format(sp.title),
         '##JCAMP-DX=5.0\n',
         '##DATA TYPE=LINK\n',
-        '##BLOCKS={}\n'.format(sp.block_count + 2),
+        '##BLOCKS=3\n',
         '\n'
     ]
+
+
+def gen_headers_spectrum_orig(sp):
+    num_pts = sp.y.shape[0]
+    return [
+        '\n',
+        TEXT_SPECTRUM_ORIG,
+        '##TITLE={}\n'.format(sp.title),
+        '##JCAMP-DX=5.00\n',
+        '##DATA TYPE={}\n'.format(sp.datatype),
+        '##DATA CLASS=XYDATA\n',
+        '##ORIGIN={}\n'.format(extrac_sp(sp, 'ORIGIN')),
+        '##OWNER={}\n'.format(extrac_sp(sp, 'OWNER')),
+        '##.OBSERVE FREQUENCY={}\n'.format(extrac_sp(sp, '.OBSERVEFREQUENCY')),
+        '##.OBSERVE NUCLEUS={}\n'.format(extrac_sp(sp, '.OBSERVENUCLEUS')),
+        '##SPECTROMETER/DATA SYSTEM={}\n'.format(extrac_sp(sp, 'SPECTROMETER/DATASYSTEM')),
+        '##XUNITS={}\n'.format(sp.label['x']),
+        '##YUNITS={}\n'.format(sp.label['y']),
+        '##XFACTOR={}\n'.format(sp.factor['x']),
+        '##YFACTOR={}\n'.format(sp.factor['y']),
+        '##FIRSTX={}\n'.format(sp.boundary['x']['max']),
+        '##LASTX={}\n'.format(sp.boundary['x']['min']),
+        '##MAXX={}\n'.format(sp.boundary['x']['max']),
+        '##MAXY={}\n'.format(sp.boundary['y']['max']),
+        '##MINX={}\n'.format(sp.boundary['x']['min']),
+        '##MINY={}\n'.format(sp.boundary['y']['min'])
+    ]
+
+
+# def gen_headers_spectrum_edit(sp):
+#     return [
+#         '\n',
+#         TEXT_SPECTRUM_EDIT,
+#         '##TITLE=SPECTRUM_EDIT_{}\n'.format(sp.title),
+#         '##JCAMP-DX=5.00\n',
+#         '##DATA TYPE={}\n'.format(sp.datatype),
+#         '##DATA CLASS=NTUPLES\n',
+#         '##MAXX={}\n'.format(sp.boundary['x']['max']),
+#         '##MAXY={}\n'.format(sp.boundary['y']['max']),
+#         '##MINX={}\n'.format(sp.boundary['x']['min']),
+#         '##MINY={}\n'.format(sp.boundary['y']['min']),
+#     ]
 
 
 def gen_headers_peakassignments_auto(sp):
     return [
         '\n',
         TEXT_ASSIGN_AUTO,
-        '##TITLE={}_PEAK_ASSIGNMENTS\n'.format(sp.title),
+        '##TITLE={}\n'.format(sp.title),
         '##JCAMP-DX=5.00\n',
         '##DATA TYPE={} PEAK ASSIGNMENTS\n'.format(sp.typ),
         '##DATA CLASS=ASSIGNMENTS\n',
@@ -34,18 +86,32 @@ def gen_headers_peakassignments_auto(sp):
         '##MAXX={}\n'.format(sp.boundary['x']['max']),
         '##MAXY={}\n'.format(sp.boundary['y']['max']),
         '##MINX={}\n'.format(sp.boundary['x']['min']),
-        '##MINY={}\n'.format(sp.boundary['y']['min']),
-        '##.SOLVENT REFERENCE={}\n'.format(''),
-        '##SOURCE REFERENCE={}\n'.format(''),
-        '##CROSS REFERENCE={}\n'.format(sp.target_idx + 1)
+        '##MINY={}\n'.format(sp.boundary['y']['min'])
     ]
 
 
 def gen_headers_peakassignments_edit(sp):
+    select_x = sp.params['select_x']
+    ref_name = sp.params['ref_name']
+    ref_value = sp.params['ref_value']
+
+    if select_x:
+        select_x = 'SELECTX={};'.format(select_x)
+    else:
+        select_x = ''
+    if ref_name:
+        ref_name = 'SOLNAME={};'.format(ref_name)
+    else:
+        ref_name = ''
+    if ref_value:
+        ref_value = 'SOLVAL={};'.format(ref_value)
+    else:
+        ref_value = ''
+
     return [
         '\n',
         TEXT_ASSIGN_EDIT,
-        '##TITLE={}_PEAK_ASSIGNMENTS\n'.format(sp.title),
+        '##TITLE={}\n'.format(sp.title),
         '##JCAMP-DX=5.00\n',
         '##DATA TYPE={} PEAK ASSIGNMENTS\n'.format(sp.typ),
         '##DATA CLASS=ASSIGNMENTS\n',
@@ -54,9 +120,7 @@ def gen_headers_peakassignments_edit(sp):
         '##MAXY={}\n'.format(sp.boundary['y']['max']),
         '##MINX={}\n'.format(sp.boundary['x']['min']),
         '##MINY={}\n'.format(sp.boundary['y']['min']),
-        '##.SOLVENT REFERENCE={}\n'.format(''),
-        '##SOURCE REFERENCE={}\n'.format(''),
-        '##CROSS REFERENCE={}\n'.format(sp.target_idx + 1)
+        '##SAMPLE DESCRIPTION={}\n'.format(select_x + ref_name + ref_value)
     ]
 
 
@@ -73,6 +137,26 @@ def get_peaks_table(peaks):
         target = '({}, {}, <{}>)'.format(p['x'], p['y'], idx + 1)
         content.append(target)
     return '\n'.join(content)
+
+
+def gen_spectrum_orig(sp):
+    c_spectrum_orig = [
+        '##NPOINTS={}\n'.format(sp.y.shape[0]),
+        TEXT_DATA_TABLE
+    ]
+    c_spectrum_orig.extend(sp.datatable)
+
+    return c_spectrum_orig
+
+
+# def gen_spectrum_edit(sp):
+#     c_spectrum_edit = [
+#         '##NPOINTS={}\n'.format(sp.y.shape[0]),
+#         TEXT_DATA_TABLE
+#     ]
+#     c_spectrum_edit.extend(sp.datatable)
+
+#     return c_spectrum_edit
 
 
 def gen_auto_peakassignments(sp):
@@ -125,48 +209,28 @@ def count_auto_idx(lines):
     return auto_idx
 
 
-def gen_origin(path):
-    orig = None
-    with open(path, 'r', errors = 'ignore') as f:
-        orig = f.readlines()
-    return orig
-
-
-def build_one_block_meta(sp, orig):
+def build_block_meta(sp):
     meta = []
     meta.extend(gen_headers_root(sp))
-    meta.extend(orig)
+
+    meta.extend(gen_headers_spectrum_orig(sp))
+    meta.extend(gen_spectrum_orig(sp))
+    meta.extend(gen_ending())
+
+    # meta.extend(gen_headers_spectrum_edit(sp))
+    # meta.extend(gen_spectrum_edit(sp))
+    # meta.extend(gen_ending())
+
     meta.extend(gen_headers_peakassignments_auto(sp))
     meta.extend(gen_auto_peakassignments(sp))
     meta.extend(gen_ending())
+
     meta.extend(gen_headers_peakassignments_edit(sp))
     meta.extend(gen_edit_peakassignments(sp))
     meta.extend(gen_ending())
+
     meta.extend(gen_ending())
     return meta
-
-
-def build_block_meta(sp, orig):
-    meta = []
-    end_idx = count_end_idx(orig)
-    auto_idx = count_auto_idx(orig)
-    target_idx = auto_idx if auto_idx > 0 else end_idx
-    meta.extend(orig[:target_idx])
-    meta.extend(gen_headers_peakassignments_auto(sp))
-    meta.extend(gen_auto_peakassignments(sp))
-    meta.extend(gen_ending())
-    meta.extend(gen_headers_peakassignments_edit(sp))
-    meta.extend(gen_edit_peakassignments(sp))
-    meta.extend(gen_ending())
-    meta.extend(gen_ending())
-    return meta
-
-
-def gen_jcamp_meta(sp, orig):
-    if sp.block_count == 1:
-        return build_one_block_meta(sp, orig)
-
-    return build_block_meta(sp, orig)
 
 
 def construct_jcamp_temp(meta):
@@ -178,11 +242,7 @@ def construct_jcamp_temp(meta):
     return tf
 
 
-def gen_jcamp_temp(sp, orig):
-    meta = gen_jcamp_meta(sp, orig)
+def convert_jcamp_temp(sp):
+    meta = build_block_meta(sp)
     return construct_jcamp_temp(meta)
 
-
-def edit_jcamp_temp(sp, orig):
-    meta = gen_jcamp_meta(sp, orig)
-    return construct_jcamp_temp(meta)
