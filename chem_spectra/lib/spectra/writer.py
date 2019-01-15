@@ -21,7 +21,6 @@ def extrac_sp(sp, key):
     return query
 
 
-
 def gen_headers_root(sp):
     return [
         '##TITLE={}\n'.format(sp.title),
@@ -32,8 +31,7 @@ def gen_headers_root(sp):
     ]
 
 
-def gen_headers_spectrum_orig(sp):
-    num_pts = sp.y.shape[0]
+def header_base(sp):
     return [
         '\n',
         TEXT_SPECTRUM_ORIG,
@@ -43,9 +41,19 @@ def gen_headers_spectrum_orig(sp):
         '##DATA CLASS=XYDATA\n',
         '##ORIGIN={}\n'.format(extrac_sp(sp, 'ORIGIN')),
         '##OWNER={}\n'.format(extrac_sp(sp, 'OWNER')),
+    ]
+
+
+def header_nmr(sp):
+    return [
         '##.OBSERVE FREQUENCY={}\n'.format(extrac_sp(sp, '.OBSERVEFREQUENCY')),
         '##.OBSERVE NUCLEUS={}\n'.format(extrac_sp(sp, '.OBSERVENUCLEUS')),
         '##SPECTROMETER/DATA SYSTEM={}\n'.format(extrac_sp(sp, 'SPECTROMETER/DATASYSTEM')),
+    ]
+
+
+def header_params(sp):
+    return [
         '##XUNITS={}\n'.format(sp.label['x']),
         '##YUNITS={}\n'.format(sp.label['y']),
         '##XFACTOR={}\n'.format(sp.factor['x']),
@@ -57,6 +65,13 @@ def gen_headers_spectrum_orig(sp):
         '##MINX={}\n'.format(sp.boundary['x']['min']),
         '##MINY={}\n'.format(sp.boundary['y']['min'])
     ]
+
+
+def gen_headers_spectrum_orig(sp):
+    if sp.typ == 'INFRARED':
+        return header_base(sp) + header_params(sp)
+    else:
+        return header_base(sp) + header_nmr(sp) + header_params(sp)
 
 
 # def gen_headers_spectrum_edit(sp):
@@ -74,10 +89,8 @@ def gen_headers_spectrum_orig(sp):
 #     ]
 
 
-def gen_headers_peakassignments_auto(sp):
+def header_pk_common(sp):
     return [
-        '\n',
-        TEXT_ASSIGN_AUTO,
         '##TITLE={}\n'.format(sp.title),
         '##JCAMP-DX=5.00\n',
         '##DATA TYPE={} PEAK ASSIGNMENTS\n'.format(sp.typ),
@@ -88,6 +101,10 @@ def gen_headers_peakassignments_auto(sp):
         '##MINX={}\n'.format(sp.boundary['x']['min']),
         '##MINY={}\n'.format(sp.boundary['y']['min'])
     ]
+
+
+def gen_headers_peakassignments_auto(sp):
+    return ['\n', TEXT_ASSIGN_AUTO] + header_pk_common(sp)
 
 
 def gen_headers_peakassignments_edit(sp):
@@ -108,20 +125,11 @@ def gen_headers_peakassignments_edit(sp):
     else:
         ref_value = ''
 
-    return [
-        '\n',
-        TEXT_ASSIGN_EDIT,
-        '##TITLE={}\n'.format(sp.title),
-        '##JCAMP-DX=5.00\n',
-        '##DATA TYPE={} PEAK ASSIGNMENTS\n'.format(sp.typ),
-        '##DATA CLASS=ASSIGNMENTS\n',
-        '##THRESHOLD={}\n'.format(sp.threshold),
-        '##MAXX={}\n'.format(sp.boundary['x']['max']),
-        '##MAXY={}\n'.format(sp.boundary['y']['max']),
-        '##MINX={}\n'.format(sp.boundary['x']['min']),
-        '##MINY={}\n'.format(sp.boundary['y']['min']),
+    spl_desc = [
         '##SAMPLE DESCRIPTION={}\n'.format(select_x + ref_name + ref_value)
     ]
+
+    return ['\n', TEXT_ASSIGN_EDIT] + header_pk_common(sp) + spl_desc
 
 
 def gen_ending():
