@@ -1,6 +1,7 @@
 from flask import (
-    Flask, Blueprint, request, redirect, jsonify, send_file, abort
+    Flask, Blueprint, request, redirect, jsonify, send_file, abort, jsonify
 )
+import base64
 from .lib.spectra.helper import (
     allowed_file, convert2jcamp_img, convert2jcamp, convert2img
 )
@@ -84,7 +85,7 @@ def jcamp():
                 attachment_filename='spectrum.jdx',
                 as_attachment=True
             )
-            abort(400)
+        abort(400)
     except:
         abort(500)
 
@@ -104,4 +105,51 @@ def image():
             )
         abort(400)
     except:
+        abort(500)
+
+
+@pk.route('/api/v1/chemspectra/file/convert', methods=['POST'])
+def chemspectra_file_convert():
+    try:
+        file = request.files['file']
+        params = extract_params(request)
+        if file: # and allowed_file(file):
+            tf_jcamp, tf_img = convert2jcamp_img(file, params)
+            jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
+            img = base64.b64encode(tf_img.read()).decode("utf-8")
+            return jsonify(
+                status=True,
+                jcamp=jcamp,
+                img=img
+            )
+        abort(400)
+    except:
+        return jsonify(
+            status=False,
+            jcamp='',
+            img=''
+        )
+        abort(500)
+
+
+@pk.route('/api/v1/chemspectra/file/save', methods=['POST'])
+def chemspectra_file_save():
+    try:
+        file = request.files['file']
+        params = extract_params(request)
+        if file: # and allowed_file(file):
+            tf_jcamp, tf_img = convert2jcamp_img(file, params)
+            memory = to_zip_response([tf_jcamp, tf_img])
+            return send_file(
+                memory,
+                attachment_filename='spectrum.zip',
+                as_attachment=True
+            )
+        abort(400)
+    except:
+        return jsonify(
+            status=False,
+            jcamp='',
+            img=''
+        )
         abort(500)

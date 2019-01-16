@@ -17,6 +17,14 @@ see [LICENSE][LICENSE]
 see [INSTALL.md][INSTALL]
 
 
+### Run development
+
+```
+$ export FLASK_ENV=development
+$ export FLASK_APP=chem_spectra
+$ flask run --host=0.0.0.0 --port=2412
+```
+
 ### Run Production
 
 ```

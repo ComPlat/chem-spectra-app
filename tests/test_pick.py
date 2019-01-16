@@ -103,3 +103,35 @@ def test_image(client):
 
     assert response.status_code == 200
     assert response.mimetype == 'image/png'
+
+
+def test_api_chemspectra_file_convert(client):
+    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+        file_content = f.read()
+    data = dict(
+        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
+    )
+    response = client.post(
+        '/api/v1/chemspectra/file/convert',
+        content_type='multipart/form-data',
+        data=data
+    )
+
+    assert response.status_code == 200
+    assert response.mimetype == 'application/json'
+
+
+def test_api_chemspectra_file_save(client):
+    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+        file_content = f.read()
+    data = dict(
+        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
+    )
+    response = client.post(
+        '/api/v1/chemspectra/file/save',
+        content_type='multipart/form-data',
+        data=data
+    )
+
+    assert response.status_code == 200
+    assert response.mimetype == 'application/zip'
