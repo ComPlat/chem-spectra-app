@@ -1,12 +1,24 @@
 import io
 import zipfile
+from os.path import basename
 
 
-def to_zip_response(tmp_arr):
+def get_fname(abs_path, filename):
+    if not filename:
+        return basename(abs_path)
+
+    ext = abs_path.split('.')[-1]
+
+    return filename + '.' + ext
+
+
+def to_zip_response(tmp_arr, filename=False):
     memory = io.BytesIO()
     with zipfile.ZipFile(memory, 'w') as zf:
         for tmp in tmp_arr:
-            zf.write(tmp.name)
+            abs_path = tmp.name
+            fname = get_fname(abs_path, filename)
+            zf.write(abs_path, fname)
     memory.seek(0)
     for tmp in tmp_arr:
         tmp.close()

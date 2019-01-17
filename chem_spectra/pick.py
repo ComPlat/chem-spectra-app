@@ -136,10 +136,11 @@ def chemspectra_file_convert():
 def chemspectra_file_save():
     try:
         file = request.files['file']
+        filename = request.form.get('filename', default=None)
         params = extract_params(request)
         if file: # and allowed_file(file):
             tf_jcamp, tf_img = convert2jcamp_img(file, params)
-            memory = to_zip_response([tf_jcamp, tf_img])
+            memory = to_zip_response([tf_jcamp, tf_img], filename)
             return send_file(
                 memory,
                 attachment_filename='spectrum.zip',
