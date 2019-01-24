@@ -107,7 +107,18 @@ def gen_headers_peakassignments_auto(sp):
     return ['\n', TEXT_ASSIGN_AUTO] + header_pk_common(sp)
 
 
-def gen_headers_peakassignments_edit(sp):
+def heritage_sample_description(sp):
+    try:
+        target = sp.dict['SAMPLEDESCRIPTION'][-1]
+        if target and (target != ''):
+            return target
+    except:
+        pass
+
+    return ''
+
+
+def create_sample_description(sp):
     select_x = sp.params['select_x']
     ref_name = sp.params['ref_name']
     ref_value = sp.params['ref_value']
@@ -125,11 +136,23 @@ def gen_headers_peakassignments_edit(sp):
     else:
         ref_value = ''
 
+    description = select_x + ref_name + ref_value
+
+    if description == '':
+        description = heritage_sample_description(sp)
+
     spl_desc = [
-        '##SAMPLE DESCRIPTION={}\n'.format(select_x + ref_name + ref_value)
+        '##SAMPLE DESCRIPTION={}\n'.format(description)
     ]
 
-    return ['\n', TEXT_ASSIGN_EDIT] + header_pk_common(sp) + spl_desc
+    return spl_desc
+
+
+def gen_headers_peakassignments_edit(sp):
+    header = header_pk_common(sp)
+    spl_desc = create_sample_description(sp)
+
+    return ['\n', TEXT_ASSIGN_EDIT] + header + spl_desc
 
 
 def gen_ending():
