@@ -109,7 +109,7 @@ def gen_headers_peakassignments_auto(sp):
 
 def heritage_sample_description(sp):
     try:
-        target = sp.dict['SAMPLEDESCRIPTION'][-1]
+        target = sp.dic['SAMPLEDESCRIPTION'][-1]
         if target and (target != ''):
             return target
     except:

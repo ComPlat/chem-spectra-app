@@ -225,8 +225,16 @@ def test_shift_edit_params_meta_1H():
     assert auto_meta_content == meta_target
 
 
-# def test_auto_params_auto_meta_13C_DEPT135():
-#     auto_meta_content = __generated_peaks_meta('edit/edit_' + C13_DEPT135_dx, params)
-#     meta_target = __target_peaks_meta('shift/shift_edit_' + meta_C13_DEPT135_dx)
-#     assert auto_meta_content == meta_target
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# inherit sample description
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+params_3 = {
+}
 
+
+def test_inherit_wihtout_params_1H():
+    inherit_meta_content = __generated_peaks_meta('edit/inherit_' + H1_dx, params_3)
+    meta_target = __target_peaks_meta('edit/inherit_' + meta_H1_dx)
+    assert inherit_meta_content == meta_target
