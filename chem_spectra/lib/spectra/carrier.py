@@ -73,6 +73,8 @@ class SpectraCarrier():
         dts = self.datatypes
         if 'NMR SPECTRUM' in dts:
             return 'NMR SPECTRUM'
+        elif 'NMRSPECTRUM' in dts: # MNova
+            return 'NMR SPECTRUM'
         elif 'INFRARED SPECTRUM' in dts:
             return 'INFRARED SPECTRUM'
         return ''
@@ -82,6 +84,8 @@ class SpectraCarrier():
         dt = self.datatype
         if 'NMR SPECTRUM' == dt:
             return THRESHOLD_NMR
+        elif 'NMRSPECTRUM' == dt: # MNova
+            return THRESHOLD_NMR
         elif 'INFRARED SPECTRUM' == dt:
             return THRESHOLD_IR
         return 0.5
@@ -90,6 +94,8 @@ class SpectraCarrier():
     def __typ(self):
         dt = self.datatype
         if 'NMR SPECTRUM' == dt:
+            return 'NMR'
+        elif 'NMRSPECTRUM' == dt: # MNova
             return 'NMR'
         elif 'INFRARED SPECTRUM' == dt:
             return 'INFRARED'
@@ -111,7 +117,7 @@ class SpectraCarrier():
 
 
     def __index_target(self):
-        target_topics = ['NMR SPECTRUM', 'INFRARED SPECTRUM']
+        target_topics = ['NMR SPECTRUM', 'NMRSPECTRUM', 'INFRARED SPECTRUM']
         for tp in target_topics:
             if tp in self.datatypes:
                 idx = self.datatypes.index(tp)
@@ -146,13 +152,21 @@ class SpectraCarrier():
 
         if beg_pt is None:
             try:
-                obs_freq = float(self.dic['$SFO1'][idx])
+                obs_freq = self.obs_freq
                 shift = float(self.dic['$OFFSET'][idx])
                 beg_pt = float(self.dic['FIRST'][idx].replace(' ', '').split(',')[0]) / obs_freq
                 end_pt = float(self.dic['LAST'][idx].replace(' ', '').split(',')[0]) / obs_freq
                 shift = beg_pt - shift
                 beg_pt = beg_pt - shift
                 end_pt = end_pt - shift
+            except:
+                pass
+
+        if beg_pt is None: # MNova
+            try:
+                obs_freq = self.obs_freq
+                beg_pt = float(self.dic['FIRST'][idx].replace(' ', '').split(',')[0]) / obs_freq
+                end_pt = float(self.dic['LAST'][idx].replace(' ', '').split(',')[0]) / obs_freq
             except:
                 pass
 
