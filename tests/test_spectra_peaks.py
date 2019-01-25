@@ -238,3 +238,15 @@ def test_inherit_wihtout_params_1H():
     inherit_meta_content = __generated_peaks_meta('edit/inherit_' + H1_dx, params_3)
     meta_target = __target_peaks_meta('edit/inherit_' + meta_H1_dx)
     assert inherit_meta_content == meta_target
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# MNova
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+def test_mnova_13C():
+    inherit_meta_content = __generated_peaks_meta('mnova/MNOVA_SVS_13C.jdx', params_3)
+    meta_target = __target_peaks_meta('mnova/MNOVA_SVS_13C.jdx')
+    assert inherit_meta_content == meta_target
+
