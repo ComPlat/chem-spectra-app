@@ -7,9 +7,9 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[ # 'nmrglue',
-        'flask',
+        'flask==1.0.2',
         'numpy',
-        'scipy',
+        'scipy==1.2.0',
         'waitress',
     ],
 )

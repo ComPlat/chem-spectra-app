@@ -1,5 +1,37 @@
 # INSTALL
 
+
+### 0. prepare
+
+0.1. install Anaconda.
+
+0.2. create env
+
+```
+$ conda create --name chem-spectra-app
+$ source activate chem-spectra-app
+```
+
+```
+$ git clone git@git.scc.kit.edu:qj9692/chem-spectra-app.git
+$ cd chem-spectra-app
+$ python setup.py install
+```
+
+0.3 install nmrglue
+
+```
+$ pip uninstall nmrglue
+
+$ cd ..
+$ git clone git@bitbucket.org:ioc-general/nmrglue.git
+$ cd nmrglue
+$ git co show-all-data
+$ pip install -e .
+$ python setup.py install
+```
+
+
 ### 1. Add `config.py`
 
 ```
@@ -18,8 +50,6 @@ IP_WHITE_LIST = 'xxx.xxx.xxx.xxx'
 ### 2. Run
 
 ```
-$ pip install waitress
-
 $ waitress-serve --port=2412 --call 'chem_spectra:create_app'
 ```
 
