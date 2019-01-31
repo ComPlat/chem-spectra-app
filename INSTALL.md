@@ -50,7 +50,7 @@ IP_WHITE_LIST = 'xxx.xxx.xxx.xxx'
 ### 2. Run
 
 ```
-$ waitress-serve --port=2412 --call 'chem_spectra:create_app'
+$ gunicorn -w 4 -b 0.0.0.0:2412 server:app --daemon
 ```
 
 ### 3. Usage

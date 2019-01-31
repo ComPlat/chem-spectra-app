@@ -10,6 +10,6 @@ setup(
         'flask==1.0.2',
         'numpy',
         'scipy==1.2.0',
-        'waitress',
+        'gunicorn',
     ],
 )
