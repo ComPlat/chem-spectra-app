@@ -17,7 +17,7 @@ def to_zip_response(tmp_arr, filename=False):
     with zipfile.ZipFile(memory, 'w') as zf:
         for tmp in tmp_arr:
             abs_path = tmp.name
-            fname = get_fname(abs_path, filename)
+            fname = get_fname(abs_path, filename).replace(' ', '_')
             zf.write(abs_path, fname)
     memory.seek(0)
     for tmp in tmp_arr:

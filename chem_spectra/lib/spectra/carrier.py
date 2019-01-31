@@ -145,13 +145,6 @@ class SpectraCarrier():
 
         if beg_pt is None:
             try:
-                beg_pt = float(self.dic['FIRSTX'][idx])
-                end_pt = float(self.dic['LASTX'][idx])
-            except:
-                pass
-
-        if beg_pt is None:
-            try:
                 obs_freq = self.obs_freq
                 shift = float(self.dic['$OFFSET'][idx])
                 beg_pt = float(self.dic['FIRST'][idx].replace(' ', '').split(',')[0]) / obs_freq
@@ -167,6 +160,13 @@ class SpectraCarrier():
                 obs_freq = self.obs_freq
                 beg_pt = float(self.dic['FIRST'][idx].replace(' ', '').split(',')[0]) / obs_freq
                 end_pt = float(self.dic['LAST'][idx].replace(' ', '').split(',')[0]) / obs_freq
+            except:
+                pass
+
+        if beg_pt is None:
+            try:
+                beg_pt = float(self.dic['FIRSTX'][idx])
+                end_pt = float(self.dic['LASTX'][idx])
             except:
                 pass
 
