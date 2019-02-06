@@ -15,8 +15,8 @@ pk = Blueprint('pick', __name__)
 @pk.before_app_request
 def filter_remote_ip():
     trusted_servers = get_ip_white_list()
-    if request.remote_addr not in trusted_servers:
-        abort(403)
+    # if request.remote_addr not in trusted_servers:
+    #     abort(403)
 
 
 @pk.route('/zip_jcamp_n_img', methods=['POST'])

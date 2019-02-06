@@ -34,3 +34,22 @@ def test_STM212_H():
     inherit_meta_content = __generated_peaks_meta(target, params_0)
     meta_target = __target_peaks_meta(target)
     assert inherit_meta_content == meta_target
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# MNova pick-peaking
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+def test_mnova_nonpp():
+    target = 'mnova/mnova_nonpp.jcamp'
+    inherit_meta_content = __generated_peaks_meta(target, params_0)
+    meta_target = __target_peaks_meta(target)
+    assert inherit_meta_content == meta_target
+
+
+def test_mnova_haspp():
+    target = 'mnova/mnova_haspp.jcamp'
+    inherit_meta_content = __generated_peaks_meta(target, params_0)
+    meta_target = __target_peaks_meta(target)
+    assert inherit_meta_content == meta_target

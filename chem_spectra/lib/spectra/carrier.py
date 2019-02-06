@@ -325,6 +325,22 @@ class SpectraCarrier():
         except:
             pass
 
+        try: # mnova
+            if self.edit_peaks is None:
+                edit_x = []
+                edit_y = []
+
+                pas = self.dic['PEAKTABLE'][-1].split('\n')[1:]
+                for pa in pas:
+                    info = pa.replace(' ', '').split(',')
+                    edit_x.append(float(info[0]))
+                    edit_y.append(float(info[1]))
+                if len(edit_x) == 0:
+                    return
+                self.edit_peaks = { 'x': edit_x, 'y': edit_y }
+        except:
+            pass
+
 
     def __parse_edit(self):
         edit_x = []
