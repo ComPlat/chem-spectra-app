@@ -38,7 +38,7 @@ def convert_to_img(sp_carrier):
             sp_carrier.edit_peaks['y'],
             'rd'
         )
-    else:
+    elif sp_carrier.auto_peaks:
         plt.plot(
             sp_carrier.auto_peaks['x'],
             sp_carrier.auto_peaks['y'],
