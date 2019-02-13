@@ -53,3 +53,15 @@ def test_mnova_haspp():
     inherit_meta_content = __generated_peaks_meta(target, params_0)
     meta_target = __target_peaks_meta(target)
     assert inherit_meta_content == meta_target
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# Example
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+def test_fdm_175():
+    target = 'example/fdm_c175.dx'
+    inherit_meta_content = __generated_peaks_meta(target, params_0)
+    meta_target = __target_peaks_meta(target)
+    assert inherit_meta_content == meta_target
