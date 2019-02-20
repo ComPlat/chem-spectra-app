@@ -6,6 +6,7 @@ from .lib.spectra.helper import (
     allowed_file, convert2jcamp_img, convert2jcamp, convert2img
 )
 from .lib.process import to_zip_response, extract_params
+from .lib.predict import predict_by_peaks
 from .settings import get_ip_white_list
 
 
@@ -152,5 +153,23 @@ def chemspectra_file_save():
             status=False,
             jcamp='',
             img=''
+        )
+        abort(500)
+
+
+@pk.route('/api/v1/chemspectra/predict/byPeaks', methods=['POST'])
+def chemspectra_predict_by_peaks():
+    try:
+        payload = request.json
+        rsp = predict_by_peaks(payload)
+        if rsp:
+            return jsonify(
+                status=True,
+                result=rsp.json(),
+            )
+        abort(400)
+    except:
+        return jsonify(
+            status=False,
         )
         abort(500)
