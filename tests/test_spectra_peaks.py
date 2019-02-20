@@ -82,6 +82,14 @@ def test_meta_SVS_790A_13C_jdx():
     assert meta_content == meta_target
 
 
+def test_meta_MS_jdx():
+    pass
+    # meta_content = __generated_peaks_meta('MS.dx')
+    # import pdb; pdb.set_trace()
+    # meta_target = __target_peaks_meta(meta_SVS_790A_13C_jdx)
+    # assert meta_content == meta_target
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #
 # generate peaks + edit files
