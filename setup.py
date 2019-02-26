@@ -11,5 +11,7 @@ setup(
         'numpy',
         'scipy==1.2.0',
         'gunicorn',
+        'pytest==4.0.0',
+        'pytest-mock==1.10.1',
     ],
 )

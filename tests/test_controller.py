@@ -1,5 +1,8 @@
 import pytest
 import io
+import json
+from fixtures.mock_predict import RequestPredictNmr
+
 
 target_dir = './tests/fixtures/'
 source_dir = 'source/'
@@ -135,3 +138,15 @@ def test_api_chemspectra_file_save(client):
 
     assert response.status_code == 200
     assert response.mimetype == 'application/zip'
+
+
+def test_api_chemspectra_predict_by_peaks(client):
+    response = client.post(
+        '/api/v1/chemspectra/predict/by_peaks',
+        content_type='application/json',
+        data=RequestPredictNmr().json()
+    )
+
+    assert response.status_code == 200
+    assert response.json['status'] == True
+    assert response.mimetype == 'application/json'

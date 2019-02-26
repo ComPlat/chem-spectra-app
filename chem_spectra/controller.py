@@ -157,7 +157,8 @@ def chemspectra_file_save():
         abort(500)
 
 
-@ctrl.route('/api/v1/chemspectra/predict/byPeaks', methods=['POST'])
+@ctrl.route('/predict/by_peaks', methods=['POST'])
+@ctrl.route('/api/v1/chemspectra/predict/by_peaks', methods=['POST'])
 def chemspectra_predict_by_peaks():
     try:
         payload = request.json
