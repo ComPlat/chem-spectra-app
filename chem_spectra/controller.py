@@ -10,17 +10,17 @@ from .lib.predict import predict_by_peaks
 from .settings import get_ip_white_list
 
 
-pk = Blueprint('pick', __name__)
+ctrl = Blueprint('controller', __name__)
 
 
-@pk.before_app_request
+@ctrl.before_app_request
 def filter_remote_ip():
     trusted_servers = get_ip_white_list()
     # if request.remote_addr not in trusted_servers:
     #     abort(403)
 
 
-@pk.route('/zip_jcamp_n_img', methods=['POST'])
+@ctrl.route('/zip_jcamp_n_img', methods=['POST'])
 def zip_jcamp_n_img():
     try:
         file = request.files['file']
@@ -38,7 +38,7 @@ def zip_jcamp_n_img():
         abort(500)
 
 
-@pk.route('/zip_jcamp', methods=['POST'])
+@ctrl.route('/zip_jcamp', methods=['POST'])
 def zip_jcamp():
     try:
         file = request.files['file']
@@ -56,7 +56,7 @@ def zip_jcamp():
         abort(500)
 
 
-@pk.route('/zip_image', methods=['POST'])
+@ctrl.route('/zip_image', methods=['POST'])
 def zip_image():
     try:
         file = request.files['file']
@@ -74,7 +74,7 @@ def zip_image():
         abort(500)
 
 
-@pk.route('/jcamp', methods=['POST'])
+@ctrl.route('/jcamp', methods=['POST'])
 def jcamp():
     try:
         file = request.files['file']
@@ -91,7 +91,7 @@ def jcamp():
         abort(500)
 
 
-@pk.route('/image', methods=['POST'])
+@ctrl.route('/image', methods=['POST'])
 def image():
     try:
         file = request.files['file']
@@ -109,7 +109,7 @@ def image():
         abort(500)
 
 
-@pk.route('/api/v1/chemspectra/file/convert', methods=['POST'])
+@ctrl.route('/api/v1/chemspectra/file/convert', methods=['POST'])
 def chemspectra_file_convert():
     try:
         file = request.files['file']
@@ -133,7 +133,7 @@ def chemspectra_file_convert():
         abort(500)
 
 
-@pk.route('/api/v1/chemspectra/file/save', methods=['POST'])
+@ctrl.route('/api/v1/chemspectra/file/save', methods=['POST'])
 def chemspectra_file_save():
     try:
         file = request.files['file']
@@ -157,7 +157,7 @@ def chemspectra_file_save():
         abort(500)
 
 
-@pk.route('/api/v1/chemspectra/predict/byPeaks', methods=['POST'])
+@ctrl.route('/api/v1/chemspectra/predict/byPeaks', methods=['POST'])
 def chemspectra_predict_by_peaks():
     try:
         payload = request.json

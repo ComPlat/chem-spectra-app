@@ -20,8 +20,8 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    from . import pick
-    app.register_blueprint(pick.pk)
+    from . import controller
+    app.register_blueprint(controller.ctrl)
 
 
     return app
