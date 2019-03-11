@@ -5,9 +5,10 @@ matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 
-from .carrier import SpectraCarrier
-from .writer import convert_jcamp_temp
-
+from chem_spectra.lib.spectra.carrier import SpectraCarrier
+from chem_spectra.lib.spectra.writer import convert_jcamp_temp
+from chem_spectra.lib.ms.raw_converter import RawConverter
+from chem_spectra.lib.ms.ms_composer import MsComposer
 
 ALLOWED_EXTENSIONS = set(['dx', 'jdx'])
 
@@ -83,3 +84,9 @@ def convert2img(file, params=False):
     sp_carrier = create_sp_carrier(file, params)
     tf_img = convert_to_img(sp_carrier)
     return tf_img
+
+
+def convertRaw2jcamp_img(file, exact_mz=0):
+    rc = RawConverter(file, exact_mz)
+    mc = MsComposer(rc)
+    return mc.tf_jcamp(), mc.tf_img()

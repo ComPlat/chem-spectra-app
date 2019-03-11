@@ -3,7 +3,8 @@ from flask import (
 )
 import base64
 from .lib.spectra.helper import (
-    allowed_file, convert2jcamp_img, convert2jcamp, convert2img
+    allowed_file, convert2jcamp_img, convert2jcamp, convert2img,
+    convertRaw2jcamp_img
 )
 from .lib.process import to_zip_response, extract_params
 from .lib.predict import predict_by_peaks
@@ -111,26 +112,35 @@ def image():
 
 @ctrl.route('/api/v1/chemspectra/file/convert', methods=['POST'])
 def chemspectra_file_convert():
-    try:
-        file = request.files['file']
-        params = extract_params(request)
-        if file: # and allowed_file(file):
-            tf_jcamp, tf_img = convert2jcamp_img(file, params)
-            jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
-            img = base64.b64encode(tf_img.read()).decode("utf-8")
-            return jsonify(
-                status=True,
-                jcamp=jcamp,
-                img=img
-            )
-        abort(400)
-    except:
+    # try:
+    file = request.files['file']
+    is_raw = file.filename.split('.')[-1].lower() == 'raw'
+    params = extract_params(request)
+    if file and is_raw:
+        tf_jcamp, tf_img = convertRaw2jcamp_img(file)
+        jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
+        img = base64.b64encode(tf_img.read()).decode("utf-8")
         return jsonify(
-            status=False,
-            jcamp='',
-            img=''
+            status=True,
+            jcamp=jcamp,
+            img=img
         )
-        abort(500)
+    elif file: # and allowed_file(file):
+        tf_jcamp, tf_img = convert2jcamp_img(file, params)
+        jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
+        img = base64.b64encode(tf_img.read()).decode("utf-8")
+        return jsonify(
+            status=True,
+            jcamp=jcamp,
+            img=img
+        )
+    abort(400)
+    # except:
+    #     return jsonify(
+    #         status=False,
+    #         jcamp='',
+    #         img=''
+    #     )
 
 
 @ctrl.route('/api/v1/chemspectra/file/save', methods=['POST'])
@@ -154,7 +164,6 @@ def chemspectra_file_save():
             jcamp='',
             img=''
         )
-        abort(500)
 
 
 @ctrl.route('/predict/by_peaks', methods=['POST'])
@@ -173,4 +182,3 @@ def chemspectra_predict_by_peaks():
         return jsonify(
             status=False,
         )
-        abort(500)

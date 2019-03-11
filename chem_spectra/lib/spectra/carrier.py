@@ -7,7 +7,7 @@ from .encoder import encode_datatable
 
 THRESHOLD_IR = 0.93
 THRESHOLD_NMR = 0.02
-
+THRESHOLD_MS = 0.0
 
 class SpectraCarrier():
     def __init__(self, path, params=False):
@@ -77,6 +77,8 @@ class SpectraCarrier():
             return 'NMR SPECTRUM'
         elif 'INFRARED SPECTRUM' in dts:
             return 'INFRARED SPECTRUM'
+        elif 'MASS SPECTRUM' in dts:
+            return 'MASS SPECTRUM'
         return ''
 
 
@@ -88,6 +90,8 @@ class SpectraCarrier():
             return THRESHOLD_NMR
         elif 'INFRARED SPECTRUM' == dt:
             return THRESHOLD_IR
+        elif 'MASS SPECTRUM' == dt:
+            return THRESHOLD_MS
         return 0.5
 
 
@@ -98,7 +102,9 @@ class SpectraCarrier():
         elif 'NMRSPECTRUM' == dt: # MNova
             return 'NMR'
         elif 'INFRARED SPECTRUM' == dt:
-            return 'INFRARED'
+            return 'INFRARED' # TBD
+        elif 'MASS SPECTRUM' == dt:
+            return 'MS'
         return ''
 
 
@@ -117,7 +123,7 @@ class SpectraCarrier():
 
 
     def __index_target(self):
-        target_topics = ['NMR SPECTRUM', 'NMRSPECTRUM', 'INFRARED SPECTRUM']
+        target_topics = ['NMR SPECTRUM', 'NMRSPECTRUM', 'INFRARED SPECTRUM', 'MASS SPECTRUM']
         for tp in target_topics:
             if tp in self.datatypes:
                 idx = self.datatypes.index(tp)
