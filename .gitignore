@@ -15,3 +15,6 @@ build/
 
 **/log/*
 !/log/.keep
+
+/chem_spectra/tmp/
+!/chem_spectra/tmp/.keep
