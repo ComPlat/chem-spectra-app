@@ -21,11 +21,12 @@ docker run --name msconvert_docker \
 """
 
 class RawConverter():
-    def __init__(self, file, exact_mz=0, params=False):
+    def __init__(self, file, params=False):
         self.fname = file.filename.split('.')[0]
-        self.exact_mz = exact_mz
-        self.bound_high = exact_mz + MARGIN
-        self.bound_low = exact_mz - MARGIN
+        self.scan = params.get('scan', 0) if params else 0
+        self.exact_mz = params.get('mass', 0) if params else 0
+        self.bound_high = self.exact_mz + MARGIN
+        self.bound_low = self.exact_mz - MARGIN
         self.target_dir, self.hash_str = self.__mk_dir(file)
         self.tf = self.__store_in_tmp(file)
         self.cmd_msconvert = self.__build_cmd_msconvert()
@@ -102,6 +103,12 @@ class RawConverter():
     def __decode(self, runs):
         spectrum, best_ratio = None, 0
         for idx, data in enumerate(runs):
+            if self.scan:
+                if idx + 1 == self.scan:
+                    return data.peaks('raw')
+                else:
+                    continue
+
             spc = data.peaks('raw')
             if spectrum is None:
                 spectrum = spc
@@ -121,9 +128,11 @@ class RawConverter():
         while True:
             if mzml_path.exists():
                 try:
+                    time.sleep(0.2)
                     runs = pymzml.run.Reader(mzml_file)
                     spectrum = self.__decode(runs)
                     break
+                # except Exception as e: print(e)
                 except:
                     pass
             else:

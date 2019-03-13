@@ -31,12 +31,18 @@ def extract_params(request):
         'select_x': request.form.get('shift_select_x', default=None),
         'ref_name': request.form.get('shift_ref_name', default=None),
         'ref_value': request.form.get('shift_ref_value', default=None),
+        'scan': int(request.form.get('scan', default=0)),
+        'mass': float(request.form.get('mass', default=0)),
+        'molfile': request.form.get('molfile', default=None),
     }
     has_params = (
         params.get('peaks_str') or
         params.get('select_x') or
         params.get('ref_name') or
-        params.get('ref_value')
+        params.get('ref_value') or
+        params.get('scan') or
+        params.get('mass') or
+        params.get('molfile')
     )
     if not has_params:
         params = False

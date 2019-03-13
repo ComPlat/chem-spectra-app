@@ -34,25 +34,37 @@ def create_nicv(file, params=False):
     return nicv
 
 
-def convert2jcamp_img(file, params=False):
-    nicv = create_nicv(file, params)
-    nicp = NmrIrComposer(nicv)
-    return nicp.tf_jcamp(), nicp.tf_img()
-
-
 def convert2jcamp(file, params=False):
+    is_raw = file.filename.split('.')[-1].lower() == 'raw'
+    if is_raw:
+        return raw2jcamp_img(file, params)[0]
+
     nicv = create_nicv(file, params)
     nicp = NmrIrComposer(nicv)
     return nicp.tf_jcamp()
 
 
 def convert2img(file, params=False):
+    is_raw = file.filename.split('.')[-1].lower() == 'raw'
+    if is_raw:
+        return raw2jcamp_img(file, params)[1]
+
     nicv = create_nicv(file, params)
     nicp = NmrIrComposer(nicv)
     return nicp.tf_img()
 
 
-def convertRaw2jcamp_img(file, exact_mz=0):
-    rc = RawConverter(file, exact_mz)
+def convert2jcamp_img(file, params=False):
+    is_raw = file.filename.split('.')[-1].lower() == 'raw'
+    if is_raw:
+        return raw2jcamp_img(file, params)
+
+    nicv = create_nicv(file, params)
+    nicp = NmrIrComposer(nicv)
+    return nicp.tf_jcamp(), nicp.tf_img()
+
+
+def raw2jcamp_img(file, params=False):
+    rc = RawConverter(file, params)
     mc = MsComposer(rc)
     return mc.tf_jcamp(), mc.tf_img()
