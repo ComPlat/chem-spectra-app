@@ -2,15 +2,9 @@ import pytest
 import io
 
 from werkzeug.datastructures import FileStorage
-from chem_spectra.lib.spectra.helper import (
-    convert_jcamp_temp, create_sp_carrier
-)
-from chem_spectra.lib.spectra.writer import (
-    build_block_meta
-)
-
-from chem_spectra.lib.spectra.carrier import SpectraCarrier
-
+from chem_spectra.controller.helper import create_nicv
+from chem_spectra.model.converter.nmr_ir import NmrIrConverter
+from chem_spectra.model.composer.nmr_ir import NmrIrComposer
 
 target_dir = './tests/fixtures/'
 source_dir = 'source/'
@@ -28,8 +22,6 @@ SVS_790A_13C_jdx = 'SVS-790A_13C.jdx'
 # generate datatable
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
 def __fixture_path(orig_filename):
     return target_dir + source_dir + orig_filename
 
@@ -37,9 +29,10 @@ def __fixture_path(orig_filename):
 def __generated_jcamp_temp(path, params=False):
     with open(path, 'rb') as f:
         file = FileStorage(f)
-        sp_carrier = create_sp_carrier(file, params)
-        tmp = convert_jcamp_temp(sp_carrier)
-    return sp_carrier, tmp
+        nicv = create_nicv(file, params)
+        nicp = NmrIrComposer(nicv)
+        jcamp = nicp.tf_jcamp()
+    return nicv, nicp, jcamp
 
 
 def __target_peaks_meta(filename):
@@ -64,83 +57,83 @@ def __is_match(ori, nxt, ref, count_target, tolerance=None):
 
 
 def test_datatable_IR():
-    sp_car_ori, ori_tmp = __generated_jcamp_temp(
+    nicv_ori, nicp_ori, jcamp_ori = __generated_jcamp_temp(
         __fixture_path(IR_dx)
     )
-    sp_car_nxt, nxt_tmp = __generated_jcamp_temp(ori_tmp.name)
-    sp_car_ano, ano_tmp = __generated_jcamp_temp(nxt_tmp.name)
-    total_count = sp_car_ori.y.shape[0]
-    ori_bd = sp_car_ori.boundary
+    nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
+    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
+    total_count = nicv_ori.ys.shape[0]
+    ori_bd = nicv_ori.boundary
     ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
 
-    assert __is_match(sp_car_ori.x, sp_car_nxt.x, ref, total_count)
-    assert __is_match(sp_car_ori.y, sp_car_nxt.y, ref, total_count)
-    assert __is_match(sp_car_ori.x, sp_car_ano.x, ref, total_count)
-    assert __is_match(sp_car_ori.y, sp_car_ano.y, ref, total_count)
+    assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
+    assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
 
 
 def test_datatable_1H():
-    sp_car_ori, ori_tmp = __generated_jcamp_temp(
+    nicv_ori, nicp_ori, jcamp_ori = __generated_jcamp_temp(
         __fixture_path(H1_dx)
     )
-    sp_car_nxt, nxt_tmp = __generated_jcamp_temp(ori_tmp.name)
-    sp_car_ano, ano_tmp = __generated_jcamp_temp(nxt_tmp.name)
-    total_count = sp_car_ori.y.shape[0]
-    ori_bd = sp_car_ori.boundary
+    nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
+    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
+    total_count = nicv_ori.ys.shape[0]
+    ori_bd = nicv_ori.boundary
     ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
 
-    assert __is_match(sp_car_ori.x, sp_car_nxt.x, ref, total_count)
-    assert __is_match(sp_car_ori.y, sp_car_nxt.y, ref, total_count)
-    assert __is_match(sp_car_ori.x, sp_car_ano.x, ref, total_count)
-    assert __is_match(sp_car_ori.y, sp_car_ano.y, ref, total_count)
+    assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
+    assert __is_match(nicv_ori.xs, nicv_ano.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_ano.ys, ref, total_count)
 
 
 def test_datatable_13C_CPD_dx():
-    sp_car_ori, ori_tmp = __generated_jcamp_temp(
+    nicv_ori, nicp_ori, jcamp_ori = __generated_jcamp_temp(
         __fixture_path(C13_CPD_dx)
     )
-    sp_car_nxt, nxt_tmp = __generated_jcamp_temp(ori_tmp.name)
-    sp_car_ano, ano_tmp = __generated_jcamp_temp(nxt_tmp.name)
-    total_count = sp_car_ori.y.shape[0]
-    ori_bd = sp_car_ori.boundary
+    nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
+    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
+    total_count = nicv_ori.ys.shape[0]
+    ori_bd = nicv_ori.boundary
     ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
 
-    assert __is_match(sp_car_ori.x, sp_car_nxt.x, ref, total_count)
-    assert __is_match(sp_car_ori.y, sp_car_nxt.y, ref, total_count)
-    assert __is_match(sp_car_ori.x, sp_car_ano.x, ref, total_count)
-    assert __is_match(sp_car_ori.y, sp_car_ano.y, ref, total_count)
+    assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
+    assert __is_match(nicv_ori.xs, nicv_ano.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_ano.ys, ref, total_count)
 
 
 def test_datatable_13C_DEPT135():
-    sp_car_ori, ori_tmp = __generated_jcamp_temp(
+    nicv_ori, nicp_ori, jcamp_ori = __generated_jcamp_temp(
         __fixture_path(C13_DEPT135_dx)
     )
-    sp_car_nxt, nxt_tmp = __generated_jcamp_temp(ori_tmp.name)
-    sp_car_ano, ano_tmp = __generated_jcamp_temp(nxt_tmp.name)
-    total_count = sp_car_ori.y.shape[0]
-    ori_bd = sp_car_ori.boundary
+    nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
+    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
+    total_count = nicv_ori.ys.shape[0]
+    ori_bd = nicv_ori.boundary
     ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
 
-    assert __is_match(sp_car_ori.x, sp_car_nxt.x, ref, total_count)
-    assert __is_match(sp_car_ori.y, sp_car_nxt.y, ref, total_count)
-    assert __is_match(sp_car_ori.x, sp_car_ano.x, ref, total_count)
-    assert __is_match(sp_car_ori.y, sp_car_ano.y, ref, total_count)
+    assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
+    assert __is_match(nicv_ori.xs, nicv_ano.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_ano.ys, ref, total_count)
 
 
 def test_datatable_SVS_790A_13C_jdx():
-    sp_car_ori, ori_tmp = __generated_jcamp_temp(
+    nicv_ori, nicp_ori, jcamp_ori = __generated_jcamp_temp(
         __fixture_path(SVS_790A_13C_jdx)
     )
-    sp_car_nxt, nxt_tmp = __generated_jcamp_temp(ori_tmp.name)
-    sp_car_ano, ano_tmp = __generated_jcamp_temp(nxt_tmp.name)
-    total_count = sp_car_ori.y.shape[0]
-    ori_bd = sp_car_ori.boundary
+    nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
+    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
+    total_count = nicv_ori.ys.shape[0]
+    ori_bd = nicv_ori.boundary
     ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
 
-    assert __is_match(sp_car_ori.x, sp_car_nxt.x, ref, total_count)
-    assert __is_match(sp_car_ori.y, sp_car_nxt.y, ref, total_count, 1/10000)
-    assert __is_match(sp_car_ori.x, sp_car_ano.x, ref, total_count)
-    assert __is_match(sp_car_ori.y, sp_car_ano.y, ref, total_count, 1/10000)
+    assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count, 1/10000)
+    assert __is_match(nicv_ori.xs, nicv_ano.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_ano.ys, ref, total_count, 1/10000)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -157,15 +150,11 @@ def __is_same(ones, twos):
 
 
 def test_compare_datatable_13C_DEPT135():
-    sp_car_ori, ori_tmp = __generated_jcamp_temp(
+    nicv_ori, nicp_ori, jcamp_ori = __generated_jcamp_temp(
         __fixture_path(C13_DEPT135_dx)
     )
-    sp_car_nxt, nxt_tmp = __generated_jcamp_temp(ori_tmp.name)
-    sp_car_ano, ano_tmp = __generated_jcamp_temp(nxt_tmp.name)
+    nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
+    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
 
-    meta_ori = build_block_meta(sp_car_ori)
-    meta_nxt = build_block_meta(sp_car_nxt)
-    meta_ano = build_block_meta(sp_car_ano)
-
-    assert(__is_same(meta_ori, meta_nxt))
-    assert(__is_same(meta_ori, meta_ano))
+    assert(__is_same(nicp_ori.meta, nicp_nxt.meta))
+    assert(__is_same(nicp_ori.meta, nicp_ano.meta))

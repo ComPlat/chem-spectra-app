@@ -2,12 +2,9 @@ import pytest
 import io
 
 from werkzeug.datastructures import FileStorage
-from chem_spectra.lib.spectra.helper import (
-    convert2jcamp_img, create_sp_carrier
-)
-from chem_spectra.lib.spectra.writer import (
-    build_block_meta
-)
+from chem_spectra.controller.helper import create_nicv
+from chem_spectra.model.converter.nmr_ir import NmrIrConverter
+from chem_spectra.model.composer.nmr_ir import NmrIrComposer
 
 
 target_dir = './tests/fixtures/'
@@ -32,10 +29,10 @@ separator = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS AUTO ==='
 def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
         file = FileStorage(f)
-        sp_carrier = create_sp_carrier(file, params)
-        meta_jcamp = build_block_meta(sp_carrier)
+        nicv = create_nicv(file, params)
+        nicp = NmrIrComposer(nicv)
 
-    parts = ''.join(meta_jcamp).split(separator)
+    parts = ''.join(nicp.meta).split(separator)
     assert len(parts) == 2
 
     meta_content = parts[1]

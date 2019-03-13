@@ -31,6 +31,8 @@ class RawConverter():
         self.cmd_msconvert = self.__build_cmd_msconvert()
         self.__run_cmd()
         self.runs, self.spectrum = self.__read_mz_ml()
+        self.xs, self.ys = self.__extract_xs_ys()
+        self.datatable = self.__set_datatable()
 
 
     def __store_in_tmp(self, file):
@@ -128,3 +130,21 @@ class RawConverter():
                 time.sleep(0.1)
 
         return runs, spectrum
+
+
+    def __extract_xs_ys(self):
+        spc = self.spectrum
+        return spc[:, 0], spc[:, 1]
+
+
+    def __set_datatable(self):
+        pts = self.xs.shape[0]
+        datatable = []
+        for idx in range(pts):
+            datatable.append(
+                '{}, {}\n'.format(
+                    self.xs[idx],
+                    self.ys[idx]
+                )
+            )
+        return datatable

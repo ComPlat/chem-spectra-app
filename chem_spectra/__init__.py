@@ -20,8 +20,8 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    from . import controller
-    app.register_blueprint(controller.ctrl)
+    from chem_spectra.controller.api import ctrl
+    app.register_blueprint(ctrl)
 
 
     return app

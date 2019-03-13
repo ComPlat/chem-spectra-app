@@ -2,14 +2,15 @@ import nmrglue as ng
 import numpy as np
 from scipy import signal
 
-from .encoder import encode_datatable
+from chem_spectra.model.converter.encoder import encode_datatable
 
 
 THRESHOLD_IR = 0.93
 THRESHOLD_NMR = 0.02
 THRESHOLD_MS = 0.0
 
-class SpectraCarrier():
+
+class NmrIrConverter():
     def __init__(self, path, params=False):
         self.params = self.__set_params(params)
         self.dic, self.data = self.__read(path)
@@ -24,8 +25,8 @@ class SpectraCarrier():
         self.obs_freq = self.__set_obs_freq()
         self.factor = self.__set_factor()
         self.x_unit = self.__set_x_unit()
-        self.y = self.__read_y()
-        self.x = self.__read_x()
+        self.ys = self.__read_ys()
+        self.xs = self.__read_xs()
         self.boundary = self.__find_boundary()
         self.label = self.__set_label()
         self.auto_peaks = None
@@ -144,7 +145,7 @@ class SpectraCarrier():
         return count
 
 
-    def __read_x(self): # TBD
+    def __read_xs(self): # TBD
         beg_pt = None
         end_pt = None
         idx = self.target_idx
@@ -176,7 +177,7 @@ class SpectraCarrier():
             except:
                 pass
 
-        num_pt = self.y.shape[0]
+        num_pt = self.ys.shape[0]
         x = np.linspace(
             beg_pt + self.params['delta'],
             end_pt + self.params['delta'],
@@ -190,7 +191,7 @@ class SpectraCarrier():
         return x
 
 
-    def __read_y(self):
+    def __read_ys(self):
         y = None
         try:
             y = self.data['real'][self.target_idx]
@@ -209,12 +210,12 @@ class SpectraCarrier():
     def __find_boundary(self):
         return {
             'x': {
-                'max': self.x.max(),
-                'min': self.x.min(),
+                'max': self.xs.max(),
+                'min': self.xs.min(),
             },
             'y': {
-                'max': self.y.max(),
-                'min': self.y.min(),
+                'max': self.ys.max(),
+                'min': self.ys.min(),
             },
         }
 
@@ -288,8 +289,8 @@ class SpectraCarrier():
         auto_x = []
         auto_y = []
         for idx in peak_idxs:
-            auto_x.append(self.x[idx])
-            auto_y.append(self.y[idx])
+            auto_x.append(self.xs[idx])
+            auto_y.append(self.ys[idx])
         if len(auto_x) == 0:
             return
         self.auto_peaks = { 'x': auto_x, 'y': auto_y }
@@ -361,13 +362,13 @@ class SpectraCarrier():
 
 
     def __run_auto_pick_peak(self):
-        max_y = np.max(self.y)
+        max_y = np.max(self.ys)
         height = self.threshold * max_y
 
-        corr_data_ys = self.y
+        corr_data_ys = self.ys
         corr_height = height
         if 'INFRARED SPECTRUM' == self.datatype:
-            corr_data_ys = 1 - self.y
+            corr_data_ys = 1 - self.ys
             corr_height = 1 - height
 
         peaks = signal.find_peaks(corr_data_ys, height=corr_height)
@@ -379,7 +380,7 @@ class SpectraCarrier():
         y_factor = self.factor and self.factor['y']
         y_factor = y_factor or 1.0
         return encode_datatable(
-            self.y,
+            self.ys,
             self.boundary['y']['max'],
             y_factor
         )

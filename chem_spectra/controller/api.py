@@ -2,16 +2,16 @@ from flask import (
     Flask, Blueprint, request, redirect, jsonify, send_file, abort, jsonify
 )
 import base64
-from .lib.spectra.helper import (
+from chem_spectra.controller.helper import (
     allowed_file, convert2jcamp_img, convert2jcamp, convert2img,
     convertRaw2jcamp_img
 )
-from .lib.process import to_zip_response, extract_params
-from .lib.predict import predict_by_peaks
-from .settings import get_ip_white_list
+from chem_spectra.controller.settings import get_ip_white_list
+from chem_spectra.model.process import to_zip_response, extract_params
+from chem_spectra.model.predict import predict_by_peaks
 
 
-ctrl = Blueprint('controller', __name__)
+ctrl = Blueprint('api', __name__)
 
 
 @ctrl.before_app_request
@@ -112,35 +112,30 @@ def image():
 
 @ctrl.route('/api/v1/chemspectra/file/convert', methods=['POST'])
 def chemspectra_file_convert():
-    # try:
-    file = request.files['file']
-    is_raw = file.filename.split('.')[-1].lower() == 'raw'
-    params = extract_params(request)
-    if file and is_raw:
-        tf_jcamp, tf_img = convertRaw2jcamp_img(file)
-        jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
-        img = base64.b64encode(tf_img.read()).decode("utf-8")
+    try:
+        file = request.files['file']
+        is_raw = file.filename.split('.')[-1].lower() == 'raw'
+        params = extract_params(request)
+        if file:
+            if is_raw:
+                tf_jcamp, tf_img = convertRaw2jcamp_img(file)
+            else:
+                tf_jcamp, tf_img = convert2jcamp_img(file, params)
+
+            jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
+            img = base64.b64encode(tf_img.read()).decode("utf-8")
+            return jsonify(
+                status=True,
+                jcamp=jcamp,
+                img=img
+            )
+        abort(400)
+    except:
         return jsonify(
-            status=True,
-            jcamp=jcamp,
-            img=img
+            status=False,
+            jcamp='',
+            img=''
         )
-    elif file: # and allowed_file(file):
-        tf_jcamp, tf_img = convert2jcamp_img(file, params)
-        jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
-        img = base64.b64encode(tf_img.read()).decode("utf-8")
-        return jsonify(
-            status=True,
-            jcamp=jcamp,
-            img=img
-        )
-    abort(400)
-    # except:
-    #     return jsonify(
-    #         status=False,
-    #         jcamp='',
-    #         img=''
-    #     )
 
 
 @ctrl.route('/api/v1/chemspectra/file/save', methods=['POST'])
