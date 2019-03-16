@@ -8,7 +8,7 @@ from chem_spectra.controller.helper import (
 from chem_spectra.controller.settings import get_ip_white_list
 from chem_spectra.model.process import to_zip_response, extract_params
 from chem_spectra.model.predict import predict_by_peaks
-
+from chem_spectra.model.converter.chem import molfile2chem
 
 ctrl = Blueprint('api', __name__)
 
@@ -170,4 +170,22 @@ def chemspectra_predict_by_peaks():
     except:
         return jsonify(
             status=False,
+        )
+
+
+@ctrl.route('/api/v1/chemspectra/molfile/convert', methods=['POST'])
+def chemspectra_molfile_convert():
+    try:
+        molfile = request.files['molfile']
+        smi, mass = molfile2chem(molfile)
+        return jsonify(
+            status=True,
+            smi=smi,
+            mass=mass
+        )
+    except:
+        return jsonify(
+            status=False,
+            smi='',
+            mass=''
         )
