@@ -9,6 +9,7 @@ from chem_spectra.controller.settings import get_ip_white_list
 from chem_spectra.model.process import to_zip_response, extract_params
 from chem_spectra.model.predict import predict_by_peaks
 from chem_spectra.model.converter.chem import molfile2chem
+import json
 
 ctrl = Blueprint('api', __name__)
 
@@ -111,25 +112,24 @@ def image():
 
 @ctrl.route('/api/v1/chemspectra/file/convert', methods=['POST'])
 def chemspectra_file_convert():
-    # try:
-    file = request.files['file']
-    params = extract_params(request)
-    if file:
-        tf_jcamp, tf_img = convert2jcamp_img(file, params)
-        jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
-        img = base64.b64encode(tf_img.read()).decode("utf-8")
+    try:
+        file = request.files['file']
+        params = extract_params(request)
+        if file:
+            tf_jcamp, tf_img = convert2jcamp_img(file, params)
+            jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
+            img = base64.b64encode(tf_img.read()).decode("utf-8")
+            return jsonify(
+                status=True,
+                jcamp=jcamp,
+                img=img
+            )
+            abort(400)
+    except:
         return jsonify(
-            status=True,
-            jcamp=jcamp,
-            img=img
+            status=False,
+            error='Fail to process',
         )
-    #     abort(400)
-    # except:
-    #     return jsonify(
-    #         status=False,
-    #         jcamp='',
-    #         img=''
-    #     )
 
 
 @ctrl.route('/api/v1/chemspectra/file/save', methods=['POST'])
@@ -150,17 +150,20 @@ def chemspectra_file_save():
     except:
         return jsonify(
             status=False,
-            jcamp='',
-            img=''
+            error='Fail to process',
         )
 
 
-@ctrl.route('/predict/by_peaks', methods=['POST'])
-@ctrl.route('/api/v1/chemspectra/predict/by_peaks', methods=['POST'])
-def chemspectra_predict_by_peaks():
+@ctrl.route('/predict/by_peaks_json', methods=['POST'])
+@ctrl.route('/api/v1/chemspectra/predict/by_peaks_json', methods=['POST'])
+def chemspectra_predict_by_peaks_json():
     try:
         payload = request.json
-        rsp = predict_by_peaks(payload)
+        layout = payload.get('layout')
+        molfile = payload.get('molfile')
+        peaks = payload.get('peaks')
+
+        rsp = predict_by_peaks(layout, molfile, peaks)
         if rsp:
             return jsonify(
                 status=True,
@@ -170,6 +173,37 @@ def chemspectra_predict_by_peaks():
     except:
         return jsonify(
             status=False,
+            error='Fail to process',
+        )
+
+
+@ctrl.route('/predict/by_peaks_form', methods=['POST'])
+@ctrl.route('/api/v1/chemspectra/predict/by_peaks_form', methods=['POST'])
+def chemspectra_predict_by_peaks_form():
+    try:
+        molfile = request.files['molfile']
+        molfile = molfile.stream.read().decode('utf-8')
+        layout = request.form.get('layout', default=None)
+        peaks = request.form.get('peaks', default=None)
+        peaks = json.loads(peaks)
+
+        if (not peaks) or (not molfile):
+            return jsonify(
+                status=False,
+                error='No peaks or molfile',
+            )
+
+        rsp = predict_by_peaks(layout, molfile, peaks)
+        if rsp:
+            return jsonify(
+                status=True,
+                result=rsp.json(),
+            )
+        abort(400)
+    except:
+        return jsonify(
+            status=False,
+            error='Fail to process',
         )
 
 
@@ -186,6 +220,5 @@ def chemspectra_molfile_convert():
     except:
         return jsonify(
             status=False,
-            smi='',
-            mass=''
+            error='Fail to process',
         )

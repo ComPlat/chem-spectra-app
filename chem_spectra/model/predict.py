@@ -7,7 +7,7 @@ headers = {
 }
 
 
-def build_data(typ, shifts, molecule):
+def build_data(typ, shifts, molfile):
     return {
         'inputs':[
             {
@@ -16,7 +16,7 @@ def build_data(typ, shifts, molecule):
                 'shifts': shifts
             },
         ],
-        'moltxt': molecule
+        'moltxt': molfile
     }
 
 
@@ -28,22 +28,17 @@ def extract_x(peaks):
     return ';'.join(total)
 
 
-def predict_by_peaks(payload):
-    layout = payload.get('layout')
-    shifts = extract_x(payload.get('peaks'))
-    molecule = payload.get('molecule')
-
-    if not molecule:
-        return False
+def predict_by_peaks(layout, molfile, peaks):
+    shifts = extract_x(peaks)
 
     if layout == '1H':
         typ = 'nmr;1H;1d'
-        data = build_data(typ, shifts, molecule)
+        data = build_data(typ, shifts, molfile)
         rsp = requests.post(url_nmrshiftdb, headers=headers, json=data)
         return rsp
     elif layout == '13C':
         typ = 'nmr;13C;1d'
-        data = build_data(typ, shifts, molecule)
+        data = build_data(typ, shifts, molfile)
         rsp = requests.post(url_nmrshiftdb, headers=headers, json=data)
         return rsp
 

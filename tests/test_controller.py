@@ -140,9 +140,9 @@ def test_api_chemspectra_file_save(client):
     assert response.mimetype == 'application/zip'
 
 
-def test_api_chemspectra_predict_by_peaks(client):
+def test_api_chemspectra_predict_by_peaks_json(client):
     response = client.post(
-        '/api/v1/chemspectra/predict/by_peaks',
+        '/api/v1/chemspectra/predict/by_peaks_json',
         content_type='application/json',
         data=RequestPredictNmr().json()
     )
@@ -150,3 +150,8 @@ def test_api_chemspectra_predict_by_peaks(client):
     assert response.status_code == 200
     assert response.json['status'] == True
     assert response.mimetype == 'application/json'
+
+
+def test_api_chemspectra_predict_by_peaks_form(client):
+    pass
+    # TBD
