@@ -124,12 +124,9 @@ def chemspectra_file_convert():
                 jcamp=jcamp,
                 img=img
             )
-            abort(400)
+        abort(400)
     except:
-        return jsonify(
-            status=False,
-            error='Fail to process',
-        )
+        abort(500)
 
 
 @ctrl.route('/api/v1/chemspectra/file/save', methods=['POST'])
@@ -148,10 +145,7 @@ def chemspectra_file_save():
             )
         abort(400)
     except:
-        return jsonify(
-            status=False,
-            error='Fail to process',
-        )
+        abort(500)
 
 
 @ctrl.route('/predict/by_peaks_json', methods=['POST'])
@@ -171,10 +165,7 @@ def chemspectra_predict_by_peaks_json():
             )
         abort(400)
     except:
-        return jsonify(
-            status=False,
-            error='Fail to process',
-        )
+        abort(500)
 
 
 @ctrl.route('/predict/by_peaks_form', methods=['POST'])
@@ -188,10 +179,7 @@ def chemspectra_predict_by_peaks_form():
         peaks = json.loads(peaks)
 
         if (not peaks) or (not molfile):
-            return jsonify(
-                status=False,
-                error='No peaks or molfile',
-            )
+            abort(400)
 
         rsp = predict_by_peaks(layout, molfile, peaks)
         if rsp:
@@ -201,10 +189,7 @@ def chemspectra_predict_by_peaks_form():
             )
         abort(400)
     except:
-        return jsonify(
-            status=False,
-            error='Fail to process',
-        )
+        abort(500)
 
 
 @ctrl.route('/api/v1/chemspectra/molfile/convert', methods=['POST'])
@@ -218,7 +203,4 @@ def chemspectra_molfile_convert():
             mass=mass
         )
     except:
-        return jsonify(
-            status=False,
-            error='Fail to process',
-        )
+        abort(500)
