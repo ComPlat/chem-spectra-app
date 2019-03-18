@@ -8,8 +8,12 @@
 0.2. create env
 
 ```
-$ conda create --name chem-spectra-app
-$ source activate chem-spectra-app
+$ conda create --name chem-spectra python=3.5
+$ source activate chem-spectra
+```
+
+```
+$ conda install -c openbabel openbabel
 ```
 
 ```
@@ -29,6 +33,19 @@ $ cd nmrglue
 $ git co show-all-data
 $ pip install -e .
 $ python setup.py install
+```
+
+0.4 docker msconvert
+
+```
+$ docker pull chambm/pwiz-skyline-i-agree-to-the-vendor-licenses
+
+$ docker run --name msconvert_docker \
+    --rm -it \
+    -e WINEDEBUG=-all \
+    -v /home/jason/workspace/chem-spectra/chem-spectra-app/chem_spectra/tmp:/data \
+    chambm/pwiz-skyline-i-agree-to-the-vendor-licenses bash
+
 ```
 
 
