@@ -1,6 +1,6 @@
 import requests
 
-url_nmrshiftdb = 'http://nmr-sdbtest.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
+url_nmrshiftdb = 'http://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
 
 headers = {
     'Content-Type': 'application/json'
