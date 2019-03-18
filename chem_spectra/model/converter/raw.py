@@ -4,6 +4,7 @@ import os
 import pymzml
 import time
 import tempfile
+import shutil
 
 from pathlib import Path
 from datetime import datetime
@@ -34,6 +35,7 @@ class RawConverter():
         self.runs, self.spectrum = self.__read_mz_ml()
         self.xs, self.ys = self.__extract_xs_ys()
         self.datatable = self.__set_datatable()
+        self.__clean()
 
 
     def __store_in_tmp(self, file):
@@ -157,3 +159,8 @@ class RawConverter():
                 )
             )
         return datatable
+
+
+    def __clean(self):
+        self.tf.close()
+        shutil.rmtree(self.target_dir.absolute().as_posix())
