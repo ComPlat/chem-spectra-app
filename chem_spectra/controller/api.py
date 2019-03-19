@@ -156,8 +156,9 @@ def chemspectra_predict_by_peaks_json():
         layout = payload.get('layout')
         molfile = payload.get('molfile')
         peaks = payload.get('peaks')
+        shift = payload.get('shift')
 
-        rsp = predict_by_peaks(layout, molfile, peaks)
+        rsp = predict_by_peaks(layout, molfile, peaks, shift)
         if rsp:
             return jsonify(
                 status=True,
@@ -177,11 +178,13 @@ def chemspectra_predict_by_peaks_form():
         layout = request.form.get('layout', default=None)
         peaks = request.form.get('peaks', default=None)
         peaks = json.loads(peaks)
+        shift = request.form.get('shift', default=None)
+        shift = json.loads(shift)
 
         if (not peaks) or (not molfile):
             abort(400)
 
-        rsp = predict_by_peaks(layout, molfile, peaks)
+        rsp = predict_by_peaks(layout, molfile, peaks, shift)
         if rsp:
             return jsonify(
                 status=True,
