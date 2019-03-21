@@ -9,22 +9,13 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 
-MARGIN = 0.1
+MARGIN = 1
 
 tmp_dir = Path('./chem_spectra/tmp') # TBD
 
-"""
-docker run --name msconvert_docker \
-    --rm -it \
-    -e WINEDEBUG=-all \
-    -v /Users/jason/workspace/python-project/chem-spectra-app/chem_spectra/tmp:/data \
-    chambm/pwiz-skyline-i-agree-to-the-vendor-licenses bash
-"""
-
-class RawConverter():
+class MsRawConverter():
     def __init__(self, file, params=False):
         self.fname = file.filename.split('.')[0]
-        self.scan = params.get('scan', 0) if params else 0
         self.exact_mz = params.get('mass', 0) if params else 0
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
@@ -32,9 +23,8 @@ class RawConverter():
         self.tf = self.__store_in_tmp(file)
         self.cmd_msconvert = self.__build_cmd_msconvert()
         self.__run_cmd()
-        self.runs, self.spectrum = self.__read_mz_ml()
-        self.xs, self.ys = self.__extract_xs_ys()
-        self.datatable = self.__set_datatable()
+        self.runs, self.spectra, self.scan_auto_target = self.__read_mz_ml()
+        self.datatables = self.__set_datatables()
         self.__clean()
 
 
@@ -90,6 +80,7 @@ class RawConverter():
 
     def __get_ratio(self, spc):
         match_xs, match_ys, all_ys, ratio = [], [], [], 0
+
         for pk in spc:
             all_ys.append(pk[1])
             if self.bound_low < pk[0] < self.bound_high:
@@ -103,36 +94,30 @@ class RawConverter():
 
 
     def __decode(self, runs):
-        spectrum, best_ratio = None, 0
+        spectra, best_ratio, best_idx = [], 0, 0
         for idx, data in enumerate(runs):
-            if self.scan:
-                if idx + 1 == self.scan:
-                    return data.peaks('raw')
-                else:
-                    continue
-
             spc = data.peaks('raw')
-            if spectrum is None:
-                spectrum = spc
+            spectra.append(spc)
 
             ratio = self.__get_ratio(spc)
             if best_ratio < ratio:
-                best_ratio, spectrum = ratio, spc
+                best_idx = idx
+                best_ratio = ratio
 
-        return spectrum
+        return spectra, (best_idx + 1)
 
 
     def __read_mz_ml(self):
         mzml_path = self.__get_mzml_path()
         mzml_file = mzml_path.absolute().as_posix()
 
-        runs, spectrum = None, None
+        runs, spectra = None, None
         while True:
             if mzml_path.exists():
                 try:
                     time.sleep(0.2)
                     runs = pymzml.run.Reader(mzml_file)
-                    spectrum = self.__decode(runs)
+                    spectra, scan_auto_target = self.__decode(runs)
                     break
                 # except Exception as e: print(e)
                 except:
@@ -140,25 +125,25 @@ class RawConverter():
             else:
                 time.sleep(0.1)
 
-        return runs, spectrum
+        return runs, spectra, scan_auto_target
 
 
-    def __extract_xs_ys(self):
-        spc = self.spectrum
-        return spc[:, 0], spc[:, 1]
-
-
-    def __set_datatable(self):
-        pts = self.xs.shape[0]
-        datatable = []
-        for idx in range(pts):
-            datatable.append(
-                '{}, {}\n'.format(
-                    self.xs[idx],
-                    self.ys[idx]
+    def __set_datatables(self):
+        dts = []
+        for idx, spc in enumerate(self.spectra):
+            xs = spc[:, 0]
+            ys = spc[:, 1]
+            pts = xs.shape[0]
+            dt = []
+            for idx in range(pts):
+                dt.append(
+                    '{}, {}\n'.format(
+                        xs[idx],
+                        ys[idx]
+                    )
                 )
-            )
-        return datatable
+            dts.append({ 'dt': dt, 'pts': pts })
+        return dts
 
 
     def __clean(self):

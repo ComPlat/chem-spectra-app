@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from chem_spectra.model.converter.nmr_ir import NmrIrConverter
-from chem_spectra.model.converter.raw import RawConverter
+from chem_spectra.model.converter.ms_raw import MsRawConverter
 from chem_spectra.model.composer.nmr_ir import NmrIrComposer
 from chem_spectra.model.composer.ms import MsComposer
 
@@ -65,6 +65,6 @@ def convert2jcamp_img(file, params=False):
 
 
 def raw2jcamp_img(file, params=False):
-    rc = RawConverter(file, params)
+    rc = MsRawConverter(file, params)
     mc = MsComposer(rc)
     return mc.tf_jcamp(), mc.tf_img()
