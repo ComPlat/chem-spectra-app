@@ -13,26 +13,34 @@ MARGIN = 1
 
 tmp_dir = Path('./chem_spectra/tmp') # TBD
 
-class MsRawConverter():
+class MsConverter():
     def __init__(self, file, params=False):
-        self.fname = file.filename.split('.')[0]
+        fn = file.filename.split('.')
+        self.fname, self.ext = fn[0], fn[-1].lower()
         self.exact_mz = params.get('mass', 0) if params else 0
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
         self.target_dir, self.hash_str = self.__mk_dir(file)
-        self.tf = self.__store_in_tmp(file)
-        self.cmd_msconvert = self.__build_cmd_msconvert()
-        self.__run_cmd()
+        self.__get_mzml(file)
         self.runs, self.spectra, self.scan_auto_target = self.__read_mz_ml()
         self.datatables = self.__set_datatables()
         self.__clean()
 
 
-    def __store_in_tmp(self, file):
+    def __get_mzml(self, file):
+        if self.ext == 'raw':
+            self.tf = self.__store_in_tmp(file, '.RAW')
+            self.cmd_msconvert = self.__build_cmd_msconvert()
+            self.__run_cmd()
+        elif self.ext == 'mzml':
+            self.tf = self.__store_in_tmp(file, '.mzML')
+
+
+    def __store_in_tmp(self, file, suffix):
         byteContent = file.stream.read()
         tf = tempfile.NamedTemporaryFile(
             prefix=self.fname,
-            suffix='.RAW',
+            suffix=suffix,
             dir=self.target_dir.absolute().as_posix()
         )
         with open(tf.name, 'w') as f:

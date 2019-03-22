@@ -6,12 +6,12 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from chem_spectra.model.converter.nmr_ir import NmrIrConverter
-from chem_spectra.model.converter.ms_raw import MsRawConverter
+from chem_spectra.model.converter.ms import MsConverter
 from chem_spectra.model.composer.nmr_ir import NmrIrComposer
 from chem_spectra.model.composer.ms import MsComposer
 
 
-ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw'])
+ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw', 'mzml'])
 
 
 def allowed_file(file):
@@ -35,9 +35,9 @@ def create_nicv(file, params=False):
 
 
 def convert2jcamp(file, params=False):
-    is_raw = file.filename.split('.')[-1].lower() == 'raw'
-    if is_raw:
-        return raw2jcamp_img(file, params)[0]
+    is_ms = file.filename.split('.')[-1].lower() in ['raw', 'mzml']
+    if is_ms:
+        return ms2jcamp_img(file, params)[0]
 
     nicv = create_nicv(file, params)
     nicp = NmrIrComposer(nicv)
@@ -45,9 +45,9 @@ def convert2jcamp(file, params=False):
 
 
 def convert2img(file, params=False):
-    is_raw = file.filename.split('.')[-1].lower() == 'raw'
-    if is_raw:
-        return raw2jcamp_img(file, params)[1]
+    is_ms = file.filename.split('.')[-1].lower() in ['raw', 'mzml']
+    if is_ms:
+        return ms2jcamp_img(file, params)[1]
 
     nicv = create_nicv(file, params)
     nicp = NmrIrComposer(nicv)
@@ -55,16 +55,16 @@ def convert2img(file, params=False):
 
 
 def convert2jcamp_img(file, params=False):
-    is_raw = file.filename.split('.')[-1].lower() == 'raw'
-    if is_raw:
-        return raw2jcamp_img(file, params)
+    is_ms = file.filename.split('.')[-1].lower() in ['raw', 'mzml']
+    if is_ms:
+        return ms2jcamp_img(file, params)
 
     nicv = create_nicv(file, params)
     nicp = NmrIrComposer(nicv)
     return nicp.tf_jcamp(), nicp.tf_img()
 
 
-def raw2jcamp_img(file, params=False):
-    rc = MsRawConverter(file, params)
-    mc = MsComposer(rc)
-    return mc.tf_jcamp(), mc.tf_img()
+def ms2jcamp_img(file, params=False):
+    mcv = MsConverter(file, params)
+    mcp = MsComposer(mcv)
+    return mcp.tf_jcamp(), mcp.tf_img()
