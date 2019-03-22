@@ -153,5 +153,36 @@ def test_api_chemspectra_predict_by_peaks_json(client):
 
 
 def test_api_chemspectra_predict_by_peaks_form(client):
-    pass
-    # TBD
+    with open(target_dir + source_dir + '/molfile/svs813f1_B.mol', 'rb') as f:
+        file_content = f.read()
+    params = RequestPredictNmr().json()
+    params = json.loads(params)
+    data = dict(
+        molfile=(io.BytesIO(file_content), 'svs813f1_B.mol'),
+        layout=params['layout'],
+        peaks=json.dumps(params['peaks']),
+        shift=json.dumps(params['shift']),
+    )
+    response = client.post(
+        '/api/v1/chemspectra/predict/by_peaks_form',
+        content_type='multipart/form-data',
+        data=data
+    )
+    assert response.status_code == 200
+    assert response.json['status'] == True
+    assert response.mimetype == 'application/json'
+
+
+def test_api_chemspectra_molfile_convert(client):
+    with open(target_dir + source_dir + '/molfile/svs813f1_B.mol', 'rb') as f:
+        file_content = f.read()
+    data = dict(
+        molfile=(io.BytesIO(file_content), 'svs813f1_B.mol'),
+    )
+    response = client.post(
+        '/api/v1/chemspectra/molfile/convert',
+        content_type='multipart/form-data',
+        data=data
+    )
+    assert response.status_code == 200
+    assert response.mimetype == 'application/json'
