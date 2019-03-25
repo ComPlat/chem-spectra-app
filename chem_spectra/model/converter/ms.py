@@ -75,7 +75,7 @@ class MsConverter():
 
 
     def __run_cmd(self):
-        sbp.run(self.cmd_msconvert)
+        sbp.run(self.cmd_msconvert, timeout=10)
 
 
     def __get_mzml_path(self):
@@ -120,9 +120,11 @@ class MsConverter():
         mzml_file = mzml_path.absolute().as_posix()
 
         runs, spectra = None, None
+        elapsed = 0.0
         while True:
             if mzml_path.exists():
                 try:
+                    elapsed += 0.2
                     time.sleep(0.2)
                     runs = pymzml.run.Reader(mzml_file)
                     spectra, scan_auto_target = self.__decode(runs)
@@ -131,7 +133,10 @@ class MsConverter():
                 except:
                     pass
             else:
+                elapsed += 0.1
                 time.sleep(0.1)
+            if elapsed > 10.0:
+                break
 
         return runs, spectra, scan_auto_target
 
