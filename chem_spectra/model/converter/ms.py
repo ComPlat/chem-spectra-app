@@ -87,39 +87,72 @@ class MsConverter():
 
 
     def __get_ratio(self, spc):
-        match_xs, match_ys, all_ys, ratio = [], [], [], 0
+        all_ys, ratio = [], 0
+        bLow, bHigh = self.bound_low, self.bound_high
+
+        match_base_xs, match_base_ys = [], []
+        match_seed_xs, match_seed_ys = [], []
+        match_oorg_xs, match_oorg_ys = [], []
 
         for pk in spc:
             all_ys.append(pk[1])
-            if self.bound_low < pk[0] < self.bound_high:
-                match_xs.append(pk[0])
-                match_ys.append(pk[1])
 
-        if len(match_xs) > 0:
-            ratio = 100 * max(match_ys) / max(all_ys)
+            if bLow < pk[0] < bHigh:
+                match_seed_xs.append(pk[0])
+                match_seed_ys.append(pk[1])
+            elif bLow + 1 < pk[0] < bHigh + 1:
+                match_seed_xs.append(pk[0])
+                match_seed_ys.append(pk[1])
+            elif bLow + 23 < pk[0] < bHigh + 23:
+                match_seed_xs.append(pk[0])
+                match_seed_ys.append(pk[1])
+            elif bLow + 39 < pk[0] < bHigh + 39:
+                match_seed_xs.append(pk[0])
+                match_seed_ys.append(pk[1])
 
-        return ratio
+            if pk[0] <= bHigh + 39:
+                match_base_xs.append(pk[0])
+                match_base_ys.append(pk[1])
+            elif bHigh + 39 < pk[0]:
+                match_oorg_xs.append(pk[0])
+                match_oorg_ys.append(pk[1])
+
+        max_all = max(all_ys, default=0)
+        max_base = max(match_base_ys, default=0.1)
+        max_seed = max(match_seed_ys, default=0)
+        max_oorg = max(match_oorg_ys, default=0)
+
+        ratio = 100 * max_seed / max_base
+        noise_ratio = 100 * max_oorg / max_base
+
+        return ratio, noise_ratio
 
 
     def __decode(self, runs):
-        spectra, best_ratio, best_idx = [], 0, 0
+        spectra, best_ratio, best_idx, backup_ratio, backup_idx = [], 0, 0, 0, 0
         for idx, data in enumerate(runs):
             spc = data.peaks('raw')
             spectra.append(spc)
 
-            ratio = self.__get_ratio(spc)
-            if best_ratio < ratio:
+            ratio, noise_ratio = self.__get_ratio(spc)
+            if (best_ratio < ratio) and (noise_ratio <= 50.0):
                 best_idx = idx
                 best_ratio = ratio
 
-        return spectra, (best_idx + 1)
+            if (backup_ratio < ratio):
+                backup_idx = idx
+                backup_ratio = ratio
+
+        output_idx = best_idx if best_ratio > 10.0 else backup_idx
+
+        return spectra, (output_idx + 1)
 
 
     def __read_mz_ml(self):
         mzml_path = self.__get_mzml_path()
         mzml_file = mzml_path.absolute().as_posix()
 
-        runs, spectra = None, None
+        runs, spectra, scan_auto_target = None, None, 0
         elapsed = 0.0
         while True:
             if mzml_path.exists():
