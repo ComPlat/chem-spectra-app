@@ -35,10 +35,10 @@ class MsComposer(BaseComposer):
             '##.SPECTROMETER TYPE={}\n'.format('TRAP'),
             '##.INLET={}\n'.format('GC'),
             '##.IONIZATION MODE={}\n'.format('EI+'),
-            '##$SCANAUTOTARGET={}\n'.format(self.core.scan_auto_target),
-            '##$SCANEDITTARGET={}\n'.format(''),
+            '##$SCANAUTOTARGET={}\n'.format(self.core.auto_scan),
+            '##$SCANEDITTARGET={}\n'.format(self.core.edit_scan),
             '##$SCANCOUNT={}\n'.format(len(self.core.datatables)),
-            '##$THRESHOLD={}\n'.format(0.05),
+            '##$THRESHOLD={}\n'.format(self.core.thres / 100),
         ]
 
 
@@ -88,13 +88,30 @@ class MsComposer(BaseComposer):
         return meta
 
 
+    def __prism(self, spc):
+        blues_x, blues_y, greys_x, greys_y = [], [], [], []
+        thres = spc[:, 1].max() * (self.core.thres / 100)
+
+        for pt in spc:
+            x, y = pt[0], pt[1]
+            if y >= thres:
+                blues_x.append(x)
+                blues_y.append(y)
+            else:
+                greys_x.append(x)
+                greys_y.append(y)
+        return blues_x, blues_y, greys_x, greys_y
+
+
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
         # PLOT data
-        idx = self.core.scan_auto_target - 1
+        idx = (self.core.edit_scan or self.core.auto_scan) - 1
         spc = self.core.spectra[idx]
-        plt.bar(spc[:, 0], spc[:, 1])
+        blues_x, blues_y, greys_x, greys_y = self.__prism(spc)
+        plt.bar(blues_x, blues_y)
+        plt.bar(greys_x, greys_y, color='#dddddd')
 
         # PLOT label
         plt.xlabel('X (m/z)', fontsize=18)

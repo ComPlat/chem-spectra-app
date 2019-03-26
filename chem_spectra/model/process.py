@@ -32,6 +32,7 @@ def extract_params(request):
         'ref_name': request.form.get('shift_ref_name', default=None),
         'ref_value': request.form.get('shift_ref_value', default=None),
         'scan': int(request.form.get('scan', default=0)),
+        'thres': float(request.form.get('thres', default=0)),
         'mass': float(request.form.get('mass', default=0)),
         'molfile': request.form.get('molfile', default=None),
     }
@@ -41,6 +42,7 @@ def extract_params(request):
         params.get('ref_name') or
         params.get('ref_value') or
         params.get('scan') or
+        params.get('thres') or
         params.get('mass') or
         params.get('molfile')
     )

@@ -18,11 +18,13 @@ class MsConverter():
         fn = file.filename.split('.')
         self.fname, self.ext = fn[0], fn[-1].lower()
         self.exact_mz = params.get('mass', 0) if params else 0
+        self.edit_scan = params.get('scan', 0) if params else 0
+        self.thres = params.get('thres', 5) if params else 5
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
         self.target_dir, self.hash_str = self.__mk_dir(file)
         self.__get_mzml(file)
-        self.runs, self.spectra, self.scan_auto_target = self.__read_mz_ml()
+        self.runs, self.spectra, self.auto_scan = self.__read_mz_ml()
         self.datatables = self.__set_datatables()
         self.__clean()
 
@@ -152,7 +154,7 @@ class MsConverter():
         mzml_path = self.__get_mzml_path()
         mzml_file = mzml_path.absolute().as_posix()
 
-        runs, spectra, scan_auto_target = None, None, 0
+        runs, spectra, auto_scan = None, None, 0
         elapsed = 0.0
         while True:
             if mzml_path.exists():
@@ -160,7 +162,7 @@ class MsConverter():
                     elapsed += 0.2
                     time.sleep(0.2)
                     runs = pymzml.run.Reader(mzml_file)
-                    spectra, scan_auto_target = self.__decode(runs)
+                    spectra, auto_scan = self.__decode(runs)
                     break
                 # except Exception as e: print(e)
                 except:
@@ -171,7 +173,7 @@ class MsConverter():
             if elapsed > 10.0:
                 break
 
-        return runs, spectra, scan_auto_target
+        return runs, spectra, auto_scan
 
 
     def __set_datatables(self):
