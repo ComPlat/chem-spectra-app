@@ -2,9 +2,7 @@ import pytest
 import io
 
 from werkzeug.datastructures import FileStorage
-from chem_spectra.controller.helper import create_nicv
-from chem_spectra.model.converter.nmr_ir import NmrIrConverter
-from chem_spectra.model.composer.nmr_ir import NmrIrComposer
+from chem_spectra.controller.helper import jcamp2cvp
 
 target_dir = './tests/fixtures/'
 source_dir = 'source/'
@@ -29,8 +27,7 @@ def __fixture_path(orig_filename):
 def __generated_jcamp_temp(path, params=False):
     with open(path, 'rb') as f:
         file = FileStorage(f)
-        nicv = create_nicv(file, params)
-        nicp = NmrIrComposer(nicv)
+        nicv, nicp = jcamp2cvp(file, params)
         jcamp = nicp.tf_jcamp()
     return nicv, nicp, jcamp
 

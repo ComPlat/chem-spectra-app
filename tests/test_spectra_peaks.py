@@ -2,9 +2,7 @@ import pytest
 import io
 
 from werkzeug.datastructures import FileStorage
-from chem_spectra.controller.helper import create_nicv
-from chem_spectra.model.converter.nmr_ir import NmrIrConverter
-from chem_spectra.model.composer.nmr_ir import NmrIrComposer
+from chem_spectra.controller.helper import jcamp2cvp
 
 
 target_dir = './tests/fixtures/'
@@ -29,8 +27,7 @@ separator = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS AUTO ==='
 def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
         file = FileStorage(f)
-        nicv = create_nicv(file, params)
-        nicp = NmrIrComposer(nicv)
+        nicv, nicp = jcamp2cvp(file, params)
 
     parts = ''.join(nicp.meta).split(separator)
     assert len(parts) == 2
