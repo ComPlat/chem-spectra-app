@@ -14,7 +14,7 @@ TEXT_ASSIGN_EDIT = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS EDIT ===\n'
 TEXT_PEAK_ASSIGN = '##PEAK ASSIGNMENTS=(XYA)\n'
 
 
-class MsComposer(BaseComposer):
+class MSComposer(BaseComposer):
     def __init__(self, core):
         super().__init__(core)
         self.title = core.fname
@@ -36,7 +36,7 @@ class MsComposer(BaseComposer):
             '##.INLET={}\n'.format('GC'),
             '##.IONIZATION MODE={}\n'.format('EI+'),
             '##$SCANAUTOTARGET={}\n'.format(self.core.auto_scan),
-            '##$SCANEDITTARGET={}\n'.format(self.core.edit_scan),
+            '##$SCANEDITTARGET={}\n'.format(self.core.edit_scan or self.core.auto_scan),
             '##$SCANCOUNT={}\n'.format(len(self.core.datatables)),
             '##$THRESHOLD={}\n'.format(self.core.thres / 100),
         ]
@@ -110,8 +110,8 @@ class MsComposer(BaseComposer):
         idx = (self.core.edit_scan or self.core.auto_scan) - 1
         spc = self.core.spectra[idx]
         blues_x, blues_y, greys_x, greys_y = self.__prism(spc)
-        plt.bar(blues_x, blues_y)
         plt.bar(greys_x, greys_y, color='#dddddd')
+        plt.bar(blues_x, blues_y)
 
         # PLOT label
         plt.xlabel('X (m/z)', fontsize=18)

@@ -10,17 +10,19 @@ THRESHOLD_NMR = 0.02
 THRESHOLD_MS = 0.05
 
 
-class NmrIrConverter():
-    def __init__(self, path, params=False):
-        self.params = self.__set_params(params)
-        self.dic, self.data = self.__read(path)
-        self.datatypes = self.dic['DATATYPE']
-        self.datatype = self.__set_datatype()
-        self.title = self.dic['TITLE'][0]
+class JcampNIConverter(): # nmr & IR
+    def __init__(self, base):
+        self.params = base.params
+        self.dic = base.dic
+        self.data = base.data
+        self.datatypes = base.datatypes
+        self.datatype = base.datatype
+        self.title = base.title
+        self.typ = base.typ
+        # - - - - - - - - - - -
         self.target_idx = self.__index_target()
         self.block_count = self.__count_block()
         self.threshold = self.__thres()
-        self.typ = self.__typ()
         self.ncl = self.__ncl()
         self.obs_freq = self.__set_obs_freq()
         self.factor = self.__set_factor()
@@ -35,54 +37,6 @@ class NmrIrConverter():
         self.__read_peak_from_file()
 
 
-    def __set_params(self, params):
-        if not params:
-            return {
-                'select_x': None,
-                'ref_name': None,
-                'ref_value': None,
-                'peaks_str': None,
-                'delta': 0.0,
-            }
-
-        select_x = params.get('select_x', None)
-        ref_name = params.get('ref_name', None)
-        ref_value = params.get('ref_value', None)
-        peaks_str = params.get('peaks_str', None)
-        delta = 0.0
-
-        try:
-            if select_x and float(select_x) != 0.0 and ref_name != '- - -' :
-                delta = float(ref_value) - float(select_x)
-        except:
-            pass
-
-        return {
-            'select_x': select_x,
-            'ref_name': ref_name,
-            'ref_value': ref_value,
-            'peaks_str': peaks_str,
-            'delta': delta,
-        }
-
-
-    def __read(self, path):
-        return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
-
-
-    def __set_datatype(self):
-        dts = self.datatypes
-        if 'NMR SPECTRUM' in dts:
-            return 'NMR SPECTRUM'
-        elif 'NMRSPECTRUM' in dts: # MNova
-            return 'NMR SPECTRUM'
-        elif 'INFRARED SPECTRUM' in dts:
-            return 'INFRARED SPECTRUM'
-        elif 'MASS SPECTRUM' in dts:
-            return 'MASS SPECTRUM'
-        return ''
-
-
     def __thres(self):
         dt = self.datatype
         if 'NMR SPECTRUM' == dt:
@@ -94,19 +48,6 @@ class NmrIrConverter():
         elif 'MASS SPECTRUM' == dt:
             return THRESHOLD_MS
         return 0.5
-
-
-    def __typ(self):
-        dt = self.datatype
-        if 'NMR SPECTRUM' == dt:
-            return 'NMR'
-        elif 'NMRSPECTRUM' == dt: # MNova
-            return 'NMR'
-        elif 'INFRARED SPECTRUM' == dt:
-            return 'INFRARED' # TBD
-        elif 'MASS SPECTRUM' == dt:
-            return 'MS'
-        return ''
 
 
     def __ncl(self):

@@ -5,10 +5,13 @@ matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 
-from chem_spectra.model.converter.nmr_ir import NmrIrConverter
-from chem_spectra.model.converter.ms import MsConverter
-from chem_spectra.model.composer.nmr_ir import NmrIrComposer
-from chem_spectra.model.composer.ms import MsComposer
+from chem_spectra.model.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.model.converter.jcamp.ni import JcampNIConverter
+from chem_spectra.model.converter.jcamp.ms import JcampMSConverter
+from chem_spectra.model.converter.ms import MSConverter
+
+from chem_spectra.model.composer.ni import NIComposer
+from chem_spectra.model.composer.ms import MSComposer
 
 
 ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw', 'mzml'])
@@ -27,44 +30,46 @@ def store_in_tmp(file):
     return tf
 
 
-def create_nicv(file, params=False):
-    tf = store_in_tmp(file)
-    nicv = NmrIrConverter(tf.name, params)
-    tf.close()
-    return nicv
-
-
 def convert2jcamp(file, params=False):
-    is_ms = file.filename.split('.')[-1].lower() in ['raw', 'mzml']
-    if is_ms:
-        return ms2jcamp_img(file, params)[0]
-
-    nicv = create_nicv(file, params)
-    nicp = NmrIrComposer(nicv)
-    return nicp.tf_jcamp()
+    cmpsr = to_composer(file, params)
+    return cmpsr.tf_jcamp()
 
 
 def convert2img(file, params=False):
-    is_ms = file.filename.split('.')[-1].lower() in ['raw', 'mzml']
-    if is_ms:
-        return ms2jcamp_img(file, params)[1]
-
-    nicv = create_nicv(file, params)
-    nicp = NmrIrComposer(nicv)
-    return nicp.tf_img()
+    cmpsr = to_composer(file, params)
+    return cmpsr.tf_img()
 
 
 def convert2jcamp_img(file, params=False):
-    is_ms = file.filename.split('.')[-1].lower() in ['raw', 'mzml']
-    if is_ms:
-        return ms2jcamp_img(file, params)
-
-    nicv = create_nicv(file, params)
-    nicp = NmrIrComposer(nicv)
-    return nicp.tf_jcamp(), nicp.tf_img()
+    cmpsr = to_composer(file, params)
+    return cmpsr.tf_jcamp(), cmpsr.tf_img()
 
 
-def ms2jcamp_img(file, params=False):
-    mcv = MsConverter(file, params)
-    mcp = MsComposer(mcv)
-    return mcp.tf_jcamp(), mcp.tf_img()
+def to_composer(file, params):
+    not_jcamp = file.filename.split('.')[-1].lower() in ['raw', 'mzml']
+    if not_jcamp:
+        return ms2composer(file, params)
+
+    cv, cp = jcamp2cvp(file, params)
+    return cp
+
+
+def ms2composer(file, params=False):
+    mscv = MSConverter(file, params)
+    mscp = MSComposer(mscv)
+    return mscp
+
+
+def jcamp2cvp(file, params=False):
+    tf = store_in_tmp(file)
+    jbcv = JcampBaseConverter(tf.name, params)
+    tf.close()
+
+    if jbcv.typ == 'MS':
+        mscv = JcampMSConverter(jbcv)
+        mscp = MSComposer(mscv)
+        return mscv, mscp
+    else:
+        nicv = JcampNIConverter(jbcv)
+        nicp = NIComposer(nicv)
+        return nicv, nicp

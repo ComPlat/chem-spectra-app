@@ -15,7 +15,7 @@ TEXT_ASSIGN_EDIT = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS EDIT ===\n'
 TEXT_PEAK_ASSIGN = '##PEAK ASSIGNMENTS=(XYA)\n'
 
 
-class NmrIrComposer(BaseComposer):
+class NIComposer(BaseComposer):
     def __init__(self, core):
         super().__init__(core)
         self.title = core.title
