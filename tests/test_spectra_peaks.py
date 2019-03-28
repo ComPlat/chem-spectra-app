@@ -21,15 +21,17 @@ meta_C13_CPD_dx = 'meta_13C-CPD'
 meta_C13_DEPT135_dx = 'meta_13C-DEPT135'
 meta_SVS_790A_13C_jdx = 'meta_SVS-790A_13C'
 
-separator = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS AUTO ==='
-
+separator_e = '$$ === CHEMSPECTRA PEAK TABLE EDIT ==='
+separator_a = '$$ === CHEMSPECTRA PEAK TABLE AUTO ==='
 
 def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
         file = FileStorage(f)
         nicv, nicp = jcamp2cvp(file, params)
 
-    parts = ''.join(nicp.meta).split(separator)
+    parts = ''.join(nicp.meta).split(separator_e)
+    if len(parts) == 1:
+        parts = ''.join(nicp.meta).split(separator_a)
     assert len(parts) == 2
 
     meta_content = parts[1]

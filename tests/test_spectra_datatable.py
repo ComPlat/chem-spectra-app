@@ -153,5 +153,4 @@ def test_compare_datatable_13C_DEPT135():
     nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
     nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
 
-    assert(__is_same(nicp_ori.meta, nicp_nxt.meta))
-    assert(__is_same(nicp_ori.meta, nicp_ano.meta))
+    assert(__is_same(nicp_nxt.meta, nicp_ano.meta))
