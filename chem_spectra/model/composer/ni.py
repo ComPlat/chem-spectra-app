@@ -8,11 +8,6 @@ from chem_spectra.model.composer.base import (
 )
 
 TEXT_SPECTRUM_ORIG = '$$ === CHEMSPECTRA SPECTRUM ORIG ===\n'
-TEXT_SPECTRUM_EDIT = '$$ === CHEMSPECTRA SPECTRUM EDIT ===\n'
-TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'
-TEXT_ASSIGN_AUTO = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS AUTO ===\n'
-TEXT_ASSIGN_EDIT = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS EDIT ===\n'
-TEXT_PEAK_ASSIGN = '##PEAK ASSIGNMENTS=(XYA)\n'
 
 
 class NIComposer(BaseComposer):
@@ -73,12 +68,13 @@ class NIComposer(BaseComposer):
         meta.extend(self.gen_spectrum_orig())
         meta.extend(self.gen_ending())
 
-        meta.extend(self.gen_headers_peakassignments_auto())
-        meta.extend(self.gen_auto_peakassignments())
-        meta.extend(self.gen_ending())
+        if calc_npoints(self.core.edit_peaks) > 0:
+            meta.extend(self.gen_headers_peaktable_edit())
+            meta.extend(self.gen_edit_peaktable())
+            meta.extend(self.gen_ending())
 
-        meta.extend(self.gen_headers_peakassignments_edit())
-        meta.extend(self.gen_edit_peakassignments())
+        meta.extend(self.gen_headers_peaktable_auto())
+        meta.extend(self.gen_auto_peaktable())
         meta.extend(self.gen_ending())
 
         meta.extend(self.gen_ending())

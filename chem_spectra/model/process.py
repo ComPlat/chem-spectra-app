@@ -1,5 +1,6 @@
 import io
 import zipfile
+import numpy as np
 from os.path import basename
 
 
@@ -26,14 +27,19 @@ def to_zip_response(tmp_arr, filename=False):
 
 
 def extract_params(request):
+    scan = float(request.form.get('scan', default=0))
+    scan = 0 if np.isnan(scan) else int(scan)
+    thres = float(request.form.get('thres', default=0))
+    mass = float(request.form.get('mass', default=0))
+
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
         'select_x': request.form.get('shift_select_x', default=None),
         'ref_name': request.form.get('shift_ref_name', default=None),
         'ref_value': request.form.get('shift_ref_value', default=None),
-        'scan': int(request.form.get('scan', default=0)),
-        'thres': float(request.form.get('thres', default=0)),
-        'mass': float(request.form.get('mass', default=0)),
+        'scan': scan,
+        'thres': thres,
+        'mass': mass,
         'molfile': request.form.get('molfile', default=None),
     }
     has_params = (

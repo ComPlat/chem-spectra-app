@@ -14,12 +14,10 @@ def calc_npoints(peaks):
     return 0
 
 
-TEXT_SPECTRUM_ORIG = '$$ === CHEMSPECTRA SPECTRUM ORIG ===\n'
-TEXT_SPECTRUM_EDIT = '$$ === CHEMSPECTRA SPECTRUM EDIT ===\n'
 TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'
-TEXT_ASSIGN_AUTO = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS AUTO ===\n'
-TEXT_ASSIGN_EDIT = '$$ === CHEMSPECTRA PEAK ASSIGNMENTS EDIT ===\n'
-TEXT_PEAK_ASSIGN = '##PEAK ASSIGNMENTS=(XYA)\n'
+TEXT_PEAK_AUTO = '$$ === CHEMSPECTRA PEAK TABLE AUTO ===\n'
+TEXT_PEAK_EDIT = '$$ === CHEMSPECTRA PEAK TABLE EDIT ===\n'
+TEXT_PEAK_TABLE = '##PEAKTABLE= (XY..XY)\n'
 
 
 class BaseComposer:
@@ -33,8 +31,8 @@ class BaseComposer:
         return [
             '##TITLE={}\n'.format(self.title),
             '##JCAMP-DX=5.00\n',
-            '##DATA TYPE={} PEAK ASSIGNMENTS\n'.format(self.core.typ),
-            '##DATA CLASS=ASSIGNMENTS\n',
+            '##DATA TYPE={}PEAKTABLE\n'.format(self.core.typ),
+            '##DATA CLASS=PEAKTABLE\n',
             '##THRESHOLD={}\n'.format(self.core.threshold),
             '##MAXX={}\n'.format(self.core.boundary['x']['max']),
             '##MAXY={}\n'.format(self.core.boundary['y']['max']),
@@ -110,51 +108,51 @@ class BaseComposer:
         return c_spectrum_orig
 
 
-    def gen_headers_peakassignments_auto(self):
-        return ['\n', TEXT_ASSIGN_AUTO] + self.__header_pk_common()
+    def gen_headers_peaktable_auto(self):
+        return ['\n', TEXT_PEAK_AUTO] + self.__header_pk_common()
 
 
-    def gen_auto_peakassignments(self):
-        c_peakassignments = [
+    def gen_auto_peaktable(self):
+        content = [
             '##NPOINTS={}\n'.format(calc_npoints(self.core.auto_peaks)),
-            TEXT_PEAK_ASSIGN
+            TEXT_PEAK_TABLE
         ]
         if not self.core.auto_peaks:
-            return c_peakassignments
+            return content
 
         auto_x = self.core.auto_peaks['x']
         auto_y = self.core.auto_peaks['y']
         for i, _ in enumerate(auto_x):
-            c_peakassignments.append(
-                '({}, {}, <{}>)\n'.format(auto_x[i], auto_y[i], i + 1)
+            content.append(
+                '{}, {}\n'.format(auto_x[i], auto_y[i])
             )
 
-        return c_peakassignments
+        return content
 
 
-    def gen_headers_peakassignments_edit(self):
+    def gen_headers_peaktable_edit(self):
         header = self.__header_pk_common()
         spl_desc = self.__create_sample_description()
 
-        return ['\n', TEXT_ASSIGN_EDIT] + header + spl_desc
+        return ['\n', TEXT_PEAK_EDIT] + header + spl_desc
 
 
-    def gen_edit_peakassignments(self):
-        c_peakassignments = [
+    def gen_edit_peaktable(self):
+        content = [
             '##NPOINTS={}\n'.format(calc_npoints(self.core.edit_peaks)),
-            TEXT_PEAK_ASSIGN
+            TEXT_PEAK_TABLE
         ]
         if not self.core.edit_peaks:
-            return c_peakassignments
+            return content
 
         edit_x = self.core.edit_peaks['x']
         edit_y = self.core.edit_peaks['y']
         for i, _ in enumerate(edit_x):
-            c_peakassignments.append(
-                '({}, {}, <{}>)\n'.format(edit_x[i], edit_y[i], i + 1)
+            content.append(
+                '{}, {}\n'.format(edit_x[i], edit_y[i])
             )
 
-        return c_peakassignments
+        return content
 
 
     def tf_jcamp(self):

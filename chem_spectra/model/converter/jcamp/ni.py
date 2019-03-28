@@ -238,15 +238,10 @@ class JcampNIConverter(): # nmr & IR
 
 
     def __read_auto_peaks(self):
-        try:
+        try: # legacy
             auto_x = []
             auto_y = []
-            pas_list = self.dic['PEAKASSIGNMENTS']
-            pas_idx = len(pas_list) - 2
-            pas_idx = 0 if pas_idx < 0 else pas_idx
-            pas_target = pas_list[pas_idx]
-
-            pas = pas_target.split('\n')[1:]
+            pas = self.dic['PEAKASSIGNMENTS'][0].split('\n')[1:]
             for pa in pas:
                 info = pa.replace('(', '').replace(')', '').replace(' ', '').split(',')
                 auto_x.append(float(info[0]))
@@ -257,9 +252,26 @@ class JcampNIConverter(): # nmr & IR
         except:
             pass
 
+        try: # mnova
+            if self.auto_peaks is None:
+                auto_x = []
+                auto_y = []
+                if len(self.dic['PEAKTABLE']):
+                    return
+                pas = self.dic['PEAKTABLE'][-1].split('\n')[1:]
+                for pa in pas:
+                    info = pa.replace(' ', '').split(',')
+                    auto_x.append(float(info[0]))
+                    auto_y.append(float(info[1]))
+                if len(auto_x) == 0:
+                    return
+                self.auto_peaks = { 'x': auto_x, 'y': auto_y }
+        except:
+            pass
+
 
     def __read_edit_peaks(self):
-        try:
+        try: # legacy
             edit_x = []
             edit_y = []
             pas = self.dic['PEAKASSIGNMENTS'][-1].split('\n')[1:]
@@ -277,8 +289,7 @@ class JcampNIConverter(): # nmr & IR
             if self.edit_peaks is None:
                 edit_x = []
                 edit_y = []
-
-                pas = self.dic['PEAKTABLE'][-1].split('\n')[1:]
+                pas = self.dic['PEAKTABLE'][0].split('\n')[1:]
                 for pa in pas:
                     info = pa.replace(' ', '').split(',')
                     edit_x.append(float(info[0]))
