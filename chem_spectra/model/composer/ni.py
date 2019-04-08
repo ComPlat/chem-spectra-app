@@ -81,6 +81,17 @@ class NIComposer(BaseComposer):
         return meta
 
 
+    def __plt_nbins(self):
+        typ = self.core.typ
+        if 'NMR' == typ:
+            return 20
+        elif 'INFRARED' == typ:
+            return 20
+        elif 'MS' == typ:
+            return 20
+        return 20
+
+
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
@@ -107,6 +118,7 @@ class NIComposer(BaseComposer):
         # PLOT label
         plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
         plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
+        plt.locator_params(nbins=self.__plt_nbins())
         plt.grid(False)
         # Save
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
