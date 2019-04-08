@@ -6,7 +6,7 @@ from chem_spectra.model.converter.encoder import encode_datatable
 
 
 THRESHOLD_IR = 0.93
-THRESHOLD_NMR = 0.02
+THRESHOLD_NMR = 0.005
 THRESHOLD_MS = 0.05
 
 
