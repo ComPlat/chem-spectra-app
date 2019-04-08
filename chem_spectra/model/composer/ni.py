@@ -2,6 +2,7 @@ import tempfile
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.path as mpath
 
 from chem_spectra.model.composer.base import (
     extrac_dic, calc_npoints, BaseComposer
@@ -92,6 +93,17 @@ class NIComposer(BaseComposer):
         return 20
 
 
+    def __fakto(self):
+        typ = self.core.typ
+        if 'NMR' == typ:
+            return 1
+        elif 'MS' == typ:
+            return 1
+        elif 'INFRARED' == typ:
+            return -1
+        return 1
+
+
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
@@ -102,17 +114,28 @@ class NIComposer(BaseComposer):
             self.core.boundary['x']['min']
         )
         # PLOT peaks
+        faktor = self.__fakto()
+        path_data = [
+            (mpath.Path.MOVETO, (0, faktor * 5)),
+            (mpath.Path.LINETO, (0, faktor * 20)),
+        ]
+        codes, verts = zip(*path_data)
+        marker = mpath.Path(verts, codes)
         if self.core.edit_peaks:
             plt.plot(
                 self.core.edit_peaks['x'],
                 self.core.edit_peaks['y'],
-                'rd'
+                'rd',
+                marker=marker,
+                markersize=50,
             )
         elif self.core.auto_peaks:
             plt.plot(
                 self.core.auto_peaks['x'],
                 self.core.auto_peaks['y'],
-                'rd'
+                'rd',
+                marker=marker,
+                markersize=50,
             )
 
         # PLOT label
