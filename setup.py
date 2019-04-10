@@ -14,6 +14,6 @@ setup(
         'pytest==4.0.0',
         'pytest-mock==1.10.1',
         'pymzml==2.0.6',
-        'matplotlib'
+        'matplotlib==2.0.2'
     ],
 )
