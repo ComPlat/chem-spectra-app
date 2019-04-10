@@ -26,6 +26,7 @@ class JcampBaseConverter():
                 'mass': 0,
                 'scan': None,
                 'thres': None,
+                'clear': False,
             }
 
         select_x = params.get('select_x', None)
@@ -36,6 +37,7 @@ class JcampBaseConverter():
         mass = params.get('mass', 0)
         scan = params.get('scan', None)
         thres = params.get('thres', None)
+        clear = params.get('clear', False)
 
         try:
             if select_x and float(select_x) != 0.0 and ref_name != '- - -' :
@@ -52,6 +54,7 @@ class JcampBaseConverter():
             'mass': mass,
             'scan': scan,
             'thres': thres,
+            'clear': clear,
         }
 
 

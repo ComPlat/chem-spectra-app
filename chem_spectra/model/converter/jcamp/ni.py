@@ -238,6 +238,9 @@ class JcampNIConverter(): # nmr & IR
 
 
     def __read_auto_peaks(self):
+        if self.params['clear']:
+            return
+
         try: # legacy
             auto_x = []
             auto_y = []
@@ -271,6 +274,9 @@ class JcampNIConverter(): # nmr & IR
 
 
     def __read_edit_peaks(self):
+        if self.params['clear']:
+            return
+
         try: # legacy
             edit_x = []
             edit_y = []

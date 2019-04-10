@@ -31,6 +31,7 @@ def extract_params(request):
     scan = 0 if np.isnan(scan) else int(scan)
     thres = float(request.form.get('thres', default=0))
     mass = float(request.form.get('mass', default=0))
+    clear = bool(request.form.get('clear', default=False))
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -41,6 +42,7 @@ def extract_params(request):
         'thres': thres,
         'mass': mass,
         'molfile': request.form.get('molfile', default=None),
+        'clear': clear,
     }
     has_params = (
         params.get('peaks_str') or
@@ -50,7 +52,8 @@ def extract_params(request):
         params.get('scan') or
         params.get('thres') or
         params.get('mass') or
-        params.get('molfile')
+        params.get('molfile') or
+        params.get('clear')
     )
     if not has_params:
         params = False
