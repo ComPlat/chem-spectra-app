@@ -40,10 +40,10 @@ $ python setup.py install
 ```
 $ docker pull chambm/pwiz-skyline-i-agree-to-the-vendor-licenses
 
-$ docker run --name msconvert_docker \
+$ docker run --detach --name msconvert_docker \
     --rm -it \
     -e WINEDEBUG=-all \
-    -v /home/jason/workspace/chem-spectra/chem-spectra-app/chem_spectra/tmp:/data \
+    -v /ABSOLUTE_PATH_TO/chem-spectra-app/chem_spectra/tmp:/data \
     chambm/pwiz-skyline-i-agree-to-the-vendor-licenses bash
 
 ```
