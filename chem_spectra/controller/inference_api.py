@@ -5,8 +5,7 @@ from flask import (
 
 from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
-from chem_spectra.model.inferencer import InferencerModel as InfModel
-
+from chem_spectra.model.inferencer import InferencerModel as InferModel
 
 infer_api = Blueprint('inference_api', __name__)
 
@@ -21,13 +20,18 @@ def chemspectra_predict_by_peaks_json():
         shift = payload.get('shift')
         molfile = FileContainer().from_str(payload.get('molfile'))
 
-        rsp = InfModel(layout, molfile, peaks, shift).predict_by_peaks()
+        rsp = InferModel.predict_nmr(
+            molfile=molfile,
+            layout=layout,
+            peaks=peaks,
+            shift=shift
+        )
         if rsp:
             return jsonify(
                 status=True,
                 result=rsp.json(),
             )
-            abort(400)
+        abort(400)
     except:
         abort(500)
 
@@ -46,13 +50,18 @@ def chemspectra_predict_by_peaks_form():
         if (not peaks) or (not molfile):
             abort(400)
 
-        rsp = InfModel(layout, molfile, peaks, shift).predict_by_peaks()
+        rsp = InferModel.predict_nmr(
+            molfile=molfile,
+            layout=layout,
+            peaks=peaks,
+            shift=shift
+        )
         if rsp:
             return jsonify(
                 status=True,
                 result=rsp.json(),
             )
-            abort(400)
+        abort(400)
     except:
         abort(500)
 
@@ -65,12 +74,12 @@ def chemspectra_predict_infrared():
         molfile = FileContainer(request.files['molfile'])
         spectrum = FileContainer(request.files['spectrum'])
 
-        # results = InfraredModel(molfile, spectrum).check_fgs()
-
-        # return jsonify(
-        #     status=True,
-        #     results=results,
-        # )
+        rsp = InferModel.predict_ir(
+            molfile=molfile,
+            spectrum=spectrum
+        )
+        if rsp:
+            return jsonify(rsp.json())
         abort(400)
     except:
         abort(500)

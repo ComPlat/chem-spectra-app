@@ -1,33 +1,58 @@
+import io
 import requests
+import numpy as np
+import json
 
-url_nmrshiftdb = 'http://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
+from chem_spectra.model.molecule import MoleculeModel
+from chem_spectra.model.infrared import InfraredModel
 
-headers = {
+url_nsdb = 'http://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
+hdr_nsdb = {
     'Content-Type': 'application/json'
 }
 
+url_deepir = 'http://127.0.0.1:2512/inference'
+
 
 class InferencerModel:
-    def __init__(self, layout, molfile, peaks, shift):
-        self.layout = layout
+    def __init__(
+        self,
+        molfile=False, layout=False, peaks=False, shift=False, spectrum=False
+    ):
         self.molfile = molfile.core
+        self.layout = layout
         self.peaks = peaks
         self.shift = shift
+        self.spectrum = spectrum
 
 
-    def predict_by_peaks(self):
+    @classmethod
+    def predict_nmr(
+        cls,
+        molfile=False, layout=False, peaks=False, shift=False
+    ):
+        instance = cls(
+            molfile=molfile,
+            layout=layout,
+            peaks=peaks,
+            shift=shift
+        )
+        return instance.__predict_nmr()
+
+
+    def __predict_nmr(self):
         peak_xs = self.__extract_x()
         solvent = self.shift.get('ref', {}) .get('nsdb')
 
         if self.layout == '1H':
             typ = 'nmr;1H;1d'
             data = self.__build_data(typ, peak_xs, solvent)
-            rsp = requests.post(url_nmrshiftdb, headers=headers, json=data)
+            rsp = requests.post(url_nsdb, headers=hdr_nsdb, json=data)
             return rsp
         elif self.layout == '13C':
             typ = 'nmr;13C;1d'
             data = self.__build_data(typ, peak_xs, solvent)
-            rsp = requests.post(url_nmrshiftdb, headers=headers, json=data)
+            rsp = requests.post(url_nsdb, headers=hdr_nsdb, json=data)
             return rsp
 
         return False
@@ -53,3 +78,28 @@ class InferencerModel:
             ],
             'moltxt': self.molfile
         }
+
+
+    @classmethod
+    def predict_ir(cls, molfile=False, spectrum=False):
+        instance = cls(
+            molfile=molfile,
+            spectrum=spectrum
+        )
+        return instance.__predict_ir()
+
+
+    def __predict_ir(self):
+        mm = MoleculeModel(self.molfile)
+        fgs = { 'fgs': json.dumps(mm.fgs()) }
+
+        im = InfraredModel(self.spectrum)
+        xs, ys = im.standarize()
+
+        buf = io.BytesIO()
+        np.savez(buf, ys=ys)
+        file = buf.getvalue()
+        files = { 'file': (file) }
+
+        rsp = requests.post(url_deepir, files=files, data=fgs)
+        return rsp

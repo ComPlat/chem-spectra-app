@@ -37,21 +37,21 @@ def chemspectra_file_convert():
 
 @file_api.route('/api/v1/chemspectra/file/save', methods=['POST'])
 def chemspectra_file_save():
-    # try:
-    file = FileContainer(request.files['file'])
-    filename = request.form.get('filename', default=None)
-    params = extract_params(request)
-    if file: # and allowed_file(file):
-        tf_jcamp, tf_img = TraModel(file, params).convert2jcamp_img()
-        memory = to_zip_response([tf_jcamp, tf_img], filename)
-        return send_file(
-            memory,
-            attachment_filename='spectrum.zip',
-            as_attachment=True
-        )
-    #     abort(400)
-    # except:
-    #     abort(500)
+    try:
+        file = FileContainer(request.files['file'])
+        filename = request.form.get('filename', default=None)
+        params = extract_params(request)
+        if file: # and allowed_file(file):
+            tf_jcamp, tf_img = TraModel(file, params).convert2jcamp_img()
+            memory = to_zip_response([tf_jcamp, tf_img], filename)
+            return send_file(
+                memory,
+                attachment_filename='spectrum.zip',
+                as_attachment=True
+            )
+            abort(400)
+    except:
+        abort(500)
 
 
 @file_api.route('/api/v1/chemspectra/molfile/convert', methods=['POST'])
