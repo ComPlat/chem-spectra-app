@@ -4,7 +4,7 @@ from flask import (
 )
 
 from chem_spectra.controller.helper.settings import get_ip_white_list
-
+from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.inferencer import InferencerModel as InfModel
 
 
@@ -17,9 +17,9 @@ def chemspectra_predict_by_peaks_json():
     try:
         payload = request.json
         layout = payload.get('layout')
-        molfile = payload.get('molfile')
         peaks = payload.get('peaks')
         shift = payload.get('shift')
+        molfile = FileContainer().from_str(payload.get('molfile'))
 
         rsp = InfModel(layout, molfile, peaks, shift).predict_by_peaks()
         if rsp:
@@ -27,7 +27,7 @@ def chemspectra_predict_by_peaks_json():
                 status=True,
                 result=rsp.json(),
             )
-        abort(400)
+            abort(400)
     except:
         abort(500)
 
@@ -36,8 +36,7 @@ def chemspectra_predict_by_peaks_json():
 @infer_api.route('/api/v1/chemspectra/predict/by_peaks_form', methods=['POST'])
 def chemspectra_predict_by_peaks_form():
     try:
-        molfile = request.files['molfile']
-        molfile = molfile.stream.read().decode('utf-8')
+        molfile = FileContainer(request.files['molfile'])
         layout = request.form.get('layout', default=None)
         peaks = request.form.get('peaks', default=None)
         peaks = json.loads(peaks)
@@ -53,6 +52,25 @@ def chemspectra_predict_by_peaks_form():
                 status=True,
                 result=rsp.json(),
             )
+            abort(400)
+    except:
+        abort(500)
+
+
+
+@infer_api.route('/predict/infrared', methods=['POST'])
+@infer_api.route('/api/v1/chemspectra/predict/infrared', methods=['POST'])
+def chemspectra_predict_infrared():
+    try:
+        molfile = FileContainer(request.files['molfile'])
+        spectrum = FileContainer(request.files['spectrum'])
+
+        # results = InfraredModel(molfile, spectrum).check_fgs()
+
+        # return jsonify(
+        #     status=True,
+        #     results=results,
+        # )
         abort(400)
     except:
         abort(500)

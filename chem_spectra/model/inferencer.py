@@ -10,7 +10,7 @@ headers = {
 class InferencerModel:
     def __init__(self, layout, molfile, peaks, shift):
         self.layout = layout
-        self.molfile = molfile
+        self.molfile = molfile.core
         self.peaks = peaks
         self.shift = shift
 

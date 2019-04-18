@@ -2,6 +2,7 @@ import pytest
 import io
 
 from werkzeug.datastructures import FileStorage
+from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.transformer import TransformerModel as TraModel
 
 target_dir = './tests/fixtures/'
@@ -26,7 +27,7 @@ def __fixture_path(orig_filename):
 
 def __generated_jcamp_temp(path, params=False):
     with open(path, 'rb') as f:
-        file = FileStorage(f)
+        file = FileContainer(FileStorage(f))
         nicv, nicp = TraModel(file, params).jcamp2cvp()
         jcamp = nicp.tf_jcamp()
     return nicv, nicp, jcamp
@@ -34,7 +35,7 @@ def __generated_jcamp_temp(path, params=False):
 
 def __target_peaks_meta(filename):
     meta_target = open(target_dir + result_dir + filename, 'rb')
-    return meta_target.read().decode('utf-8')
+    return meta_target.read().decode('utf-8', errors='ignore')
 
 
 def __tolerable(one, two, ref, defined_tolerance=None):

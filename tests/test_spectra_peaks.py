@@ -2,6 +2,7 @@ import pytest
 import io
 
 from werkzeug.datastructures import FileStorage
+from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.transformer import TransformerModel as TraModel
 
 
@@ -26,7 +27,7 @@ separator_a = '$$ === CHEMSPECTRA PEAK TABLE AUTO ==='
 
 def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
-        file = FileStorage(f)
+        file = FileContainer(FileStorage(f))
         nicv, nicp = TraModel(file, params).jcamp2cvp()
 
     parts = ''.join(nicp.meta).split(separator_e)
@@ -40,7 +41,7 @@ def __generated_peaks_meta(orig_filename, params=False):
 
 def __target_peaks_meta(filename):
     meta_target = open(target_dir + result_dir + filename, 'rb')
-    return meta_target.read().decode('utf-8')
+    return meta_target.read().decode('utf-8', errors='ignore')
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

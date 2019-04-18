@@ -9,6 +9,8 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 
+from chem_spectra.model.helper.share import store_byte_in_tmp
+
 MARGIN = 1
 
 tmp_dir = Path('./chem_spectra/tmp') # TBD
@@ -37,24 +39,23 @@ class MSConverter:
 
 
     def __get_mzml(self, file):
+        b_content = file.stream.read()
         if self.ext == 'raw':
-            self.tf = self.__store_in_tmp(file, '.RAW')
+            self.tf = store_byte_in_tmp(
+                b_content,
+                prefix=self.fname,
+                suffix='.RAW',
+                directory=self.target_dir.absolute().as_posix()
+            )
             self.cmd_msconvert = self.__build_cmd_msconvert()
             self.__run_cmd()
         elif self.ext == 'mzml':
-            self.tf = self.__store_in_tmp(file, '.mzML')
-
-
-    def __store_in_tmp(self, file, suffix):
-        byteContent = file.stream.read()
-        tf = tempfile.NamedTemporaryFile(
-            prefix=self.fname,
-            suffix=suffix,
-            dir=self.target_dir.absolute().as_posix()
-        )
-        with open(tf.name, 'w') as f:
-            tf.write(byteContent)
-        return tf
+            self.tf = store_byte_in_tmp(
+                b_content,
+                prefix=self.fname,
+                suffix='.mzML',
+                directory=self.target_dir.absolute().as_posix()
+            )
 
 
     def __mk_dir(self, file):

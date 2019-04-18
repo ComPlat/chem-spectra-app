@@ -4,7 +4,7 @@ matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 
-from chem_spectra.model.helper.share import store_in_tmp
+from chem_spectra.model.helper.share import store_str_in_tmp
 
 from chem_spectra.model.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.model.converter.jcamp.ni import JcampNIConverter
@@ -37,7 +37,7 @@ class TransformerModel:
 
 
     def to_composer(self):
-        not_jcamp = self.file.filename.split('.')[-1].lower() in ['raw', 'mzml']
+        not_jcamp = self.file.name.split('.')[-1].lower() in ['raw', 'mzml']
         if not_jcamp:
             return self.ms2composer()
 
@@ -46,13 +46,13 @@ class TransformerModel:
 
 
     def ms2composer(self):
-        mscv = MSConverter(self.file, self.params)
+        mscv = MSConverter(self.file.core, self.params)
         mscp = MSComposer(mscv)
         return mscp
 
 
     def jcamp2cvp(self):
-        tf = store_in_tmp(self.file)
+        tf = store_str_in_tmp(self.file.core)
         jbcv = JcampBaseConverter(tf.name, self.params)
         tf.close()
 

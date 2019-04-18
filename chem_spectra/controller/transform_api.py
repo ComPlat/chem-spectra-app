@@ -1,7 +1,7 @@
 from flask import (
     Flask, Blueprint, request, jsonify, send_file, abort,
 )
-
+from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.share import (
     allowed_file, to_zip_response, extract_params
@@ -23,7 +23,7 @@ def filter_remote_ip():
 @trans_api.route('/zip_jcamp_n_img', methods=['POST'])
 def zip_jcamp_n_img():
     try:
-        file = request.files['file']
+        file = FileContainer(request.files['file'])
         params = extract_params(request)
         if file: # and allowed_file(file):
             tf_jcamp, tf_img = TraModel(file, params).convert2jcamp_img()
@@ -33,7 +33,7 @@ def zip_jcamp_n_img():
                 attachment_filename='spectrum.zip',
                 as_attachment=True
             )
-        abort(400)
+            abort(400)
     except:
         abort(500)
 
@@ -41,7 +41,7 @@ def zip_jcamp_n_img():
 @trans_api.route('/zip_jcamp', methods=['POST'])
 def zip_jcamp():
     try:
-        file = request.files['file']
+        file = FileContainer(request.files['file'])
         params = extract_params(request)
         if file: # and allowed_file(file):
             tf_jcamp = TraModel(file, params).convert2jcamp()
@@ -59,7 +59,7 @@ def zip_jcamp():
 @trans_api.route('/zip_image', methods=['POST'])
 def zip_image():
     try:
-        file = request.files['file']
+        file = FileContainer(request.files['file'])
         params = extract_params(request)
         if file: # and allowed_file(file):
             tf_img = TraModel(file, params).convert2img()
@@ -77,7 +77,7 @@ def zip_image():
 @trans_api.route('/jcamp', methods=['POST'])
 def jcamp():
     try:
-        file = request.files['file']
+        file = FileContainer(request.files['file'])
         params = extract_params(request)
         if file: # and allowed_file(file):
             tf_jcamp = TraModel(file, params).convert2jcamp()
@@ -94,7 +94,7 @@ def jcamp():
 @trans_api.route('/image', methods=['POST'])
 def image():
     try:
-        file = request.files['file']
+        file = FileContainer(request.files['file'])
         params = extract_params(request)
         if file: # and allowed_file(file):
             tf_img = TraModel(file, params).convert2img()

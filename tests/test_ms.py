@@ -19,7 +19,7 @@ def test_ms_mzml_converter_composer():
         mscv = MSConverter(file, params)
         mscp = MSComposer(mscv)
 
-    lines = mscp.tf_jcamp().read()[:800].decode('utf-8').split('\n')
+    lines = mscp.tf_jcamp().read()[:800].decode('utf-8', errors='ignore').split('\n')
 
     assert '##$SCANAUTOTARGET=3' in lines
     assert '##$SCANEDITTARGET=3' in lines
@@ -36,7 +36,7 @@ def test_ms_jcamp_converter_composer():
     mscv = JcampMSConverter(jbcv)
     mscp = MSComposer(mscv)
 
-    lines = mscp.tf_jcamp().read()[:800].decode('utf-8').split('\n')
+    lines = mscp.tf_jcamp().read()[:800].decode('utf-8', errors='ignore').split('\n')
 
     assert '##$SCANAUTOTARGET=3' in lines
     assert '##$SCANEDITTARGET=16' in lines
