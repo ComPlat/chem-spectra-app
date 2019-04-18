@@ -2,13 +2,11 @@ import nmrglue as ng
 import numpy as np
 from scipy import signal
 
-from chem_spectra.model.converter.encoder import encode_datatable
-
 
 MARGIN = 1
 
 
-class JcampMSConverter(): # nmr & IR
+class JcampMSConverter: # nmr & IR
     def __init__(self, base):
         self.params = base.params
         self.dic = base.dic

@@ -2,7 +2,7 @@ import nmrglue as ng
 import numpy as np
 from scipy import signal
 
-from chem_spectra.model.converter.encoder import encode_datatable
+from chem_spectra.model.converter.datatable import DatatableModel
 
 
 THRESHOLD_IR = 0.93
@@ -10,7 +10,7 @@ THRESHOLD_NMR = 0.005
 THRESHOLD_MS = 0.05
 
 
-class JcampNIConverter(): # nmr & IR
+class JcampNIConverter: # nmr & IR
     def __init__(self, base):
         self.params = base.params
         self.dic = base.dic
@@ -337,9 +337,8 @@ class JcampNIConverter(): # nmr & IR
     def __set_datatable(self):
         y_factor = self.factor and self.factor['y']
         y_factor = y_factor or 1.0
-        return encode_datatable(
+        return DatatableModel().encode(
             self.ys,
-            self.boundary['y']['max'],
             y_factor
         )
 

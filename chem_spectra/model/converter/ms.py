@@ -14,7 +14,7 @@ MARGIN = 1
 tmp_dir = Path('./chem_spectra/tmp') # TBD
 
 
-class MSConverter():
+class MSConverter:
     def __init__(self, file, params=False):
         self.exact_mz, self.edit_scan, self.thres = self.__set_params(params)
         self.bound_high = self.exact_mz + MARGIN

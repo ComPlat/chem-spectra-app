@@ -2,7 +2,7 @@ import pytest
 import io
 
 from werkzeug.datastructures import FileStorage
-from chem_spectra.controller.helper import jcamp2cvp
+from chem_spectra.model.transformer import TransformerModel as TraModel
 
 target_dir = './tests/fixtures/'
 source_dir = 'source/'
@@ -27,7 +27,7 @@ def __fixture_path(orig_filename):
 def __generated_jcamp_temp(path, params=False):
     with open(path, 'rb') as f:
         file = FileStorage(f)
-        nicv, nicp = jcamp2cvp(file, params)
+        nicv, nicp = TraModel(file, params).jcamp2cvp()
         jcamp = nicp.tf_jcamp()
     return nicv, nicp, jcamp
 

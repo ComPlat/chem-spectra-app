@@ -2,7 +2,7 @@ import pytest
 import io
 
 from werkzeug.datastructures import FileStorage
-from chem_spectra.controller.helper import jcamp2cvp
+from chem_spectra.model.transformer import TransformerModel as TraModel
 
 
 target_dir = './tests/fixtures/'
@@ -27,7 +27,7 @@ separator_a = '$$ === CHEMSPECTRA PEAK TABLE AUTO ==='
 def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
         file = FileStorage(f)
-        nicv, nicp = jcamp2cvp(file, params)
+        nicv, nicp = TraModel(file, params).jcamp2cvp()
 
     parts = ''.join(nicp.meta).split(separator_e)
     if len(parts) == 1:

@@ -4,6 +4,14 @@ import numpy as np
 from os.path import basename
 
 
+ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw', 'mzml'])
+
+
+def allowed_file(file):
+    ext = file.filename.split('.')[-1].lower()
+    return ext in ALLOWED_EXTENSIONS
+
+
 def get_fname(abs_path, filename):
     if not filename:
         return basename(abs_path)

@@ -2,10 +2,8 @@ import nmrglue as ng
 import numpy as np
 from scipy import signal
 
-from chem_spectra.model.converter.encoder import encode_datatable
 
-
-class JcampBaseConverter():
+class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = self.__set_params(params)
         self.dic, self.data = self.__read(path)
