@@ -1,8 +1,8 @@
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 
-from chem_spectra.model.helper.share import store_str_in_tmp
-import chem_spectra.model.helper.chem.ifg as ifg
+from chem_spectra.lib.shared.buffer import store_str_in_tmp
+import chem_spectra.lib.chem.ifg as ifg
 
 class MoleculeModel:
     def __init__(self, molfile):

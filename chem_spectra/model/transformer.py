@@ -4,15 +4,15 @@ matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 
-from chem_spectra.model.helper.share import store_str_in_tmp
+from chem_spectra.lib.shared.buffer import store_str_in_tmp
 
-from chem_spectra.model.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.model.converter.jcamp.ni import JcampNIConverter
-from chem_spectra.model.converter.jcamp.ms import JcampMSConverter
-from chem_spectra.model.converter.ms import MSConverter
+from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
+from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
+from chem_spectra.lib.converter.ms import MSConverter
 
-from chem_spectra.model.composer.ni import NIComposer
-from chem_spectra.model.composer.ms import MSComposer
+from chem_spectra.lib.composer.ni import NIComposer
+from chem_spectra.lib.composer.ms import MSComposer
 
 
 class TransformerModel:

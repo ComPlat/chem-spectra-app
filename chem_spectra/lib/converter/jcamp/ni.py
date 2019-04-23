@@ -2,7 +2,7 @@ import nmrglue as ng
 import numpy as np
 from scipy import signal
 
-from chem_spectra.model.converter.datatable import DatatableModel
+from chem_spectra.lib.converter.datatable import DatatableModel
 
 
 THRESHOLD_IR = 0.93

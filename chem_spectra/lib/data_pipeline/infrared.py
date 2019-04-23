@@ -2,9 +2,9 @@ import numpy as np
 import tempfile
 from scipy import interpolate as sc_interpolate
 
-from chem_spectra.model.helper.share import store_str_in_tmp
-from chem_spectra.model.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.model.converter.jcamp.ni import JcampNIConverter
+from chem_spectra.lib.shared.buffer import store_str_in_tmp
+from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 
 
 class InfraredModel:

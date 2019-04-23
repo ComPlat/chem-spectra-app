@@ -3,7 +3,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from chem_spectra.model.composer.base import BaseComposer
+from chem_spectra.lib.composer.base import BaseComposer
 
 
 TEXT_SPECTRUM_ORIG = '$$ === CHEMSPECTRA SPECTRUM ORIG ===\n'

@@ -4,14 +4,14 @@ import numpy as np
 import json
 
 from chem_spectra.model.molecule import MoleculeModel
-from chem_spectra.model.infrared import InfraredModel
+from chem_spectra.lib.data_pipeline.infrared import InfraredModel
 
 url_nsdb = 'http://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
 hdr_nsdb = {
     'Content-Type': 'application/json'
 }
 
-url_deepir = 'http://127.0.0.1:2512/inference'
+url_deepir = 'http://127.0.0.1:2512/infer_ir'
 
 
 class InferencerModel:

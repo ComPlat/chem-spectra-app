@@ -4,7 +4,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.path as mpath
 
-from chem_spectra.model.composer.base import (
+from chem_spectra.lib.composer.base import (
     extrac_dic, calc_npoints, BaseComposer
 )
 

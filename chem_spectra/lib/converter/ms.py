@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 
-from chem_spectra.model.helper.share import store_byte_in_tmp
+from chem_spectra.lib.shared.buffer import store_byte_in_tmp
 
 MARGIN = 1
 
