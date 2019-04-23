@@ -35,7 +35,8 @@ $ waitress-serve --port=2412 --call 'chem_spectra:create_app'
 ### Run test
 
 ```
-$ pytest --disable-pytest-warnings
+$ coverage run -m pytest --disable-pytest-warnings
+$ coverage report
 ```
 
 
