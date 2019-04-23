@@ -1,7 +1,5 @@
 import pytest
 import io
-import json
-from fixtures.mock_predict import RequestPredictNmr
 
 
 target_dir = './tests/fixtures/'
@@ -9,14 +7,6 @@ source_dir = 'source/'
 file_jdx = '13C-DEPT135.dx'
 
 peaks_str = '745.0957757310398,0.2787140606224312#1018.4864309069585,0.31625977127489585#1154.473492548866,0.32047998816450246'
-
-
-def test_ping(client):
-    response = client.get(
-        '/ping',
-    )
-
-    assert response.status_code == 200
 
 
 def test_zip_jcamp_n_img(client):
@@ -114,83 +104,3 @@ def test_image(client):
 
     assert response.status_code == 200
     assert response.mimetype == 'image/png'
-
-
-def test_api_chemspectra_file_convert(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
-        file_content = f.read()
-    data = dict(
-        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
-    )
-    response = client.post(
-        '/api/v1/chemspectra/file/convert',
-        content_type='multipart/form-data',
-        data=data
-    )
-
-    assert response.status_code == 200
-    assert response.mimetype == 'application/json'
-
-
-def test_api_chemspectra_file_save(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
-        file_content = f.read()
-    data = dict(
-        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
-    )
-    response = client.post(
-        '/api/v1/chemspectra/file/save',
-        content_type='multipart/form-data',
-        data=data
-    )
-
-    assert response.status_code == 200
-    assert response.mimetype == 'application/zip'
-
-
-def test_api_chemspectra_predict_by_peaks_json(client):
-    response = client.post(
-        '/api/v1/chemspectra/predict/by_peaks_json',
-        content_type='application/json',
-        data=RequestPredictNmr().json()
-    )
-
-    assert response.status_code == 200
-    assert response.json['status'] == True
-    assert response.mimetype == 'application/json'
-
-
-def test_api_chemspectra_predict_by_peaks_form(client):
-    with open(target_dir + source_dir + '/molfile/svs813f1_B.mol', 'rb') as f:
-        file_content = f.read()
-    params = RequestPredictNmr().json()
-    params = json.loads(params)
-    data = dict(
-        molfile=(io.BytesIO(file_content), 'svs813f1_B.mol'),
-        layout=params['layout'],
-        peaks=json.dumps(params['peaks']),
-        shift=json.dumps(params['shift']),
-    )
-    response = client.post(
-        '/api/v1/chemspectra/predict/by_peaks_form',
-        content_type='multipart/form-data',
-        data=data
-    )
-    assert response.status_code == 200
-    assert response.json['status'] == True
-    assert response.mimetype == 'application/json'
-
-
-def test_api_chemspectra_molfile_convert(client):
-    with open(target_dir + source_dir + '/molfile/svs813f1_B.mol', 'rb') as f:
-        file_content = f.read()
-    data = dict(
-        molfile=(io.BytesIO(file_content), 'svs813f1_B.mol'),
-    )
-    response = client.post(
-        '/api/v1/chemspectra/molfile/convert',
-        content_type='multipart/form-data',
-        data=data
-    )
-    assert response.status_code == 200
-    assert response.mimetype == 'application/json'
