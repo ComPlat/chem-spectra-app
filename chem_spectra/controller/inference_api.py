@@ -11,7 +11,7 @@ infer_api = Blueprint('inference_api', __name__)
 
 
 @infer_api.route('/predict/by_peaks_json', methods=['POST'])
-@infer_api.route('/api/v1/chemspectra/predict/by_peaks_json', methods=['POST'])
+@infer_api.route('/api/v1/chemspectra/predict/nmr_peaks_json', methods=['POST'])
 def chemspectra_predict_by_peaks_json():
     try:
         payload = request.json
@@ -37,7 +37,7 @@ def chemspectra_predict_by_peaks_json():
 
 
 @infer_api.route('/predict/by_peaks_form', methods=['POST'])
-@infer_api.route('/api/v1/chemspectra/predict/by_peaks_form', methods=['POST'])
+@infer_api.route('/api/v1/chemspectra/predict/nmr_peaks_form', methods=['POST'])
 def chemspectra_predict_by_peaks_form():
     try:
         molfile = FileContainer(request.files['molfile'])

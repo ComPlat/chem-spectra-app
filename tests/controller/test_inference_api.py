@@ -13,7 +13,7 @@ source_dir = 'source/'
 @mock.patch('requests.post', mock.Mock(return_value=ResponsePredictNmr()))
 def test_api_chemspectra_predict_by_peaks_json(client):
     response = client.post(
-        '/api/v1/chemspectra/predict/by_peaks_json',
+        '/api/v1/chemspectra/predict/nmr_peaks_json',
         content_type='application/json',
         data=RequestPredictNmr().json()
     )
@@ -36,7 +36,7 @@ def test_api_chemspectra_predict_by_peaks_form(client):
         shift=json.dumps(params['shift']),
     )
     response = client.post(
-        '/api/v1/chemspectra/predict/by_peaks_form',
+        '/api/v1/chemspectra/predict/nmr_peaks_form',
         content_type='multipart/form-data',
         data=data
     )
