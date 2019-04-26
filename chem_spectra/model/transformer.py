@@ -46,7 +46,7 @@ class TransformerModel:
 
 
     def ms2composer(self):
-        mscv = MSConverter(self.file.core, self.params)
+        mscv = MSConverter(self.file, self.params)
         mscp = MSComposer(mscv)
         return mscp
 

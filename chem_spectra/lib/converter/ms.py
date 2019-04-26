@@ -22,9 +22,9 @@ class MSConverter:
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
         # - - - - - - - - - - -
-        fn = file.filename.split('.')
+        fn = file.name.split('.')
         self.fname, self.ext = fn[0], fn[-1].lower()
-        self.target_dir, self.hash_str = self.__mk_dir(file)
+        self.target_dir, self.hash_str = self.__mk_dir()
         self.__get_mzml(file)
         self.runs, self.spectra, self.auto_scan = self.__read_mz_ml()
         self.datatables = self.__set_datatables()
@@ -39,7 +39,7 @@ class MSConverter:
 
 
     def __get_mzml(self, file):
-        b_content = file.stream.read()
+        b_content = file.bcore
         if self.ext == 'raw':
             self.tf = store_byte_in_tmp(
                 b_content,
@@ -58,7 +58,7 @@ class MSConverter:
             )
 
 
-    def __mk_dir(self, file):
+    def __mk_dir(self):
         hash_str = '{}{}'.format(datetime.now(), self.fname)
         hash_str = str.encode(hash_str)
         hash_str = hashlib.md5(hash_str).hexdigest()
