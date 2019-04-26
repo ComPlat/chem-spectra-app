@@ -52,7 +52,7 @@ class InfraredModel:
         return x_o, y_o
 
 
-    def __use_absorption(self, x_i, y_i):
+    def __use_transmission(self, x_i, y_i):
         x_o = x_i
         y_o = y_i
 
@@ -82,7 +82,7 @@ class InfraredModel:
         x_full, y_full = self.__concat_boundary(x_order, y_order)
         x_itp, y_itp = self.__interpolate(x_full, y_full)
         x_itp_norm, y_itp_norm = self.__normalize(x_itp, y_itp)
-        x_itp_norm_abs, y_itp_norm_abs = self.__use_absorption(x_itp_norm, y_itp_norm)
+        x_itp_norm_abs, y_itp_norm_abs = self.__use_transmission(x_itp_norm, y_itp_norm)
         x_inac, y_inac = self.__chop(x_itp_norm_abs, y_itp_norm_abs)
 
         return x_inac, y_inac

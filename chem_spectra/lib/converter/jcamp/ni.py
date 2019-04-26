@@ -144,6 +144,12 @@ class JcampNIConverter: # nmr & IR
                 y = self.data[:]
             except:
                 pass
+        # transmission only # IR ABS vs TRANS
+        if self.typ == 'INFRARED':
+            y_median = np.median(y)
+            y_max = np.max(y)
+            if y_median < 0.5 * y_max:
+                y = y_max - y
 
         return y
 
@@ -162,12 +168,13 @@ class JcampNIConverter: # nmr & IR
 
 
     def __set_label(self):
+        target = { 'x': 'PPM', 'y': 'ARBITRARY' }
         try:
             x = self.dic['XUNITS'][self.target_idx]
             y = self.dic['YUNITS'][self.target_idx]
             x = 'PPM' if x.upper() == 'HZ' else x
             y = 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y
-            return { 'x': x, 'y': y }
+            target = { 'x': x, 'y': y }
         except:
             pass
 
@@ -175,11 +182,14 @@ class JcampNIConverter: # nmr & IR
             x, y, _ = dic['UNITS'][1].replace(' ', '').split(',')
             x = 'PPM' if x.upper() == 'HZ' else x
             y = 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y
-            return { 'x': x, 'y': y }
+            target = { 'x': x, 'y': y }
         except:
             pass
 
-        return { 'x': 'PPM', 'y': 'ARBITRARY' }
+        if 'absorb' in target['y'].lower(): # IR ABS vs TRANS
+            target['y'] = 'TRANSMITTANCE'
+
+        return target
 
 
     def __set_obs_freq(self):
