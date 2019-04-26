@@ -13,7 +13,7 @@ $ source activate chem-spectra
 ```
 
 ```
-$ conda install -c openbabel openbabel
+$ conda install -c rdkit rdkit
 ```
 
 ```
@@ -32,7 +32,6 @@ $ git clone git@bitbucket.org:ioc-general/nmrglue.git
 $ cd nmrglue
 $ git co show-all-data
 $ pip install -e .
-$ python setup.py install
 ```
 
 0.4 docker msconvert
