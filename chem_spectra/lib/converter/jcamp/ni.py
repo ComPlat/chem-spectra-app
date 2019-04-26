@@ -118,6 +118,12 @@ class JcampNIConverter: # nmr & IR
             except:
                 pass
 
+        if self.typ == 'INFRARED' and beg_pt < end_pt:
+            buf = beg_pt
+            beg_pt = end_pt
+            end_pt = buf
+            self.ys = self.ys[::-1]
+
         num_pt = self.ys.shape[0]
         x = np.linspace(
             beg_pt + self.params['delta'],
