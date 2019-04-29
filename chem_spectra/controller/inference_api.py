@@ -37,9 +37,9 @@ def chemspectra_predict_by_peaks_json():
 def chemspectra_predict_by_peaks_form():
     molfile = FileContainer(request.files['molfile'])
     layout = request.form.get('layout', default=None)
-    peaks = request.form.get('peaks', default=None)
+    peaks = request.form.get('peaks', default='{}')
     peaks = json.loads(peaks)
-    shift = request.form.get('shift', default=None)
+    shift = request.form.get('shift', default='{}')
     shift = json.loads(shift)
 
     if (not peaks) or (not molfile):

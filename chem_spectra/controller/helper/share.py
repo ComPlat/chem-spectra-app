@@ -1,6 +1,7 @@
 import io
 import zipfile
 import numpy as np
+import json
 from os.path import basename
 
 
@@ -40,6 +41,8 @@ def extract_params(request):
     thres = float(request.form.get('thres', default=0))
     mass = float(request.form.get('mass', default=0))
     clear = bool(request.form.get('clear', default=False))
+    json_predict = request.form.get('predict', default='{}')
+    predict = json.loads(json_predict)
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -51,6 +54,7 @@ def extract_params(request):
         'mass': mass,
         'molfile': request.form.get('molfile', default=None),
         'clear': clear,
+        'predict': predict,
     }
     has_params = (
         params.get('peaks_str') or
@@ -61,7 +65,8 @@ def extract_params(request):
         params.get('thres') or
         params.get('mass') or
         params.get('molfile') or
-        params.get('clear')
+        params.get('clear') or
+        params.get('predict')
     )
     if not has_params:
         params = False
