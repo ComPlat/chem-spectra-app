@@ -41,8 +41,7 @@ def extract_params(request):
     thres = float(request.form.get('thres', default=0))
     mass = float(request.form.get('mass', default=0))
     clear = bool(request.form.get('clear', default=False))
-    json_predict = request.form.get('predict', default='{}')
-    predict = json.loads(json_predict)
+    predict = request.form.get('predict', default='{}')
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),

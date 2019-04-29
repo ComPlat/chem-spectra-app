@@ -37,8 +37,10 @@ def chemspectra_file_save():
     filename = request.form.get('filename', default=None)
     params = extract_params(request)
     if file: # and allowed_file(file):
-        tf_jcamp, tf_img = TraModel(file, params).convert2jcamp_img()
-        memory = to_zip_response([tf_jcamp, tf_img], filename)
+        tm = TraModel(file, params)
+        tf_jcamp, tf_img = tm.convert2jcamp_img()
+        tf_arr = [tf_jcamp, tf_img, tm.tf_predict()]
+        memory = to_zip_response(tf_arr, filename)
         return send_file(
             memory,
             attachment_filename='spectrum.zip',

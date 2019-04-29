@@ -64,3 +64,11 @@ class TransformerModel:
             nicv = JcampNIConverter(jbcv)
             nicp = NIComposer(nicv)
             return nicv, nicp
+
+
+    def tf_predict(self):
+        tf = store_str_in_tmp(
+            self.params['predict'],
+            suffix='.json',
+        )
+        return tf
