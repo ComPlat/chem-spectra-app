@@ -2,16 +2,14 @@ import io
 import requests
 import numpy as np
 import json
+from flask import current_app
 
 from chem_spectra.model.molecule import MoleculeModel
 from chem_spectra.lib.data_pipeline.infrared import InfraredModel
 
-url_nsdb = 'http://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
 hdr_nsdb = {
     'Content-Type': 'application/json'
 }
-
-url_deepir = 'http://127.0.0.1:2512/infer_ir'
 
 
 class InferencerModel:
@@ -47,12 +45,20 @@ class InferencerModel:
         if self.layout == '1H':
             typ = 'nmr;1H;1d'
             data = self.__build_data(typ, peak_xs, solvent)
-            rsp = requests.post(url_nsdb, headers=hdr_nsdb, json=data)
+            rsp = requests.post(
+                current_app.config['URL_NSHIFTDB'],
+                headers=hdr_nsdb,
+                json=data,
+            )
             return rsp
         elif self.layout == '13C':
             typ = 'nmr;13C;1d'
             data = self.__build_data(typ, peak_xs, solvent)
-            rsp = requests.post(url_nsdb, headers=hdr_nsdb, json=data)
+            rsp = requests.post(
+                current_app.config['URL_NSHIFTDB'],
+                headers=hdr_nsdb,
+                json=data,
+            )
             return rsp
 
         return False
@@ -101,5 +107,9 @@ class InferencerModel:
         file = buf.getvalue()
         files = { 'file': (file) }
 
-        rsp = requests.post(url_deepir, files=files, data=fgs)
+        rsp = requests.post(
+            current_app.config['URL_DEEPIR'],
+            files=files,
+            data=fgs,
+        )
         return rsp
