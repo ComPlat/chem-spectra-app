@@ -3,9 +3,9 @@
 
 ### 0. prepare
 
-0.1. install Anaconda.
+##### 0.1. install Anaconda.
 
-0.2. create env
+##### 0.2. create env
 
 ```
 $ conda create --name chem-spectra python=3.5
@@ -22,7 +22,7 @@ $ cd chem-spectra-app
 $ python setup.py install
 ```
 
-0.3 install nmrglue
+##### 0.3 install nmrglue
 
 ```
 $ pip uninstall nmrglue
@@ -34,7 +34,7 @@ $ git co show-all-data
 $ pip install -e .
 ```
 
-0.4 docker msconvert
+##### 0.4 docker msconvert
 
 ```
 $ docker pull chambm/pwiz-skyline-i-agree-to-the-vendor-licenses
@@ -78,4 +78,11 @@ This web service will return a zip file containing an image and a modified jcamp
 ```
 POST xxx.xxx.xxx.xxx:2412/peak_zip_jcamp_n_img
 body = { file: target.jdx }
+```
+
+### 4. Run test
+
+```
+$ coverage run -m pytest --disable-pytest-warnings
+$ coverage report
 ```
