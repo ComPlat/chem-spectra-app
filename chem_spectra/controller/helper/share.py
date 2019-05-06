@@ -36,11 +36,18 @@ def to_zip_response(src_tmp_arr, filename=False):
     return memory
 
 
+def parse_float(val, default):
+    try:
+        return float(val)
+    except:
+        return float(default)
+
+
 def extract_params(request):
-    scan = float(request.form.get('scan', default=0))
-    scan = 0 if np.isnan(scan) else int(scan)
-    thres = float(request.form.get('thres', default=0))
-    mass = float(request.form.get('mass', default=0))
+    scan = parse_float(request.form.get('scan', default=1), 1)
+    scan = int(scan)
+    thres = parse_float(request.form.get('thres', default=5.0), 5.0)
+    mass = parse_float(request.form.get('mass', default=1.0), 1.0)
     clear = bool(request.form.get('clear', default=False))
     predict = request.form.get('predict', default='{}')
 
