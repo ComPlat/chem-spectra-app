@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -67,6 +68,10 @@ class TransformerModel:
 
 
     def tf_predict(self):
+        target = json.loads(self.params['predict'])
+        if not target['result'][0]:
+            return False
+
         tf = store_str_in_tmp(
             self.params['predict'],
             suffix='.json',

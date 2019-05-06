@@ -22,7 +22,8 @@ def get_fname(abs_path, filename):
     return filename + '.' + ext
 
 
-def to_zip_response(tmp_arr, filename=False):
+def to_zip_response(src_tmp_arr, filename=False):
+    tmp_arr = [el for el in src_tmp_arr if el]
     memory = io.BytesIO()
     with zipfile.ZipFile(memory, 'w') as zf:
         for tmp in tmp_arr:
