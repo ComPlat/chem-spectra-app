@@ -18,12 +18,13 @@ tmp_dir = Path('./chem_spectra/tmp') # TBD
 
 class MSConverter:
     def __init__(self, file, params=False):
-        self.exact_mz, self.edit_scan, self.thres = self.__set_params(params)
+        self.exact_mz, self.edit_scan, self.thres, param_ext = self.__set_params(params)
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
         # - - - - - - - - - - -
         fn = file.name.split('.')
-        self.fname, self.ext = fn[0], fn[-1].lower()
+        self.fname = fn[0]
+        self.ext = param_ext or fn[-1].lower()
         self.target_dir, self.hash_str = self.__mk_dir()
         self.__get_mzml(file)
         self.runs, self.spectra, self.auto_scan = self.__read_mz_ml()
@@ -35,7 +36,8 @@ class MSConverter:
         exact_mz = params.get('mass', 0) if params else 0
         edit_scan = params.get('scan', 0) if params else 0
         thres = params.get('thres', 5) if params else 5
-        return exact_mz, edit_scan, thres
+        ext = params.get('ext', '') if params else ''
+        return exact_mz, edit_scan, thres, ext
 
 
     def __get_mzml(self, file):

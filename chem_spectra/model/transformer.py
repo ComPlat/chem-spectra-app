@@ -39,7 +39,8 @@ class TransformerModel:
 
     def to_composer(self):
         not_jcamp = self.file.name.split('.')[-1].lower() in ['raw', 'mzml']
-        if not_jcamp:
+        not_jcamp_by_params = self.params['ext'] in ['raw', 'mzml']
+        if not_jcamp or not_jcamp_by_params:
             return self.ms2composer()
 
         cv, cp = self.jcamp2cvp()

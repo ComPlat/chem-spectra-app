@@ -5,7 +5,7 @@ import json
 from os.path import basename
 
 
-ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw', 'mzml'])
+ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw', 'mzml', 'jcamp'])
 
 
 def allowed_file(file):
@@ -49,6 +49,7 @@ def extract_params(request):
     thres = parse_float(request.form.get('thres', default=5.0), 5.0)
     mass = parse_float(request.form.get('mass', default=1.0), 1.0)
     clear = bool(request.form.get('clear', default=False))
+    ext = request.form.get('ext', default='')
     predict = request.form.get('predict', default='{}')
 
     params = {
@@ -62,6 +63,7 @@ def extract_params(request):
         'molfile': request.form.get('molfile', default=None),
         'clear': clear,
         'predict': predict,
+        'ext': ext,
     }
     has_params = (
         params.get('peaks_str') or
@@ -73,7 +75,8 @@ def extract_params(request):
         params.get('mass') or
         params.get('molfile') or
         params.get('clear') or
-        params.get('predict')
+        params.get('predict') or
+        params.get('ext')
     )
     if not has_params:
         params = False
