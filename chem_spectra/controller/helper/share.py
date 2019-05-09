@@ -1,7 +1,7 @@
 import io
 import zipfile
-import numpy as np
 import json
+import math
 from os.path import basename
 
 
@@ -44,9 +44,9 @@ def parse_float(val, default):
 
 
 def extract_params(request):
-    scan = parse_float(request.form.get('scan', default=1), 1)
-    scan = int(scan)
-    thres = parse_float(request.form.get('thres', default=5.0), 5.0)
+    scan = parse_float(request.form.get('scan', default=0), 0)
+    scan = 0 if math.isnan(scan) else int(scan)
+    thres = parse_float(request.form.get('thres', default=0.0), 0.0)
     mass = parse_float(request.form.get('mass', default=1.0), 1.0)
     clear = bool(request.form.get('clear', default=False))
     ext = request.form.get('ext', default='')
