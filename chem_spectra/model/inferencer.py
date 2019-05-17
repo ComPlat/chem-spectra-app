@@ -46,7 +46,7 @@ class InferencerModel:
             typ = 'nmr;1H;1d'
             data = self.__build_data(typ, peak_xs, solvent)
             rsp = requests.post(
-                current_app.config['URL_NSHIFTDB'],
+                current_app.config.get('URL_NSHIFTDB'),
                 headers=hdr_nsdb,
                 json=data,
             )
@@ -55,7 +55,7 @@ class InferencerModel:
             typ = 'nmr;13C;1d'
             data = self.__build_data(typ, peak_xs, solvent)
             rsp = requests.post(
-                current_app.config['URL_NSHIFTDB'],
+                current_app.config.get('URL_NSHIFTDB'),
                 headers=hdr_nsdb,
                 json=data,
             )
@@ -108,7 +108,7 @@ class InferencerModel:
         files = { 'file': (file) }
 
         rsp = requests.post(
-            current_app.config['URL_DEEPIR'],
+            current_app.config.get('URL_DEEPIR'),
             files=files,
             data=fgs,
         )

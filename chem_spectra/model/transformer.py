@@ -70,7 +70,7 @@ class TransformerModel:
 
     def tf_predict(self):
         target = json.loads(self.params['predict'])
-        if not target['result'][0]:
+        if not target.get('result') or not target.get('result')[0]:
             return False
 
         tf = store_str_in_tmp(
