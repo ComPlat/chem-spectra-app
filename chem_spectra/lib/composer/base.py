@@ -26,7 +26,6 @@ class BaseComposer:
         self.title = None
         self.meta = None
 
-
     def __header_pk_common(self):
         return [
             '##TITLE={}\n'.format(self.title),
@@ -40,17 +39,15 @@ class BaseComposer:
             '##MINY={}\n'.format(self.core.boundary['y']['min'])
         ]
 
-
     def __inherit_sample_description(self):
         try:
             target = self.core.dic['SAMPLEDESCRIPTION'][-1]
             if target and (target != ''):
                 return target
-        except:
+        except:  # noqa
             pass
 
         return ''
-
 
     def __create_sample_description(self):
         select_x = self.core.params['select_x']
@@ -81,23 +78,20 @@ class BaseComposer:
 
         return spl_desc
 
-
     def gen_headers_root(self):
         return [
             '##TITLE={}\n'.format(self.title),
             '##JCAMP-DX=5.0\n',
             '##DATA TYPE=LINK\n',
-            '##BLOCKS=1\n', # TBD
+            '##BLOCKS=1\n',  # TBD
             '\n'
         ]
-
 
     def gen_ending(self):
         return [
             '##END=\n',
             '\n'
         ]
-
 
     def gen_spectrum_orig(self):
         c_spectrum_orig = [
@@ -107,10 +101,8 @@ class BaseComposer:
         c_spectrum_orig.extend(self.core.datatable)
         return c_spectrum_orig
 
-
     def gen_headers_peaktable_auto(self):
         return ['\n', TEXT_PEAK_AUTO] + self.__header_pk_common()
-
 
     def gen_auto_peaktable(self):
         content = [
@@ -129,13 +121,11 @@ class BaseComposer:
 
         return content
 
-
     def gen_headers_peaktable_edit(self):
         header = self.__header_pk_common()
         spl_desc = self.__create_sample_description()
 
         return ['\n', TEXT_PEAK_EDIT] + header + spl_desc
-
 
     def gen_edit_peaktable(self):
         content = [
@@ -154,11 +144,9 @@ class BaseComposer:
 
         return content
 
-
     def tf_jcamp(self):
         meta = ''.join(self.meta)
         tf = tempfile.NamedTemporaryFile(suffix='.jdx')
-        with open(tf.name, 'w') as f:
-            tf.write(bytes(meta, 'UTF-8'))
-            tf.seek(0)
+        tf.write(bytes(meta, 'UTF-8'))
+        tf.seek(0)
         return tf

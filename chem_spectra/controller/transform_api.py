@@ -1,10 +1,10 @@
 from flask import (
-    Flask, Blueprint, request, jsonify, send_file, abort,
+    Blueprint, request, send_file,
 )
+# from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
-from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.share import (
-    allowed_file, to_zip_response, extract_params
+    to_zip_response, extract_params
 )
 
 from chem_spectra.model.transformer import TransformerModel as TraModel
@@ -15,7 +15,8 @@ trans_api = Blueprint('transform_api', __name__)
 
 @trans_api.before_app_request
 def filter_remote_ip():
-    trusted_servers = get_ip_white_list()
+    pass
+    # trusted_servers = get_ip_white_list()
     # if request.remote_addr not in trusted_servers:
     #     abort(403)
 
@@ -24,7 +25,7 @@ def filter_remote_ip():
 def zip_jcamp_n_img():
     file = FileContainer(request.files['file'])
     params = extract_params(request)
-    if file: # and allowed_file(file):
+    if file:  # and allowed_file(file):
         tf_jcamp, tf_img = TraModel(file, params).convert2jcamp_img()
         memory = to_zip_response([tf_jcamp, tf_img])
         return send_file(
@@ -38,7 +39,7 @@ def zip_jcamp_n_img():
 def zip_jcamp():
     file = FileContainer(request.files['file'])
     params = extract_params(request)
-    if file: # and allowed_file(file):
+    if file:  # and allowed_file(file):
         tf_jcamp = TraModel(file, params).convert2jcamp()
         memory = to_zip_response([tf_jcamp])
         return send_file(
@@ -52,7 +53,7 @@ def zip_jcamp():
 def zip_image():
     file = FileContainer(request.files['file'])
     params = extract_params(request)
-    if file: # and allowed_file(file):
+    if file:  # and allowed_file(file):
         tf_img = TraModel(file, params).convert2img()
         memory = to_zip_response([tf_img])
         return send_file(
@@ -66,7 +67,7 @@ def zip_image():
 def jcamp():
     file = FileContainer(request.files['file'])
     params = extract_params(request)
-    if file: # and allowed_file(file):
+    if file:  # and allowed_file(file):
         tf_jcamp = TraModel(file, params).convert2jcamp()
         return send_file(
             tf_jcamp,
@@ -79,7 +80,7 @@ def jcamp():
 def image():
     file = FileContainer(request.files['file'])
     params = extract_params(request)
-    if file: # and allowed_file(file):
+    if file:  # and allowed_file(file):
         tf_img = TraModel(file, params).convert2img()
         return send_file(
             tf_img,

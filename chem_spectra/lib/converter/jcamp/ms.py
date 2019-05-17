@@ -1,12 +1,7 @@
-import nmrglue as ng
-import numpy as np
-from scipy import signal
-
-
 MARGIN = 1
 
 
-class JcampMSConverter: # nmr & IR
+class JcampMSConverter:  # nmr & IR
     def __init__(self, base):
         self.params = base.params
         self.dic = base.dic
@@ -16,14 +11,13 @@ class JcampMSConverter: # nmr & IR
         self.title = base.title
         self.typ = base.typ
         # - - - - - - - - - - -
-        self.exact_mz, self.edit_scan, self.thres = self.__set_params(base.params)
+        self.exact_mz, self.edit_scan, self.thres = self.__set_params(base.params)  # noqa
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
         # - - - - - - - - - - -
         self.fname = base.title
         self.runs, self.spectra, self.auto_scan = self.__read_mz_ml()
         self.datatables = self.__set_datatables()
-
 
     def __set_params(self, params):
         exact_mz = params.get('mass', 0) if params else 0
@@ -36,7 +30,6 @@ class JcampMSConverter: # nmr & IR
         ethres = float(ethres[0]) * 100.0 if len(ethres) > 0 else None
         thres = pthres or ethres or None
         return exact_mz, edit_scan, thres
-
 
     def __get_ratio(self, spc):
         all_ys, ratio = [], 0
@@ -69,7 +62,6 @@ class JcampMSConverter: # nmr & IR
                 match_oorg_xs.append(pk[0])
                 match_oorg_ys.append(pk[1])
 
-        max_all = max(all_ys, default=0)
         max_base = max(match_base_ys, default=0.1)
         max_seed = max(match_seed_ys, default=0)
         max_oorg = max(match_oorg_ys, default=0)
@@ -79,9 +71,9 @@ class JcampMSConverter: # nmr & IR
 
         return ratio, noise_ratio
 
-
     def __decode(self, runs):
-        spectra, best_ratio, best_idx, backup_ratio, backup_idx = [], 0, 0, 0, 0
+        spectra = []
+        best_ratio, best_idx, backup_ratio, backup_idx = 0, 0, 0, 0
         for idx, data in enumerate(runs):
             spectra.append(data)
 
@@ -98,12 +90,10 @@ class JcampMSConverter: # nmr & IR
 
         return spectra, (output_idx + 1)
 
-
     def __read_mz_ml(self):
         runs, spectra, auto_scan = self.data['real'], None, 0
         spectra, auto_scan = self.__decode(runs)
         return runs, spectra, auto_scan
-
 
     def __set_datatables(self):
         dts = []
@@ -119,5 +109,5 @@ class JcampMSConverter: # nmr & IR
                         ys[idx]
                     )
                 )
-            dts.append({ 'dt': dt, 'pts': pts })
+            dts.append({'dt': dt, 'pts': pts})
         return dts

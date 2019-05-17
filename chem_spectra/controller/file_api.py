@@ -1,13 +1,12 @@
-import json
 import base64
 from flask import (
-    Flask, Blueprint, request, jsonify, send_file, abort,
+    Blueprint, request, jsonify, send_file,
 )
 
-from chem_spectra.controller.helper.settings import get_ip_white_list
+# from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.share import (
-    allowed_file, to_zip_response, extract_params
+    to_zip_response, extract_params
 )
 from chem_spectra.model.transformer import TransformerModel as TraModel
 from chem_spectra.model.molecule import MoleculeModel
@@ -36,7 +35,7 @@ def chemspectra_file_save():
     file = FileContainer(request.files['file'])
     filename = request.form.get('filename', default=None)
     params = extract_params(request)
-    if file: # and allowed_file(file):
+    if file:  # and allowed_file(file):
         tm = TraModel(file, params)
         tf_jcamp, tf_img = tm.convert2jcamp_img()
         tf_arr = [tf_jcamp, tf_img, tm.tf_predict()]

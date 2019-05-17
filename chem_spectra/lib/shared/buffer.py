@@ -17,7 +17,6 @@ def store_byte_in_tmp(b_content, prefix='tmp', suffix='', directory=None):
         suffix=suffix,
         dir=directory
     )
-    with open(tf.name, 'w') as f:
-        tf.write(b_content)
+    tf.write(b_content)
     tf.file.seek(0)
     return tf

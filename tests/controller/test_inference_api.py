@@ -1,4 +1,3 @@
-import pytest
 import io
 import json
 from unittest import mock
@@ -19,7 +18,7 @@ def test_api_chemspectra_predict_by_peaks_json(client):
     )
 
     assert response.status_code == 200
-    assert response.json['status'] == True
+    assert response.json['status'] == True  # noqa
     assert response.mimetype == 'application/json'
 
 
@@ -41,7 +40,7 @@ def test_api_chemspectra_predict_by_peaks_form(client):
         data=data
     )
     assert response.status_code == 200
-    assert response.json['status'] == True
+    assert response.json['status'] == True  # noqa
     assert response.mimetype == 'application/json'
 
 
@@ -61,5 +60,5 @@ def test_api_chemspectra_predict_infrared(client):
         data=data
     )
     assert response.status_code == 200
-    assert json.loads(response.json)['status'] == True
+    assert json.loads(response.json)['status'] == True  # noqa
     assert response.mimetype == 'application/json'

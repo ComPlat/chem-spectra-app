@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=[ # 'nmrglue',
+    install_requires=[  # 'nmrglue',
         'flask==1.0.2',
         'numpy',
         'scipy==1.2.0',

@@ -1,9 +1,9 @@
 import json
 from flask import (
-    Flask, Blueprint, request, redirect, jsonify, send_file, abort,
+    Blueprint, request, jsonify, abort,
 )
 
-from chem_spectra.controller.helper.settings import get_ip_white_list
+# from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.inferencer import InferencerModel as InferModel
 
@@ -11,7 +11,9 @@ infer_api = Blueprint('inference_api', __name__)
 
 
 @infer_api.route('/predict/by_peaks_json', methods=['POST'])
-@infer_api.route('/api/v1/chemspectra/predict/nmr_peaks_json', methods=['POST'])
+@infer_api.route(
+    '/api/v1/chemspectra/predict/nmr_peaks_json', methods=['POST']
+)
 def chemspectra_predict_by_peaks_json():
     payload = request.json
     layout = payload.get('layout')
@@ -33,7 +35,9 @@ def chemspectra_predict_by_peaks_json():
 
 
 @infer_api.route('/predict/by_peaks_form', methods=['POST'])
-@infer_api.route('/api/v1/chemspectra/predict/nmr_peaks_form', methods=['POST'])
+@infer_api.route(
+    '/api/v1/chemspectra/predict/nmr_peaks_form', methods=['POST']
+)
 def chemspectra_predict_by_peaks_form():
     molfile = FileContainer(request.files['molfile'])
     layout = request.form.get('layout', default=None)

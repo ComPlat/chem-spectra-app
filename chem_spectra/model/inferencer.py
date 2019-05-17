@@ -23,7 +23,6 @@ class InferencerModel:
         self.shift = shift
         self.spectrum = spectrum
 
-
     @classmethod
     def predict_nmr(
         cls,
@@ -36,7 +35,6 @@ class InferencerModel:
             shift=shift
         )
         return instance.__predict_nmr()
-
 
     def __predict_nmr(self):
         peak_xs = self.__extract_x()
@@ -63,7 +61,6 @@ class InferencerModel:
 
         return False
 
-
     def __extract_x(self):
         total = []
         for p in self.peaks:
@@ -71,10 +68,9 @@ class InferencerModel:
 
         return ';'.join(total)
 
-
     def __build_data(self, typ, peak_xs, solvent):
         return {
-            'inputs':[
+            'inputs': [
                 {
                     'id': 1,
                     'type': typ,
@@ -85,7 +81,6 @@ class InferencerModel:
             'moltxt': self.molfile
         }
 
-
     @classmethod
     def predict_ir(cls, molfile=False, spectrum=False):
         instance = cls(
@@ -94,10 +89,9 @@ class InferencerModel:
         )
         return instance.__predict_ir()
 
-
     def __predict_ir(self):
         mm = MoleculeModel(self.molfile)
-        fgs = { 'fgs': json.dumps(mm.fgs()) }
+        fgs = {'fgs': json.dumps(mm.fgs())}
 
         im = InfraredModel(self.spectrum)
         xs, ys = im.standarize()
@@ -105,7 +99,7 @@ class InferencerModel:
         buf = io.BytesIO()
         np.savez(buf, ys=ys)
         file = buf.getvalue()
-        files = { 'file': (file) }
+        files = {'file': (file)}
 
         rsp = requests.post(
             current_app.config.get('URL_DEEPIR'),

@@ -1,12 +1,12 @@
 import tempfile
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.path as mpath
 
 from chem_spectra.lib.composer.base import (
     extrac_dic, calc_npoints, BaseComposer
 )
+matplotlib.use('Agg')
 
 TEXT_SPECTRUM_ORIG = '$$ === CHEMSPECTRA SPECTRUM ORIG ===\n'
 
@@ -16,7 +16,6 @@ class NIComposer(BaseComposer):
         super().__init__(core)
         self.title = core.title
         self.meta = self.__compose()
-
 
     def __header_base(self):
         return [
@@ -30,14 +29,18 @@ class NIComposer(BaseComposer):
             '##OWNER={}\n'.format(extrac_dic(self.core, 'OWNER')),
         ]
 
-
     def __header_nmr(self):
         return [
-            '##.OBSERVE FREQUENCY={}\n'.format(extrac_dic(self.core, '.OBSERVEFREQUENCY')),
-            '##.OBSERVE NUCLEUS={}\n'.format(extrac_dic(self.core, '.OBSERVENUCLEUS')),
-            '##SPECTROMETER/DATA SYSTEM={}\n'.format(extrac_dic(self.core, 'SPECTROMETER/DATASYSTEM')),
+            '##.OBSERVE FREQUENCY={}\n'.format(
+                extrac_dic(self.core, '.OBSERVEFREQUENCY')
+            ),
+            '##.OBSERVE NUCLEUS={}\n'.format(
+                extrac_dic(self.core, '.OBSERVENUCLEUS')
+            ),
+            '##SPECTROMETER/DATA SYSTEM={}\n'.format(
+                extrac_dic(self.core, 'SPECTROMETER/DATASYSTEM')
+            ),
         ]
-
 
     def __header_params(self):
         return [
@@ -53,13 +56,12 @@ class NIComposer(BaseComposer):
             '##MINY={}\n'.format(self.core.boundary['y']['min'])
         ]
 
-
     def __gen_headers_spectrum_orig(self):
         if self.core.typ == 'INFRARED':
             return self.__header_base() + self.__header_params()
         else:
-            return self.__header_base() + self.__header_nmr() + self.__header_params()
-
+            return self.__header_base() + \
+                self.__header_nmr() + self.__header_params()
 
     def __compose(self):
         meta = []
@@ -81,7 +83,6 @@ class NIComposer(BaseComposer):
         meta.extend(self.gen_ending())
         return meta
 
-
     def __plt_nbins(self):
         typ = self.core.typ
         if 'NMR' == typ:
@@ -92,7 +93,6 @@ class NIComposer(BaseComposer):
             return 20
         return 20
 
-
     def __fakto(self):
         typ = self.core.typ
         if 'NMR' == typ:
@@ -102,7 +102,6 @@ class NIComposer(BaseComposer):
         elif 'INFRARED' == typ:
             return -1
         return 1
-
 
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]

@@ -1,6 +1,3 @@
-import math
-
-
 # Reference
 # https://github.com/jjhelmus/nmrglue/blob/master/nmrglue/fileio/jcampdx.py#L125
 DICT_DIGITS = {"0": "@",
@@ -19,14 +16,12 @@ class DatatableModel:
             num_abs_lst[0] = DICT_DIGITS[num_abs_lst[0]]
         return ''.join(num_abs_lst)
 
-
     def __encode_row(self, x, ys):
         output = [str(x)]
         for idx, y in enumerate(ys):
             output.append(self.__to_encode_str(y))
 
         return ''.join(output) + '\n'
-
 
     def encode(self, arr_ys, y_factor):
         total_count = arr_ys.shape[0]

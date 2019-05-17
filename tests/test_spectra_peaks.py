@@ -1,6 +1,3 @@
-import pytest
-import io
-
 from werkzeug.datastructures import FileStorage
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.transformer import TransformerModel as TraModel
@@ -24,6 +21,7 @@ meta_SVS_790A_13C_jdx = 'meta_SVS-790A_13C'
 
 separator_e = '$$ === CHEMSPECTRA PEAK TABLE EDIT ==='
 separator_a = '$$ === CHEMSPECTRA PEAK TABLE AUTO ==='
+
 
 def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
@@ -119,6 +117,7 @@ params_1 = {
     'peaks_str': '1.1,1.112#2.2,2.224#3.3,3.336',
 }
 
+
 def test_params_meta_IR_dx():
     ps_meta_content = __generated_peaks_meta(IR_dx, params_1)
     meta_target = __target_peaks_meta('ps/ps_' + meta_IR_dx)
@@ -155,7 +154,9 @@ def test_auto_params_meta_1H():
 
 
 def test_auto_params_auto_meta_13C_DEPT135():
-    auto_meta_content = __generated_peaks_meta('auto/auto_' + C13_DEPT135_dx, params_1)
+    auto_meta_content = __generated_peaks_meta(
+        'auto/auto_' + C13_DEPT135_dx, params_1
+    )
     meta_target = __target_peaks_meta('auto/auto_ps_' + meta_C13_DEPT135_dx)
     assert auto_meta_content == meta_target
 
@@ -171,14 +172,16 @@ def test_edit_params_meta_IR_dx():
     assert edit_meta_content == meta_target
 
 
-def test_auto_params_meta_1H():
+def test_edit_params_meta_1H():
     auto_meta_content = __generated_peaks_meta('edit/edit_' + H1_dx, params_1)
     meta_target = __target_peaks_meta('auto/auto_ps_' + meta_H1_dx)
     assert auto_meta_content == meta_target
 
 
-def test_auto_params_auto_meta_13C_DEPT135():
-    auto_meta_content = __generated_peaks_meta('edit/edit_' + C13_DEPT135_dx, params_1)
+def test_edit_params_auto_meta_13C_DEPT135():
+    auto_meta_content = __generated_peaks_meta(
+        'edit/edit_' + C13_DEPT135_dx, params_1
+        )
     meta_target = __target_peaks_meta('auto/auto_ps_' + meta_C13_DEPT135_dx)
     assert auto_meta_content == meta_target
 
@@ -240,6 +243,8 @@ params_3 = {
 
 
 def test_inherit_wihtout_params_1H():
-    inherit_meta_content = __generated_peaks_meta('edit/inherit_' + H1_dx, params_3)
+    inherit_meta_content = __generated_peaks_meta(
+        'edit/inherit_' + H1_dx, params_3
+    )
     meta_target = __target_peaks_meta('edit/inherit_' + meta_H1_dx)
     assert inherit_meta_content == meta_target

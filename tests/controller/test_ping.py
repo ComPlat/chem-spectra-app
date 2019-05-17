@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_ping(client):
     response = client.get(
         '/ping',

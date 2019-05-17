@@ -1,9 +1,7 @@
 import hashlib
 import subprocess as sbp
-import os
 import pymzml
 import time
-import tempfile
 import shutil
 
 from pathlib import Path
@@ -13,12 +11,12 @@ from chem_spectra.lib.shared.buffer import store_byte_in_tmp
 
 MARGIN = 1
 
-tmp_dir = Path('./chem_spectra/tmp') # TBD
+tmp_dir = Path('./chem_spectra/tmp')  # TBD
 
 
 class MSConverter:
     def __init__(self, file, params=False):
-        self.exact_mz, self.edit_scan, self.thres, param_ext = self.__set_params(params)
+        self.exact_mz, self.edit_scan, self.thres, param_ext = self.__set_params(params)  # noqa
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
         # - - - - - - - - - - -
@@ -31,14 +29,12 @@ class MSConverter:
         self.datatables = self.__set_datatables()
         self.__clean()
 
-
     def __set_params(self, params):
         exact_mz = params.get('mass', 0) if params else 0
         edit_scan = params.get('scan', 0) if params else 0
         thres = params.get('thres', 5) if params else 5
         ext = params.get('ext', '') if params else ''
         return exact_mz, edit_scan, thres, ext
-
 
     def __get_mzml(self, file):
         b_content = file.bcore
@@ -59,7 +55,6 @@ class MSConverter:
                 directory=self.target_dir.absolute().as_posix()
             )
 
-
     def __mk_dir(self):
         hash_str = '{}{}'.format(datetime.now(), self.fname)
         hash_str = str.encode(hash_str)
@@ -68,9 +63,7 @@ class MSConverter:
         target_dir.mkdir(parents=True, exist_ok=True)
         return target_dir, hash_str
 
-
     def __build_cmd_msconvert(self):
-        dk_img = 'chambm/pwiz-skyline-i-agree-to-the-vendor-licenses'
         cmd_msconvert = [
             'docker',
             'exec',
@@ -85,10 +78,8 @@ class MSConverter:
         ]
         return cmd_msconvert
 
-
     def __run_cmd(self):
         sbp.run(self.cmd_msconvert, timeout=10)
-
 
     def __get_mzml_path(self):
         fname = ''.join(self.tf.name.split('/')[-1])
@@ -96,7 +87,6 @@ class MSConverter:
         fname = '{}.mzML'.format(fname)
         mzml_path = self.target_dir / fname
         return mzml_path
-
 
     def __get_ratio(self, spc):
         all_ys, ratio = [], 0
@@ -129,7 +119,6 @@ class MSConverter:
                 match_oorg_xs.append(pk[0])
                 match_oorg_ys.append(pk[1])
 
-        max_all = max(all_ys, default=0)
         max_base = max(match_base_ys, default=0.1)
         max_seed = max(match_seed_ys, default=0)
         max_oorg = max(match_oorg_ys, default=0)
@@ -139,9 +128,9 @@ class MSConverter:
 
         return ratio, noise_ratio
 
-
     def __decode(self, runs):
-        spectra, best_ratio, best_idx, backup_ratio, backup_idx = [], 0, 0, 0, 0
+        spectra = []
+        best_ratio, best_idx, backup_ratio, backup_idx = 0, 0, 0, 0
         for idx, data in enumerate(runs):
             spc = data.peaks('raw')
             spectra.append(spc)
@@ -159,7 +148,6 @@ class MSConverter:
 
         return spectra, (output_idx + 1)
 
-
     def __read_mz_ml(self):
         mzml_path = self.__get_mzml_path()
         mzml_file = mzml_path.absolute().as_posix()
@@ -175,7 +163,7 @@ class MSConverter:
                     spectra, auto_scan = self.__decode(runs)
                     break
                 # except Exception as e: print(e)
-                except:
+                except:  # noqa
                     pass
             else:
                 elapsed += 0.1
@@ -184,7 +172,6 @@ class MSConverter:
                 break
 
         return runs, spectra, auto_scan
-
 
     def __set_datatables(self):
         dts = []
@@ -200,9 +187,8 @@ class MSConverter:
                         ys[idx]
                     )
                 )
-            dts.append({ 'dt': dt, 'pts': pts })
+            dts.append({'dt': dt, 'pts': pts})
         return dts
-
 
     def __clean(self):
         self.tf.close()

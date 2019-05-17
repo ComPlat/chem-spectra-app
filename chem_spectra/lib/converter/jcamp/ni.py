@@ -1,4 +1,3 @@
-import nmrglue as ng
 import numpy as np
 from scipy import signal
 
@@ -10,7 +9,7 @@ THRESHOLD_NMR = 0.005
 THRESHOLD_MS = 0.05
 
 
-class JcampNIConverter: # nmr & IR
+class JcampNIConverter:  # nmr & IR
     def __init__(self, base):
         self.params = base.params
         self.dic = base.dic
@@ -36,19 +35,17 @@ class JcampNIConverter: # nmr & IR
         self.datatable = self.__set_datatable()
         self.__read_peak_from_file()
 
-
     def __thres(self):
         dt = self.datatype
         if 'NMR SPECTRUM' == dt:
             return THRESHOLD_NMR
-        elif 'NMRSPECTRUM' == dt: # MNova
+        elif 'NMRSPECTRUM' == dt:  # MNova
             return THRESHOLD_NMR
         elif 'INFRARED SPECTRUM' == dt:
             return THRESHOLD_IR
         elif 'MASS SPECTRUM' == dt:
             return THRESHOLD_MS
         return 0.5
-
 
     def __ncl(self):
         try:
@@ -59,13 +56,14 @@ class JcampNIConverter: # nmr & IR
                 return '13C'
             elif '^19F' in ncls:
                 return '19F'
-        except:
+        except: # noqa
             pass
         return ''
 
-
     def __index_target(self):
-        target_topics = ['NMR SPECTRUM', 'NMRSPECTRUM', 'INFRARED SPECTRUM', 'MASS SPECTRUM']
+        target_topics = [
+            'NMR SPECTRUM', 'NMRSPECTRUM', 'INFRARED SPECTRUM', 'MASS SPECTRUM'
+        ]
         for tp in target_topics:
             if tp in self.datatypes:
                 idx = self.datatypes.index(tp)
@@ -75,18 +73,16 @@ class JcampNIConverter: # nmr & IR
 
         return idx
 
-
     def __count_block(self):
         count = 1
         try:
             count = int(self.dic['BLOCKS'][0])
-        except:
+        except:  # noqa
             pass
 
         return count
 
-
-    def __read_xs(self): # TBD
+    def __read_xs(self):  # TBD
         beg_pt = None
         end_pt = None
         idx = self.target_idx
@@ -95,27 +91,35 @@ class JcampNIConverter: # nmr & IR
             try:
                 obs_freq = self.obs_freq
                 shift = float(self.dic['$OFFSET'][idx])
-                beg_pt = float(self.dic['FIRST'][idx].replace(' ', '').split(',')[0]) / obs_freq
-                end_pt = float(self.dic['LAST'][idx].replace(' ', '').split(',')[0]) / obs_freq
+                beg_pt = float(
+                    self.dic['FIRST'][idx].replace(' ', '').split(',')[0]
+                ) / obs_freq
+                end_pt = float(
+                    self.dic['LAST'][idx].replace(' ', '').split(',')[0]
+                ) / obs_freq
                 shift = beg_pt - shift
                 beg_pt = beg_pt - shift
                 end_pt = end_pt - shift
-            except:
+            except:  # noqa
                 pass
 
-        if beg_pt is None: # MNova
+        if beg_pt is None:  # MNova
             try:
                 obs_freq = self.obs_freq
-                beg_pt = float(self.dic['FIRST'][idx].replace(' ', '').split(',')[0]) / obs_freq
-                end_pt = float(self.dic['LAST'][idx].replace(' ', '').split(',')[0]) / obs_freq
-            except:
+                beg_pt = float(
+                    self.dic['FIRST'][idx].replace(' ', '').split(',')[0]
+                ) / obs_freq
+                end_pt = float(
+                    self.dic['LAST'][idx].replace(' ', '').split(',')[0]
+                ) / obs_freq
+            except:  # noqa
                 pass
 
         if beg_pt is None:
             try:
                 beg_pt = float(self.dic['FIRSTX'][idx])
                 end_pt = float(self.dic['LASTX'][idx])
-            except:
+            except:  # noqa
                 pass
 
         if self.typ == 'INFRARED' and beg_pt < end_pt:
@@ -137,18 +141,17 @@ class JcampNIConverter: # nmr & IR
 
         return x
 
-
     def __read_ys(self):
         y = None
         try:
             y = self.data['real'][self.target_idx]
-        except:
+        except:  # noqa
             pass
 
         if y is None:
             try:
                 y = self.data[:]
-            except:
+            except:  # noqa
                 pass
         # transmission only # IR ABS vs TRANS
         if self.typ == 'INFRARED':
@@ -158,7 +161,6 @@ class JcampNIConverter: # nmr & IR
                 y = y_max - y
 
         return y
-
 
     def __find_boundary(self):
         return {
@@ -172,47 +174,44 @@ class JcampNIConverter: # nmr & IR
             },
         }
 
-
     def __set_label(self):
-        target = { 'x': 'PPM', 'y': 'ARBITRARY' }
+        target = {'x': 'PPM', 'y': 'ARBITRARY'}
         try:
             x = self.dic['XUNITS'][self.target_idx]
             y = self.dic['YUNITS'][self.target_idx]
             x = 'PPM' if x.upper() == 'HZ' else x
             y = 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y
-            target = { 'x': x, 'y': y }
-        except:
+            target = {'x': x, 'y': y}
+        except:  # noqa
             pass
 
         try:
-            x, y, _ = dic['UNITS'][1].replace(' ', '').split(',')
+            x, y, _ = self.dic['UNITS'][1].replace(' ', '').split(',')
             x = 'PPM' if x.upper() == 'HZ' else x
             y = 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y
-            target = { 'x': x, 'y': y }
-        except:
+            target = {'x': x, 'y': y}
+        except:  # noqa
             pass
 
-        if 'absorb' in target['y'].lower(): # IR ABS vs TRANS
+        if 'absorb' in target['y'].lower():  # IR ABS vs TRANS
             target['y'] = 'TRANSMITTANCE'
 
         return target
-
 
     def __set_obs_freq(self):
         obs_freq = None
         try:
             obs_freq = float(self.dic['.OBSERVEFREQUENCY'][0])
-        except:
+        except:  # noqa
             pass
 
         try:
             if obs_freq is None:
                 obs_freq = float(self.dic['$SFO1'][0])
-        except:
+        except:  # noqa
             pass
 
         return obs_freq
-
 
     def __set_factor(self):
         factor = {
@@ -225,22 +224,20 @@ class JcampNIConverter: # nmr & IR
                 'x': self.dic['XFACTOR'][0],
                 'y': self.dic['YFACTOR'][0],
             }
-        except:
+        except:  # noqa
             pass
 
         return factor
-
 
     def __set_x_unit(self):
         x_unit = None
 
         try:
             x_unit = self.dic['XUNITS'][0].upper()
-        except:
+        except:  # noqa
             pass
 
         return x_unit
-
 
     def __set_auto_peaks(self, peak_idxs):
         auto_x = []
@@ -250,28 +247,28 @@ class JcampNIConverter: # nmr & IR
             auto_y.append(self.ys[idx])
         if len(auto_x) == 0:
             return
-        self.auto_peaks = { 'x': auto_x, 'y': auto_y }
-
+        self.auto_peaks = {'x': auto_x, 'y': auto_y}
 
     def __read_auto_peaks(self):
         if self.params['clear']:
             return
 
-        try: # legacy
+        try:  # legacy
             auto_x = []
             auto_y = []
             pas = self.dic['PEAKASSIGNMENTS'][0].split('\n')[1:]
             for pa in pas:
-                info = pa.replace('(', '').replace(')', '').replace(' ', '').split(',')
+                info = pa.replace('(', '').replace(')', '') \
+                            .replace(' ', '').split(',')
                 auto_x.append(float(info[0]))
                 auto_y.append(float(info[1]))
             if len(auto_x) == 0:
                 return
-            self.auto_peaks = { 'x': auto_x, 'y': auto_y }
-        except:
+            self.auto_peaks = {'x': auto_x, 'y': auto_y}
+        except:  # noqa
             pass
 
-        try: # mnova
+        try:  # mnova
             if self.auto_peaks is None:
                 auto_x = []
                 auto_y = []
@@ -284,30 +281,30 @@ class JcampNIConverter: # nmr & IR
                     auto_y.append(float(info[1]))
                 if len(auto_x) == 0:
                     return
-                self.auto_peaks = { 'x': auto_x, 'y': auto_y }
-        except:
+                self.auto_peaks = {'x': auto_x, 'y': auto_y}
+        except:  # noqa
             pass
-
 
     def __read_edit_peaks(self):
         if self.params['clear']:
             return
 
-        try: # legacy
+        try:  # legacy
             edit_x = []
             edit_y = []
             pas = self.dic['PEAKASSIGNMENTS'][-1].split('\n')[1:]
             for pa in pas:
-                info = pa.replace('(', '').replace(')', '').replace(' ', '').split(',')
+                info = pa.replace('(', '').replace(')', '') \
+                            .replace(' ', '').split(',')
                 edit_x.append(float(info[0]))
                 edit_y.append(float(info[1]))
             if len(edit_x) == 0:
                 return
-            self.edit_peaks = { 'x': edit_x, 'y': edit_y }
-        except:
+            self.edit_peaks = {'x': edit_x, 'y': edit_y}
+        except:  # noqa
             pass
 
-        try: # mnova
+        try:  # mnova
             if self.edit_peaks is None:
                 edit_x = []
                 edit_y = []
@@ -318,10 +315,9 @@ class JcampNIConverter: # nmr & IR
                     edit_y.append(float(info[1]))
                 if len(edit_x) == 0:
                     return
-                self.edit_peaks = { 'x': edit_x, 'y': edit_y }
-        except:
+                self.edit_peaks = {'x': edit_x, 'y': edit_y}
+        except:  # noqa
             pass
-
 
     def __parse_edit(self):
         edit_x = []
@@ -332,8 +328,7 @@ class JcampNIConverter: # nmr & IR
             edit_y.append(float(info[1]))
         if len(edit_x) == 0:
             return
-        self.edit_peaks = { 'x': edit_x, 'y': edit_y }
-
+        self.edit_peaks = {'x': edit_x, 'y': edit_y}
 
     def __run_auto_pick_peak(self):
         max_y = np.max(self.ys)
@@ -349,7 +344,6 @@ class JcampNIConverter: # nmr & IR
         peak_idxs = peaks[0]
         self.__set_auto_peaks(peak_idxs)
 
-
     def __set_datatable(self):
         y_factor = self.factor and self.factor['y']
         y_factor = y_factor or 1.0
@@ -357,7 +351,6 @@ class JcampNIConverter: # nmr & IR
             self.ys,
             y_factor
         )
-
 
     def __read_peak_from_file(self):
         self.__read_auto_peaks()

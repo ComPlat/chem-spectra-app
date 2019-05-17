@@ -1,13 +1,13 @@
 import tempfile
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from chem_spectra.lib.composer.base import BaseComposer
 
+matplotlib.use('Agg')
 
 TEXT_SPECTRUM_ORIG = '$$ === CHEMSPECTRA SPECTRUM ORIG ===\n'
-TEXT_MS_DATA_TABLE = '##DATA TABLE= (XY..XY), PEAKS\n' # '##XYDATA= (X++(Y..Y))\n'
+TEXT_MS_DATA_TABLE = '##DATA TABLE= (XY..XY), PEAKS\n'  # '##XYDATA= (X++(Y..Y))\n'  # noqa
 
 
 class MSComposer(BaseComposer):
@@ -15,7 +15,6 @@ class MSComposer(BaseComposer):
         super().__init__(core)
         self.title = core.fname
         self.meta = self.__compose()
-
 
     def __gen_headers_spectrum_orig(self):
         return [
@@ -32,19 +31,18 @@ class MSComposer(BaseComposer):
             '##.INLET={}\n'.format('GC'),
             '##.IONIZATION MODE={}\n'.format('EI+'),
             '##$SCANAUTOTARGET={}\n'.format(self.core.auto_scan),
-            '##$SCANEDITTARGET={}\n'.format(self.core.edit_scan or self.core.auto_scan),
+            '##$SCANEDITTARGET={}\n'.format(
+                self.core.edit_scan or self.core.auto_scan
+            ),
             '##$SCANCOUNT={}\n'.format(len(self.core.datatables)),
             '##$THRESHOLD={}\n'.format(self.core.thres / 100),
         ]
 
-
     def __gen_ntuples_begin(self):
         return ['##NTUPLES={}\n'.format('MASS SPECTRUM')]
 
-
     def __gen_ntuples_end(self):
         return ['##END NTUPLES={}\n'.format('MASS SPECTRUM')]
-
 
     def __gen_config(self):
         return [
@@ -58,7 +56,6 @@ class MSComposer(BaseComposer):
             '##LAST= , , {}\n'.format(len(self.core.datatables)),
         ]
 
-
     def __gen_ms_spectra(self):
         msspcs = []
         for idx, dt in enumerate(self.core.datatables):
@@ -69,7 +66,6 @@ class MSComposer(BaseComposer):
             ]
             msspcs = msspcs + msspc + dt['dt']
         return msspcs
-
 
     def __compose(self):
         meta = []
@@ -82,7 +78,6 @@ class MSComposer(BaseComposer):
 
         meta.extend(self.gen_ending())
         return meta
-
 
     def __prism(self, spc):
         blues_x, blues_y, greys_x, greys_y = [], [], [], []
@@ -97,7 +92,6 @@ class MSComposer(BaseComposer):
                 greys_x.append(x)
                 greys_y.append(y)
         return blues_x, blues_y, greys_x, greys_y
-
 
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]

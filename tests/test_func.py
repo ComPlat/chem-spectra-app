@@ -1,5 +1,3 @@
-import json
-import io
 from werkzeug.datastructures import FileStorage
 
 from chem_spectra.controller.helper.file_container import FileContainer

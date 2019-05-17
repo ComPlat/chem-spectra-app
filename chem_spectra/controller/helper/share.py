@@ -1,6 +1,5 @@
 import io
 import zipfile
-import json
 import math
 from os.path import basename
 
@@ -39,7 +38,7 @@ def to_zip_response(src_tmp_arr, filename=False):
 def parse_float(val, default):
     try:
         return float(val)
-    except:
+    except:  # noqa
         return float(default)
 
 

@@ -1,6 +1,3 @@
-import pytest
-import io
-
 from werkzeug.datastructures import FileStorage
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.transformer import TransformerModel as TraModel

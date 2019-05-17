@@ -37,5 +37,4 @@ def create_app(test_config=None):
     from chem_spectra.controller.transform_api import trans_api
     app.register_blueprint(trans_api)
 
-
     return app
