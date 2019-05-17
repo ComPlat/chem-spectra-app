@@ -86,3 +86,9 @@ body = { file: target.jdx }
 $ coverage run -m pytest --disable-pytest-warnings
 $ coverage report
 ```
+
+### 5. Linting
+
+```
+$ flake8
+```

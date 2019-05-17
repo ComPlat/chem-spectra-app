@@ -14,6 +14,7 @@ setup(
         'matplotlib==2.0.2',
         'gunicorn',
         'pytest==4.0.0',
-        'coverage==4.5.3'
+        'coverage==4.5.3',
+        'flake8==3.7.7'
     ],
 )
