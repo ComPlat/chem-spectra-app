@@ -56,11 +56,12 @@ class TransformerModel:
 
     def tf_predict(self):
         target = json.loads(self.params['predict'])
-        if not target.get('result') or not target.get('result')[0]:
+        r = target.get('output').get('result')
+        if not r or not r[0]:
             return False
 
         tf = store_str_in_tmp(
-            self.params['predict'],
+            json.dumps(target),
             suffix='.json',
         )
         return tf

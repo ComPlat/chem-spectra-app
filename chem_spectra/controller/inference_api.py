@@ -21,17 +21,15 @@ def chemspectra_predict_by_peaks_json():
     shift = payload.get('shift')
     molfile = FileContainer().from_str(payload.get('molfile'))
 
-    rsp = InferModel.predict_nmr(
+    outcome = InferModel.predict_nmr(
         molfile=molfile,
         layout=layout,
         peaks=peaks,
         shift=shift
     )
-    if rsp:
-        return jsonify(
-            status=True,
-            result=rsp.json(),
-        )
+    if outcome:
+        return jsonify(outcome)
+    abort(400)
 
 
 @infer_api.route('/predict/by_peaks_form', methods=['POST'])
@@ -49,17 +47,15 @@ def chemspectra_predict_by_peaks_form():
     if (not peaks) or (not molfile):
         abort(400)
 
-    rsp = InferModel.predict_nmr(
+    outcome = InferModel.predict_nmr(
         molfile=molfile,
         layout=layout,
         peaks=peaks,
         shift=shift
     )
-    if rsp:
-        return jsonify(
-            status=True,
-            result=rsp.json(),
-        )
+    if outcome:
+        return jsonify(outcome)
+    abort(400)
 
 
 @infer_api.route('/predict/infrared', methods=['POST'])
@@ -67,10 +63,10 @@ def chemspectra_predict_by_peaks_form():
 def chemspectra_predict_infrared():
     molfile = FileContainer(request.files['molfile'])
     spectrum = FileContainer(request.files['spectrum'])
-
-    rsp = InferModel.predict_ir(
+    outcome = InferModel.predict_ir(
         molfile=molfile,
         spectrum=spectrum
     )
-    if rsp:
-        return jsonify(rsp.json())
+    if outcome:
+        return jsonify(outcome)
+    abort(400)

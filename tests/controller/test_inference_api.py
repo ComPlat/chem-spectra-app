@@ -16,9 +16,8 @@ def test_api_chemspectra_predict_by_peaks_json(client):
         content_type='application/json',
         data=RequestPredictNmr().json()
     )
-
     assert response.status_code == 200
-    assert response.json['status'] == True  # noqa
+    assert response.json['outline']['code'] == 200
     assert response.mimetype == 'application/json'
 
 
@@ -40,7 +39,7 @@ def test_api_chemspectra_predict_by_peaks_form(client):
         data=data
     )
     assert response.status_code == 200
-    assert response.json['status'] == True  # noqa
+    assert response.json['outline']['code'] == 200
     assert response.mimetype == 'application/json'
 
 
@@ -60,5 +59,5 @@ def test_api_chemspectra_predict_infrared(client):
         data=data
     )
     assert response.status_code == 200
-    assert json.loads(response.json)['status'] == True  # noqa
+    assert response.json['outline']['code'] == 200
     assert response.mimetype == 'application/json'

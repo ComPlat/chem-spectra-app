@@ -34,7 +34,29 @@ class InferencerModel:
             peaks=peaks,
             shift=shift
         )
-        return instance.__predict_nmr()
+        try:
+            rsp = instance.__predict_nmr()
+            return {
+                'outline': {
+                    'code': 200,
+                    'text': 'NMR prediction success.',  # noqa
+                },
+                'output': rsp.json(),
+            }
+        except json.decoder.JSONDecodeError:
+            return {
+                'outline': {
+                    'code': 400,
+                    'text': 'Peak & Element count mismatch! Please check peak-picking.',  # noqa
+                }
+            }
+        except requests.ConnectionError:
+            return {
+                'outline': {
+                    'code': 503,
+                    'text': 'No Server available! Please try it later.',
+                }
+            }
 
     def __predict_nmr(self):
         peak_xs = self.__extract_x()
@@ -87,7 +109,22 @@ class InferencerModel:
             molfile=molfile,
             spectrum=spectrum
         )
-        return instance.__predict_ir()
+        try:
+            return instance.__predict_ir()
+        except TypeError:
+            return {
+                'outline': {
+                    'code': 400,
+                    'text': 'Spectrum error!\nPlease feedback to System Admins.',  # noqa
+                }
+            }
+        except requests.ConnectionError:
+            return {
+                'outline': {
+                    'code': 503,
+                    'text': 'No Server available! Please try it later.',
+                }
+            }
 
     def __predict_ir(self):
         mm = MoleculeModel(self.molfile)
@@ -106,4 +143,4 @@ class InferencerModel:
             files=files,
             data=fgs,
         )
-        return rsp
+        return rsp.json()

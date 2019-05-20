@@ -35,7 +35,7 @@ class MoleculeModel:
         ]
 
     def fgs(self):
-        results = []
+        fg_smas = []
         fgs = ifg.identify_functional_groups(self.mol)
 
         for fg in fgs:
@@ -43,6 +43,6 @@ class MoleculeModel:
             mol = Chem.MolFromSmarts(target)
             self.__clear_mapnum(mol)
             sma = Chem.MolToSmarts(mol)
-            results.append(sma)
+            fg_smas.append(sma)
 
-        return list(set(results))
+        return list(set(fg_smas))

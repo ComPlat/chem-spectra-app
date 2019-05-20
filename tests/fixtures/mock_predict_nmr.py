@@ -31,63 +31,41 @@ request_predict_nmr = {
 
 
 response_predict_nmr = {
-    "result": [
-        {
-            "id": 1,
-            "type": "nmr;13C;1d",
-            "statistics": {
-                "accept": 0,
-                "warning": 0,
-                "reject": 5,
-                "missing": 1,
-                "total": 6
-            },
-            "shifts": [
-                {
-                   "atom": 1,
-                   "prediction": 135.5500030517578,
-                   "real": 117.0,
-                   "diff": 18.550003051757812,
-                   "status": "reject"
+    "outline": {
+        "code": 200,
+        "text": "NMR inference success.",
+    },
+    "output": {
+        "result": [
+            {
+                "id": 1,
+                "shifts": [
+                    {
+                        "atom": 1,
+                        "diff": 22.712247548698286,
+                        "prediction": 11.667065438606755,
+                        "real": -11.045182110091531,
+                        "status": "reject",
+                    },
+                    {
+                        "atom": 2,
+                        "diff": 30.449941791740933,
+                        "prediction": 19.722594964537528,
+                        "real": -10.727346827203405,
+                        "status": "reject",
+                    },
+                ],
+                "statistics": {
+                    "accept": 5,
+                    "missing": 1,
+                    "reject": 6,
+                    "total": 15,
+                    "warning": 3,
                 },
-                {
-                   "atom": 2,
-                   "prediction": 139.1999969482422,
-                   "real": 123.0,
-                   "diff": 16.199996948242188,
-                   "status": "reject"
-                },
-                {
-                   "atom": 6,
-                   "prediction": 139.1999969482422,
-                   "real": 123.0,
-                   "diff": 16.199996948242188,
-                   "status": "reject"
-                },
-                {
-                   "atom": 3,
-                   "prediction": 121.5999984741211,
-                   "real": 103.0,
-                   "diff": 18.599998474121094,
-                   "status": "reject"
-                },
-                {
-                   "atom": 5,
-                   "prediction": 121.5999984741211,
-                   "real": 103.0,
-                   "diff": 18.599998474121094,
-                   "status": "reject"
-                },
-                {
-                   "atom": 4,
-                   "prediction": 147.13500213623047,
-                   "real": 0.0,
-                   "diff": 0.0,
-                   "status": "missing"
-                }
-            ]
-        }
-    ]
+                "type": "nmr;13C;1d",
+            }
+        ]
+    }
 }
 
 
@@ -104,4 +82,4 @@ class ResponsePredictNmr:
         pass
 
     def json(self):
-        return json.dumps(response_predict_nmr)
+        return response_predict_nmr

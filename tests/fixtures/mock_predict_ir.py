@@ -1,20 +1,29 @@
-import json
+# import json
 
 
 response_predict_ir = {
-   "status": True,
-   "results": {
-      "C-,:C1(-,:C)-,:S-,:C-,:C-,:S-,:1": {
-         "valid": False,
-         "accuracy": 0,
-         "exist": False
-      },
-      "C-,:C(-,:C)=O": {
-         "valid": True,
-         "accuracy": 75,
-         "exist": True
-      }
-   }
+    "outline": {
+        "code": 200,
+        "text": "Load from files.",
+    },
+    "output": {
+        "result": [
+            {
+                "c-,:[N&+](=O)-,:[O&-]": {
+                    "confidence": 99.19,
+                    "status": "accept",
+                },
+                "c-,:C(=O)-,:O-,:C": {
+                    "confidence": 95.2,
+                    "status": "accept",
+                },
+                "c-,:[Br]": {
+                    "confidence": 88.46,
+                    "status": "accept"
+                }
+            }
+        ]
+    }
 }
 
 
@@ -31,4 +40,4 @@ class ResponsePredictIr:
         pass
 
     def json(self):
-        return json.dumps(response_predict_ir)
+        return response_predict_ir
