@@ -32,7 +32,7 @@ class MSConverter:
     def __set_params(self, params):
         exact_mz = params.get('mass', 0) if params else 0
         edit_scan = params.get('scan', 0) if params else 0
-        thres = params.get('thres', 5) if params else 5
+        thres = (params and params.get('thres', 5)) or 5
         ext = params.get('ext', '') if params else ''
         return exact_mz, edit_scan, thres, ext
 
