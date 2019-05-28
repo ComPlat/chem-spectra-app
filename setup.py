@@ -8,7 +8,7 @@ setup(
     zip_safe=False,
     install_requires=[  # 'nmrglue',
         'flask==1.0.2',
-        'numpy',
+        'numpy==1.16.2',
         'scipy==1.2.0',
         'pymzml==2.0.6',
         'matplotlib==2.0.2',
