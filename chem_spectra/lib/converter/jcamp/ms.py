@@ -22,11 +22,11 @@ class JcampMSConverter:  # nmr & IR
     def __set_params(self, params):
         exact_mz = params.get('mass', 0) if params else 0
         pscan = params.get('scan', None) if params else None
-        escan = self.dic.get('$SCANEDITTARGET', [])
+        escan = self.dic.get('$CSSCANEDITTARGET', [])
         escan = int(escan[0]) if len(escan) > 0 else None
         edit_scan = pscan or escan or None
         pthres = params.get('thres', None) if params else None
-        ethres = self.dic.get('$THRESHOLD', [])
+        ethres = self.dic.get('$CSTHRESHOLD', [])
         ethres = float(ethres[0]) * 100.0 if len(ethres) > 0 else None
         thres = pthres or ethres or None
         return exact_mz, edit_scan, thres

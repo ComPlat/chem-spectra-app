@@ -56,7 +56,7 @@ class TransformerModel:
 
     def tf_predict(self):
         target = json.loads(self.params['predict'])
-        r = target.get('output').get('result')
+        r = target.get('output', {}).get('result')
         if not r or not r[0]:
             return False
 

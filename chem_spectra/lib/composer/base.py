@@ -1,4 +1,5 @@
 import tempfile
+from chem_spectra.lib.shared.misc import is_number
 
 
 def extrac_dic(core, key):
@@ -32,48 +33,32 @@ class BaseComposer:
             '##JCAMP-DX=5.00\n',
             '##DATA TYPE={}PEAKTABLE\n'.format(self.core.typ),
             '##DATA CLASS=PEAKTABLE\n',
-            '##THRESHOLD={}\n'.format(self.core.threshold),
+            '##$CSTHRESHOLD={}\n'.format(self.core.threshold),
             '##MAXX={}\n'.format(self.core.boundary['x']['max']),
             '##MAXY={}\n'.format(self.core.boundary['y']['max']),
             '##MINX={}\n'.format(self.core.boundary['x']['min']),
             '##MINY={}\n'.format(self.core.boundary['y']['min'])
         ]
 
-    def __inherit_sample_description(self):
-        try:
-            target = self.core.dic['SAMPLEDESCRIPTION'][-1]
-            if target and (target != ''):
-                return target
-        except:  # noqa
-            pass
-
-        return ''
-
     def __create_sample_description(self):
-        select_x = self.core.params['select_x']
-        ref_name = self.core.params['ref_name']
-        ref_value = self.core.params['ref_value']
-
-        if select_x:
-            select_x = 'SELECTX={};'.format(select_x)
-        else:
-            select_x = ''
-        if ref_name:
-            ref_name = 'SOLNAME={};'.format(ref_name)
-        else:
-            ref_name = ''
-        if ref_value:
-            ref_value = 'SOLVAL={};'.format(ref_value)
-        else:
-            ref_value = ''
-
-        description = select_x + ref_name + ref_value
-
-        if description == '':
-            description = self.__inherit_sample_description()
-
+        ref_name = (
+            self.core.params['ref_name'] or
+            self.core.dic.get('$CSSOLVENTNAME', [''])[0]
+        )
+        ref_value = (
+            self.core.params['ref_value'] or
+            self.core.dic.get('$CSSOLVENTVALUE', [''])[0]
+        )
+        select_x = (
+            self.core.params['select_x'] or
+            self.core.dic.get('$CSSOLVENTX', [''])[0]
+        )
+        ref_value = ref_value if is_number(ref_value) else 0
+        select_x = select_x if is_number(select_x) else 0
         spl_desc = [
-            '##SAMPLE DESCRIPTION={}\n'.format(description)
+            '##$CSSOLVENTNAME={}\n'.format(ref_name or ''),
+            '##$CSSOLVENTVALUE={}\n'.format(ref_value or '0'),
+            '##$CSSOLVENTX={}\n'.format(select_x or '0'),
         ]
 
         return spl_desc

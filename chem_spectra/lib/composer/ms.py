@@ -27,12 +27,12 @@ class MSComposer(BaseComposer):
             '##.SPECTROMETER TYPE={}\n'.format('TRAP'),
             '##.INLET={}\n'.format('GC'),
             '##.IONIZATION MODE={}\n'.format('EI+'),
-            '##$SCANAUTOTARGET={}\n'.format(self.core.auto_scan),
-            '##$SCANEDITTARGET={}\n'.format(
+            '##$CSSCANAUTOTARGET={}\n'.format(self.core.auto_scan),
+            '##$CSSCANEDITTARGET={}\n'.format(
                 self.core.edit_scan or self.core.auto_scan
             ),
-            '##$SCANCOUNT={}\n'.format(len(self.core.datatables)),
-            '##$THRESHOLD={}\n'.format(self.core.thres / 100),
+            '##$CSSCANCOUNT={}\n'.format(len(self.core.datatables)),
+            '##$CSTHRESHOLD={}\n'.format(self.core.thres / 100),
         ]
 
     def __gen_ntuples_begin(self):
