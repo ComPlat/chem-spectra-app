@@ -1,5 +1,6 @@
+import json
 from flask import (
-    Blueprint, request, send_file,
+    Blueprint, request, send_file, make_response,
 )
 # from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
@@ -26,13 +27,19 @@ def zip_jcamp_n_img():
     file = FileContainer(request.files['file'])
     params = extract_params(request)
     if file:  # and allowed_file(file):
-        tf_jcamp, tf_img = TraModel(file, params).convert2jcamp_img()
+        cmpsr = TraModel(file, params).to_composer()
+        tf_jcamp, tf_img = cmpsr.tf_jcamp(), cmpsr.tf_img()
+        spc_type = cmpsr.core.typ
         memory = to_zip_response([tf_jcamp, tf_img])
-        return send_file(
-            memory,
-            attachment_filename='spectrum.zip',
-            as_attachment=True
+        rsp = make_response(
+            send_file(
+                memory,
+                attachment_filename='spectrum.zip',
+                as_attachment=True
+            )
         )
+        rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type})
+        return rsp
 
 
 @trans_api.route('/zip_jcamp', methods=['POST'])
