@@ -19,6 +19,7 @@ class MSConverter:
         self.exact_mz, self.edit_scan, self.thres, param_ext = self.__set_params(params)  # noqa
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
+        self.typ = 'MS'
         # - - - - - - - - - - -
         fn = file.name.split('.')
         self.fname = fn[0]
