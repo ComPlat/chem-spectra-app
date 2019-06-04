@@ -1,4 +1,5 @@
 MARGIN = 1
+THRESHOLD_MS = 0.05
 
 
 class JcampMSConverter:  # nmr & IR
@@ -28,7 +29,7 @@ class JcampMSConverter:  # nmr & IR
         pthres = params.get('thres', None) if params else None
         ethres = self.dic.get('$CSTHRESHOLD', [])
         ethres = float(ethres[0]) * 100.0 if len(ethres) > 0 else None
-        thres = pthres or ethres or None
+        thres = pthres or ethres or (THRESHOLD_MS * 100.0)
         return exact_mz, edit_scan, thres
 
     def __get_ratio(self, spc):
