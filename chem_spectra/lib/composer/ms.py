@@ -90,13 +90,16 @@ class MSComposer(BaseComposer):
                 greys_y.append(y)
         return blues_x, blues_y, greys_x, greys_y
 
+    def prism_peaks(self):
+        idx = (self.core.edit_scan or self.core.auto_scan) - 1
+        spc = self.core.spectra[idx]
+        return self.__prism(spc) + tuple([idx+1])
+
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
         # PLOT data
-        idx = (self.core.edit_scan or self.core.auto_scan) - 1
-        spc = self.core.spectra[idx]
-        blues_x, blues_y, greys_x, greys_y = self.__prism(spc)
+        blues_x, blues_y, greys_x, greys_y, _ = self.prism_peaks()
         plt.bar(greys_x, greys_y, color='#dddddd')
         plt.bar(blues_x, blues_y)
 

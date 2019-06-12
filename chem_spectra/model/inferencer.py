@@ -6,6 +6,7 @@ from flask import current_app
 
 from chem_spectra.model.molecule import MoleculeModel
 from chem_spectra.lib.data_pipeline.infrared import InfraredModel
+from chem_spectra.model.transformer import TransformerModel as TraModel
 
 hdr_nsdb = {
     'Content-Type': 'application/json'
@@ -115,7 +116,7 @@ class InferencerModel:
             return {
                 'outline': {
                     'code': 400,
-                    'text': 'Spectrum error!\nPlease feedback to System Admins.',  # noqa
+                    'text': 'IR Spectrum error!\nPlease feedback to System Admins.',  # noqa
                 }
             }
         except requests.ConnectionError:
@@ -144,3 +145,47 @@ class InferencerModel:
             data=fgs,
         )
         return rsp.json()
+
+    @classmethod
+    def predict_ms(cls, molfile=False, spectrum=False):
+        instance = cls(
+            molfile=molfile,
+            spectrum=spectrum
+        )
+        return instance.__predict_ms()
+        try:
+            return instance.__predict_ms()
+        except TypeError:
+            return {
+                'outline': {
+                    'code': 400,
+                    'text': 'MS Spectrum error!\nPlease feedback to System Admins.',  # noqa
+                }
+            }
+        except requests.ConnectionError:
+            return {
+                'outline': {
+                    'code': 503,
+                    'text': 'No Server available! Please try it later.',
+                }
+            }
+
+    def __predict_ms(self):
+        cmpsr = TraModel(self.spectrum, {'ext': 'jdx'}).to_composer()
+        bx, by, gx, gy, scan = cmpsr.prism_peaks()
+        return json.dumps({
+            'outline': {
+                'code': 200,
+            },
+            'output': {
+                'result': [
+                    {
+                        'type': 'ms',
+                        'xs': bx,
+                        'ys': by,
+                        'thres': cmpsr.core.thres,
+                        'scan': scan,
+                    }
+                ],
+            },
+        })

@@ -70,3 +70,17 @@ def chemspectra_predict_infrared():
     if outcome:
         return jsonify(outcome)
     abort(400)
+
+
+@infer_api.route('/predict/ms', methods=['POST'])
+@infer_api.route('/api/v1/chemspectra/predict/ms', methods=['POST'])
+def chemspectra_predict_ms():
+    molfile = FileContainer(request.files['molfile'])
+    spectrum = FileContainer(request.files['spectrum'])
+    outcome = InferModel.predict_ms(
+        molfile=molfile,
+        spectrum=spectrum
+    )
+    if outcome:
+        return jsonify(outcome)
+    abort(400)
