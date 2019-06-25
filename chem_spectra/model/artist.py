@@ -17,12 +17,12 @@ colors = [
 
 
 class ArtistModel:
-    def __init__(self, molfile=False, predictions=[]):
+    def __init__(self, molfile=False, predictions=[], layout=False):
         is_molfile_str = type(molfile).__name__ == 'str'
         self.molfile = molfile if is_molfile_str else molfile.core
         self.predictions = predictions
+        self.layout = layout
         self.mol = self.__set_mol()
-        self.fgs = self.__set_fgs()
 
     def __set_mol(self):
         tf = store_str_in_tmp(self.molfile, suffix='.mol')
@@ -30,19 +30,17 @@ class ArtistModel:
         tf.close
         return mol
 
-    def __set_fgs(self):
-        return [x['sma'] for x in self.predictions]
-
     @classmethod
-    def draw_ir(cls, molfile=False, predictions=[]):
-        instance = cls(molfile=molfile, predictions=predictions)
+    def draw_ir(cls, molfile=False, predictions=[], layout=False):
+        instance = cls(molfile=molfile, predictions=predictions, layout=layout)
         svgs = instance.__draw_ir()
         return svgs
 
     def __draw_ir(self):
+        fgs = [x['sma'] for x in self.predictions]
         drawer = rdMolDraw2D.MolDraw2DSVG(400, 400)
 
-        for i, fg in enumerate(self.fgs):
+        for i, fg in enumerate(fgs):
             fg = Chem.MolFromSmarts(fg)
             target_atoms = self.mol.GetSubstructMatch(fg)
 
@@ -68,5 +66,39 @@ class ArtistModel:
                 highlightBonds=target_bonds,
                 highlightBondColors=color_bonds,
             )
+        svg = drawer.GetDrawingText().replace('svg:', '')
+        return [svg]
+
+    @classmethod
+    def draw_nmr(cls, molfile=False, predictions=[], layout=False):
+        instance = cls(molfile=molfile, predictions=predictions, layout=layout)
+        svgs = instance.__draw_nmr()
+        return svgs
+
+    def __identify_targets(self):
+        atom_symbol = 'C' if self.layout == '13C' else 'H'
+
+        targets = []
+        for idx in range(self.mol.GetNumAtoms()):
+            if self.mol.GetAtomWithIdx(idx).GetSymbol() == atom_symbol:
+                targets.append(idx)
+        return targets
+
+    def __draw_nmr(self):
+        targets = self.__identify_targets()
+
+        drawer = rdMolDraw2D.MolDraw2DSVG(400, 400)
+        opts = drawer.drawOptions()
+
+        for t in targets:
+            opts.atomLabels[t] = str(t + 1)
+
+        drawer.DrawMolecule(
+            self.mol,
+            highlightAtoms=targets,
+            highlightBonds=[]
+        )
+        drawer.FinishDrawing()
+
         svg = drawer.GetDrawingText().replace('svg:', '')
         return [svg]

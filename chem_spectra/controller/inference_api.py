@@ -28,6 +28,12 @@ def chemspectra_predict_by_peaks_json():
         peaks=peaks,
         shift=shift
     )
+    svgs = ArtistModel.draw_nmr(
+        molfile=molfile,
+        layout=layout,
+        predictions=outcome['output']['result'][0]['shifts'],
+    )
+    outcome['output']['result'][0]['svgs'] = svgs
     if outcome:
         return jsonify(outcome)
     abort(400)
@@ -54,6 +60,12 @@ def chemspectra_predict_by_peaks_form():
         peaks=peaks,
         shift=shift
     )
+    svgs = ArtistModel.draw_nmr(
+        molfile=molfile,
+        layout=layout,
+        predictions=outcome['output']['result'][0]['shifts'],
+    )
+    outcome['output']['result'][0]['svgs'] = svgs
     if outcome:
         return jsonify(outcome)
     abort(400)
@@ -64,12 +76,14 @@ def chemspectra_predict_by_peaks_form():
 def chemspectra_predict_infrared():
     molfile = FileContainer(request.files['molfile'])
     spectrum = FileContainer(request.files['spectrum'])
+    layout = request.form.get('layout', default=None)
     outcome = InferModel.predict_ir(
         molfile=molfile,
         spectrum=spectrum
     )
     svgs = ArtistModel.draw_ir(
         molfile=molfile,
+        layout=layout,
         predictions=outcome['output']['result'][0]['fgs'],
     )
     outcome['output']['result'][0]['svgs'] = svgs
