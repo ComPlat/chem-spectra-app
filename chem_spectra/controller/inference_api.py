@@ -6,6 +6,7 @@ from flask import (
 # from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.inferencer import InferencerModel as InferModel
+from chem_spectra.model.artist import ArtistModel
 
 infer_api = Blueprint('inference_api', __name__)
 
@@ -67,6 +68,11 @@ def chemspectra_predict_infrared():
         molfile=molfile,
         spectrum=spectrum
     )
+    svgs = ArtistModel.draw_ir(
+        molfile=molfile,
+        predictions=outcome['output']['result'][0]['fgs'],
+    )
+    outcome['output']['result'][0]['svgs'] = svgs
     if outcome:
         return jsonify(outcome)
     abort(400)
