@@ -7,6 +7,7 @@ from flask import (
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.inferencer import InferencerModel as InferModel
 from chem_spectra.model.artist import ArtistModel
+from chem_spectra.model.molecule import MoleculeModel
 
 infer_api = Blueprint('inference_api', __name__)
 
@@ -21,15 +22,16 @@ def chemspectra_predict_by_peaks_json():
     peaks = payload.get('peaks')
     shift = payload.get('shift')
     molfile = FileContainer().from_str(payload.get('molfile'))
+    mm = MoleculeModel(molfile, layout, decorate=True)
 
     outcome = InferModel.predict_nmr(
-        molfile=molfile,
+        mm=mm,
         layout=layout,
         peaks=peaks,
         shift=shift
     )
     svgs = ArtistModel.draw_nmr(
-        molfile=molfile,
+        mm=mm,
         layout=layout,
         predictions=outcome['output']['result'][0]['shifts'],
     )
@@ -44,24 +46,25 @@ def chemspectra_predict_by_peaks_json():
     '/api/v1/chemspectra/predict/nmr_peaks_form', methods=['POST']
 )
 def chemspectra_predict_by_peaks_form():
-    molfile = FileContainer(request.files['molfile'])
     layout = request.form.get('layout', default=None)
     peaks = request.form.get('peaks', default='{}')
     peaks = json.loads(peaks)
     shift = request.form.get('shift', default='{}')
     shift = json.loads(shift)
+    molfile = FileContainer(request.files['molfile'])
+    mm = MoleculeModel(molfile, layout, decorate=True)
 
     if (not peaks) or (not molfile):
         abort(400)
 
     outcome = InferModel.predict_nmr(
-        molfile=molfile,
+        mm=mm,
         layout=layout,
         peaks=peaks,
         shift=shift
     )
     svgs = ArtistModel.draw_nmr(
-        molfile=molfile,
+        mm=mm,
         layout=layout,
         predictions=outcome['output']['result'][0]['shifts'],
     )
@@ -74,15 +77,17 @@ def chemspectra_predict_by_peaks_form():
 @infer_api.route('/predict/infrared', methods=['POST'])
 @infer_api.route('/api/v1/chemspectra/predict/infrared', methods=['POST'])
 def chemspectra_predict_infrared():
-    molfile = FileContainer(request.files['molfile'])
-    spectrum = FileContainer(request.files['spectrum'])
     layout = request.form.get('layout', default=None)
+    spectrum = FileContainer(request.files['spectrum'])
+    molfile = FileContainer(request.files['molfile'])
+    mm = MoleculeModel(molfile, layout)
+
     outcome = InferModel.predict_ir(
-        molfile=molfile,
+        mm=mm,
         spectrum=spectrum
     )
     svgs = ArtistModel.draw_ir(
-        molfile=molfile,
+        mm=mm,
         layout=layout,
         predictions=outcome['output']['result'][0]['fgs'],
     )
@@ -95,10 +100,13 @@ def chemspectra_predict_infrared():
 @infer_api.route('/predict/ms', methods=['POST'])
 @infer_api.route('/api/v1/chemspectra/predict/ms', methods=['POST'])
 def chemspectra_predict_ms():
-    molfile = FileContainer(request.files['molfile'])
+    layout = request.form.get('layout', default=None)
     spectrum = FileContainer(request.files['spectrum'])
+    molfile = FileContainer(request.files['molfile'])
+    mm = MoleculeModel(molfile, layout)
+
     outcome = InferModel.predict_ms(
-        molfile=molfile,
+        mm=mm,
         spectrum=spectrum
     )
     if outcome:

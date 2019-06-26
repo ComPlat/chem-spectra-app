@@ -31,41 +31,35 @@ request_predict_nmr = {
 
 
 response_predict_nmr = {
-    "outline": {
-        "code": 200,
-        "text": "NMR inference success.",
-    },
-    "output": {
-        "result": [
-            {
-                "id": 1,
-                "shifts": [
-                    {
-                        "atom": 1,
-                        "diff": 22.712247548698286,
-                        "prediction": 11.667065438606755,
-                        "real": -11.045182110091531,
-                        "status": "reject",
-                    },
-                    {
-                        "atom": 2,
-                        "diff": 30.449941791740933,
-                        "prediction": 19.722594964537528,
-                        "real": -10.727346827203405,
-                        "status": "reject",
-                    },
-                ],
-                "statistics": {
-                    "accept": 5,
-                    "missing": 1,
-                    "reject": 6,
-                    "total": 15,
-                    "warning": 3,
+    "result": [
+        {
+            "id": 1,
+            "shifts": [
+                {
+                    "atom": 1,
+                    "diff": 22.712247548698286,
+                    "prediction": 11.667065438606755,
+                    "real": -11.045182110091531,
+                    "status": "reject",
                 },
-                "type": "nmr;13C;1d",
-            }
-        ]
-    }
+                {
+                    "atom": 2,
+                    "diff": 30.449941791740933,
+                    "prediction": 19.722594964537528,
+                    "real": -10.727346827203405,
+                    "status": "reject",
+                },
+            ],
+            "statistics": {
+                "accept": 5,
+                "missing": 1,
+                "reject": 6,
+                "total": 15,
+                "warning": 3,
+            },
+            "type": "nmr;13C;1d",
+        }
+    ]
 }
 
 

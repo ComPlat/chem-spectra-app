@@ -8,21 +8,27 @@ response_predict_ir = {
     },
     "output": {
         "result": [
-            {
-                "c-,:[N&+](=O)-,:[O&-]": {
-                    "confidence": 99.19,
-                    "status": "accept",
-                },
-                "c-,:C(=O)-,:O-,:C": {
-                    "confidence": 95.2,
-                    "status": "accept",
-                },
-                "c-,:[Br]": {
-                    "confidence": 88.46,
-                    "status": "accept"
-                }
-            }
-        ]
+          {
+            'type': 'ir',
+            'fgs': [
+              {
+                'sma': 'c-,:C(-,:C)=O',
+                'confidence': 85.11,
+                'status': 'accept',
+              },
+              {
+                'sma': 'C-,:C(=O)-,:O-,:C',
+                'confidence': 93.2,
+                'status': 'accept',
+              },
+              {
+                'sma': 'c-,:[Cl]',
+                'confidence': 87.30,
+                'status': 'reject',
+              },
+            ],
+          },
+        ],
     }
 }
 

@@ -16,9 +16,9 @@ hdr_nsdb = {
 class InferencerModel:
     def __init__(
         self,
-        molfile=False, layout=False, peaks=False, shift=False, spectrum=False
+        mm=False, layout=False, peaks=False, shift=False, spectrum=False
     ):
-        self.molfile = molfile.core
+        self.moltxt = mm.moltxt
         self.layout = layout
         self.peaks = peaks
         self.shift = shift
@@ -27,10 +27,10 @@ class InferencerModel:
     @classmethod
     def predict_nmr(
         cls,
-        molfile=False, layout=False, peaks=False, shift=False
+        mm=False, layout=False, peaks=False, shift=False
     ):
         instance = cls(
-            molfile=molfile,
+            mm=mm,
             layout=layout,
             peaks=peaks,
             shift=shift
@@ -101,13 +101,13 @@ class InferencerModel:
                     'solvent': solvent,
                 },
             ],
-            'moltxt': self.molfile
+            'moltxt': self.moltxt
         }
 
     @classmethod
-    def predict_ir(cls, molfile=False, spectrum=False):
+    def predict_ir(cls, mm=False, spectrum=False):
         instance = cls(
-            molfile=molfile,
+            mm=mm,
             spectrum=spectrum
         )
         try:
@@ -128,7 +128,7 @@ class InferencerModel:
             }
 
     def __predict_ir(self):
-        mm = MoleculeModel(self.molfile)
+        mm = MoleculeModel(self.moltxt)
         fgs = {'fgs': json.dumps(mm.fgs())}
 
         im = InfraredModel(self.spectrum)
@@ -147,9 +147,9 @@ class InferencerModel:
         return rsp.json()
 
     @classmethod
-    def predict_ms(cls, molfile=False, spectrum=False):
+    def predict_ms(cls, mm=False, spectrum=False):
         instance = cls(
-            molfile=molfile,
+            mm=mm,
             spectrum=spectrum
         )
         return instance.__predict_ms()

@@ -2,8 +2,6 @@ from rdkit import Chem
 from rdkit.Chem.Draw import rdMolDraw2D  # Needed to show molecules
 from matplotlib import colors as mcolors
 
-from chem_spectra.lib.shared.buffer import store_str_in_tmp
-
 colors = [
     'lightpink',
     'lime',
@@ -17,22 +15,14 @@ colors = [
 
 
 class ArtistModel:
-    def __init__(self, molfile=False, predictions=[], layout=False):
-        is_molfile_str = type(molfile).__name__ == 'str'
-        self.molfile = molfile if is_molfile_str else molfile.core
+    def __init__(self, mm=False, predictions=[], layout=False):
         self.predictions = predictions
         self.layout = layout
-        self.mol = self.__set_mol()
-
-    def __set_mol(self):
-        tf = store_str_in_tmp(self.molfile, suffix='.mol')
-        mol = Chem.MolFromMolFile(tf.name)
-        tf.close
-        return mol
+        self.mol = mm.mol
 
     @classmethod
-    def draw_ir(cls, molfile=False, predictions=[], layout=False):
-        instance = cls(molfile=molfile, predictions=predictions, layout=layout)
+    def draw_ir(cls, mm=False, predictions=[], layout=False):
+        instance = cls(mm=mm, predictions=predictions, layout=layout)
         svgs = instance.__draw_ir()
         return svgs
 
@@ -70,8 +60,8 @@ class ArtistModel:
         return [svg]
 
     @classmethod
-    def draw_nmr(cls, molfile=False, predictions=[], layout=False):
-        instance = cls(molfile=molfile, predictions=predictions, layout=layout)
+    def draw_nmr(cls, mm=False, predictions=[], layout=False):
+        instance = cls(mm=mm, predictions=predictions, layout=layout)
         svgs = instance.__draw_nmr()
         return svgs
 
@@ -86,16 +76,19 @@ class ArtistModel:
 
     def __draw_nmr(self):
         targets = self.__identify_targets()
+        colors = {}
 
         drawer = rdMolDraw2D.MolDraw2DSVG(400, 400)
         opts = drawer.drawOptions()
 
         for t in targets:
             opts.atomLabels[t] = str(t + 1)
+            colors[t] = mcolors.to_rgba('yellow')
 
         drawer.DrawMolecule(
             self.mol,
             highlightAtoms=targets,
+            highlightAtomColors=colors,
             highlightBonds=[]
         )
         drawer.FinishDrawing()
