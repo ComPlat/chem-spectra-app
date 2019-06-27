@@ -173,7 +173,7 @@ class InferencerModel:
     def __predict_ms(self):
         cmpsr = TraModel(self.spectrum, {'ext': 'jdx'}).to_composer()
         bx, by, gx, gy, scan = cmpsr.prism_peaks()
-        return json.dumps({
+        return {
             'outline': {
                 'code': 200,
             },
@@ -188,4 +188,4 @@ class InferencerModel:
                     }
                 ],
             },
-        })
+        }
