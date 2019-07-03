@@ -127,19 +127,25 @@ class MSConverter:
         ratio = 100 * max_seed / max_base
         noise_ratio = 100 * max_oorg / max_base
 
-        return ratio, noise_ratio
+        return ratio, noise_ratio, max_seed
 
     def __decode(self, runs):
         spectra = []
         best_ratio, best_idx, backup_ratio, backup_idx = 0, 0, 0, 0
+        best_y = 0
         for idx, data in enumerate(runs):
             spc = data.peaks('raw')
             spectra.append(spc)
 
-            ratio, noise_ratio = self.__get_ratio(spc)
+            ratio, noise_ratio, y = self.__get_ratio(spc)
             if (best_ratio < ratio) and (noise_ratio <= 50.0):
                 best_idx = idx
                 best_ratio = ratio
+                best_y = y
+            elif (ratio == 100.0) and (noise_ratio <= 50.0) and (best_y < y):
+                best_idx = idx
+                best_ratio = ratio
+                best_y = y
 
             if (backup_ratio < ratio):
                 backup_idx = idx
