@@ -13,6 +13,10 @@ colors = [
     'beige',
 ]
 
+svg_target = "xmlns:xlink='http://www.w3.org/1999/xlink'\n                  xml:space='preserve'\n"
+svg_vb = "viewbox='0 0 400 400'"
+svg_size = "width='400px' height='400px'"
+
 
 class ArtistModel:
     def __init__(self, mm=False, predictions=[], layout=False):
@@ -56,7 +60,10 @@ class ArtistModel:
                 highlightBonds=target_bonds,
                 highlightBondColors=color_bonds,
             )
-        svg = drawer.GetDrawingText().replace('svg:', '')
+        svg = drawer.GetDrawingText().replace('svg:', '').replace(
+                svg_target + svg_size,
+                "{} {}".format(svg_target, svg_vb),
+            )
         return [svg]
 
     @classmethod
@@ -93,5 +100,8 @@ class ArtistModel:
         )
         drawer.FinishDrawing()
 
-        svg = drawer.GetDrawingText().replace('svg:', '')
+        svg = drawer.GetDrawingText().replace('svg:', '').replace(
+                svg_target + svg_size,
+                "{} {}".format(svg_target, svg_vb),
+            )
         return [svg]
