@@ -6,6 +6,7 @@ from flask import current_app
 
 from chem_spectra.model.molecule import MoleculeModel
 from chem_spectra.lib.data_pipeline.infrared import InfraredModel
+from chem_spectra.model.artist import ArtistModel
 from chem_spectra.model.transformer import TransformerModel as TraModel
 
 hdr_nsdb = {
@@ -37,12 +38,19 @@ class InferencerModel:
         )
         try:
             rsp = instance.__predict_nmr()
+            output = rsp.json()
+            svgs = ArtistModel.draw_nmr(
+                mm=mm,
+                layout=layout,
+                predictions=output['result'][0]['shifts'],
+            )
+            output['result'][0]['svgs'] = svgs
             return {
                 'outline': {
                     'code': 200,
                     'text': 'NMR prediction success.',  # noqa
                 },
-                'output': rsp.json(),
+                'output': output,
             }
         except json.decoder.JSONDecodeError:
             return {
@@ -111,7 +119,14 @@ class InferencerModel:
             spectrum=spectrum
         )
         try:
-            return instance.__predict_ir()
+            outcome = instance.__predict_ir()
+            svgs = ArtistModel.draw_ir(
+                mm=mm,
+                layout='IR',
+                predictions=outcome['output']['result'][0]['fgs'],
+            )
+            outcome['output']['result'][0]['svgs'] = svgs
+            return outcome
         except TypeError:
             return {
                 'outline': {
