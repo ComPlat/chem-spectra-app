@@ -152,7 +152,6 @@ class InferencerModel:
             mm=mm,
             spectrum=spectrum
         )
-        return instance.__predict_ms()
         try:
             return instance.__predict_ms()
         except TypeError:
