@@ -3,10 +3,10 @@ from rdkit.Chem.Draw import rdMolDraw2D  # Needed to show molecules
 from matplotlib import colors as mcolors
 
 colors = [
-    'lightpink',
-    'lime',
     'yellow',
     'lightskyblue',
+    'lightpink',
+    'lime',
     'lavender',
     'gold',
     'azure',
