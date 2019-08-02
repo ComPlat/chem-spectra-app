@@ -75,6 +75,12 @@ class MSConverter:
             '/data/{}/{}'.format(self.hash_str, self.tf.name.split('/')[-1]),
             '-o',
             '/data/{}'.format(self.hash_str),
+            '--32',
+            '--zlib',
+            '--filter',
+            '"peakPicking true 1-"',
+            '--filter',
+            '"zeroSamples removeExtra"',
             '--ignoreUnknownInstrumentError'
         ]
         return cmd_msconvert
@@ -175,7 +181,7 @@ class MSConverter:
             else:
                 elapsed += 0.1
                 time.sleep(0.1)
-            if elapsed > 10.0:
+            if elapsed > 120.0:
                 break
 
         return runs, spectra, auto_scan
