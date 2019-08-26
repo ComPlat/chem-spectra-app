@@ -1,10 +1,14 @@
-import tempfile
-import matplotlib.pyplot as plt
-import matplotlib.path as mpath
+import matplotlib
+matplotlib.use('Agg')
 
-from chem_spectra.lib.composer.base import (
+import tempfile  # noqa: E402
+import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.path as mpath  # noqa: E402
+
+from chem_spectra.lib.composer.base import (  # noqa: E402
     extrac_dic, calc_npoints, BaseComposer
 )
+
 
 TEXT_SPECTRUM_ORIG = '$$ === CHEMSPECTRA SPECTRUM ORIG ===\n'
 

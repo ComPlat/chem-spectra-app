@@ -1,7 +1,11 @@
-import tempfile
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 
-from chem_spectra.lib.composer.base import BaseComposer
+import tempfile  # noqa: E402
+import matplotlib.pyplot as plt  # noqa: E402
+
+from chem_spectra.lib.composer.base import BaseComposer  # noqa: E402
+
 
 TEXT_SPECTRUM_ORIG = '$$ === CHEMSPECTRA SPECTRUM ORIG ===\n'
 TEXT_MS_DATA_TABLE = '##DATA TABLE= (XY..XY), PEAKS\n'  # '##XYDATA= (X++(Y..Y))\n'  # noqa

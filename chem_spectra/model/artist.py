@@ -1,6 +1,10 @@
-from rdkit import Chem
-from rdkit.Chem.Draw import rdMolDraw2D  # Needed to show molecules
-from matplotlib import colors as mcolors
+import matplotlib
+matplotlib.use('Agg')
+
+from rdkit import Chem  # noqa: E402
+from rdkit.Chem.Draw import rdMolDraw2D  # noqa: E402  # To show molecules
+from matplotlib import colors as mcolors  # noqa: E402
+
 
 colors = [
     'yellow',
@@ -13,7 +17,7 @@ colors = [
     'beige',
 ]
 
-svg_target = "xmlns:xlink='http://www.w3.org/1999/xlink'\n                  xml:space='preserve'\n"
+svg_target = "xmlns:xlink='http://www.w3.org/1999/xlink'\n                  xml:space='preserve'\n"  # noqa: E501
 svg_vb = "viewbox='0 0 400 400'"
 svg_size = "width='400px' height='400px'"
 
