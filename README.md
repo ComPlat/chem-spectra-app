@@ -1,10 +1,8 @@
-# Chem_spectra
+# chem-spectra-app
 
-This web service provides automatically NMR/IR/MSprocessing for jcamp/RAW/mzML files.
+This backend web service provides NMR/IR/MS processing for jcamp/RAW/mzML files.
 
-### Funding
-
-TBD
+The frontend is provided by chem-spectra-client.
 
 
 ### License

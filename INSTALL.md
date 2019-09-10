@@ -1,15 +1,24 @@
 # INSTALL
 
+This guidance is tested on Linux Ubuntu 18.04.
 
-### 0. prepare
+## 1. Installation
 
-##### 0.1. install Anaconda.
+### 1.1. Install Anaconda & Docker
 
-##### 0.2. create env
+Please refer to `https://www.anaconda.com/` & `https://docs.docker.com/install/`.
+
+You can follow [unofficial Anaconda & Docker installations for Dummies](INSTALL_BASIC.md) for a test installation.
+
+However, it is highly recommended to refer to official websites.
+
+### 1.2. Create env
+
+_Logout & login to load installations._
 
 ```
 $ conda create --name chem-spectra python=3.5
-$ conda deactivate; conda activate chem-spectra
+$ source activate chem-spectra
 ```
 
 ```
@@ -21,95 +30,114 @@ $ sudo apt-get install gcc libxrender1 libxext-dev
 ```
 
 ```
-$ git clone git@git.scc.kit.edu:qj9692/chem-spectra-app.git
+$ git clone https://github.com/ComPlat/chem-spectra-app.git
 $ cd chem-spectra-app
-$ python setup.py install # TBD
-$ pip install numpy
+$ pip install -r requirements.txt
 ```
 
-##### 0.3 install nmrglue
+The project is in `~/chem-spectra-app`.
+
+
+### 1.3. Use msconvert in Docker
 
 ```
-$ pip uninstall nmrglue
-
-$ cd ..
-$ git clone git@bitbucket.org:ioc-general/nmrglue.git
-$ cd nmrglue
-$ git checkout show-all-data
-$ pip install -e .
+$ docker pull chambm/pwiz-skyline-i-agree-to-the-vendor-licenses
 ```
 
-##### 0.4 docker msconvert
+__Make sure you are in the `chem-spectra-app` folder.__
+```
+$ cd ~/chem-spectra-app
+```
 
 ```
-$ cd ../chem-spectra-app
 $ mkdir chem_spectra/tmp
 $ sudo chmod -R 755 chem_spectra/tmp
-
-$ docker pull chambm/pwiz-skyline-i-agree-to-the-vendor-licenses
 
 $ docker run --detach --name msconvert_docker \
     --rm -it \
     -e WINEDEBUG=-all \
-    -v /ABSOLUTE_PATH_TO/chem-spectra-app/chem_spectra/tmp:/data \
+    -v /home/ubuntu/chem-spectra-app/chem_spectra/tmp:/data \
     chambm/pwiz-skyline-i-agree-to-the-vendor-licenses bash
-
 ```
 
 
-### 1. Add `config.py`
+### 1.4. Add `config.py`
+
+Generate a secret key.
 
 ```
 $ python -c 'import os; print(os.urandom(16))'
-
 >> b'T\x1d\xb3\xfe\xb6q\xef\xbf\x7f\xcaj\xcbZ\x84\x1ee'
-
-$ mkdir -p ./instance && touch ./instance/config.py
 ```
+
+Create `config.py`.
+
+```
+$ mkdir -p ./instance && touch ./instance/config.py
+$ vim ./instance/config.py
+```
+
+Add content.
 
 ```python
 # ./instance/config.py
-
 SECRET_KEY = b'T\x1d\xb3\xfe\xb6q\xef\xbf\x7f\xcaj\xcbZ\x84\x1ee'
 IP_WHITE_LIST = 'xxx.xxx.xxx.xxx'
-URL_DEEPIR = 'http://xxx.xxx.xxx.xxx:2512/infer_ir'
+URL_DEEPIR = 'http://xxx.xxx.xxx.xxx:3008/infer_ir'
 URL_NSHIFTDB = 'https://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
 ```
 
-### 2. Run
+### 1.5. Start server
+
+Using only "one" of following commands.
 
 ```
-$ gunicorn -w 4 -b 0.0.0.0:2412 server:app --daemon
+# run on the production server
+$ gunicorn -w 4 -b 0.0.0.0:3007 server:app --daemon
 ```
 
-### 3. Usage
+
+```
+# for local development only
+$ export FLASK_APP=chem_spectra && export FLASK_ENV=development && flask run --host=0.0.0.0 --port=3007
+```
+
+### 1.6 Quick test
+
+You should receive `pong` when executing the following command from another machine.
+
+```
+$ curl xxx.xxx.xxx.xxx:3007/ping
+```
+
+## 2. Usage
 
 Send a post request with an attachment in `.dx` or `.jdx` extension.
 
 This web service will return a zip file containing an image and a modified jcamp file with peak tables.
 
 ```
-POST xxx.xxx.xxx.xxx:2412/peak_zip_jcamp_n_img
+POST xxx.xxx.xxx.xxx:3007/peak_zip_jcamp_n_img
 body = { file: target.jdx }
 ```
 
-### 4. Run test
+## 3. Run test
 
 ```
 $ coverage run -m pytest --disable-pytest-warnings
 $ coverage report
 ```
 
-### 5. Linting
+## 4. Linting
 
 ```
 $ flake8
 ```
 
 
-### DEBUG
+## DEBUG
 
-##### MS
+### msconvert_docker
 
 ```
 $ docker exec -it msconvert_docker wine msconvert --help
