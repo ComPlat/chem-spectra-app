@@ -3,6 +3,7 @@ import subprocess as sbp
 import pymzml
 import time
 import shutil
+import numpy as np
 
 from pathlib import Path
 from datetime import datetime
@@ -189,6 +190,11 @@ class MSConverter:
     def __set_datatables(self):
         dts = []
         for idx, spc in enumerate(self.spectra):
+            # RESOLVE_VSMBNAN2 a valid spectrum must be np.array (N, 2)
+            if not spc.shape[0] > 0:
+                spc = np.array([[1000.0, 0.0], [2000.0, 0.0]]) # placeholder
+                if self.auto_scan == (idx + 1): # move selected scan
+                    self.auto_scan += 1
             xs = spc[:, 0]
             ys = spc[:, 1]
             pts = xs.shape[0]

@@ -82,7 +82,9 @@ class MSComposer(BaseComposer):
 
     def __prism(self, spc):
         blues_x, blues_y, greys_x, greys_y = [], [], [], []
-        thres = spc[:, 1].max() * (self.core.thres / 100)
+        thres = 0
+        if spc.shape[0] > 0: # RESOLVE_VSMBNAN2
+            thres = spc[:, 1].max() * (self.core.thres / 100)
 
         for pt in spc:
             x, y = pt[0], pt[1]
