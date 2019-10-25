@@ -37,33 +37,47 @@ class ArtistModel:
     def __draw_ir(self):
         fgs = [x['sma'] for x in self.predictions]
         drawer = rdMolDraw2D.MolDraw2DSVG(400, 400)
+        atom_counts = {}
 
         for i, fg in enumerate(fgs):
             fg = Chem.MolFromSmarts(fg)
-            target_atoms = self.mol.GetSubstructMatch(fg)
+            matches = self.mol.GetSubstructMatches(fg)
 
-            target_bonds = []
-            for idx, b in enumerate(self.mol.GetBonds()):
-                bb = b.GetBeginAtomIdx()
-                be = b.GetEndAtomIdx()
-                if bb in target_atoms and be in target_atoms:
-                    target_bonds.append(idx)
+            for target_atoms in matches:
+                target_bonds = []
+                for idx, b in enumerate(self.mol.GetBonds()):
+                    bb = b.GetBeginAtomIdx()
+                    be = b.GetEndAtomIdx()
+                    if bb in target_atoms and be in target_atoms:
+                        target_bonds.append(idx)
 
-            farber = colors[i % len(colors)]
-            color_atoms = {}
-            for t in target_atoms:
-                color_atoms[t] = mcolors.to_rgba(farber)
-            color_bonds = {}
-            for t in target_bonds:
-                color_bonds[t] = mcolors.to_rgba(farber)
+                farber = colors[i % len(colors)]
+                color_atoms = {}
+                radius_atoms = {}
+                for t in target_atoms:
+                    if atom_counts.get(t):
+                        atom_counts[t] += 1
+                    else:
+                        atom_counts[t] = 1
+                    color_atoms[t] = mcolors.to_rgba(farber)
+                    radius_atoms[t] = 0.3
+                    # adjust for overlaps
+                    if atom_counts.get(t) == 2:
+                        radius_atoms[t] = 0.2
+                    elif atom_counts.get(t) >= 3:
+                        radius_atoms[t] = 0.1
+                color_bonds = {}
+                for t in target_bonds:
+                    color_bonds[t] = mcolors.to_rgba(farber)
 
-            drawer.DrawMolecule(
-                self.mol,
-                highlightAtoms=target_atoms,
-                highlightAtomColors=color_atoms,
-                highlightBonds=target_bonds,
-                highlightBondColors=color_bonds,
-            )
+                drawer.DrawMolecule(
+                    self.mol,
+                    highlightAtoms=target_atoms,
+                    highlightAtomColors=color_atoms,
+                    highlightAtomRadii=radius_atoms,
+                    highlightBonds=target_bonds,
+                    highlightBondColors=color_bonds,
+                )
         svg = drawer.GetDrawingText().replace('svg:', '').replace(
                 svg_target + svg_size,
                 "{} {}".format(svg_target, svg_vb),
