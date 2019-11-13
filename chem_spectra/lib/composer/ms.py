@@ -106,8 +106,8 @@ class MSComposer(BaseComposer):
         plt.rcParams['font.size'] = 14
         # PLOT data
         blues_x, blues_y, greys_x, greys_y, _ = self.prism_peaks()
-        plt.bar(greys_x, greys_y, color='#dddddd')
-        plt.bar(blues_x, blues_y)
+        plt.bar(greys_x, greys_y, width=0, edgecolor='#dddddd')
+        plt.bar(blues_x, blues_y, width=0, edgecolor='#1f77b4')
 
         # PLOT label
         plt.xlabel('X (m/z)', fontsize=18)
