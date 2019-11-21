@@ -22,7 +22,7 @@ $ source activate chem-spectra
 ```
 
 ```
-$ conda install -c rdkit rdkit
+$ conda install -c rdkit rdkit=2018.03.4.0
 ```
 
 ```
