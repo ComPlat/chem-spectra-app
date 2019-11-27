@@ -4,6 +4,7 @@ matplotlib.use('Agg')
 import tempfile  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.path as mpath  # noqa: E402
+import re # noqa: E402
 
 from chem_spectra.lib.composer.base import (  # noqa: E402
     extrac_dic, calc_npoints, BaseComposer
@@ -31,13 +32,26 @@ class NIComposer(BaseComposer):
             '##OWNER={}\n'.format(extrac_dic(self.core, 'OWNER')),
         ]
 
+    def __calc_nucleus_by_boundary(self):
+        delta = self.core.boundary['x']['max'] - self.core.boundary['x']['min']
+        nucleus = '^1H' if abs(delta) < 40.0 else '^13C'
+        return nucleus
+
+
+    def __get_nucleus(self):
+        nuc_orig = extrac_dic(self.core, '.OBSERVENUCLEUS')
+        nuc_modf = re.sub('[^A-Za-z0-9]+', '', nuc_orig).lower()
+        is_valid = ('13c' in nuc_modf) or ('1h' in nuc_modf)
+        nucleus = nuc_orig if is_valid else self.__calc_nucleus_by_boundary()
+        return nucleus
+
     def __header_nmr(self):
         return [
             '##.OBSERVE FREQUENCY={}\n'.format(
                 extrac_dic(self.core, '.OBSERVEFREQUENCY')
             ),
             '##.OBSERVE NUCLEUS={}\n'.format(
-                extrac_dic(self.core, '.OBSERVENUCLEUS')
+                self.__get_nucleus()
             ),
             '##SPECTROMETER/DATA SYSTEM={}\n'.format(
                 extrac_dic(self.core, 'SPECTROMETER/DATASYSTEM')
