@@ -21,6 +21,7 @@ class MSConverter:
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
         self.typ = 'MS'
+        self.dic = {}
         # - - - - - - - - - - -
         fn = file.name.split('.')
         self.fname = fn[0]

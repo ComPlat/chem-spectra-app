@@ -28,9 +28,9 @@ class MSComposer(BaseComposer):
             '##ORIGIN=\n',
             '##OWNER=\n',
             '##SPECTROMETER/DATA SYSTEM=\n',
-            '##.SPECTROMETER TYPE={}\n'.format('TRAP'),
-            '##.INLET={}\n'.format('GC'),
-            '##.IONIZATION MODE={}\n'.format('EI+'),
+            '##.SPECTROMETER TYPE={}\n'.format(self.core.dic.get('SPECTROMETER TYPE', '')), # TRAP
+            '##.INLET={}\n'.format(self.core.dic.get('INLET', '')), # GC
+            '##.IONIZATION MODE={}\n'.format(self.core.dic.get('IONIZATION MODE', '')), # EI+
             '##$CSSCANAUTOTARGET={}\n'.format(self.core.auto_scan),
             '##$CSSCANEDITTARGET={}\n'.format(
                 self.core.edit_scan or self.core.auto_scan

@@ -1,9 +1,11 @@
 import json
 
-from chem_spectra.lib.shared.buffer import store_str_in_tmp
+from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
+from chem_spectra.lib.converter.cdf.base import CdfBaseConverter
+from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
@@ -27,24 +29,38 @@ class TransformerModel:
         return cmpsr.tf_jcamp(), cmpsr.tf_img()
 
     def to_composer(self):
-        not_jcamp = self.file.name.split('.')[-1].lower() in ['raw', 'mzml']
-        not_jcamp_by_params = self.params['ext'] in ['raw', 'mzml']
-        if not_jcamp or not_jcamp_by_params:
+        is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml']
+        is_cdf = self.file.name.split('.')[-1].lower() in ['cdf']
+        is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml']
+        is_cdf_by_params = self.params['ext'] in ['cdf']
+        if is_raw_mzml or is_raw_mzml_by_params:
             return self.ms2composer()
-
-        cv, cp = self.jcamp2cvp()
-        return cp
+        if is_cdf or is_cdf_by_params:
+            _, cp = self.cdf2cvp()
+            return cp
+        else:
+            _, cp = self.jcamp2cvp()
+            return cp
 
     def ms2composer(self):
         mscv = MSConverter(self.file, self.params)
         mscp = MSComposer(mscv)
         return mscp
 
+    def cdf2cvp(self):
+        tf = store_byte_in_tmp(self.file.bcore, suffix='.cdf')
+        cbcv = CdfBaseConverter(tf.name, self.params)
+        tf.close()
+        # conversion
+        mscv = CdfMSConverter(cbcv)
+        mscp = MSComposer(mscv)
+        return mscv, mscp
+
     def jcamp2cvp(self):
         tf = store_str_in_tmp(self.file.core)
         jbcv = JcampBaseConverter(tf.name, self.params)
         tf.close()
-
+        # conversion
         if jbcv.typ == 'MS':
             mscv = JcampMSConverter(jbcv)
             mscp = MSComposer(mscv)
