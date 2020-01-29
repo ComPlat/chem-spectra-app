@@ -12,6 +12,8 @@ from chem_spectra.lib.composer.base import (  # noqa: E402
 
 
 TEXT_SPECTRUM_ORIG = '$$ === CHEMSPECTRA SPECTRUM ORIG ===\n'
+TEXT_INTEGRATION = '$$ === CHEMSPECTRA INTEGRATION ===\n'
+TEXT_MULTIPLICITY = '$$ === CHEMSPECTRA MULTIPLICITY ===\n'
 
 
 class NIComposer(BaseComposer):
@@ -28,6 +30,7 @@ class NIComposer(BaseComposer):
             '##JCAMP-DX=5.00\n',
             '##DATA TYPE={}\n'.format(self.core.datatype),
             '##DATA CLASS=XYDATA\n',
+            '##$CSCATEGORY=SPECTRUM\n',
             '##ORIGIN={}\n'.format(extrac_dic(self.core, 'ORIGIN')),
             '##OWNER={}\n'.format(extrac_dic(self.core, 'OWNER')),
         ]
@@ -79,18 +82,44 @@ class NIComposer(BaseComposer):
             return self.__header_base() + \
                 self.__header_nmr() + self.__header_params()
 
+    def __gen_headers_im(self):
+        return [
+            '$$ === CHEMSPECTRA ===\n',
+        ]
+
+    def __gen_headers_integration(self):
+        return [
+            '##$OBSERVEDINTEGRALS= (X Y Z)\n',
+        ]
+
+    def __gen_headers_mpy_integ(self):
+        return [
+            '##$OBSERVEDMULTIPLETS=\n',
+        ]
+
+    def __gen_headers_mpy_peaks(self):
+        return [
+            '##$OBSERVEDMULTIPLETSPEAKS=\n',
+        ]
+
     def __compose(self):
         meta = []
         meta.extend(self.gen_headers_root())
 
         meta.extend(self.__gen_headers_spectrum_orig())
         meta.extend(self.gen_spectrum_orig())
+        meta.extend(self.__gen_headers_im())
+        meta.extend(self.__gen_headers_integration())
+        meta.extend(self.gen_integration_info())
+        meta.extend(self.__gen_headers_mpy_integ())
+        meta.extend(self.gen_mpy_integ_info())
+        meta.extend(self.__gen_headers_mpy_peaks())
+        meta.extend(self.gen_mpy_peaks_info())
         meta.extend(self.gen_ending())
 
-        if calc_npoints(self.core.edit_peaks) > 0:
-            meta.extend(self.gen_headers_peaktable_edit())
-            meta.extend(self.gen_edit_peaktable())
-            meta.extend(self.gen_ending())
+        meta.extend(self.gen_headers_peaktable_edit())
+        meta.extend(self.gen_edit_peaktable())
+        meta.extend(self.gen_ending())
 
         meta.extend(self.gen_headers_peaktable_auto())
         meta.extend(self.gen_auto_peaktable())

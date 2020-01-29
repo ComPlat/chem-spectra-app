@@ -50,6 +50,8 @@ def extract_params(request):
     clear = bool(request.form.get('clear', default=False))
     ext = request.form.get('ext', default='')
     predict = request.form.get('predict', default='{}')
+    integration = request.form.get('integration', default='{}')
+    multiplicity = request.form.get('multiplicity', default='{}')
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -63,6 +65,8 @@ def extract_params(request):
         'clear': clear,
         'predict': predict,
         'ext': ext,
+        'integration': integration,
+        'multiplicity': multiplicity,
     }
     has_params = (
         params.get('peaks_str') or
@@ -75,7 +79,9 @@ def extract_params(request):
         params.get('molfile') or
         params.get('clear') or
         params.get('predict') or
-        params.get('ext')
+        params.get('ext') or
+        params.get('integration') or
+        params.get('multiplicity')
     )
     if not has_params:
         params = False

@@ -1,4 +1,5 @@
 import nmrglue as ng
+import json
 
 
 class JcampBaseConverter:
@@ -11,6 +12,8 @@ class JcampBaseConverter:
         self.typ = self.__typ()
 
     def __set_params(self, params):
+        default_itg = { 'stack': [], 'refArea': 1, 'refFactor': 1, 'shift': 0 }
+        default_mpy = { 'stack': [], 'smExtext': False, 'shift': 0 }
         if not params:
             return {
                 'select_x': None,
@@ -22,6 +25,8 @@ class JcampBaseConverter:
                 'scan': None,
                 'thres': None,
                 'clear': False,
+                'integration': default_itg,
+                'multiplicity': default_mpy,
             }
 
         select_x = params.get('select_x', None)
@@ -33,6 +38,10 @@ class JcampBaseConverter:
         scan = params.get('scan', None)
         thres = params.get('thres', None)
         clear = params.get('clear', False)
+        integration = params.get('integration')
+        integration = json.loads(integration) if integration else default_itg
+        multiplicity = params.get('multiplicity')
+        multiplicity = json.loads(multiplicity) if multiplicity else default_mpy
         ext = params.get('ext', '')
 
         try:
@@ -51,6 +60,8 @@ class JcampBaseConverter:
             'scan': scan,
             'thres': thres,
             'clear': clear,
+            'integration': integration,
+            'multiplicity': multiplicity,
             'ext': ext,
         }
 

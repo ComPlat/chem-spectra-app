@@ -32,8 +32,13 @@ class JcampNIConverter:  # nmr & IR
         self.label = self.__set_label()
         self.auto_peaks = None
         self.edit_peaks = None
+        self.itg_table = []
+        self.mpy_itg_table = []
+        self.mpy_pks_table = []
         self.datatable = self.__set_datatable()
         self.__read_peak_from_file()
+        self.__read_integration_from_file()
+        self.__read_multiplicity_from_file()
 
     def __thres(self):
         dt = self.datatype
@@ -274,7 +279,7 @@ class JcampNIConverter:  # nmr & IR
                 auto_y = []
                 if len(self.dic['PEAKTABLE']):
                     return
-                pas = self.dic['PEAKTABLE'][-1].split('\n')[1:]
+                pas = self.dic['PEAKTABLE'][1].split('\n')[1:]
                 for pa in pas:
                     info = pa.replace(' ', '').split(',')
                     auto_x.append(float(info[0]))
@@ -292,7 +297,7 @@ class JcampNIConverter:  # nmr & IR
         try:  # legacy
             edit_x = []
             edit_y = []
-            pas = self.dic['PEAKASSIGNMENTS'][-1].split('\n')[1:]
+            pas = self.dic['PEAKASSIGNMENTS'][1].split('\n')[1:]
             for pa in pas:
                 info = pa.replace('(', '').replace(')', '') \
                             .replace(' ', '').split(',')
@@ -359,3 +364,18 @@ class JcampNIConverter:  # nmr & IR
             self.__run_auto_pick_peak()
         if self.params['peaks_str']:
             self.__parse_edit()
+
+    def __read_integration_from_file(self):
+        target = self.dic.get('$OBSERVEDINTEGRALS')
+        if target:
+            self.itg_table = ['\n'.join(target[0].split('\n')[1:]), '\n']
+
+    def __read_multiplicity_from_file(self):
+        target1 = self.dic.get('$OBSERVEDMULTIPLETS')
+        if target1:
+            self.mpy_itg_table = target1
+            self.mpy_itg_table.append('\n')
+        target2 = self.dic.get('$OBSERVEDMULTIPLETSPEAKS')
+        if target2:
+            self.mpy_pks_table = target2
+            self.mpy_pks_table.append('\n')

@@ -26,13 +26,19 @@ class BaseComposer:
         self.core = core
         self.title = None
         self.meta = None
+        self.itgs = []
+        self.mpys = []
+        self.refArea = 1
+        self.refShift = 0
+        self.prepare_itg_mpy()
 
-    def __header_pk_common(self):
+    def __header_pk_common(self, category):
         return [
             '##TITLE={}\n'.format(self.title),
             '##JCAMP-DX=5.00\n',
             '##DATA TYPE={}PEAKTABLE\n'.format(self.core.typ),
             '##DATA CLASS=PEAKTABLE\n',
+            '##$CSCATEGORY={}\n'.format(category),
             '##$CSTHRESHOLD={}\n'.format(self.core.threshold),
             '##MAXX={}\n'.format(self.core.boundary['x']['max']),
             '##MAXY={}\n'.format(self.core.boundary['y']['max']),
@@ -87,7 +93,7 @@ class BaseComposer:
         return c_spectrum_orig
 
     def gen_headers_peaktable_auto(self):
-        return ['\n', TEXT_PEAK_AUTO] + self.__header_pk_common()
+        return ['\n', TEXT_PEAK_AUTO] + self.__header_pk_common('AUTO_PEAK')
 
     def gen_auto_peaktable(self):
         content = [
@@ -107,7 +113,7 @@ class BaseComposer:
         return content
 
     def gen_headers_peaktable_edit(self):
-        header = self.__header_pk_common()
+        header = self.__header_pk_common('EDIT_PEAK')
         spl_desc = self.__create_sample_description()
 
         return ['\n', TEXT_PEAK_EDIT] + header + spl_desc
@@ -135,3 +141,91 @@ class BaseComposer:
         tf.write(bytes(meta, 'UTF-8'))
         tf.seek(0)
         return tf
+
+    def prepare_itg_mpy(self):
+        if not hasattr(self.core, 'params'):
+            return
+        core_itg = self.core.params['integration']
+        core_mpy = self.core.params['multiplicity']
+        rArea = core_itg.get('refArea') or 1
+        rFact = core_itg.get('refFactor') or 1
+        self.refArea = float(rFact) / float(rArea)
+        self.refShift = core_itg.get('shift') or 0
+        # = = = = =
+        itg_stack = core_itg.get('stack') or []
+        mpy_stack = core_mpy.get('stack') or []
+
+        for itg in itg_stack:
+            skip = False
+            for mpy in mpy_stack:
+                if (itg['xL'] ==  mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):
+                    mpy['area'] = itg['area']
+                    self.mpys.append(mpy)
+                    skip = True
+                    break
+            if not skip:
+                self.itgs.append(itg)
+
+    def gen_integration_info(self):
+        if len(self.itgs) > 0:
+            table = []
+            for itg in self.itgs:
+                table.extend([
+                    '({}, {}, {})\n'.format(
+                        itg['xL'] - self.refShift,
+                        itg['xU'] - self.refShift,
+                        float(itg['area']) * self.refArea,
+                    ),
+                ])
+            return table
+        elif self.core.params['integration'].get('edited'):
+            return []
+        else:
+            return self.core.itg_table
+
+    def gen_mpy_integ_info(self):
+        ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        if len(self.mpys) > 0:
+            table = []
+            for idx, mpy in enumerate(self.mpys):
+                table.extend([
+                    '({}, {}, {}, {}, {}, {}, {}, {})\n'.format(
+                        idx + 1,
+                        mpy['xExtent']['xL'] - self.refShift,
+                        mpy['xExtent']['xU'] - self.refShift,
+                        (mpy['xExtent']['xL'] + mpy['xExtent']['xU']) / 2 - self.refShift,
+                        float(mpy['area']) * self.refArea,
+                        idx + 1,
+                        mpy['mpyType'],
+                        ascii_uppercase[idx],
+                    ),
+                ])
+            return table
+        elif self.core.params['multiplicity'].get('edited'):
+            return []
+        else:
+            return self.core.mpy_itg_table
+
+    def gen_mpy_peaks_info(self):
+        if len(self.mpys) > 0:
+            table = []
+            mpy_stack = self.core.params['multiplicity'].get('stack') or []
+            for mk in mpy_stack:
+                mk_idx = 0
+                for idx, mpy in enumerate(self.mpys):
+                    if (mpy['xExtent']['xL'] == mk['xExtent']['xL']) and (mpy['xExtent']['xU'] == mk['xExtent']['xU']):
+                        mk_idx = idx + 1
+                        break
+                for p in mk['peaks']:
+                    table.extend([
+                        '({}, {}, {})\n'.format(
+                            mk_idx,
+                            p['x'] - self.refShift,
+                            p['y'] - self.refShift,
+                        ),
+                    ])
+            return table
+        elif self.core.params['multiplicity'].get('edited'):
+            return []
+        else:
+            return self.core.mpy_pks_table
