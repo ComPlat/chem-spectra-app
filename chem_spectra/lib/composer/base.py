@@ -1,6 +1,8 @@
 import tempfile
 from chem_spectra.lib.shared.misc import is_number
-
+from chem_spectra.lib.shared.calc import (  # noqa: E402
+    calc_mpy_center
+)
 
 def extrac_dic(core, key):
     query = core.dic.get(key, '')
@@ -28,6 +30,7 @@ class BaseComposer:
         self.meta = None
         self.itgs = []
         self.mpys = []
+        self.all_itgs = []
         self.refArea = 1
         self.refShift = 0
         self.prepare_itg_mpy()
@@ -145,8 +148,10 @@ class BaseComposer:
     def prepare_itg_mpy(self):
         if not hasattr(self.core, 'params'):
             return
-        core_itg = self.core.params['integration']
-        core_mpy = self.core.params['multiplicity']
+        core_itg = self.core.params.get('integration')
+        core_mpy = self.core.params.get('multiplicity')
+        if (not core_itg) or (not core_mpy):
+            return
         rArea = core_itg.get('refArea') or 1
         rFact = core_itg.get('refFactor') or 1
         self.refArea = float(rFact) / float(rArea)
@@ -155,6 +160,7 @@ class BaseComposer:
         itg_stack = core_itg.get('stack') or []
         mpy_stack = core_mpy.get('stack') or []
 
+        self.all_itgs = itg_stack
         for itg in itg_stack:
             skip = False
             for mpy in mpy_stack:
@@ -193,7 +199,7 @@ class BaseComposer:
                         idx + 1,
                         mpy['xExtent']['xL'] - self.refShift,
                         mpy['xExtent']['xU'] - self.refShift,
-                        (mpy['xExtent']['xL'] + mpy['xExtent']['xU']) / 2 - self.refShift,
+                        calc_mpy_center(mpy['peaks'], self.refShift, mpy['mpyType']),
                         float(mpy['area']) * self.refArea,
                         idx + 1,
                         mpy['mpyType'],

@@ -5,9 +5,13 @@ import tempfile  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.path as mpath  # noqa: E402
 import re # noqa: E402
+import numpy as np # noqa: E402
 
 from chem_spectra.lib.composer.base import (  # noqa: E402
     extrac_dic, calc_npoints, BaseComposer
+)
+from chem_spectra.lib.shared.calc import (  # noqa: E402
+    calc_mpy_center, calc_ks, get_curve_endpoint
 )
 
 
@@ -157,6 +161,12 @@ class NIComposer(BaseComposer):
             self.core.boundary['x']['max'],
             self.core.boundary['x']['min']
         )
+        y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
+        h = y_max - y_min
+        plt.ylim(
+            y_min - h * 0.2,
+            y_max + h * 0.2,
+        )
         # PLOT peaks
         faktor = self.__fakto()
         path_data = [
@@ -181,6 +191,37 @@ class NIComposer(BaseComposer):
                 marker=marker,
                 markersize=50,
             )
+
+        # ----- PLOT integration -----
+        refShift, refArea = self.refShift, self.refArea
+        itg_h = y_max + h * 0.1
+        for itg in self.all_itgs:
+            # integration marker
+            xL, xU, area = itg['xL'] - refShift, itg['xU'] - refShift, itg['area'] * refArea
+            plt.plot([xL, xU], [itg_h, itg_h], color='#228B22')
+            plt.plot([xL, xL], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
+            plt.plot([xU, xU], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
+            plt.text((xL + xU) / 2, itg_h + h * 0.015, '{:0.2f}'.format(area), color='#228B22', ha='center', size=12)
+            # integration curve
+            ks = calc_ks(self.core.ys, y_max, h)
+            iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
+            ref = ks[iL]
+            cxs = self.core.xs[iL:iU]
+            cys = (ks[iL:iU] - ref) * 3 + (y_max - h * 0.4)
+            plt.plot(cxs, cys, color='#228B22')
+
+        # ----- PLOT multiplicity -----
+        mpy_h = y_min - h * 0.08
+        for mpy in self.mpys:
+            xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']
+            plt.plot([xL, xU], [mpy_h, mpy_h], color='#DA70D6')
+            plt.plot([xL, xL], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')
+            plt.plot([xU, xU], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')
+            plt.text((xL + xU) / 2, mpy_h - h * 0.1, '({})'.format(typ), color='#DA70D6', ha='center', size=12)
+            plt.text((xL + xU) / 2, mpy_h - h * 0.06, '{:0.3f}'.format(calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType'])), color='#DA70D6', ha='center', size=12)
+            for p in peaks:
+                x = p['x']
+                plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.05], color='#DA70D6')
 
         # PLOT label
         plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
