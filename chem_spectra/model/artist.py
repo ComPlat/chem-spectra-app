@@ -91,7 +91,11 @@ class ArtistModel:
         return svgs
 
     def __identify_targets(self):
-        atom_symbol = 'C' if self.layout == '13C' else 'H'
+        atom_symbol = 'C'
+        if self.layout == '1H':
+            atom_symbol = 'H'
+        elif self.layout == '19F':
+            atom_symbol = 'F'
 
         targets = []
         for idx in range(self.mol.GetNumAtoms()):

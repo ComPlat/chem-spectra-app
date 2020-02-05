@@ -89,7 +89,15 @@ class InferencerModel:
                 json=data,
             )
             return rsp
-
+        elif self.layout == '19F':
+            typ = 'nmr;19F;1d'
+            data = self.__build_data(typ, peak_xs, solvent)
+            rsp = requests.post(
+                current_app.config.get('URL_NSHIFTDB'),
+                headers=hdr_nsdb,
+                json=data,
+            )
+            return rsp
         return False
 
     def __extract_x(self):
