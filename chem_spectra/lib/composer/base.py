@@ -16,6 +16,11 @@ def calc_npoints(peaks):
         return len(peaks['x'])
     return 0
 
+def coupling_string(js):
+    if len(js) == 0:
+        return ''
+    return ', ' + ' '.join([str(j) for j in js])
+
 
 TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'
 TEXT_PEAK_AUTO = '$$ === CHEMSPECTRA PEAK TABLE AUTO ===\n'
@@ -195,7 +200,7 @@ class BaseComposer:
             table = []
             for idx, mpy in enumerate(self.mpys):
                 table.extend([
-                    '({}, {}, {}, {}, {}, {}, {}, {})\n'.format(
+                    '({}, {}, {}, {}, {}, {}, {}, {}{})\n'.format(
                         idx + 1,
                         mpy['xExtent']['xL'] - self.refShift,
                         mpy['xExtent']['xU'] - self.refShift,
@@ -204,6 +209,7 @@ class BaseComposer:
                         idx + 1,
                         mpy['mpyType'],
                         ascii_uppercase[idx],
+                        coupling_string(mpy['js']),
                     ),
                 ])
             return table
