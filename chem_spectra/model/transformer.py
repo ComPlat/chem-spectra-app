@@ -1,4 +1,8 @@
 import json
+import zipfile
+import tempfile
+import glob
+import os
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
@@ -6,9 +10,26 @@ from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.converter.cdf.base import CdfBaseConverter
 from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
+from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
+
+
+def search_fid(td):
+    try:
+        for one in os.listdir(td):
+            targets = glob.glob('{}/{}/fid'.format(td, one))
+            if len(targets) > 0:
+                return '{}/{}'.format(td, one)
+            if os.path.isdir('{}/{}'.format(td, one)):
+                for two in os.listdir('{}/{}'.format(td, one)):
+                    targets = glob.glob('{}/{}/{}/fid'.format(td, one, two))[0]
+                    if len(targets) > 0:
+                        return '{}/{}/{}'.format(td, one, two)
+        return False
+    except:
+        return False
 
 
 class TransformerModel:
@@ -26,17 +47,24 @@ class TransformerModel:
 
     def convert2jcamp_img(self):
         cmpsr = self.to_composer()
+        if not cmpsr:
+            return False, False
         return cmpsr.tf_jcamp(), cmpsr.tf_img()
 
     def to_composer(self):
         is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml']
         is_cdf = self.file.name.split('.')[-1].lower() in ['cdf']
+        is_zip = self.file.name.split('.')[-1].lower() in ['zip']
         is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml']
         is_cdf_by_params = self.params['ext'] in ['cdf']
+        is_zip_by_params = self.params['ext'] in ['zip']
         if is_raw_mzml or is_raw_mzml_by_params:
             return self.ms2composer()
         if is_cdf or is_cdf_by_params:
             _, cp = self.cdf2cvp()
+            return cp
+        if is_zip or is_zip_by_params:
+            _, cp = self.zip2cvp()
             return cp
         else:
             _, cp = self.jcamp2cvp()
@@ -55,6 +83,23 @@ class TransformerModel:
         mscv = CdfMSConverter(cbcv)
         mscp = MSComposer(mscv)
         return mscv, mscp
+
+    def zip2cvp(self):
+        fbcv = False
+        with tempfile.TemporaryDirectory() as td:
+            tz = store_byte_in_tmp(self.file.bcore, suffix='.zip')
+            with zipfile.ZipFile(tz.name, 'r') as z:
+                z.extractall(td)
+            target_dir = search_fid(td)
+            if not target_dir:
+                return False, False
+            fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
+            if not fbcv:
+                return False, False
+        # assume NMR only
+        nicv = JcampNIConverter(fbcv)
+        nicp = NIComposer(nicv)
+        return nicv, nicp
 
     def jcamp2cvp(self):
         tf = store_str_in_tmp(self.file.core)

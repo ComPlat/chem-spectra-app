@@ -1,6 +1,6 @@
 import base64
 from flask import (
-    Blueprint, request, jsonify, send_file,
+    Blueprint, request, jsonify, send_file, abort,
 )
 
 # from chem_spectra.controller.helper.settings import get_ip_white_list
@@ -21,6 +21,8 @@ def chemspectra_file_convert():
     params = extract_params(request)
     if file:
         tf_jcamp, tf_img = TraModel(file, params).convert2jcamp_img()
+        if not tf_jcamp:
+            abort(400)
         jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
         img = base64.b64encode(tf_img.read()).decode("utf-8")
         return jsonify(

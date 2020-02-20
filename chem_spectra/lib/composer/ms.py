@@ -31,6 +31,7 @@ class MSComposer(BaseComposer):
             '##.SPECTROMETER TYPE={}\n'.format(self.core.dic.get('SPECTROMETER TYPE', '')), # TRAP
             '##.INLET={}\n'.format(self.core.dic.get('INLET', '')), # GC
             '##.IONIZATION MODE={}\n'.format(self.core.dic.get('IONIZATION MODE', '')), # EI+
+            '##$CSCATEGORY=SPECTRUM\n',
             '##$CSSCANAUTOTARGET={}\n'.format(self.core.auto_scan),
             '##$CSSCANEDITTARGET={}\n'.format(
                 self.core.edit_scan or self.core.auto_scan
