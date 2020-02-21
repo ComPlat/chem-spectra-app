@@ -12,22 +12,24 @@ def allowed_file(file):
     return ext in ALLOWED_EXTENSIONS
 
 
-def get_fname(abs_path, filename):
+def get_fname(abs_path, filename, is_src):
     if not filename:
         return basename(abs_path)
 
     ext = abs_path.split('.')[-1]
+    header = 'orig_' if is_src else ''
 
-    return filename + '.' + ext
+    return '{}{}.{}'.format(header, filename, ext)
 
 
-def to_zip_response(src_tmp_arr, filename=False):
+def to_zip_response(src_tmp_arr, filename=False, src_idx=-1):
     tmp_arr = [el for el in src_tmp_arr if el]
     memory = io.BytesIO()
     with zipfile.ZipFile(memory, 'w') as zf:
-        for tmp in tmp_arr:
+        for idx, tmp in enumerate(tmp_arr):
             abs_path = tmp.name
-            fname = get_fname(abs_path, filename).replace(' ', '_')
+            is_src = idx == src_idx
+            fname = get_fname(abs_path, filename, is_src).replace(' ', '_')
             zf.write(abs_path, fname)
     memory.seek(0)
     for tmp in tmp_arr:

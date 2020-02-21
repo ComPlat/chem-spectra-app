@@ -1,3 +1,5 @@
+import tempfile
+
 class FileContainer:
     def __init__(self, src=False):
         self.name = src and src.filename
@@ -8,3 +10,10 @@ class FileContainer:
         self.core = core
         self.bcore = str.encode(core)
         return self
+
+    def temp_file(self, prefix=None):
+        suffix = '.{}'.format(self.name.split('.')[-1])
+        tf = tempfile.NamedTemporaryFile(suffix=suffix)
+        tf.write(self.bcore)
+        tf.seek(0)
+        return tf

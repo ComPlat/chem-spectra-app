@@ -34,14 +34,20 @@ def chemspectra_file_convert():
 
 @file_api.route('/api/v1/chemspectra/file/save', methods=['POST'])
 def chemspectra_file_save():
-    file = FileContainer(request.files['file'])
+    src = FileContainer(request.files['src'])
+    dst = FileContainer(request.files['dst'])
     filename = request.form.get('filename', default=None)
     params = extract_params(request)
-    if file:  # and allowed_file(file):
-        tm = TraModel(file, params)
+    if dst:  # and allowed_file(file):
+        tm = TraModel(dst, params)
         tf_jcamp, tf_img = tm.convert2jcamp_img()
-        tf_arr = [tf_jcamp, tf_img, tm.tf_predict()]
-        memory = to_zip_response(tf_arr, filename)
+        tf_arr = [
+            src.temp_file(),
+            tf_jcamp,
+            tf_img,
+            tm.tf_predict(),
+        ]
+        memory = to_zip_response(tf_arr, filename, src_idx=0)
         return send_file(
             memory,
             attachment_filename='spectrum.zip',
