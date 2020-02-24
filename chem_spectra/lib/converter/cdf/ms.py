@@ -18,7 +18,7 @@ class CdfMSConverter:  # nmr & IR
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
         # - - - - - - - - - - -
-        self.fname = base.title
+        self.fname = base.fname
         self.runs, self.spectra, self.auto_scan = self.__read_data()
         self.datatables = self.__set_datatables()
 

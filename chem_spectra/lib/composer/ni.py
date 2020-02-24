@@ -23,7 +23,7 @@ TEXT_MULTIPLICITY = '$$ === CHEMSPECTRA MULTIPLICITY ===\n'
 class NIComposer(BaseComposer):
     def __init__(self, core):
         super().__init__(core)
-        self.title = core.title
+        self.title = core.fname
         self.meta = self.__compose()
 
     def __header_base(self):

@@ -44,6 +44,13 @@ def parse_float(val, default):
         return float(default)
 
 
+def parse_fname(request):
+    fil_name = request.files.get('file') and request.files.get('file').filename
+    src_name = request.files.get('src') and request.files.get('src').filename
+    def_name = request.form.get('fname', default=False)
+    return def_name or fil_name or src_name or ''
+
+
 def extract_params(request):
     scan = parse_float(request.form.get('scan', default=0), 0)
     scan = 0 if math.isnan(scan) else int(scan)
@@ -54,6 +61,7 @@ def extract_params(request):
     predict = request.form.get('predict', default='{}')
     integration = request.form.get('integration', default='{}')
     multiplicity = request.form.get('multiplicity', default='{}')
+    fname = parse_fname(request)
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -69,6 +77,7 @@ def extract_params(request):
         'ext': ext,
         'integration': integration,
         'multiplicity': multiplicity,
+        'fname': fname,
     }
     has_params = (
         params.get('peaks_str') or
@@ -83,7 +92,8 @@ def extract_params(request):
         params.get('predict') or
         params.get('ext') or
         params.get('integration') or
-        params.get('multiplicity')
+        params.get('multiplicity') or
+        params.get('fname')
     )
     if not has_params:
         params = False

@@ -19,6 +19,7 @@ class JcampNIConverter:  # nmr & IR
         self.title = base.title
         self.typ = base.typ
         # - - - - - - - - - - -
+        self.fname = base.fname
         self.target_idx = self.__index_target()
         self.block_count = self.__count_block()
         self.threshold = self.__thres()

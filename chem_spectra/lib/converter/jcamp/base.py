@@ -11,6 +11,7 @@ class JcampBaseConverter:
         self.datatype = self.__set_datatype()
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = self.__typ()
+        self.fname = self.params.get('fname')
 
     def __read(self, path):
         return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')

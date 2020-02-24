@@ -11,6 +11,7 @@ class CdfBaseConverter:
         self.datatype = 'MASS SPECTRUM'
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = 'MS'
+        self.fname = '.'.join(params.get('fname').split('.')[:-1])
 
     def __read(self, path):
         cdf = netCDF4.Dataset(path)

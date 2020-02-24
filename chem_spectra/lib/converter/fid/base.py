@@ -12,6 +12,7 @@ class FidBaseConverter:
         self.datatype = 'NMR SPECTRUM'
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = 'NMR'
+        self.fname = '.'.join(params.get('fname').split('.')[:-1])
 
     def __read(self, target_dir, fname):
         dic, data = ng.bruker.read(target_dir)

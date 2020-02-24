@@ -17,6 +17,7 @@ def parse_params(params):
             'clear': False,
             'integration': default_itg,
             'multiplicity': default_mpy,
+            'fname': '',
         }
 
     select_x = params.get('select_x', None)
@@ -33,6 +34,9 @@ def parse_params(params):
     multiplicity = params.get('multiplicity')
     multiplicity = json.loads(multiplicity) if multiplicity else default_mpy
     ext = params.get('ext', '')
+    fname = params.get('fname', '').split('.')
+    fname = fname[:-2] if (len(fname) > 2 and (fname[-2] in ['edit', 'peak'])) else fname[:-1]
+    fname = '.'.join(fname)
 
     try:
         if select_x and float(select_x) != 0.0 and ref_name != '- - -':
@@ -53,4 +57,5 @@ def parse_params(params):
         'integration': integration,
         'multiplicity': multiplicity,
         'ext': ext,
+        'fname': fname,
     }
