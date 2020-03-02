@@ -5,6 +5,7 @@ from chem_spectra.lib.converter.datatable import DatatableModel
 
 
 THRESHOLD_IR = 0.93
+THRESHOLD_RAMAN = 0.07
 THRESHOLD_NMR = 0.005
 THRESHOLD_MS = 0.05
 
@@ -18,6 +19,8 @@ class JcampNIConverter:  # nmr & IR
         self.datatype = base.datatype
         self.title = base.title
         self.typ = base.typ
+        self.is_em_wave = base.is_em_wave
+        self.is_ir = base.is_ir
         # - - - - - - - - - - -
         self.fname = base.fname
         self.target_idx = self.__index_target()
@@ -49,6 +52,8 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_NMR
         elif 'INFRARED SPECTRUM' == dt:
             return THRESHOLD_IR
+        elif 'RAMAN SPECTRUM' == dt:
+            return THRESHOLD_RAMAN
         elif 'MASS SPECTRUM' == dt:
             return THRESHOLD_MS
         return 0.5
@@ -68,7 +73,9 @@ class JcampNIConverter:  # nmr & IR
 
     def __index_target(self):
         target_topics = [
-            'NMR SPECTRUM', 'NMRSPECTRUM', 'INFRARED SPECTRUM', 'MASS SPECTRUM'
+            'NMR SPECTRUM', 'NMRSPECTRUM',
+            'INFRARED SPECTRUM', 'RAMAN SPECTRUM',
+            'MASS SPECTRUM'
         ]
         for tp in target_topics:
             if tp in self.datatypes:
@@ -128,7 +135,7 @@ class JcampNIConverter:  # nmr & IR
             except:  # noqa
                 pass
 
-        if self.typ == 'INFRARED' and beg_pt < end_pt:
+        if self.is_em_wave and beg_pt < end_pt:
             buf = beg_pt
             beg_pt = end_pt
             end_pt = buf
@@ -160,7 +167,7 @@ class JcampNIConverter:  # nmr & IR
             except:  # noqa
                 pass
         # transmission only # IR ABS vs TRANS
-        if self.typ == 'INFRARED':
+        if self.is_ir:
             y_median = np.median(y)
             y_max = np.max(y)
             if y_median < 0.5 * y_max:
@@ -342,7 +349,7 @@ class JcampNIConverter:  # nmr & IR
 
         corr_data_ys = self.ys
         corr_height = height
-        if 'INFRARED SPECTRUM' == self.datatype:
+        if self.is_ir:
             corr_data_ys = 1 - self.ys
             corr_height = 1 - height
 

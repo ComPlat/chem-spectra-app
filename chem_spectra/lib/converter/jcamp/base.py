@@ -12,6 +12,8 @@ class JcampBaseConverter:
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = self.__typ()
         self.fname = self.params.get('fname')
+        self.is_em_wave = self.__is_em_wave()
+        self.is_ir = self.__is_ir()
 
     def __read(self, path):
         return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
@@ -24,6 +26,8 @@ class JcampBaseConverter:
             return 'NMR SPECTRUM'
         elif 'INFRARED SPECTRUM' in dts:
             return 'INFRARED SPECTRUM'
+        elif 'RAMAN SPECTRUM' in dts:
+            return 'RAMAN SPECTRUM'
         elif 'MASS SPECTRUM' in dts:
             return 'MASS SPECTRUM'
         return ''
@@ -36,6 +40,14 @@ class JcampBaseConverter:
             return 'NMR'
         elif 'INFRARED SPECTRUM' == dt:
             return 'INFRARED'  # TBD
+        elif 'RAMAN SPECTRUM' == dt:
+            return 'RAMAN'  # TBD
         elif 'MASS SPECTRUM' == dt:
             return 'MS'
         return ''
+
+    def __is_em_wave(self):
+        return self.typ in ['INFRARED', 'RAMAN']
+
+    def __is_ir(self):
+        return self.typ in ['INFRARED']

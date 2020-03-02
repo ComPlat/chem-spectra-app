@@ -80,7 +80,7 @@ class NIComposer(BaseComposer):
         ]
 
     def __gen_headers_spectrum_orig(self):
-        if self.core.typ == 'INFRARED':
+        if self.core.is_em_wave:
             return self.__header_base() + self.__header_params()
         else:
             return self.__header_base() + \
@@ -138,6 +138,8 @@ class NIComposer(BaseComposer):
             return 20
         elif 'INFRARED' == typ:
             return 20
+        elif 'RAMAN' == typ:
+            return 20
         elif 'MS' == typ:
             return 20
         return 20
@@ -150,6 +152,8 @@ class NIComposer(BaseComposer):
             return 1
         elif 'INFRARED' == typ:
             return -1
+        elif 'RAMAN' == typ:
+            return 1
         return 1
 
     def tf_img(self):
