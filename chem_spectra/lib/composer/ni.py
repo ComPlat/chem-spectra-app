@@ -207,7 +207,7 @@ class NIComposer(BaseComposer):
             iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
             ref = ks[iL]
             cxs = self.core.xs[iL:iU]
-            cys = (ks[iL:iU] - ref) * 3 + (y_max - h * 0.4)
+            cys = (ks[iL:iU] - ref) * 1.5 + (y_max - h * 0.4)
             plt.plot(cxs, cys, color='#228B22')
 
         # ----- PLOT multiplicity -----

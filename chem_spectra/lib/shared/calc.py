@@ -7,10 +7,10 @@ def calc_ks(ys, y_max, h):
     ks = np.zeros_like(ys)
     cs = ys / y_max
 
-    gate = 0.03
+    gate = 0.0
     accum = 0
     for idx, val in enumerate(cs):
-        if gate < abs(val):
+        if gate < val:
             accum += val * h * 0.01
         ks[idx] = accum
     return ks
