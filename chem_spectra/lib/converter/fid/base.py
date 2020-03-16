@@ -13,6 +13,8 @@ class FidBaseConverter:
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = 'NMR'
         self.fname = '.'.join(params.get('fname').split('.')[:-1])
+        self.is_em_wave = self.__is_em_wave()
+        self.is_ir = self.__is_ir()
 
     def __read(self, target_dir, fname):
         dic, data = ng.bruker.read(target_dir)
@@ -42,3 +44,9 @@ class FidBaseConverter:
         data = ng.proc_base.di(data)                # discard the imaginaries
         data = ng.proc_base.rev(data)               # reverse the data
         return dic, data
+
+    def __is_em_wave(self):
+        return self.typ in ['INFRARED', 'RAMAN']
+
+    def __is_ir(self):
+        return self.typ in ['INFRARED']
