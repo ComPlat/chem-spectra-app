@@ -1,5 +1,5 @@
 from rdkit import Chem
-from rdkit.Chem import Descriptors, AllChem
+from rdkit.Chem import Descriptors, AllChem, Draw, rdDepictor
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp
 import chem_spectra.lib.chem.ifg as ifg
@@ -14,6 +14,7 @@ class MoleculeModel:
         self.mol = self.__set_mol()
         self.smi = self.__set_smi()
         self.mass = self.__set_mass()
+        self.svg = self.__set_svg()
 
     def __decorate(self, mol):
         if self.layout == '1H':
@@ -40,6 +41,13 @@ class MoleculeModel:
     def __set_mass(self):
         mass = Descriptors.ExactMolWt(self.mol)
         return mass
+
+    def __set_svg(self):
+        drawer = Draw.MolDraw2DSVG(300, 150)
+        drawer.DrawMolecule(self.mol)
+        drawer.FinishDrawing()
+        svg = drawer.GetDrawingText().replace('svg:','')
+        return svg
 
     def __clear_mapnum(self, mol):
         [

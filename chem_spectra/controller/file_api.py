@@ -62,5 +62,6 @@ def chemspectra_molfile_convert():
     return jsonify(
         status=True,
         smi=mm.smi,
-        mass=mm.mass
+        mass=mm.mass,
+        svg=mm.svg,
     )
