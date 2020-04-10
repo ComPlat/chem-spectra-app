@@ -16,18 +16,19 @@ from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
 
 
-def search_fid(td):
+def find_dir(path, name):
+    for root, _, files in os.walk(path):
+        if name in files:
+            return os.path.join(root)
+    return False
+
+
+def search_brucker_binary(td):
     try:
-        for one in os.listdir(td):
-            targets = glob.glob('{}/{}/fid'.format(td, one))
-            if len(targets) > 0:
-                return '{}/{}'.format(td, one)
-            if os.path.isdir('{}/{}'.format(td, one)):
-                for two in os.listdir('{}/{}'.format(td, one)):
-                    targets = glob.glob('{}/{}/{}/fid'.format(td, one, two))[0]
-                    if len(targets) > 0:
-                        return '{}/{}/{}'.format(td, one, two)
-        return False
+        target_dir = find_dir(td, 'fid')
+        if not target_dir:
+            target_dir = find_dir(td, 'ser')
+        return target_dir
     except:
         return False
 
@@ -90,7 +91,7 @@ class TransformerModel:
             tz = store_byte_in_tmp(self.file.bcore, suffix='.zip')
             with zipfile.ZipFile(tz.name, 'r') as z:
                 z.extractall(td)
-            target_dir = search_fid(td)
+            target_dir = search_brucker_binary(td)
             if not target_dir:
                 return False, False
             fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
