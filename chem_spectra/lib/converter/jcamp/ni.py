@@ -343,7 +343,7 @@ class JcampNIConverter:  # nmr & IR
             return
         self.edit_peaks = {'x': edit_x, 'y': edit_y}
 
-    def __run_auto_pick_peak(self):
+    def __exec_peak_picking_logic(self):
         max_y = np.max(self.ys)
         height = self.threshold * max_y
 
@@ -353,9 +353,25 @@ class JcampNIConverter:  # nmr & IR
             corr_data_ys = 1 - self.ys
             corr_height = 1 - height
 
-        peaks = signal.find_peaks(corr_data_ys, height=corr_height)
-        peak_idxs = peaks[0]
-        self.__set_auto_peaks(peak_idxs)
+        peak_idxs = signal.find_peaks(corr_data_ys, height=corr_height)[0]
+
+        min_y = np.min(self.ys)
+        if not self.is_ir and (max_y * 0.4 < -min_y):
+            dept_corr_data_ys = 1 - self.ys
+            dept_corr_height = height
+            dept_peak_idxs = signal.find_peaks(dept_corr_data_ys, height=dept_corr_height)[0]
+            peak_idxs = np.unique(np.concatenate((peak_idxs, dept_peak_idxs)))
+        return peak_idxs
+
+    def __run_auto_pick_peak(self):
+        within_limit = False
+        while not within_limit:
+            peak_idxs = self.__exec_peak_picking_logic()
+            if peak_idxs.shape[0] <= 100:
+                within_limit = True
+                self.__set_auto_peaks(peak_idxs)
+            else:
+                self.threshold *= 1.5
 
     def __set_datatable(self):
         y_factor = self.factor and self.factor['y']
