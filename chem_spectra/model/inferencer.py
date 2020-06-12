@@ -30,6 +30,14 @@ class InferencerModel:
         cls,
         mm=False, layout=False, peaks=False, shift=False
     ):
+        if len(peaks) == 1 and peaks[0]['x'] == -1000:
+            return {
+                'outline': {
+                    'code': 400,
+                    'text': 'Peak & Element count mismatch! Please check peak-picking.',  # noqa
+                }
+            }
+
         instance = cls(
             mm=mm,
             layout=layout,
