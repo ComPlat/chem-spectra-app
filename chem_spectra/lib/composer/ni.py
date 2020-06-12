@@ -63,6 +63,15 @@ class NIComposer(BaseComposer):
             '##SPECTROMETER/DATA SYSTEM={}\n'.format(
                 extrac_dic(self.core, 'SPECTROMETER/DATASYSTEM')
             ),
+            '##.SHIFT REFERENCE={}\n'.format(
+                extrac_dic(self.core, '.SHIFTREFERENCE')
+            ),
+            '##.SOLVENT NAME={}\n'.format(
+                extrac_dic(self.core, '.SOLVENTNAME')
+            ),
+            '##.PULSE SEQUENCE={}\n'.format(
+                extrac_dic(self.core, '.PULSESEQUENCE')
+            ),
         ]
 
     def __header_params(self):

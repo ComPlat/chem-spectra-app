@@ -22,6 +22,9 @@ class FidBaseConverter:
         # process dic
         dic['.OBSERVENUCLEUS'] = '^{}'.format(udic.get('label'))
         dic['.OBSERVEFREQUENCY'] = [udic.get('obs')]
+        dic['.SOLVENTNAME'] = dic.get('acqus', {}).get('SOLVENT')
+        dic['.SHIFTREFERENCE'] = dic.get('acqus', {}).get('SOLVENT')
+        dic['.PULSESEQUENCE'] = dic.get('acqus', {}).get('PULPROG')
         num_pts = data.shape[-1]
         offset = (float(dic['acqus']['SW']) / 2) - (float(dic['acqus']['O1']) / float(dic['acqus']['BF1']))
         pt_head = float(dic['acqus']['SW']) - offset
@@ -39,9 +42,14 @@ class FidBaseConverter:
         data = ng.proc_base.fft(data)               # Fourier transform
         # p0, p1 = ng.process.proc_autophase.manual_ps(data)
         # data = ng.proc_base.ps(data, p0=-60, p1=200)
-        data_am = ng.process.proc_autophase.autops(data, 'acme') # phase correction
-        data_pm = ng.process.proc_autophase.autops(data, 'peak_minima') # phase correction
-        data = data_am if (data_am.min() > data_pm.min()) else data_pm
+        if 'dept' not in dic['.PULSESEQUENCE']:
+            data_am = ng.process.proc_autophase.autops(data, 'acme') # phase correction
+            data_pm = ng.process.proc_autophase.autops(data, 'peak_minima') # phase correction
+            data = data_am if (data_am.min() > data_pm.min()) else data_pm
+        else:
+            data = ng.proc_base.ps(data, p0=0, p1=210)
+            data_pm = ng.process.proc_autophase.autops(data, 'peak_minima') # phase correction
+            data = data_pm
         data = ng.process.proc_bl.baseline_corrector(data, wd=20) # baseline correction
         data = ng.proc_base.di(data)                # discard the imaginaries
         data = ng.proc_base.rev(data)               # reverse the data
