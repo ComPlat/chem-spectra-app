@@ -6,7 +6,7 @@ from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 
 
-class InfraredModel:
+class InfraredLib:
     def __init__(self, spectrum):
         self.nicv = self.__read_spectrum(spectrum)
 

@@ -22,7 +22,7 @@ svg_vb = "viewbox='0 0 400 400'"
 svg_size = "width='400px' height='400px'"
 
 
-class ArtistModel:
+class ArtistLib:
     def __init__(self, mm=False, predictions=[], layout=False):
         self.predictions = predictions
         self.layout = layout

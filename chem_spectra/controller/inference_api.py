@@ -5,8 +5,10 @@ from flask import (
 
 # from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
+
 from chem_spectra.model.inferencer import InferencerModel as InferModel
 from chem_spectra.model.molecule import MoleculeModel
+from chem_spectra.model.transformer import TransformerModel as TraModel
 
 infer_api = Blueprint('inference_api', __name__)
 
@@ -85,10 +87,11 @@ def chemspectra_predict_ms():
     spectrum = FileContainer(request.files['spectrum'])
     molfile = FileContainer(request.files['molfile'])
     mm = MoleculeModel(molfile, layout)
+    tm = TraModel(spectrum, molfile=None, params={'ext': 'jdx'}).to_composer()
 
     outcome = InferModel.predict_ms(
         mm=mm,
-        spectrum=spectrum
+        tm=tm
     )
     if outcome:
         return jsonify(outcome)

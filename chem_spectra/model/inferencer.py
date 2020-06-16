@@ -4,10 +4,8 @@ import numpy as np
 import json
 from flask import current_app
 
-from chem_spectra.model.molecule import MoleculeModel
-from chem_spectra.lib.data_pipeline.infrared import InfraredModel
-from chem_spectra.model.artist import ArtistModel
-from chem_spectra.model.transformer import TransformerModel as TraModel
+from chem_spectra.lib.data_pipeline.infrared import InfraredLib
+from chem_spectra.lib.chem.artist import ArtistLib
 
 hdr_nsdb = {
     'Content-Type': 'application/json'
@@ -17,9 +15,10 @@ hdr_nsdb = {
 class InferencerModel:
     def __init__(
         self,
-        mm=False, layout=False, peaks=False, shift=False, spectrum=False
+        mm=False, tm=False, layout=False, peaks=False, shift=False, spectrum=False
     ):
-        self.moltxt = mm.moltxt
+        self.mm = mm
+        self.tm = tm
         self.layout = layout
         self.peaks = peaks
         self.shift = shift
@@ -32,7 +31,7 @@ class InferencerModel:
         instance = cls(
             mm=mm,
             layout=layout,
-            peaks=[{'y': 0, 'x': -1000}],
+            peaks=[{'y': 0, 'x': -9999}],
             shift={'ref': {'label': False, 'name': '- - -', 'value': 0}, 'peak': False, 'enable': False}
         )
         try:
@@ -65,7 +64,7 @@ class InferencerModel:
         try:
             rsp = instance.__predict_nmr()
             output = rsp.json()
-            svgs = ArtistModel.draw_nmr(
+            svgs = ArtistLib.draw_nmr(
                 mm=mm,
                 layout=layout,
                 predictions=output['result'][0]['shifts'],
@@ -143,7 +142,7 @@ class InferencerModel:
                     'solvent': solvent,
                 },
             ],
-            'moltxt': self.moltxt
+            'moltxt': self.mm.moltxt
         }
 
     @classmethod
@@ -154,7 +153,7 @@ class InferencerModel:
         )
         try:
             outcome = instance.__predict_ir()
-            svgs = ArtistModel.draw_ir(
+            svgs = ArtistLib.draw_ir(
                 mm=mm,
                 layout='IR',
                 predictions=outcome['output']['result'][0]['fgs'],
@@ -177,10 +176,9 @@ class InferencerModel:
             }
 
     def __predict_ir(self):
-        mm = MoleculeModel(self.moltxt)
-        fgs = {'fgs': json.dumps(mm.fgs())}
+        fgs = {'fgs': json.dumps(self.mm.fgs())}
 
-        im = InfraredModel(self.spectrum)
+        im = InfraredLib(self.spectrum)
         xs, ys = im.standarize()
 
         buf = io.BytesIO()
@@ -196,10 +194,10 @@ class InferencerModel:
         return rsp.json()
 
     @classmethod
-    def predict_ms(cls, mm=False, spectrum=False):
+    def predict_ms(cls, mm=False, tm=False):
         instance = cls(
             mm=mm,
-            spectrum=spectrum
+            tm=tm
         )
         try:
             return instance.__predict_ms()
@@ -219,8 +217,7 @@ class InferencerModel:
             }
 
     def __predict_ms(self):
-        cmpsr = TraModel(self.spectrum, molfile=None, params={'ext': 'jdx'}).to_composer()
-        bx, by, gx, gy, scan = cmpsr.prism_peaks()
+        bx, by, _, _, scan = self.tm.prism_peaks()
         return {
             'outline': {
                 'code': 200,
@@ -231,7 +228,7 @@ class InferencerModel:
                         'type': 'ms',
                         'xs': bx,
                         'ys': by,
-                        'thres': cmpsr.core.thres,
+                        'thres': self.tm.core.thres,
                         'scan': scan,
                     }
                 ],
