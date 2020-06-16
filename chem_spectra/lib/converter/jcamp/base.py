@@ -14,6 +14,7 @@ class JcampBaseConverter:
         self.fname = self.params.get('fname')
         self.is_em_wave = self.__is_em_wave()
         self.is_ir = self.__is_ir()
+        self.ncl = self.__ncl()
 
     def __read(self, path):
         return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
@@ -51,3 +52,16 @@ class JcampBaseConverter:
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
+
+    def __ncl(self):
+        try:
+            ncls = self.dic['.OBSERVENUCLEUS']
+            if '^1H' in ncls:
+                return '1H'
+            elif '^13C' in ncls:
+                return '13C'
+            elif '^19F' in ncls:
+                return '19F'
+        except: # noqa
+            pass
+        return ''

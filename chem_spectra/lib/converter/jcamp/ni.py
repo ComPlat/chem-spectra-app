@@ -21,12 +21,12 @@ class JcampNIConverter:  # nmr & IR
         self.typ = base.typ
         self.is_em_wave = base.is_em_wave
         self.is_ir = base.is_ir
+        self.ncl = base.ncl
         # - - - - - - - - - - -
         self.fname = base.fname
         self.target_idx = self.__index_target()
         self.block_count = self.__count_block()
         self.threshold = self.__thres()
-        self.ncl = self.__ncl()
         self.obs_freq = self.__set_obs_freq()
         self.factor = self.__set_factor()
         self.x_unit = self.__set_x_unit()
@@ -57,19 +57,6 @@ class JcampNIConverter:  # nmr & IR
         elif 'MASS SPECTRUM' == dt:
             return THRESHOLD_MS
         return 0.5
-
-    def __ncl(self):
-        try:
-            ncls = self.dic['.OBSERVENUCLEUS']
-            if '^1H' in ncls:
-                return '1H'
-            elif '^13C' in ncls:
-                return '13C'
-            elif '^19F' in ncls:
-                return '19F'
-        except: # noqa
-            pass
-        return ''
 
     def __index_target(self):
         target_topics = [
