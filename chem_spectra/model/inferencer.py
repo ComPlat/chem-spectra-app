@@ -26,6 +26,24 @@ class InferencerModel:
         self.spectrum = spectrum
 
     @classmethod
+    def simulate_nmr(
+        cls, mm=False, layout='13C'
+    ):
+        instance = cls(
+            mm=mm,
+            layout=layout,
+            peaks=[{'y': 0, 'x': -1000}],
+            shift={'ref': {'label': False, 'name': '- - -', 'value': 0}, 'peak': False, 'enable': False}
+        )
+        try:
+            rsp = instance.__predict_nmr()
+            output = rsp.json()
+            simulations = list(set(shift['prediction'] for shift in output['result'][0]['shifts']))
+            return simulations
+        except:
+            return []
+
+    @classmethod
     def predict_nmr(
         cls,
         mm=False, layout=False, peaks=False, shift=False
