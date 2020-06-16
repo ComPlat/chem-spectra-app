@@ -25,9 +25,10 @@ def filter_remote_ip():
 @trans_api.route('/zip_jcamp_n_img', methods=['POST'])
 def zip_jcamp_n_img():
     file = FileContainer(request.files['file'])
+    molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:  # and allowed_file(file):
-        cmpsr = TraModel(file, params).to_composer()
+        cmpsr = TraModel(file, molfile=molfile, params=params).to_composer()
         tf_jcamp, tf_img = cmpsr.tf_jcamp(), cmpsr.tf_img()
         spc_type = cmpsr.core.typ
         memory = to_zip_response([tf_jcamp, tf_img])
@@ -45,9 +46,10 @@ def zip_jcamp_n_img():
 @trans_api.route('/zip_jcamp', methods=['POST'])
 def zip_jcamp():
     file = FileContainer(request.files['file'])
+    molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:  # and allowed_file(file):
-        tf_jcamp = TraModel(file, params).convert2jcamp()
+        tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
         memory = to_zip_response([tf_jcamp])
         return send_file(
             memory,
@@ -59,9 +61,10 @@ def zip_jcamp():
 @trans_api.route('/zip_image', methods=['POST'])
 def zip_image():
     file = FileContainer(request.files['file'])
+    molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:  # and allowed_file(file):
-        tf_img = TraModel(file, params).convert2img()
+        tf_img = TraModel(file, molfile=molfile, params=params).convert2img()
         memory = to_zip_response([tf_img])
         return send_file(
             memory,
@@ -73,9 +76,10 @@ def zip_image():
 @trans_api.route('/jcamp', methods=['POST'])
 def jcamp():
     file = FileContainer(request.files['file'])
+    molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:  # and allowed_file(file):
-        tf_jcamp = TraModel(file, params).convert2jcamp()
+        tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
         return send_file(
             tf_jcamp,
             attachment_filename='spectrum.jdx',
@@ -86,9 +90,10 @@ def jcamp():
 @trans_api.route('/image', methods=['POST'])
 def image():
     file = FileContainer(request.files['file'])
+    molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:  # and allowed_file(file):
-        tf_img = TraModel(file, params).convert2img()
+        tf_img = TraModel(file, molfile=molfile, params=params).convert2img()
         return send_file(
             tf_img,
             attachment_filename='spectrum.png',

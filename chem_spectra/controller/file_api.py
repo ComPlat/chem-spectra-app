@@ -18,9 +18,10 @@ file_api = Blueprint('file_api', __name__)
 @file_api.route('/api/v1/chemspectra/file/convert', methods=['POST'])
 def chemspectra_file_convert():
     file = FileContainer(request.files['file'])
+    molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:
-        tf_jcamp, tf_img = TraModel(file, params).convert2jcamp_img()
+        tf_jcamp, tf_img = TraModel(file, molfile=molfile, params=params).convert2jcamp_img()
         if not tf_jcamp:
             abort(400)
         jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
@@ -36,10 +37,11 @@ def chemspectra_file_convert():
 def chemspectra_file_save():
     src = FileContainer(request.files['src'])
     dst = FileContainer(request.files['dst'])
+    molfile = FileContainer(request.files.get('molfile'))
     filename = request.form.get('filename', default=None)
     params = extract_params(request)
     if dst:  # and allowed_file(file):
-        tm = TraModel(dst, params)
+        tm = TraModel(dst, molfile=molfile, params=params)
         tf_jcamp, tf_img = tm.convert2jcamp_img()
         tf_arr = [
             src.temp_file(),
@@ -57,7 +59,7 @@ def chemspectra_file_save():
 
 @file_api.route('/api/v1/chemspectra/molfile/convert', methods=['POST'])
 def chemspectra_molfile_convert():
-    molfile = FileContainer(request.files['molfile'])
+    molfile = FileContainer(request.files.get('molfile'))
     mm = MoleculeModel(molfile)
     return jsonify(
         status=True,

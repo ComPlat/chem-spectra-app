@@ -201,7 +201,7 @@ class InferencerModel:
             }
 
     def __predict_ms(self):
-        cmpsr = TraModel(self.spectrum, {'ext': 'jdx'}).to_composer()
+        cmpsr = TraModel(self.spectrum, molfile=None, params={'ext': 'jdx'}).to_composer()
         bx, by, gx, gy, scan = cmpsr.prism_peaks()
         return {
             'outline': {

@@ -34,8 +34,9 @@ def search_brucker_binary(td):
 
 
 class TransformerModel:
-    def __init__(self, file, params=False):
+    def __init__(self, file, molfile=None, params=False):
         self.file = file
+        self.molfile  = molfile
         self.params = params
 
     def convert2jcamp(self):
