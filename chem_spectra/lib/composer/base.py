@@ -241,3 +241,12 @@ class BaseComposer:
             return []
         else:
             return self.core.mpy_pks_table
+
+    def gen_simulation_info(self):
+        if len(self.core.simu_peaks) > 0:
+            table = []
+            for simu_peak in self.core.simu_peaks:
+                table.extend([ '{}\n'.format(simu_peak) ])
+            return table
+        else:
+            return []

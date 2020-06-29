@@ -97,7 +97,7 @@ class NIComposer(BaseComposer):
 
     def __gen_headers_im(self):
         return [
-            '$$ === CHEMSPECTRA ===\n',
+            '$$ === CHEMSPECTRA INTEGRALS AND MULTIPLETS ===\n',
         ]
 
     def __gen_headers_integration(self):
@@ -115,6 +115,12 @@ class NIComposer(BaseComposer):
             '##$OBSERVEDMULTIPLETSPEAKS=\n',
         ]
 
+    def __gen_header_simulation(self):
+        return [
+            '$$ === CHEMSPECTRA SIMULATION ===\n',
+            '##$CSSIMULATIONPEAKS=\n',
+        ]
+
     def __compose(self):
         meta = []
         meta.extend(self.gen_headers_root())
@@ -128,6 +134,8 @@ class NIComposer(BaseComposer):
         meta.extend(self.gen_mpy_integ_info())
         meta.extend(self.__gen_headers_mpy_peaks())
         meta.extend(self.gen_mpy_peaks_info())
+        meta.extend(self.__gen_header_simulation())
+        meta.extend(self.gen_simulation_info())
         meta.extend(self.gen_ending())
 
         meta.extend(self.gen_headers_peaktable_edit())
