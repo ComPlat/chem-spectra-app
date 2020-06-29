@@ -15,6 +15,10 @@ class FidBaseConverter:
         self.fname = '.'.join(params.get('fname').split('.')[:-1])
         self.is_em_wave = self.__is_em_wave()
         self.is_ir = self.__is_ir()
+        self.ncl = self.__ncl()
+        self.simu_peaks = self.__read_simu_peaks()
+        self.solv_peaks = []
+        self.__read_solvent()
 
     def __read(self, target_dir, fname):
         dic, data = ng.bruker.read(target_dir)
@@ -60,3 +64,43 @@ class FidBaseConverter:
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
+
+    def __ncl(self):
+        try:
+            ncls = self.dic['NUC1']
+            if '^1H' in ncls:
+                return '1H'
+            elif '13C' in ncls:
+                return '13C'
+            elif '19F' in ncls:
+                return '19F'
+        except: # noqa
+            pass
+        return '1H'
+
+    def __read_simu_peaks(self):
+        target = self.dic.get('$CSSIMULATIONPEAKS', [])
+        if target:
+            target = [float(t) for t in target[0].split('\n')]
+            return sorted(target)
+        return []
+
+    def __read_solvent(self):
+        if self.ncl == '13C':
+            ref_name = (
+                self.params['ref_name'] or
+                self.dic.get('$CSSOLVENTNAME', [''])[0]
+            )
+            # if ref_name and ref_name != '- - -':
+            if ref_name: # skip when the solvent is exist.
+                return
+            orig_solv = (
+                self.dic.get('.SOLVENTNAME', [''])[0] + \
+                self.dic.get('.SHIFTREFERENCE', [''])[0]
+            ).lower()
+
+            if 'acetone' in orig_solv:
+                self.dic['$CSSOLVENTNAME'] = ['Acetone-d6 (sep)']
+                self.dic['$CSSOLVENTVALUE'] = ['29.920']
+                self.dic['$CSSOLVENTX'] = ['0']
+                self.solv_peaks = [(27.0, 33.0), (203.7, 209.7)]

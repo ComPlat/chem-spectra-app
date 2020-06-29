@@ -22,6 +22,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_em_wave = base.is_em_wave
         self.is_ir = base.is_ir
         self.ncl = base.ncl
+        self.solv_peaks = base.solv_peaks
         # - - - - - - - - - - -
         self.fname = base.fname
         self.target_idx = self.__index_target()
@@ -32,8 +33,10 @@ class JcampNIConverter:  # nmr & IR
         self.x_unit = self.__set_x_unit()
         self.ys = self.__read_ys()
         self.xs = self.__read_xs()
+        self.clear = self.__refresh_solvent()
         self.boundary = self.__find_boundary()
         self.label = self.__set_label()
+        self.simu_peaks = base.simu_peaks
         self.auto_peaks = None
         self.edit_peaks = None
         self.itg_table = []
@@ -239,18 +242,8 @@ class JcampNIConverter:  # nmr & IR
 
         return x_unit
 
-    def __set_auto_peaks(self, peak_idxs):
-        auto_x = []
-        auto_y = []
-        for idx in peak_idxs:
-            auto_x.append(self.xs[idx])
-            auto_y.append(self.ys[idx])
-        if len(auto_x) == 0:
-            return
-        self.auto_peaks = {'x': auto_x, 'y': auto_y}
-
     def __read_auto_peaks(self):
-        if self.params['clear']:
+        if self.params['clear'] or self.clear:
             return
 
         try:  # legacy
@@ -272,7 +265,7 @@ class JcampNIConverter:  # nmr & IR
             if self.auto_peaks is None:
                 auto_x = []
                 auto_y = []
-                if len(self.dic['PEAKTABLE']):
+                if len(self.dic['PEAKTABLE']) == 0:
                     return
                 pas = self.dic['PEAKTABLE'][1].split('\n')[1:]
                 for pa in pas:
@@ -286,7 +279,7 @@ class JcampNIConverter:  # nmr & IR
             pass
 
     def __read_edit_peaks(self):
-        if self.params['clear']:
+        if self.params['clear'] or self.clear:
             return
 
         try:  # legacy
@@ -330,9 +323,9 @@ class JcampNIConverter:  # nmr & IR
             return
         self.edit_peaks = {'x': edit_x, 'y': edit_y}
 
-    def __exec_peak_picking_logic(self):
+    def __exec_peak_picking_logic(self, refresh_solvent=False):
         max_y = np.max(self.ys)
-        height = self.threshold * max_y
+        height = 0.2 * max_y if refresh_solvent else self.threshold * max_y
 
         corr_data_ys = self.ys
         corr_height = height
@@ -351,17 +344,34 @@ class JcampNIConverter:  # nmr & IR
         return peak_idxs
 
     def __run_auto_pick_peak(self):
-        within_limit = False
-        while not within_limit:
-            peak_idxs = self.__exec_peak_picking_logic()
-            if peak_idxs.shape[0] <= 100:
-                within_limit = True
-                self.__set_auto_peaks(peak_idxs)
-            else:
-                if self.is_ir:
-                    self.threshold *= 0.9
-                else:
-                    self.threshold *= 1.5
+        peak_idxs = self.__exec_peak_picking_logic()
+        auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx]} for idx in peak_idxs]
+        auto_peaks.sort(key=lambda d: d['y'], reverse=True)
+
+        if self.is_ir:
+            auto_peaks = auto_peaks[-100:]
+        elif self.ncl == '13C':
+            simu_length = len(self.simu_peaks)
+            simu_length = simu_length if simu_length > 1 else 50
+            auto_peaks = auto_peaks[:100]
+            edit_non_solv_peaks = []
+            for peak in auto_peaks:
+                not_solvent = True
+                for u, v in self.solv_peaks:
+                    if u < peak['x'] < v:
+                        not_solvent = False
+                if not_solvent:
+                    edit_non_solv_peaks.append(peak)
+            edit_peaks = edit_non_solv_peaks[:simu_length]
+            edit_x = [peak['x'] for peak in edit_peaks]
+            edit_y = [peak['y'] for peak in edit_peaks]
+            self.edit_peaks = {'x': edit_x, 'y': edit_y}
+        else:
+            auto_peaks = auto_peaks[:100]
+
+        auto_x = [peak['x'] for peak in auto_peaks]
+        auto_y = [peak['y'] for peak in auto_peaks]
+        self.auto_peaks = {'x': auto_x, 'y': auto_y}
 
     def __set_datatable(self):
         y_factor = self.factor and self.factor['y']
@@ -393,3 +403,47 @@ class JcampNIConverter:  # nmr & IR
         if target2:
             self.mpy_pks_table = target2
             self.mpy_pks_table.append('\n')
+
+    def __refresh_solvent(self):
+        if self.ncl == '13C':
+            ref_name = (
+                self.params['ref_name'] or
+                self.dic.get('$CSSOLVENTNAME', [''])[0]
+            )
+            if ref_name and ref_name != '- - -':
+                return
+            # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            peak_idxs = self.__exec_peak_picking_logic(refresh_solvent=True)[:100]
+            auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx], 'idx': idx} for idx in peak_idxs]
+            auto_peaks.sort(key=lambda d: d['y'], reverse=True)
+            # is acetone
+            left, right = auto_peaks[0], auto_peaks[1]
+            if left['x'] < right['x']: left, right = right, left
+            diff = abs(left['x'] - right['x'])
+            if 175 < diff < 177:
+                self.dic['$CSSOLVENTNAME'] = ['Acetone-d6 (sep)']
+                self.dic['$CSSOLVENTVALUE'] = ['29.920']
+                self.dic['$CSSOLVENTX'] = ['0']
+                self.solv_peaks = [(27.0, 33.0), (203.7, 209.7)]
+                shift = 29.920 - right['x']
+                self.xs = self.xs + shift
+                return True # self.clear
+            # is chloroform
+            for hpk in auto_peaks[:10]:
+                x_c = hpk['x']
+                peaks = [p for p in auto_peaks if x_c - 2.0 < p['x'] < x_c + 2.0]
+                if len(peaks) == 3:
+                    pxs = sorted(map(lambda p: p['x'], peaks))
+                    diff_one = abs(pxs[0] - pxs[1])
+                    diff_two = abs(pxs[1] - pxs[2])
+                    if 0.2 < diff_one < 0.6 and 0.2 < diff_two < 0.6:
+                        self.dic['$CSSOLVENTNAME'] = ['Chloroform-d (t)']
+                        self.dic['$CSSOLVENTVALUE'] = ['77.00']
+                        self.dic['$CSSOLVENTX'] = ['0']
+                        self.solv_peaks = [(74.0, 80.0)]
+                        shift = 77.00 - pxs[1]
+                        self.xs = self.xs + shift
+                        return True # self.clear
+
+        return False # self.clear
+
