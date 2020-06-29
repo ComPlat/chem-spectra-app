@@ -15,6 +15,8 @@ from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
 
+from chem_spectra.model.concern.property import decorate_sim_property
+
 
 def find_dir(path, name):
     for root, _, files in os.walk(path):
@@ -99,7 +101,8 @@ class TransformerModel:
             if not fbcv:
                 return False, False
         # assume NMR only
-        nicv = JcampNIConverter(fbcv)
+        d_jbcv = decorate_sim_property(fbcv, self.molfile)
+        nicv = JcampNIConverter(d_jbcv)
         nicp = NIComposer(nicv)
         return nicv, nicp
 
@@ -113,7 +116,8 @@ class TransformerModel:
             mscp = MSComposer(mscv)
             return mscv, mscp
         else:
-            nicv = JcampNIConverter(jbcv)
+            d_jbcv = decorate_sim_property(jbcv, self.molfile)
+            nicv = JcampNIConverter(d_jbcv)
             nicp = NIComposer(nicv)
             return nicv, nicp
 
