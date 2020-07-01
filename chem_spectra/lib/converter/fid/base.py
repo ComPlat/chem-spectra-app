@@ -1,7 +1,7 @@
 import nmrglue as ng
 import numpy as np
 
-from chem_spectra.lib.converter.share import parse_params
+from chem_spectra.lib.converter.share import parse_params, parse_solvent
 
 
 class FidBaseConverter:
@@ -67,7 +67,7 @@ class FidBaseConverter:
 
     def __ncl(self):
         try:
-            ncls = self.dic['NUC1']
+            ncls = self.dic.get('NUC1') or self.dic.get('.OBSERVENUCLEUS')
             if '^1H' in ncls:
                 return '1H'
             elif '13C' in ncls:
@@ -76,7 +76,7 @@ class FidBaseConverter:
                 return '19F'
         except: # noqa
             pass
-        return '1H'
+        return '13C'
 
     def __read_simu_peaks(self):
         target = self.dic.get('$CSSIMULATIONPEAKS', [])
@@ -86,21 +86,4 @@ class FidBaseConverter:
         return []
 
     def __read_solvent(self):
-        if self.ncl == '13C':
-            ref_name = (
-                self.params['ref_name'] or
-                self.dic.get('$CSSOLVENTNAME', [''])[0]
-            )
-            # if ref_name and ref_name != '- - -':
-            if ref_name: # skip when the solvent is exist.
-                return
-            orig_solv = (
-                self.dic.get('.SOLVENTNAME', [''])[0] + \
-                self.dic.get('.SHIFTREFERENCE', [''])[0]
-            ).lower()
-
-            if 'acetone' in orig_solv:
-                self.dic['$CSSOLVENTNAME'] = ['Acetone-d6 (sep)']
-                self.dic['$CSSOLVENTVALUE'] = ['29.920']
-                self.dic['$CSSOLVENTX'] = ['0']
-                self.solv_peaks = [(27.0, 33.0), (203.7, 209.7)]
+        parse_solvent(self)
