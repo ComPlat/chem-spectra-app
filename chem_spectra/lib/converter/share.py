@@ -62,7 +62,7 @@ def parse_params(params):
 
 
 def parse_solvent(base):
-    if base.ncl == '13C':
+    if base.ncl in ['1H', '13C']:
         ref_name = (
             base.params['ref_name'] or
             base.dic.get('$CSSOLVENTNAME', [''])[0]
@@ -77,38 +77,101 @@ def parse_solvent(base):
         sr = sr if isinstance(sr, str) else sr[0]
         orig_solv = (sn + sr).lower()
 
-        if 'acetone' in orig_solv:
-            base.dic['$CSSOLVENTNAME'] = ['Acetone-d6 (sep)']
-            base.dic['$CSSOLVENTVALUE'] = ['29.920']
-            base.dic['$CSSOLVENTX'] = ['0']
-            base.solv_peaks = [(27.0, 33.0), (203.7, 209.7)]
-        elif 'dmso' in orig_solv:
-            base.dic['$CSSOLVENTNAME'] = ['DMSO-d6']
-            base.dic['$CSSOLVENTVALUE'] = ['39.51']
-            base.dic['$CSSOLVENTX'] = ['0']
-            base.solv_peaks = [(36.0, 43.0)]
-        elif 'methanol-d4' in orig_solv or 'meod' in orig_solv:
-            base.dic['$CSSOLVENTNAME'] = ['Methanol-d4 (sep)']
-            base.dic['$CSSOLVENTVALUE'] = ['49.15']
-            base.dic['$CSSOLVENTX'] = ['0']
-            base.solv_peaks = [(44, 54)]
-        elif 'dichloromethane-d2' in orig_solv:
-            base.dic['$CSSOLVENTNAME'] = ['Dichloromethane-d2 (quin)']
-            base.dic['$CSSOLVENTVALUE'] = ['54.0']
-            base.dic['$CSSOLVENTX'] = ['0']
-            base.solv_peaks = [(51.0, 57.0)]
-        elif 'acetonitrile-d3' in orig_solv:
-            base.dic['$CSSOLVENTNAME'] = ['Acetonitrile-d3 (sep)']
-            base.dic['$CSSOLVENTVALUE'] = ['1.39']
-            base.dic['$CSSOLVENTX'] = ['0']
-            base.solv_peaks = [(-1.0, 4.0)]
-        elif 'benzene' in orig_solv:
-            base.dic['$CSSOLVENTNAME'] = ['Benzene (t)']
-            base.dic['$CSSOLVENTVALUE'] = ['128.390']
-            base.dic['$CSSOLVENTX'] = ['0']
-            base.solv_peaks = [(125.4, 131.4)]
-        elif 'chloroform-d' in orig_solv or 'cdcl3' in orig_solv:
-            base.dic['$CSSOLVENTNAME'] = ['Chloroform-d (t)']
-            base.dic['$CSSOLVENTVALUE'] = ['77.00']
-            base.dic['$CSSOLVENTX'] = ['0']
-            base.solv_peaks = [(74.0, 80.0)]
+        if base.ncl == '13C':
+            if 'acetone' in orig_solv:
+                base.dic['$CSSOLVENTNAME'] = ['Acetone-d6 (sep)']
+                base.dic['$CSSOLVENTVALUE'] = ['29.920']
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(27.0, 33.0), (203.7, 209.7)]
+            elif 'dmso' in orig_solv:
+                peak = 39.51
+                delta = 3
+                base.dic['$CSSOLVENTNAME'] = ['DMSO-d6']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'methanol-d4' in orig_solv or 'meod' in orig_solv:
+                peak = 49.15
+                delta = 5
+                base.dic['$CSSOLVENTNAME'] = ['Methanol-d4 (sep)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'dichloromethane-d2' in orig_solv:
+                peak = 54.0
+                delta = 3
+                base.dic['$CSSOLVENTNAME'] = ['Dichloromethane-d2 (quin)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'acetonitrile-d3' in orig_solv:
+                peak = 1.39
+                delta = 3
+                base.dic['$CSSOLVENTNAME'] = ['Acetonitrile-d3 (sep)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'benzene' in orig_solv:
+                peak = 128.39
+                delta = 3
+                base.dic['$CSSOLVENTNAME'] = ['Benzene (t)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'chloroform-d' in orig_solv or 'cdcl3' in orig_solv:
+                peak = 77.0
+                delta = 3
+                base.dic['$CSSOLVENTNAME'] = ['Chloroform-d (t)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+        elif base.ncl == '1H':
+            if 'acetonitrile' in orig_solv:
+                peak = 1.94
+                delta = 0.05
+                base.dic['$CSSOLVENTNAME'] = ['Acetonitrile-d3 (quin)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'acetone' in orig_solv:
+                peak = 2.05
+                delta = 0.05
+                base.dic['$CSSOLVENTNAME'] = ['Acetone-d6 (quin)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'benzene' in orig_solv:
+                peak = 7.16
+                delta = 0.01
+                base.dic['$CSSOLVENTNAME'] = ['Benzene (s)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'deuterium' in orig_solv:
+                peak = 4.75
+                delta = 0.01
+                base.dic['$CSSOLVENTNAME'] = ['Deuterium oxide (s)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'dichloromethane' in orig_solv:
+                peak = 5.32
+                delta = 0.01
+                base.dic['$CSSOLVENTNAME'] = ['Dichloromethane-d2 (t)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'dmso' in orig_solv:
+                peak = 2.50
+                delta = 0.02
+                base.dic['$CSSOLVENTNAME'] = ['DMSO-d6 (quin)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]
+            elif 'chloroform-d' in orig_solv or 'cdcl3' in orig_solv:
+                peak = 7.27
+                delta = 0.01
+                base.dic['$CSSOLVENTNAME'] = ['Chloroform-d (s)']
+                base.dic['$CSSOLVENTVALUE'] = [str(peak)]
+                base.dic['$CSSOLVENTX'] = ['0']
+                base.solv_peaks = [(peak - delta, peak + delta)]

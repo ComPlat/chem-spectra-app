@@ -366,6 +366,19 @@ class JcampNIConverter:  # nmr & IR
             edit_x = [peak['x'] for peak in edit_peaks]
             edit_y = [peak['y'] for peak in edit_peaks]
             self.edit_peaks = {'x': edit_x, 'y': edit_y}
+        elif self.ncl == '1H':
+            auto_peaks = auto_peaks[:100]
+            edit_non_solv_peaks = []
+            for peak in auto_peaks:
+                not_solvent = True
+                for u, v in self.solv_peaks:
+                    if u < peak['x'] < v:
+                        not_solvent = False
+                if not_solvent:
+                    edit_non_solv_peaks.append(peak)
+            edit_x = [peak['x'] for peak in edit_non_solv_peaks]
+            edit_y = [peak['y'] for peak in edit_non_solv_peaks]
+            self.edit_peaks = {'x': edit_x, 'y': edit_y}
         else:
             auto_peaks = auto_peaks[:100]
 
