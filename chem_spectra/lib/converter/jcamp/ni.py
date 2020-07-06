@@ -371,7 +371,10 @@ class JcampNIConverter:  # nmr & IR
                 within_limit = True
                 self.__set_auto_peaks(peak_idxs)
             else:
-                self.threshold *= 1.5
+                if self.is_ir:
+                    self.threshold *= 0.9
+                else:
+                    self.threshold *= 1.5
 
     def __set_datatable(self):
         y_factor = self.factor and self.factor['y']
