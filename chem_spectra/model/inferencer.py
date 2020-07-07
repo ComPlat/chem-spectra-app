@@ -35,7 +35,7 @@ class InferencerModel:
             shift={'ref': {'label': False, 'name': '- - -', 'value': 0}, 'peak': False, 'enable': False}
         )
         try:
-            rsp = instance.__predict_nmr()
+            rsp = instance.__predict_nmr(timeout=6)
             output = rsp.json()
             simulations = list(set(shift['prediction'] for shift in output['result'][0]['shifts']))
             return simulations
@@ -92,7 +92,7 @@ class InferencerModel:
                 }
             }
 
-    def __predict_nmr(self):
+    def __predict_nmr(self, timeout=None):
         peak_xs = self.__extract_x()
         solvent = self.shift.get('ref', {}) .get('nsdb')
 
@@ -103,6 +103,7 @@ class InferencerModel:
                 current_app.config.get('URL_NSHIFTDB'),
                 headers=hdr_nsdb,
                 json=data,
+                timeout=timeout,
             )
             return rsp
         elif self.layout == '13C':
@@ -112,6 +113,7 @@ class InferencerModel:
                 current_app.config.get('URL_NSHIFTDB'),
                 headers=hdr_nsdb,
                 json=data,
+                timeout=timeout,
             )
             return rsp
         elif self.layout == '19F':
@@ -121,6 +123,7 @@ class InferencerModel:
                 current_app.config.get('URL_NSHIFTDB'),
                 headers=hdr_nsdb,
                 json=data,
+                timeout=timeout,
             )
             return rsp
         return False
