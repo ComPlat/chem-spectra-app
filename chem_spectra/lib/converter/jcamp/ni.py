@@ -353,7 +353,8 @@ class JcampNIConverter:  # nmr & IR
         elif self.ncl == '13C':
             simu_length = len(self.simu_peaks)
             simu_length = simu_length if simu_length > 1 else 50
-            auto_peaks = auto_peaks[:100]
+            auto_peaks = auto_peaks[:200]
+            # rm solvent peaks
             edit_non_solv_peaks = []
             for peak in auto_peaks:
                 not_solvent = True
@@ -362,10 +363,45 @@ class JcampNIConverter:  # nmr & IR
                         not_solvent = False
                 if not_solvent:
                     edit_non_solv_peaks.append(peak)
-            edit_peaks = edit_non_solv_peaks[:simu_length]
+            # as - 26.90 (range: 26.80 - 26.95)
+            # bs, cs - 207.1 (207.0-207.2) + 30.9 (30.8 - 31.0)
+            # ds, es, fs, gs - 60.4 (60.3 - 60.5) + 14.2 (14.1 - 14.3) + 21.1 (20.9 - 21.2) + 171.3 (171.2-171.4)
+            # rm impurity peaks
+            imp_as, imp_bs, imp_cs, imp_ds, imp_es, imp_fs, imp_gs, edit_pure_peaks = [], [], [], [], [], [], [], []
+            i, capacity, l = 0, simu_length + 10, len(edit_non_solv_peaks)
+            while i < capacity and i < l:
+                target = edit_non_solv_peaks[i]
+                if 26.80 <= target['x'] <= 27.0:
+                    imp_as.append(target)
+                elif 207.0 <= target['x'] <= 207.2:
+                    imp_bs.append(target)
+                elif 30.8 <= target['x'] <= 31.0:
+                    imp_cs.append(target)
+                elif 60.3 <= target['x'] <= 60.5:
+                    imp_ds.append(target)
+                elif 14.1 <= target['x'] <= 14.3:
+                    imp_es.append(target)
+                elif 20.9 <= target['x'] <= 21.2:
+                    imp_fs.append(target)
+                elif 171.1 <= target['x'] <= 171.4:
+                    imp_gs.append(target)
+                else:
+                    edit_pure_peaks.append(target)
+                    i += 1
+                    continue
+                i += 1
+                capacity += 1
+            if not (imp_bs and imp_cs):
+                edit_pure_peaks = edit_pure_peaks + imp_bs + imp_cs
+            if not (imp_ds and imp_es and imp_fs and imp_gs):
+                edit_pure_peaks = edit_pure_peaks + imp_ds + imp_es + imp_fs + imp_gs
+            edit_pure_peaks.sort(key=lambda d: d['y'], reverse=True)
+            edit_peaks = edit_pure_peaks[:simu_length]
+            # assign to edit_peaks
             edit_x = [peak['x'] for peak in edit_peaks]
             edit_y = [peak['y'] for peak in edit_peaks]
             self.edit_peaks = {'x': edit_x, 'y': edit_y}
+            auto_peaks = auto_peaks[:100]
         elif self.ncl == '1H':
             auto_peaks = auto_peaks[:100]
             edit_non_solv_peaks = []
