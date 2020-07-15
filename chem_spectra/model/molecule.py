@@ -26,6 +26,8 @@ class MoleculeModel:
             return mol
 
     def __set_mol(self):
+        if not self.moltxt:
+            return False
         tf = store_str_in_tmp(self.moltxt, suffix='.mol')
         mol = Chem.MolFromMolFile(tf.name)
         tf.close
