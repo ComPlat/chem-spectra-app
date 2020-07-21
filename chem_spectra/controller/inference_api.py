@@ -5,6 +5,7 @@ from flask import (
 
 # from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
+from chem_spectra.controller.helper.share import parse_array_to_dict_xys
 
 from chem_spectra.model.inferencer import InferencerModel as InferModel
 from chem_spectra.model.molecule import MoleculeModel
@@ -48,6 +49,12 @@ def chemspectra_predict_by_peaks_form():
     shift = json.loads(shift)
     molfile = FileContainer(request.files['molfile'])
     mm = MoleculeModel(molfile, layout, decorate=True)
+
+    if not peaks:
+        spectrum = FileContainer(request.files['spectrum'])
+        if spectrum and layout == '13C':
+            cv = TraModel(spectrum, molfile=molfile, params={'ext': 'jdx'}).to_converter()
+            peaks = parse_array_to_dict_xys(cv.edit_peaks)
 
     if (not peaks) or (not molfile):
         abort(400)

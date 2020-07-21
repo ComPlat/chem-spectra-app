@@ -74,6 +74,25 @@ class TransformerModel:
             _, cp = self.jcamp2cvp()
             return cp
 
+    def to_converter(self):
+        is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml']
+        is_cdf = self.file.name.split('.')[-1].lower() in ['cdf']
+        is_zip = self.file.name.split('.')[-1].lower() in ['zip']
+        is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml']
+        is_cdf_by_params = self.params['ext'] in ['cdf']
+        is_zip_by_params = self.params['ext'] in ['zip']
+        if is_raw_mzml or is_raw_mzml_by_params:
+            return self.ms2composer()
+        if is_cdf or is_cdf_by_params:
+            cv, _ = self.cdf2cvp()
+            return cv
+        if is_zip or is_zip_by_params:
+            cv, _ = self.zip2cvp()
+            return cv
+        else:
+            cv, _ = self.jcamp2cvp()
+            return cv
+
     def ms2composer(self):
         mscv = MSConverter(self.file, self.params)
         mscp = MSComposer(mscv)

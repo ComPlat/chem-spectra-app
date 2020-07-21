@@ -98,3 +98,11 @@ def extract_params(request):
     if not has_params:
         params = False
     return params
+
+def parse_array_to_dict_xys(peaks):
+    xs, ys = peaks['x'], peaks['y']
+    xys = []
+    for idx, x in enumerate(xs):
+        y = ys[idx]
+        xys.append({ 'x': x, 'y': y })
+    return xys
