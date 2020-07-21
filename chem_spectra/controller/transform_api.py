@@ -30,7 +30,7 @@ def zip_jcamp_n_img():
     if file:  # and allowed_file(file):
         cmpsr = TraModel(file, molfile=molfile, params=params).to_composer()
         tf_jcamp, tf_img = cmpsr.tf_jcamp(), cmpsr.tf_img()
-        spc_type = cmpsr.core.typ
+        spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
         memory = to_zip_response([tf_jcamp, tf_img])
         rsp = make_response(
             send_file(
