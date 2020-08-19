@@ -2,6 +2,7 @@ import numpy as np
 from scipy import signal
 
 from chem_spectra.lib.converter.datatable import DatatableModel
+from chem_spectra.lib.shared.calc import to_float
 
 
 THRESHOLD_IR = 0.93
@@ -120,8 +121,8 @@ class JcampNIConverter:  # nmr & IR
 
         if beg_pt is None:
             try:
-                beg_pt = float(self.dic['FIRSTX'][idx])
-                end_pt = float(self.dic['LASTX'][idx])
+                beg_pt = to_float(self.dic['FIRSTX'][idx])
+                end_pt = to_float(self.dic['LASTX'][idx])
             except:  # noqa
                 pass
 
@@ -224,8 +225,8 @@ class JcampNIConverter:  # nmr & IR
 
         try:
             factor = {
-                'x': self.dic['XFACTOR'][0],
-                'y': self.dic['YFACTOR'][0],
+                'x': to_float(self.dic['XFACTOR'][0]),
+                'y': to_float(self.dic['YFACTOR'][0]),
             }
         except:  # noqa
             pass

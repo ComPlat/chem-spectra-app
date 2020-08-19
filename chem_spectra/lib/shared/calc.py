@@ -51,3 +51,10 @@ def get_curve_endpoint(xs, ys, x1, x2):
             toggle = False
             iU = idx
     return iL, iU
+
+def to_float(target):
+    try:
+        target = target.replace(',', '.')
+        return float(target)
+    except:
+        return target
