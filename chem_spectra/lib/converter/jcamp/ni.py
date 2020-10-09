@@ -3,6 +3,7 @@ from scipy import signal
 
 from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import to_float
+from chem_spectra.lib.shared.equal_space import make_equal_space_1d
 
 
 THRESHOLD_IR = 0.93
@@ -15,7 +16,7 @@ class JcampNIConverter:  # nmr & IR
     def __init__(self, base):
         self.params = base.params
         self.dic = base.dic
-        self.data = base.data
+        self.data = make_equal_space_1d(base)
         self.datatypes = base.datatypes
         self.datatype = base.datatype
         self.title = base.title
@@ -230,6 +231,9 @@ class JcampNIConverter:  # nmr & IR
             }
         except:  # noqa
             pass
+
+        if factor['y'] == 1.0 and not isinstance(self.data, dict):
+            factor['y'] = self.data.max() / 1000000.0
 
         return factor
 
