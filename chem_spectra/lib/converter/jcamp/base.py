@@ -34,6 +34,8 @@ class JcampBaseConverter:
             return 'RAMAN SPECTRUM'
         elif 'MASS SPECTRUM' in dts:
             return 'MASS SPECTRUM'
+        elif 'UV/VIS SPECTRUM' in dts:
+            return 'UV/VIS SPECTRUM'
         return ''
 
     def __typ(self):
@@ -48,10 +50,12 @@ class JcampBaseConverter:
             return 'RAMAN'  # TBD
         elif 'MASS SPECTRUM' == dt:
             return 'MS'
+        elif 'UV/VIS SPECTRUM' == dt:
+            return 'UVVIS'
         return ''
 
     def __is_em_wave(self):
-        return self.typ in ['INFRARED', 'RAMAN']
+        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']

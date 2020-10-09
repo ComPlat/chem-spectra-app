@@ -157,6 +157,8 @@ class NIComposer(BaseComposer):
             return 20
         elif 'RAMAN' == typ:
             return 20
+        elif 'UVVIS' == typ:
+            return 20
         elif 'MS' == typ:
             return 20
         return 20
@@ -170,6 +172,8 @@ class NIComposer(BaseComposer):
         elif 'INFRARED' == typ:
             return -1
         elif 'RAMAN' == typ:
+            return 1
+        elif 'UVVIS' == typ:
             return 1
         return 1
 

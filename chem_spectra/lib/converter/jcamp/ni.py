@@ -10,7 +10,7 @@ THRESHOLD_IR = 0.93
 THRESHOLD_RAMAN = 0.07
 THRESHOLD_NMR = 0.005
 THRESHOLD_MS = 0.05
-
+THRESHOLD_UVVIS = 0.05
 
 class JcampNIConverter:  # nmr & IR
     def __init__(self, base):
@@ -61,13 +61,15 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_RAMAN
         elif 'MASS SPECTRUM' == dt:
             return THRESHOLD_MS
+        elif 'UV/VIS SPECTRUM' == dt:
+            return THRESHOLD_UVVIS
         return 0.5
 
     def __index_target(self):
         target_topics = [
             'NMR SPECTRUM', 'NMRSPECTRUM',
             'INFRARED SPECTRUM', 'RAMAN SPECTRUM',
-            'MASS SPECTRUM'
+            'MASS SPECTRUM', 'UV/VIS SPECTRUM'
         ]
         for tp in target_topics:
             if tp in self.datatypes:

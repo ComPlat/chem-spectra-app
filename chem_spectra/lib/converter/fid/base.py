@@ -60,7 +60,7 @@ class FidBaseConverter:
         return dic, data
 
     def __is_em_wave(self):
-        return self.typ in ['INFRARED', 'RAMAN']
+        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
