@@ -20,10 +20,11 @@ class CdfBaseConverter:
             'YS': cdf.variables['intensity_values'],
             'SCANINDEXS': cdf.variables['scan_index'],
         }
+        d = cdf.__dict__
         dic = {
-            'TITLE': cdf.source_file_reference,
-            'SPECTROMETER TYPE':cdf.experiment_type,
-            'INLET': cdf.test_ms_inlet,
-            'IONIZATION MODE': cdf.test_ionization_mode,
+            'TITLE': d.get('source_file_reference', ['']),
+            'SPECTROMETER TYPE': d.get('experiment_type'),
+            'INLET': d.get('test_ms_inlet'),
+            'IONIZATION MODE': d.get('test_ionization_mode'),
         }
         return dic, data
