@@ -1,3 +1,5 @@
+from chem_spectra.lib.shared.reduce_pts import reduce_pts
+
 MARGIN = 1
 THRESHOLD_MS = 0.05
 
@@ -78,7 +80,7 @@ class JcampMSConverter:  # nmr & IR
         spectra = []
         best_ratio, best_idx, backup_ratio, backup_idx = 0, 0, 0, 0
         for idx, data in enumerate(runs):
-            spectra.append(data)
+            spectra.append(reduce_pts(data))
 
             ratio, noise_ratio = self.__get_ratio(data)
             if (best_ratio < ratio) and (noise_ratio <= 50.0):
