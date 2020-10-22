@@ -63,13 +63,15 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_MS
         elif 'UV/VIS SPECTRUM' == dt:
             return THRESHOLD_UVVIS
+        elif 'UV-VIS' == dt:
+            return THRESHOLD_UVVIS
         return 0.5
 
     def __index_target(self):
         target_topics = [
             'NMR SPECTRUM', 'NMRSPECTRUM',
             'INFRARED SPECTRUM', 'RAMAN SPECTRUM',
-            'MASS SPECTRUM', 'UV/VIS SPECTRUM'
+            'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS'
         ]
         for tp in target_topics:
             if tp in self.datatypes:

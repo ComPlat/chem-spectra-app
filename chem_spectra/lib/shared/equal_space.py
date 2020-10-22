@@ -11,7 +11,14 @@ def __num_pts(base, x_max, x_min):
         return 32000
 
 
+def __parse_xy_points(base):
+    pts = base.dic['XYPOINTS'][0].split('\n')[1:]
+    return np.array([[float(p) for p in pt.split(',')]for pt in pts])
+
 def make_equal_space_1d(base):
+    if base.data is None and base.dic['XYPOINTS']:
+        base.data = __parse_xy_points(base)
+
     # base.data type is dict
     if isinstance(base.data, dict):
         return base.data

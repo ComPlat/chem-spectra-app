@@ -36,6 +36,8 @@ class JcampBaseConverter:
             return 'MASS SPECTRUM'
         elif 'UV/VIS SPECTRUM' in dts:
             return 'UV/VIS SPECTRUM'
+        elif 'UV-VIS' in dts:
+            return 'UV/VIS SPECTRUM'
         return ''
 
     def __typ(self):
@@ -51,6 +53,8 @@ class JcampBaseConverter:
         elif 'MASS SPECTRUM' == dt:
             return 'MS'
         elif 'UV/VIS SPECTRUM' == dt:
+            return 'UVVIS'
+        elif 'UV-VIS' == dt:
             return 'UVVIS'
         return ''
 
