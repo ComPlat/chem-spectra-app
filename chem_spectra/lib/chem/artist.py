@@ -1,3 +1,4 @@
+from collections import defaultdict
 import matplotlib
 matplotlib.use('Agg')
 
@@ -37,8 +38,15 @@ class ArtistLib:
     def __draw_ir(self):
         fgs = [x['sma'] for x in self.predictions]
         drawer = rdMolDraw2D.MolDraw2DSVG(400, 400)
-        atom_counts = {}
+        option = drawer.drawOptions()
+        option.padding=0.15
+        option.bondLineWidth = 2
+        option.annotationFontScale = 0.2
 
+        atom_highlights = defaultdict(list)
+        bond_highlights = defaultdict(list)
+        atom_highlight_rads = {}
+        atom_counts = {}
         for i, fg in enumerate(fgs):
             fg = Chem.MolFromSmarts(fg)
             matches = self.mol.GetSubstructMatches(fg)
@@ -52,32 +60,31 @@ class ArtistLib:
                         target_bonds.append(idx)
 
                 farber = colors[i % len(colors)]
-                color_atoms = {}
-                radius_atoms = {}
                 for t in target_atoms:
                     if atom_counts.get(t):
                         atom_counts[t] += 1
                     else:
                         atom_counts[t] = 1
-                    color_atoms[t] = mcolors.to_rgba(farber)
-                    radius_atoms[t] = 0.3
+                    atom_highlights[t] = [mcolors.to_rgba(farber)]
+                    atom_highlight_rads[t] = 0.3
                     # adjust for overlaps
-                    if atom_counts.get(t) == 2:
-                        radius_atoms[t] = 0.2
-                    elif atom_counts.get(t) >= 3:
-                        radius_atoms[t] = 0.1
-                color_bonds = {}
+                    # if atom_counts.get(t) == 2:
+                    #     atom_highlight_rads[t] = 0.2
+                    # elif atom_counts.get(t) >= 3:
+                    #     atom_highlight_rads[t] = 0.1
                 for t in target_bonds:
-                    color_bonds[t] = mcolors.to_rgba(farber)
+                    bond_highlights[t] = [mcolors.to_rgba(farber)]
 
-                drawer.DrawMolecule(
-                    self.mol,
-                    highlightAtoms=target_atoms,
-                    highlightAtomColors=color_atoms,
-                    highlightAtomRadii=radius_atoms,
-                    highlightBonds=target_bonds,
-                    highlightBondColors=color_bonds,
-                )
+        drawer.DrawMoleculeWithHighlights(
+            self.mol,
+            '',
+            dict(atom_highlights),
+            dict(bond_highlights),
+            atom_highlight_rads,
+            {}
+        )
+        drawer.FinishDrawing()
+
         svg = drawer.GetDrawingText().replace('svg:', '').replace(
                 svg_target + svg_size,
                 "{} {}".format(svg_target, svg_vb),
