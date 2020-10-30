@@ -14,6 +14,8 @@ class JcampBaseConverter:
         self.fname = self.params.get('fname')
         self.is_em_wave = self.__is_em_wave()
         self.is_ir = self.__is_ir()
+        self.is_tga = self.__is_tga()
+        self.is_uv_vis = self.__is_uv_vis()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
@@ -71,6 +73,12 @@ class JcampBaseConverter:
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
+
+    def __is_tga(self):
+        return self.typ in ['THERMOGRAVIMETRIC ANALYSIS']
+
+    def __is_uv_vis(self):
+        return self.typ in ['UVVIS']
 
     def __ncl(self):
         try:

@@ -186,10 +186,9 @@ class NIComposer(BaseComposer):
         plt.rcParams['font.size'] = 14
         # PLOT data
         plt.plot(self.core.xs, self.core.ys)
-        plt.xlim(
-            self.core.boundary['x']['max'],
-            self.core.boundary['x']['min']
-        )
+        x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']
+        xlim_left, xlim_right = [x_min, x_max] if self.core.is_tga or self.core.is_uv_vis else [x_max, x_min]
+        plt.xlim(xlim_left, xlim_right)
         y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
         h = y_max - y_min
         plt.ylim(
