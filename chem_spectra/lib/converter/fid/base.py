@@ -15,6 +15,7 @@ class FidBaseConverter:
         self.fname = '.'.join(params.get('fname').split('.')[:-1])
         self.is_em_wave = self.__is_em_wave()
         self.is_ir = self.__is_ir()
+        self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
         self.solv_peaks = []
@@ -61,6 +62,9 @@ class FidBaseConverter:
 
     def __is_em_wave(self):
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
+
+    def __non_nmr(self):
+        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']

@@ -15,6 +15,7 @@ class JcampMSConverter:  # nmr & IR
         self.typ = base.typ
         self.is_em_wave = base.is_em_wave
         self.is_ir = base.is_ir
+        self.non_nmr = base.non_nmr
         # - - - - - - - - - - -
         self.exact_mz, self.edit_scan, self.thres = self.__set_params(base.params)  # noqa
         self.bound_high = self.exact_mz + MARGIN

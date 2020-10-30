@@ -11,6 +11,7 @@ THRESHOLD_RAMAN = 0.07
 THRESHOLD_NMR = 0.005
 THRESHOLD_MS = 0.05
 THRESHOLD_UVVIS = 0.05
+THRESHOLD_TGA = 1.05
 
 class JcampNIConverter:  # nmr & IR
     def __init__(self, base):
@@ -23,6 +24,7 @@ class JcampNIConverter:  # nmr & IR
         self.typ = base.typ
         self.is_em_wave = base.is_em_wave
         self.is_ir = base.is_ir
+        self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.solv_peaks = base.solv_peaks
         # - - - - - - - - - - -
@@ -35,6 +37,7 @@ class JcampNIConverter:  # nmr & IR
         self.x_unit = self.__set_x_unit()
         self.ys = self.__read_ys()
         self.xs = self.__read_xs()
+        self.__set_first_last_xs()
         self.clear = self.__refresh_solvent()
         self.boundary = self.__find_boundary()
         self.label = self.__set_label()
@@ -65,13 +68,16 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_UVVIS
         elif 'UV-VIS' == dt:
             return THRESHOLD_UVVIS
+        elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
+            return THRESHOLD_TGA
         return 0.5
 
     def __index_target(self):
         target_topics = [
             'NMR SPECTRUM', 'NMRSPECTRUM',
             'INFRARED SPECTRUM', 'RAMAN SPECTRUM',
-            'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS'
+            'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS',
+            'THERMOGRAVIMETRIC ANALYSIS'
         ]
         for tp in target_topics:
             if tp in self.datatypes:
@@ -505,3 +511,6 @@ class JcampNIConverter:  # nmr & IR
 
         return False # self.clear
 
+    def __set_first_last_xs(self):
+        self.first_x = self.xs[0]
+        self.last_x = self.xs[-1]

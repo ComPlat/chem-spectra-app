@@ -80,8 +80,8 @@ class NIComposer(BaseComposer):
             '##YUNITS={}\n'.format(self.core.label['y']),
             '##XFACTOR={}\n'.format(self.core.factor['x']),
             '##YFACTOR={}\n'.format(self.core.factor['y']),
-            '##FIRSTX={}\n'.format(self.core.boundary['x']['max']),
-            '##LASTX={}\n'.format(self.core.boundary['x']['min']),
+            '##FIRSTX={}\n'.format(self.core.first_x),
+            '##LASTX={}\n'.format(self.core.last_x),
             '##MAXX={}\n'.format(self.core.boundary['x']['max']),
             '##MAXY={}\n'.format(self.core.boundary['y']['max']),
             '##MINX={}\n'.format(self.core.boundary['x']['min']),
@@ -89,7 +89,7 @@ class NIComposer(BaseComposer):
         ]
 
     def __gen_headers_spectrum_orig(self):
-        if self.core.is_em_wave:
+        if self.core.is_em_wave or self.core.non_nmr:
             return self.__header_base() + self.__header_params()
         else:
             return self.__header_base() + \
@@ -159,6 +159,8 @@ class NIComposer(BaseComposer):
             return 20
         elif 'UVVIS' == typ:
             return 20
+        elif 'THERMOGRAVIMETRIC ANALYSIS' == typ:
+            return 20
         elif 'MS' == typ:
             return 20
         return 20
@@ -174,6 +176,8 @@ class NIComposer(BaseComposer):
         elif 'RAMAN' == typ:
             return 1
         elif 'UVVIS' == typ:
+            return 1
+        elif 'THERMOGRAVIMETRIC ANALYSIS' == typ:
             return 1
         return 1
 
