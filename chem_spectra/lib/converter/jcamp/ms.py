@@ -1,3 +1,6 @@
+from chem_spectra.lib.converter.jcamp.data_parse import make_ms_data_xsys
+
+
 MARGIN = 1
 THRESHOLD_MS = 0.05
 num_pts_limit = 4000
@@ -6,12 +9,12 @@ num_pts_limit = 4000
 class JcampMSConverter:  # nmr & IR
     def __init__(self, base):
         self.params = base.params
-        self.dic = base.dic
-        self.data = base.data
         self.datatypes = base.datatypes
         self.datatype = base.datatype
-        self.title = base.title
         self.typ = base.typ
+        self.dic = base.dic
+        self.data = make_ms_data_xsys(base)
+        self.title = base.title
         self.is_em_wave = base.is_em_wave
         self.is_ir = base.is_ir
         self.non_nmr = base.non_nmr
@@ -106,7 +109,7 @@ class JcampMSConverter:  # nmr & IR
         return spectra, (output_idx + 1)
 
     def __read_mz_ml(self):
-        runs, spectra, auto_scan = self.data['real'], None, 0
+        runs, spectra, auto_scan = self.data, None, 0
         spectra, auto_scan = self.__decode(runs)
         return runs, spectra, auto_scan
 

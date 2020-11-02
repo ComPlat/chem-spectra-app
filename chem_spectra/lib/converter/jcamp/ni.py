@@ -3,7 +3,7 @@ from scipy import signal
 
 from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import to_float
-from chem_spectra.lib.shared.equal_space import make_equal_space_1d
+from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys
 
 
 THRESHOLD_IR = 0.93
@@ -16,12 +16,13 @@ THRESHOLD_TGA = 1.05
 class JcampNIConverter:  # nmr & IR
     def __init__(self, base):
         self.params = base.params
-        self.dic = base.dic
-        self.data = make_equal_space_1d(base)
         self.datatypes = base.datatypes
         self.datatype = base.datatype
-        self.title = base.title
         self.typ = base.typ
+        self.target_idx = self.__index_target()
+        self.dic = base.dic
+        self.data = make_ni_data_ys(base, self.target_idx)
+        self.title = base.title
         self.is_em_wave = base.is_em_wave
         self.is_ir = base.is_ir
         self.is_tga = base.is_tga
@@ -31,7 +32,6 @@ class JcampNIConverter:  # nmr & IR
         self.solv_peaks = base.solv_peaks
         # - - - - - - - - - - -
         self.fname = base.fname
-        self.target_idx = self.__index_target()
         self.block_count = self.__count_block()
         self.threshold = self.__thres()
         self.obs_freq = self.__set_obs_freq()
@@ -159,25 +159,15 @@ class JcampNIConverter:  # nmr & IR
         return x
 
     def __read_ys(self):
-        y = None
-        try:
-            y = self.data['real'][self.target_idx]
-        except:  # noqa
-            pass
-
-        if y is None:
-            try:
-                y = self.data[:]
-            except:  # noqa
-                pass
+        ys = self.data
         # transmission only # IR ABS vs TRANS
         if self.is_ir:
-            y_median = np.median(y)
-            y_max = np.max(y)
+            y_median = np.median(ys)
+            y_max = np.max(ys)
             if y_median < 0.5 * y_max:
-                y = y_max - y
+                ys = y_max - ys
 
-        return y
+        return ys
 
     def __find_boundary(self):
         return {
