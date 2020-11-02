@@ -4,7 +4,7 @@ import math
 from os.path import basename
 
 
-ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw', 'mzml', 'jcamp'])
+ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw', 'mzml', 'mzxml', 'jcamp'])
 
 
 def allowed_file(file):

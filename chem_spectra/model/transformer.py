@@ -56,10 +56,10 @@ class TransformerModel:
         return cmpsr.tf_jcamp(), cmpsr.tf_img()
 
     def to_composer(self):
-        is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml']
+        is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml', 'mzxml']
         is_cdf = self.file.name.split('.')[-1].lower() in ['cdf']
         is_zip = self.file.name.split('.')[-1].lower() in ['zip']
-        is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml']
+        is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml', 'mzxml']
         is_cdf_by_params = self.params['ext'] in ['cdf']
         is_zip_by_params = self.params['ext'] in ['zip']
         if is_raw_mzml or is_raw_mzml_by_params:
@@ -75,10 +75,10 @@ class TransformerModel:
             return cp
 
     def to_converter(self):
-        is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml']
+        is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml', 'mzxml']
         is_cdf = self.file.name.split('.')[-1].lower() in ['cdf']
         is_zip = self.file.name.split('.')[-1].lower() in ['zip']
-        is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml']
+        is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml', 'mzxml']
         is_cdf_by_params = self.params['ext'] in ['cdf']
         is_zip_by_params = self.params['ext'] in ['zip']
         if is_raw_mzml or is_raw_mzml_by_params:

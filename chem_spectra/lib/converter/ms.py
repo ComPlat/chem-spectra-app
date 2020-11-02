@@ -1,14 +1,16 @@
 import hashlib
 import subprocess as sbp
-import pymzml
 import time
 import shutil
 import numpy as np
+import pymzml
+import pyopenms
 
 from pathlib import Path
 from datetime import datetime
 
 from chem_spectra.lib.shared.buffer import store_byte_in_tmp
+from chem_spectra.lib.converter.share import reduce_pts
 
 MARGIN = 1
 
@@ -57,6 +59,17 @@ class MSConverter:
                 suffix='.mzML',
                 directory=self.target_dir.absolute().as_posix()
             )
+        elif self.ext == 'mzxml':
+            self.tf = store_byte_in_tmp(
+                b_content,
+                prefix=self.fname,
+                suffix='.mzXML',
+                directory=self.target_dir.absolute().as_posix()
+            )
+            exp = pyopenms.MSExperiment()
+            pyopenms.MzXMLFile().load(self.tf.name, exp)
+            target_path = self.__get_mzml_path().absolute().as_posix()
+            pyopenms.MzMLFile().store(target_path, exp)
 
     def __mk_dir(self):
         hash_str = '{}{}'.format(datetime.now(), self.fname)
@@ -143,7 +156,7 @@ class MSConverter:
         best_y = 0
         for idx, data in enumerate(runs):
             spc = data.peaks('raw')
-            spectra.append(spc)
+            spectra.append(reduce_pts(spc))
 
             ratio, noise_ratio, y = self.__get_ratio(spc)
             if (best_ratio < ratio) and (noise_ratio <= 50.0):

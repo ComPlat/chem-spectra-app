@@ -1,9 +1,8 @@
 from chem_spectra.lib.converter.jcamp.data_parse import make_ms_data_xsys
-
+from chem_spectra.lib.converter.share import reduce_pts
 
 MARGIN = 1
 THRESHOLD_MS = 0.05
-num_pts_limit = 4000
 
 
 class JcampMSConverter:  # nmr & IR
@@ -79,21 +78,11 @@ class JcampMSConverter:  # nmr & IR
 
         return ratio, noise_ratio
 
-    def __reduce_pts(self, xys):
-        filter_ratio = 0.001
-        filter_y = filter_ratio * xys[:, 1].max()
-        while True:
-            if xys.shape[0] < num_pts_limit:
-                break
-            xys = xys[xys[:, 1] > filter_y]
-            filter_y = filter_y * 2
-        return xys
-
     def __decode(self, runs):
         spectra = []
         best_ratio, best_idx, backup_ratio, backup_idx = 0, 0, 0, 0
         for idx, data in enumerate(runs):
-            spectra.append(self.__reduce_pts(data))
+            spectra.append(reduce_pts(data))
 
             ratio, noise_ratio = self.__get_ratio(data)
             if (best_ratio < ratio) and (noise_ratio <= 50.0):
