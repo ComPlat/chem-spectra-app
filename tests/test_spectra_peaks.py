@@ -21,12 +21,13 @@ meta_SVS_790A_13C_jdx = 'meta_SVS-790A_13C'
 
 separator_e = '$$ === CHEMSPECTRA PEAK TABLE EDIT ==='
 separator_a = '$$ === CHEMSPECTRA PEAK TABLE AUTO ==='
-separator = '$$ === CHEMSPECTRA ==='
+separator = '$$ === CHEMSPECTRA INTEGRALS AND MULTIPLETS ==='
 
 def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
         file = FileContainer(FileStorage(f))
-        nicv, nicp = TraModel(file, params).jcamp2cvp()
+        molfile = FileContainer(FileStorage(None))
+        _, nicp = TraModel(file, molfile, params).jcamp2cvp()
 
     parts = ''.join(nicp.meta).split(separator)
     assert len(parts) == 2

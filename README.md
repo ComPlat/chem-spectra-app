@@ -14,6 +14,8 @@ see [INSTALL.md][INSTALL]
 ```
 $ coverage run -m pytest --disable-pytest-warnings
 $ coverage report
+
+$ coverage run -m pytest --disable-pytest-warnings -k ./tests/test_spectra_im.py -k 'test_meta_1H' -vv
 ```
 
 ### Demo & Manual

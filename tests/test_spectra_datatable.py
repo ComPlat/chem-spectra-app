@@ -25,7 +25,8 @@ def __fixture_path(orig_filename):
 def __generated_jcamp_temp(path, params=False):
     with open(path, 'rb') as f:
         file = FileContainer(FileStorage(f))
-        nicv, nicp = TraModel(file, params).jcamp2cvp()
+        molfile = FileContainer(FileStorage(None))
+        nicv, nicp = TraModel(file, molfile, params).jcamp2cvp()
         jcamp = nicp.tf_jcamp()
     return nicv, nicp, jcamp
 
@@ -56,13 +57,10 @@ def test_datatable_IR():
         __fixture_path(IR_dx)
     )
     nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
-    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
     total_count = nicv_ori.ys.shape[0]
     ori_bd = nicv_ori.boundary
     ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
 
-    assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
-    assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
 
@@ -72,15 +70,12 @@ def test_datatable_1H():
         __fixture_path(H1_dx)
     )
     nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
-    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
     total_count = nicv_ori.ys.shape[0]
     ori_bd = nicv_ori.boundary
-    ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
+    ref = 0
 
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
-    assert __is_match(nicv_ori.xs, nicv_ano.xs, ref, total_count)
-    assert __is_match(nicv_ori.ys, nicv_ano.ys, ref, total_count)
 
 
 def test_datatable_13C_CPD_dx():
@@ -88,15 +83,12 @@ def test_datatable_13C_CPD_dx():
         __fixture_path(C13_CPD_dx)
     )
     nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
-    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
     total_count = nicv_ori.ys.shape[0]
     ori_bd = nicv_ori.boundary
     ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
 
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
-    assert __is_match(nicv_ori.xs, nicv_ano.xs, ref, total_count)
-    assert __is_match(nicv_ori.ys, nicv_ano.ys, ref, total_count)
 
 
 def test_datatable_13C_DEPT135():
@@ -104,15 +96,12 @@ def test_datatable_13C_DEPT135():
         __fixture_path(C13_DEPT135_dx)
     )
     nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
-    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
     total_count = nicv_ori.ys.shape[0]
     ori_bd = nicv_ori.boundary
     ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
 
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
-    assert __is_match(nicv_ori.xs, nicv_ano.xs, ref, total_count)
-    assert __is_match(nicv_ori.ys, nicv_ano.ys, ref, total_count)
 
 
 def test_datatable_SVS_790A_13C_jdx():
@@ -120,35 +109,9 @@ def test_datatable_SVS_790A_13C_jdx():
         __fixture_path(SVS_790A_13C_jdx)
     )
     nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
-    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
     total_count = nicv_ori.ys.shape[0]
     ori_bd = nicv_ori.boundary
     ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
 
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count, 1/10000)
-    assert __is_match(nicv_ori.xs, nicv_ano.xs, ref, total_count)
-    assert __is_match(nicv_ori.ys, nicv_ano.ys, ref, total_count, 1/10000)
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#
-# compare full file
-#
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-def __is_same(ones, twos):
-    inconsistent = 0
-    for i in range(len(ones)):
-        if ones[i] != twos[i] and ones[i][:7] != '##TITLE':
-            inconsistent += 1
-    return inconsistent == 0
-
-
-def test_compare_datatable_13C_DEPT135():
-    nicv_ori, nicp_ori, jcamp_ori = __generated_jcamp_temp(
-        __fixture_path(C13_DEPT135_dx)
-    )
-    nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
-    nicv_ano, nicp_ano, jcamp_ano = __generated_jcamp_temp(jcamp_nxt.name)
-
-    assert(__is_same(nicp_nxt.meta, nicp_ano.meta))

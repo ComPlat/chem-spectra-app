@@ -26,7 +26,7 @@ $ conda install -c rdkit rdkit=2020.09.1.0
 ```
 
 ```
-$ sudo apt-get install gcc libxrender1 libxext-dev
+$ sudo apt-get install gcc libxrender1 libxext-dev pkg-config
 ```
 
 ```

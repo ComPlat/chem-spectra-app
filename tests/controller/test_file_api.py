@@ -26,7 +26,9 @@ def test_api_chemspectra_file_save(client):
     with open(target_dir + source_dir + file_jdx, 'rb') as f:
         file_content = f.read()
     data = dict(
-        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
+        src=(io.BytesIO(file_content), '13C-DEPT135.dx'),
+        dst=(io.BytesIO(file_content), '13C-DEPT135.dx'),
+        molfile=None
     )
     response = client.post(
         '/api/v1/chemspectra/file/save',
