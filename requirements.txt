@@ -40,3 +40,4 @@ six==1.11.0
 urllib3==1.24.2
 Werkzeug==0.15.5
 zipp==0.5.2
+pyopenms==2.6.0
