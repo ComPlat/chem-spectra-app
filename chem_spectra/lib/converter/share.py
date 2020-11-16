@@ -180,6 +180,8 @@ def parse_solvent(base):
 def reduce_pts(xys):
     num_pts_limit = 4000
     filter_ratio = 0.001
+    if xys.shape[0] == 0:
+        return xys
     filter_y = filter_ratio * xys[:, 1].max()
     while True:
         if xys.shape[0] < num_pts_limit:
