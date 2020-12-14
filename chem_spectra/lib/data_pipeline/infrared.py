@@ -6,6 +6,9 @@ from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 
 
+curve_begin_idx = 600
+
+
 class InfraredLib:
     def __init__(self, spectrum):
         self.nicv = self.__read_spectrum(spectrum)
@@ -35,7 +38,7 @@ class InfraredLib:
         f = sc_interpolate.interp1d(x_i, y_i)
         x_o = np.linspace(0, 3999, 4000, endpoint=True)
         y_o = f(x_o)
-        return x_o, y_o
+        return x_o[curve_begin_idx:], y_o[curve_begin_idx:]
 
     def __normalize(self, x_i, y_i):
         max_y = np.max(y_i)
@@ -52,7 +55,7 @@ class InfraredLib:
 
         y_median = np.median(y_i)
         if y_median < 0.5:
-            y_o = 1 - y_i
+            y_o = y_i # 1 - y_i # TBD
         return x_o, y_o
 
     def __chop(self, x_i, y_i):
@@ -72,6 +75,7 @@ class InfraredLib:
         x_order, y_order = self.__order(self.nicv.xs, self.nicv.ys)
         x_full, y_full = self.__concat_boundary(x_order, y_order)
         x_itp, y_itp = self.__interpolate(x_full, y_full)
+        y_itp = y_itp ** 0.5
         x_itp_norm, y_itp_norm = self.__normalize(x_itp, y_itp)
         x_itp_norm_abs, y_itp_norm_abs = self.__use_transmission(
             x_itp_norm, y_itp_norm
