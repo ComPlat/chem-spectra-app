@@ -35,7 +35,7 @@ class InferencerModel:
             shift={'ref': {'label': False, 'name': '- - -', 'value': 0}, 'peak': False, 'enable': False}
         )
         try:
-            rsp = instance.__predict_nmr(timeout=6)
+            rsp = instance.__predict_nmr(timeout=20)
             output = rsp.json()
             simulations = list(set(shift['prediction'] for shift in output['result'][0]['shifts']))
             return simulations
@@ -130,8 +130,13 @@ class InferencerModel:
 
     def __extract_x(self):
         total = []
+        deviation = 0.0001
         for p in self.peaks:
-            total.append(str(p['x']))
+            target = str(p['x'])
+            if target in total:
+                target = str(p['x'] + deviation)
+                deviation += 0.0001
+            total.append(target)
 
         return ';'.join(total)
 
