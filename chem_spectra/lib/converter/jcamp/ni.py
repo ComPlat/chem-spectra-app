@@ -29,6 +29,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_uv_vis = base.is_uv_vis
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
+        self.is_dept = base.is_dept
         self.solv_peaks = base.solv_peaks
         # - - - - - - - - - - -
         self.fname = base.fname
@@ -459,7 +460,7 @@ class JcampNIConverter:  # nmr & IR
         if target2:
             self.mpy_pks_table = target2
             self.mpy_pks_table.append('\n')
-        if self.ncl == '13C' and len(self.mpy_itg_table) == 0 and len(self.mpy_pks_table) == 0:
+        if self.ncl == '13C' and not self.is_dept and len(self.mpy_itg_table) == 0 and len(self.mpy_pks_table) == 0:
             self.__add_13C_mpy_programmatically()
     
     def __add_13C_mpy_programmatically(self):
