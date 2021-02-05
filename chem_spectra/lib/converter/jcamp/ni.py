@@ -460,36 +460,36 @@ class JcampNIConverter:  # nmr & IR
         if target2:
             self.mpy_pks_table = target2
             self.mpy_pks_table.append('\n')
-        if self.ncl == '13C' and not self.is_dept and len(self.mpy_itg_table) == 0 and len(self.mpy_pks_table) == 0:
-            self.__add_13C_mpy_programmatically()
-    
-    def __add_13C_mpy_programmatically(self):
-        num_edit_peaks = len(self.edit_peaks['x'])
-        if num_edit_peaks > 50:
-            return
+    #     if self.ncl == '13C' and not self.is_dept and len(self.mpy_itg_table) == 0 and len(self.mpy_pks_table) == 0:
+    #         self.__add_13C_mpy_programmatically()
 
-        str_mpy_itg = ''
-        for idx in range(num_edit_peaks):
-            str_mpy_itg += '({}, {}, {}, {}, 1.0, {}, s, {})\n'.format(
-                idx + 1,
-                self.edit_peaks['x'][idx] - 1.0,
-                self.edit_peaks['x'][idx] + 1.0,
-                self.edit_peaks['x'][idx],
-                idx + 1,
-                'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[idx%26]
-            )
-        if str_mpy_itg:
-            self.mpy_itg_table = [str_mpy_itg]
+    # def __add_13C_mpy_programmatically(self):
+    #     num_edit_peaks = len(self.edit_peaks['x'])
+    #     if num_edit_peaks > 50:
+    #         return
 
-        str_mpy_pks = ''
-        for idx in range(num_edit_peaks):
-            str_mpy_pks += '({}, {}, {})\n'.format(
-                idx + 1,
-                self.edit_peaks['x'][idx],
-                self.edit_peaks['y'][idx]
-            )
-        if str_mpy_pks:
-            self.mpy_pks_table = [str_mpy_pks]
+    #     str_mpy_itg = ''
+    #     for idx in range(num_edit_peaks):
+    #         str_mpy_itg += '({}, {}, {}, {}, 1.0, {}, s, {})\n'.format(
+    #             idx + 1,
+    #             self.edit_peaks['x'][idx] - 1.0,
+    #             self.edit_peaks['x'][idx] + 1.0,
+    #             self.edit_peaks['x'][idx],
+    #             idx + 1,
+    #             'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[idx%26]
+    #         )
+    #     if str_mpy_itg:
+    #         self.mpy_itg_table = [str_mpy_itg]
+
+    #     str_mpy_pks = ''
+    #     for idx in range(num_edit_peaks):
+    #         str_mpy_pks += '({}, {}, {})\n'.format(
+    #             idx + 1,
+    #             self.edit_peaks['x'][idx],
+    #             self.edit_peaks['y'][idx]
+    #         )
+    #     if str_mpy_pks:
+    #         self.mpy_pks_table = [str_mpy_pks]
 
     def __refresh_solvent(self):
         if self.ncl == '13C':
