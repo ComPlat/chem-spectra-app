@@ -1,6 +1,6 @@
 # INSTALL
 
-This guidance is tested on Linux Ubuntu 18.04.
+This guidance is tested on Linux Ubuntu 18.04 & Ubuntu 20.04
 
 ## 1. Installation
 
@@ -26,7 +26,7 @@ $ conda install -c rdkit rdkit=2020.09.1.0
 ```
 
 ```
-$ sudo apt-get install gcc libxrender1 libxext-dev pkg-config
+$ sudo apt-get install gcc libxrender1 libxext-dev pkg-config g++
 ```
 
 ```
