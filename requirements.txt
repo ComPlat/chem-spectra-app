@@ -37,7 +37,7 @@ regex==2019.4.9
 requests==2.22.0
 scipy==1.2.0
 six==1.11.0
-urllib3==1.24.2
+urllib3==1.26.5
 Werkzeug==0.15.5
 zipp==0.5.2
 pyopenms==2.6.0
