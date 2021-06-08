@@ -120,7 +120,8 @@ class TransformerModel:
             if not fbcv:
                 return False, False
         # assume NMR only
-        d_jbcv = decorate_sim_property(fbcv, self.molfile)
+        isSimulateNRM = self.params['simulatenrm']
+        d_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNRM)
         nicv = JcampNIConverter(d_jbcv)
         nicp = NIComposer(nicv)
         return nicv, nicp
@@ -135,7 +136,8 @@ class TransformerModel:
             mscp = MSComposer(mscv)
             return mscv, mscp
         else:
-            d_jbcv = decorate_sim_property(jbcv, self.molfile)
+            isSimulateNRM = self.params['simulatenrm']
+            d_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNRM)
             nicv = JcampNIConverter(d_jbcv)
             nicp = NIComposer(nicv)
             return nicv, nicp
