@@ -62,6 +62,7 @@ def extract_params(request):
     integration = request.form.get('integration', default='{}')
     multiplicity = request.form.get('multiplicity', default='{}')
     fname = parse_fname(request)
+    simulatenrm = bool(request.form.get('simulatenrm', default=False))
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -78,6 +79,7 @@ def extract_params(request):
         'integration': integration,
         'multiplicity': multiplicity,
         'fname': fname,
+        'simulatenrm': simulatenrm,
     }
     has_params = (
         params.get('peaks_str') or
@@ -93,7 +95,8 @@ def extract_params(request):
         params.get('ext') or
         params.get('integration') or
         params.get('multiplicity') or
-        params.get('fname')
+        params.get('fname') or
+        params.get('simulatenrm')
     )
     if not has_params:
         params = False
