@@ -37,7 +37,7 @@ class InferencerModel:
         try:
             rsp = instance.__predict_nmr(timeout=20)
             output = rsp.json()
-            simulations = list(set(shift['prediction'] for shift in output['result'][0]['shifts']))
+            simulations = sorted([shift['prediction'] for shift in output['result'][0]['shifts']])
             return simulations
         except:
             return []
