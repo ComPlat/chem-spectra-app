@@ -85,6 +85,7 @@ SECRET_KEY = b'T\x1d\xb3\xfe\xb6q\xef\xbf\x7f\xcaj\xcbZ\x84\x1ee'
 IP_WHITE_LIST = 'xxx.xxx.xxx.xxx'
 URL_DEEPIR = 'http://xxx.xxx.xxx.xxx:3008/infer_ir'
 URL_NSHIFTDB = 'https://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
+LOGS_FILE = './instance/logging.log' #location of logs file
 ```
 
 ### 1.5. Start server
