@@ -29,7 +29,7 @@ def zip_jcamp_n_img():
     params = extract_params(request)
     if file:  # and allowed_file(file):
         cmpsr = TraModel(file, molfile=molfile, params=params).to_composer()
-        if 'invalid_molfile' in cmpsr:
+        if ((type(cmpsr) is dict) and "invalid_molfile" in cmpsr):
             return json.dumps(cmpsr)
         tf_jcamp, tf_img = cmpsr.tf_jcamp(), cmpsr.tf_img()
         spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ

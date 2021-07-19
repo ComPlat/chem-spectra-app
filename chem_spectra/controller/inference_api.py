@@ -95,7 +95,7 @@ def chemspectra_predict_ms():
     molfile = FileContainer(request.files['molfile'])
     mm = MoleculeModel(molfile, layout)
     tm = TraModel(spectrum, molfile=None, params={'ext': 'jdx'}).to_composer()
-    if 'invalid_molfile' in tm:
+    if ((type(tm) is dict) and "invalid_molfile" in tm):
         return json.dumps(tm)
 
     outcome = InferModel.predict_ms(

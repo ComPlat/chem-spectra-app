@@ -122,7 +122,7 @@ class TransformerModel:
         # assume NMR only
         isSimulateNRM = self.params['simulatenrm']
         d_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNRM)
-        if "invalid_molfile" in d_jbcv:
+        if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
             #return if molfile is invalid
             return None, d_jbcv
         nicv = JcampNIConverter(d_jbcv)
@@ -141,7 +141,7 @@ class TransformerModel:
         else:
             isSimulateNRM = self.params['simulatenrm']
             d_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNRM)
-            if "invalid_molfile" in d_jbcv:
+            if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
                 #return if molfile is invalid
                 return None, d_jbcv
             nicv = JcampNIConverter(d_jbcv)
