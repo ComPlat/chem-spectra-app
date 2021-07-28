@@ -87,6 +87,12 @@ class FidBaseConverter:
                 return '13C'
             elif '19F' in ncls:
                 return '19F'
+            elif '31P' in ncls:
+                return '31P'
+            elif '15N' in ncls:
+                return '15N'
+            elif '29Si' in ncls:
+                return '29Si'
         except: # noqa
             pass
         return '13C'
