@@ -103,6 +103,12 @@ class ArtistLib:
             atom_symbol = 'H'
         elif self.layout == '19F':
             atom_symbol = 'F'
+        elif self.layout == '31P':
+            atom_symbol = 'P'
+        elif self.layout == '15N':
+            atom_symbol = 'N'
+        elif self.layout == '29Si':
+            atom_symbol = 'Si'
 
         targets = []
         for idx in range(self.mol.GetNumAtoms()):

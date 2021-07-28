@@ -48,7 +48,7 @@ class NIComposer(BaseComposer):
     def __get_nucleus(self):
         nuc_orig = extrac_dic(self.core, '.OBSERVENUCLEUS')
         nuc_modf = re.sub('[^A-Za-z0-9]+', '', nuc_orig).lower()
-        is_valid = ('13c' in nuc_modf) or ('1h' in nuc_modf) or ('19f' in nuc_modf)
+        is_valid = ('13c' in nuc_modf) or ('1h' in nuc_modf) or ('19f' in nuc_modf) or ('31p' in nuc_modf) or ('15n' in nuc_modf) or ('29si' in nuc_modf)
         nucleus = nuc_orig if is_valid else self.__calc_nucleus_by_boundary()
         return nucleus
 
