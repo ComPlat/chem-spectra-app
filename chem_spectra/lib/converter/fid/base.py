@@ -17,6 +17,7 @@ class FidBaseConverter:
         self.is_ir = self.__is_ir()
         self.is_tga = self.__is_tga()
         self.is_uv_vis = self.__is_uv_vis()
+        self.is_xrd = self.__is_xrd()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
@@ -67,7 +68,7 @@ class FidBaseConverter:
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS']
+        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -77,6 +78,9 @@ class FidBaseConverter:
 
     def __is_uv_vis(self):
         return self.typ in ['UVVIS']
+
+    def __is_xrd(self):
+        return self.typ in ['X-RAY DIFFRACTION']
 
     def __ncl(self):
         try:
