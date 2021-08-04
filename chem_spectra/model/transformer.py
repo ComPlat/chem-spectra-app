@@ -14,6 +14,7 @@ from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
+from chem_spectra.lib.composer.base import BaseComposer
 
 from chem_spectra.model.concern.property import decorate_sim_property
 

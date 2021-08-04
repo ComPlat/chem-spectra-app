@@ -12,6 +12,7 @@ THRESHOLD_NMR = 0.005
 THRESHOLD_MS = 0.05
 THRESHOLD_UVVIS = 0.05
 THRESHOLD_TGA = 1.05
+THRESHOLD_XRD = 1.00
 
 class JcampNIConverter:  # nmr & IR
     def __init__(self, base):
@@ -26,6 +27,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_em_wave = base.is_em_wave
         self.is_ir = base.is_ir
         self.is_tga = base.is_tga
+        self.is_xrd = base.is_xrd
         self.is_uv_vis = base.is_uv_vis
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
@@ -73,6 +75,8 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_UVVIS
         elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
             return THRESHOLD_TGA
+        elif 'X-RAY DIFFRACTION' == dt:
+            return THRESHOLD_XRD
         return 0.5
 
     def __index_target(self):
@@ -80,7 +84,7 @@ class JcampNIConverter:  # nmr & IR
             'NMR SPECTRUM', 'NMRSPECTRUM',
             'INFRARED SPECTRUM', 'RAMAN SPECTRUM',
             'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS',
-            'THERMOGRAVIMETRIC ANALYSIS'
+            'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION'
         ]
         for tp in target_topics:
             if tp in self.datatypes:
