@@ -17,7 +17,7 @@ MarkupSafe==1.1.1
 matplotlib==2.0.2
 mccabe==0.6.1
 more-itertools==7.2.0
--e git+https://github.com/ComPlat/nmrglue.git@5f24f0013c9601742a92205c1ecc519663005301#egg=nmrglue
+-e git+https://github.com/ComPlat/nmrglue.git@d9c0de6d3d7c852fc0d167442af395393a8ae513#egg=nmrglue
 netCDF4==1.5.3
 numpy==1.20.3
 olefile==0.46
