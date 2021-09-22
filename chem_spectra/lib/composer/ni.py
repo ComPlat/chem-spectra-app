@@ -236,6 +236,8 @@ class NIComposer(BaseComposer):
             ref = ks[iL]
             cxs = self.core.xs[iL:iU]
             cys = (ks[iL:iU] - ref) * 1.5 + (y_max - h * 0.4)
+            if self.core.typ == 'UVVIS':
+                cys = (ref - ks[iL:iU]) * 0.5 + (y_max - h * 0.4)
             plt.plot(cxs, cys, color='#228B22')
 
         # ----- PLOT multiplicity -----

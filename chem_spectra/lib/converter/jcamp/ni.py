@@ -84,6 +84,7 @@ class JcampNIConverter:  # nmr & IR
             'NMR SPECTRUM', 'NMRSPECTRUM',
             'INFRARED SPECTRUM', 'RAMAN SPECTRUM',
             'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS',
+            'HPLC UV-VIS', 'HPLC UV/VIS SPECTRUM',
             'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION'
         ]
         for tp in target_topics:
@@ -205,7 +206,7 @@ class JcampNIConverter:  # nmr & IR
         except:  # noqa
             pass
 
-        if 'absorb' in target['y'].lower():  # IR ABS vs TRANS
+        if 'absorb' in target['y'].lower() and not(self.is_uv_vis):  # IR ABS vs TRANS
             target['y'] = 'TRANSMITTANCE'
 
         return target
