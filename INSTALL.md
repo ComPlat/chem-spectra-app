@@ -96,6 +96,7 @@ IP_WHITE_LIST = 'xxx.xxx.xxx.xxx'
 URL_DEEPIR = 'http://xxx.xxx.xxx.xxx:3008/infer_ir'
 URL_NSHIFTDB = 'https://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
 LOGS_FILE = './instance/logging.log' #location of logs file
+MAX_ZIP_SIZE = 100 #maximum size of a zip file in MB to prevent zip bomb, default is 100 MB
 ```
 
 ### 1.5. Start server
