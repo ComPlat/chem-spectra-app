@@ -14,6 +14,7 @@ from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
+from chem_spectra.lib.composer.base import BaseComposer
 
 from chem_spectra.model.concern.property import decorate_sim_property
 
@@ -120,7 +121,11 @@ class TransformerModel:
             if not fbcv:
                 return False, False
         # assume NMR only
-        d_jbcv = decorate_sim_property(fbcv, self.molfile)
+        isSimulateNRM = self.params['simulatenrm']
+        d_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNRM)
+        if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
+            #return if molfile is invalid
+            return None, d_jbcv
         nicv = JcampNIConverter(d_jbcv)
         nicp = NIComposer(nicv)
         return nicv, nicp
@@ -135,7 +140,11 @@ class TransformerModel:
             mscp = MSComposer(mscv)
             return mscv, mscp
         else:
-            d_jbcv = decorate_sim_property(jbcv, self.molfile)
+            isSimulateNRM = self.params['simulatenrm']
+            d_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNRM)
+            if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
+                #return if molfile is invalid
+                return None, d_jbcv
             nicv = JcampNIConverter(d_jbcv)
             nicp = NIComposer(nicv)
             return nicv, nicp

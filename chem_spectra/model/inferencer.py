@@ -3,6 +3,7 @@ import requests
 import numpy as np
 import json
 from flask import current_app
+import logging
 
 from chem_spectra.lib.data_pipeline.infrared import InfraredLib
 from chem_spectra.lib.chem.artist import ArtistLib
@@ -37,9 +38,17 @@ class InferencerModel:
         try:
             rsp = instance.__predict_nmr(timeout=20)
             output = rsp.json()
+            logger = logging.getLogger(__name__)
+            logger.setLevel(logging.INFO)
+            log_msg = 'smiles: {smi} - nmrshiftdb_result: {nmrshiftdb}'.format(smi=mm.smi, nmrshiftdb=output)
+            logger.info(log_msg)
             simulations = sorted([shift['prediction'] for shift in output['result'][0]['shifts']])
             return simulations
-        except:
+        except Exception as error:
+            logger = logging.getLogger(__name__)
+            logger.setLevel(logging.ERROR)
+            log_msg = 'smiles: {smi} - nmrshiftdb_result: {nmrshiftdb}'.format(smi=mm.smi, nmrshiftdb=error)
+            logger.error(log_msg)
             return []
 
     @classmethod
@@ -85,6 +94,9 @@ class InferencerModel:
                 }
             }
         except requests.ConnectionError:
+            logger = logging.getLogger(__name__)
+            logger.setLevel(logging.ERROR)
+            logger.error('cannot connect with NRMShiftDB')
             return {
                 'outline': {
                     'code': 503,

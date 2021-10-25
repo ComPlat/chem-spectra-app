@@ -52,14 +52,24 @@ $ cd ~/chem-spectra-app
 ```
 $ mkdir chem_spectra/tmp
 $ sudo chmod -R 755 chem_spectra/tmp
+```
+To running docker for converting Mass spectrum, run this command:
+```
+$ docker run --detach --name msconvert_docker \
+    --rm -it \
+    -e WINEDEBUG=-all \
+    -v [YOUR LOCATION TO chem-spectra-app]/chem_spectra/tmp:/data \
+    chambm/pwiz-skyline-i-agree-to-the-vendor-licenses bash
+```
 
+For example, if your location of `chem-spectra-app` is `/home/ubuntu/chem-spectra-app`
+```
 $ docker run --detach --name msconvert_docker \
     --rm -it \
     -e WINEDEBUG=-all \
     -v /home/ubuntu/chem-spectra-app/chem_spectra/tmp:/data \
     chambm/pwiz-skyline-i-agree-to-the-vendor-licenses bash
 ```
-
 
 ### 1.4. Add `config.py`
 
@@ -85,6 +95,8 @@ SECRET_KEY = b'T\x1d\xb3\xfe\xb6q\xef\xbf\x7f\xcaj\xcbZ\x84\x1ee'
 IP_WHITE_LIST = 'xxx.xxx.xxx.xxx'
 URL_DEEPIR = 'http://xxx.xxx.xxx.xxx:3008/infer_ir'
 URL_NSHIFTDB = 'https://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
+LOGS_FILE = './instance/logging.log' #location of logs file
+MAX_ZIP_SIZE = 100 #maximum size of a zip file in MB to prevent zip bomb, default is 100 MB
 ```
 
 ### 1.5. Start server
@@ -120,6 +132,26 @@ This web service will return a zip file containing an image and a modified jcamp
 POST xxx.xxx.xxx.xxx:3007/peak_zip_jcamp_n_img
 body = { file: target.jdx }
 ```
+
+### 2.1. Logging
+By default, the logging file is at 
+```
+./instance/logging.log
+```
+
+### 2.2. Implement a new log message
+Import `logging` package at where you want to write your log message
+```
+import logging
+```
+
+Write log message as
+```
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR) //levels: DEBUG, INFO, ERROR, WARNING, CRITICAL
+logger.error('message to log')
+```
+Note: You need to use function as the same as your logger level, which named as lowercased of level's name, to write your log message to the logs file
 
 ## 3. Run test
 

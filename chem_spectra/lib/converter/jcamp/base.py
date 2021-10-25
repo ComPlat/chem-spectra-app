@@ -16,6 +16,7 @@ class JcampBaseConverter:
         self.is_ir = self.__is_ir()
         self.is_tga = self.__is_tga()
         self.is_uv_vis = self.__is_uv_vis()
+        self.is_xrd = self.__is_xrd()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
@@ -44,6 +45,8 @@ class JcampBaseConverter:
             return 'UV/VIS SPECTRUM'
         elif 'THERMOGRAVIMETRIC ANALYSIS' in dts:
             return 'THERMOGRAVIMETRIC ANALYSIS'
+        elif 'X-RAY DIFFRACTION' in dts:
+            return 'X-RAY DIFFRACTION'
         return ''
 
     def __typ(self):
@@ -64,13 +67,15 @@ class JcampBaseConverter:
             return 'UVVIS'
         elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
             return 'THERMOGRAVIMETRIC ANALYSIS'
+        elif 'X-RAY DIFFRACTION' == dt:
+            return 'X-RAY DIFFRACTION'
         return ''
 
     def __is_em_wave(self):
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS']
+        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -81,6 +86,9 @@ class JcampBaseConverter:
     def __is_uv_vis(self):
         return self.typ in ['UVVIS']
 
+    def __is_xrd(self):
+        return self.typ in ['X-RAY DIFFRACTION']
+
     def __ncl(self):
         try:
             ncls = self.dic['.OBSERVENUCLEUS']
@@ -90,6 +98,12 @@ class JcampBaseConverter:
                 return '13C'
             elif '^19F' in ncls:
                 return '19F'
+            elif '31P' in ncls:
+                return '31P'
+            elif '15N' in ncls:
+                return '15N'
+            elif '29Si' in ncls:
+                return '29Si'
         except: # noqa
             pass
         return ''
