@@ -182,15 +182,22 @@ class BaseComposer:
             table = []
             for itg in self.itgs:
                 table.extend([
-                    '({}, {}, {})\n'.format(
+                    '({}, {}, {}, {})\n'.format(
                         itg['xL'] - self.refShift,
                         itg['xU'] - self.refShift,
                         float(itg['area']) * self.refArea,
+                        itg['absoluteArea'],
                     ),
                 ])
             return table
-        elif self.core.params['integration'].get('edited'):
-            return []
+        elif self.core.params['integration']:
+            dicIntegration = self.core.params['integration']
+            if dicIntegration.get('edited'):
+                return []
+            elif 'stack' in dicIntegration:
+                return dicIntegration['stack']
+            else:
+                return self.core.itg_table
         else:
             return self.core.itg_table
 

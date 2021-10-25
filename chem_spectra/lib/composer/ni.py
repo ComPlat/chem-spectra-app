@@ -11,7 +11,7 @@ from chem_spectra.lib.composer.base import (  # noqa: E402
     extrac_dic, calc_npoints, BaseComposer
 )
 from chem_spectra.lib.shared.calc import (  # noqa: E402
-    calc_mpy_center, calc_ks, get_curve_endpoint
+    calc_mpy_center, calc_ks, get_curve_endpoint, cal_slope
 )
 
 
@@ -187,7 +187,7 @@ class NIComposer(BaseComposer):
         # PLOT data
         plt.plot(self.core.xs, self.core.ys)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']
-        xlim_left, xlim_right = [x_min, x_max] if self.core.is_tga or self.core.is_uv_vis else [x_max, x_min]
+        xlim_left, xlim_right = [x_min, x_max] if self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis else [x_max, x_min]
         plt.xlim(xlim_left, xlim_right)
         y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
         h = y_max - y_min
@@ -226,19 +226,36 @@ class NIComposer(BaseComposer):
         for itg in self.all_itgs:
             # integration marker
             xL, xU, area = itg['xL'] - refShift, itg['xU'] - refShift, itg['area'] * refArea
-            plt.plot([xL, xU], [itg_h, itg_h], color='#228B22')
-            plt.plot([xL, xL], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
-            plt.plot([xU, xU], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
-            plt.text((xL + xU) / 2, itg_h + h * 0.015, '{:0.2f}'.format(area), color='#228B22', ha='center', size=12)
             # integration curve
             ks = calc_ks(self.core.ys, y_max, h)
             iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
             ref = ks[iL]
             cxs = self.core.xs[iL:iU]
-            cys = (ks[iL:iU] - ref) * 1.5 + (y_max - h * 0.4)
-            if self.core.typ == 'UVVIS':
-                cys = (ref - ks[iL:iU]) * 0.5 + (y_max - h * 0.4)
-            plt.plot(cxs, cys, color='#228B22')
+
+            if self.core.is_hplc_uv_vis:
+                # fill area under curve
+                cys = self.core.ys[iL:iU]
+                slope = cal_slope(cxs[0], cys[0], cxs[len(cxs)-1], cys[len(cys)-1])
+                last_y = cys[0]
+                last_x = cxs[0]
+                aucys = [last_y]
+                for i in range(1, len(cys)):
+                    curr_x = cxs[i]
+                    curr_y = slope*(curr_x-last_x) + last_y
+                    aucys.append(curr_y)
+                    last_x = curr_x
+                    last_y = curr_y
+                plt.fill_between(cxs, y1=cys, y2=aucys, alpha=0.2, color='#FF0000')
+            else:
+                # display integration
+                plt.plot([xL, xU], [itg_h, itg_h], color='#228B22')
+                plt.plot([xL, xL], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
+                plt.plot([xU, xU], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
+                plt.text((xL + xU) / 2, itg_h + h * 0.015, '{:0.2f}'.format(area), color='#228B22', ha='center', size=12)
+                cys = (ks[iL:iU] - ref) * 1.5 + (y_max - h * 0.4)
+                # if self.core.is_uv_vis:
+                #     cys = (ref - ks[iL:iU]) * 0.5 + (y_max - h * 0.4)
+                plt.plot(cxs, cys, color='#228B22')
 
         # ----- PLOT multiplicity -----
         mpy_h = y_min - h * 0.08
