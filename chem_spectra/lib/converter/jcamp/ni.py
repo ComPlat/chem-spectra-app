@@ -29,6 +29,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_tga = base.is_tga
         self.is_xrd = base.is_xrd
         self.is_uv_vis = base.is_uv_vis
+        self.is_hplc_uv_vis = base.is_hplc_uv_vis
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.is_dept = base.is_dept
@@ -69,6 +70,10 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_RAMAN
         elif 'MASS SPECTRUM' == dt:
             return THRESHOLD_MS
+        elif 'HPLC UV/VIS SPECTRUM' == dt:
+            return THRESHOLD_UVVIS
+        elif 'HPLC UV-VIS' == dt:
+            return THRESHOLD_UVVIS
         elif 'UV/VIS SPECTRUM' == dt:
             return THRESHOLD_UVVIS
         elif 'UV-VIS' == dt:

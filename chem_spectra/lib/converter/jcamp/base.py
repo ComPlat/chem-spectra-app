@@ -16,6 +16,7 @@ class JcampBaseConverter:
         self.is_ir = self.__is_ir()
         self.is_tga = self.__is_tga()
         self.is_uv_vis = self.__is_uv_vis()
+        self.is_hplc_uv_vis = self.__is_hplc_uv_vis()
         self.is_xrd = self.__is_xrd()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
@@ -39,6 +40,10 @@ class JcampBaseConverter:
             return 'RAMAN SPECTRUM'
         elif 'MASS SPECTRUM' in dts:
             return 'MASS SPECTRUM'
+        elif 'HPLC UV/VIS SPECTRUM' in dts:
+            return 'HPLC UV/VIS SPECTRUM'
+        elif 'HPLC UV-VIS' in dts:
+            return 'HPLC UV/VIS SPECTRUM'
         elif 'UV/VIS SPECTRUM' in dts:
             return 'UV/VIS SPECTRUM'
         elif 'UV-VIS' in dts:
@@ -61,6 +66,10 @@ class JcampBaseConverter:
             return 'RAMAN'  # TBD
         elif 'MASS SPECTRUM' == dt:
             return 'MS'
+        elif 'HPLC UV/VIS SPECTRUM' == dt:
+            return 'HPLC UVVIS'
+        elif 'HPLC UV-VIS' == dt:
+            return 'HPLC UVVIS'
         elif 'UV/VIS SPECTRUM' == dt:
             return 'UVVIS'
         elif 'UV-VIS' == dt:
@@ -75,7 +84,7 @@ class JcampBaseConverter:
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION']
+        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -85,6 +94,9 @@ class JcampBaseConverter:
 
     def __is_uv_vis(self):
         return self.typ in ['UVVIS']
+
+    def __is_hplc_uv_vis(self):
+        return self.typ in ['HPLC UVVIS']
 
     def __is_xrd(self):
         return self.typ in ['X-RAY DIFFRACTION']
