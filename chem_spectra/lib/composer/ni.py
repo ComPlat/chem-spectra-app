@@ -187,7 +187,7 @@ class NIComposer(BaseComposer):
         # PLOT data
         plt.plot(self.core.xs, self.core.ys)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']
-        xlim_left, xlim_right = [x_min, x_max] if self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis else [x_max, x_min]
+        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd) else [x_max, x_min]
         plt.xlim(xlim_left, xlim_right)
         y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
         h = y_max - y_min
@@ -223,6 +223,18 @@ class NIComposer(BaseComposer):
         # ----- PLOT integration -----
         refShift, refArea = self.refShift, self.refArea
         itg_h = y_max + h * 0.1
+        if (len(self.all_itgs) == 0 and len(self.core.itg_table) > 0):
+            core_itg_table = self.core.itg_table[0]
+            itg_table = core_itg_table.split('\n')
+            for itg in itg_table:
+                clear_itg = itg.replace('(', '')
+                clear_itg = clear_itg.replace(')', '')
+                split_itg = clear_itg.split(',')
+                if (len(split_itg) > 2):
+                  xLStr = split_itg[0].strip()
+                  xUStr = split_itg[1].strip()
+                  areaStr = split_itg[2].strip()
+                  self.all_itgs.append({'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)})
         for itg in self.all_itgs:
             # integration marker
             xL, xU, area = itg['xL'] - refShift, itg['xU'] - refShift, itg['area'] * refArea
@@ -271,7 +283,12 @@ class NIComposer(BaseComposer):
                 plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.05], color='#DA70D6')
 
         # PLOT label
-        plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
+        if (self.core.is_xrd):
+            waveLength = self.core.params['waveLength']
+            label = "X ({}), WL={} nm".format(self.core.label['x'], waveLength['value'], waveLength['unit'])
+            plt.xlabel((label), fontsize=18)
+        else:
+            plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
         plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
         plt.locator_params(nbins=self.__plt_nbins())
         plt.grid(False)
