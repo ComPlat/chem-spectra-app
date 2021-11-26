@@ -190,15 +190,8 @@ class BaseComposer:
                     ),
                 ])
             return table
-        elif self.core.params['integration']:
-            dicIntegration = self.core.params['integration']
-            if dicIntegration.get('edited'):
-                self.core.itg_table = []
-                return []
-            elif 'stack' in dicIntegration:
-                return dicIntegration['stack']
-            else:
-                return self.core.itg_table
+        elif self.core.params['integration'].get('edited'):
+            return []
         else:
             return self.core.itg_table
 
