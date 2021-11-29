@@ -181,17 +181,32 @@ class BaseComposer:
         if len(self.itgs) > 0:
             table = []
             for itg in self.itgs:
+                absoluteArea = 0
+                if 'absoluteArea' in itg:
+                    absoluteArea = itg['absoluteArea']
                 table.extend([
                     '({}, {}, {}, {})\n'.format(
                         itg['xL'] - self.refShift,
                         itg['xU'] - self.refShift,
                         float(itg['area']) * self.refArea,
-                        itg['absoluteArea'],
+                        absoluteArea,
                     ),
                 ])
             return table
         elif self.core.params['integration'].get('edited'):
             return []
+        elif 'stack' in self.core.params['integration']:
+            itg_stack = self.core.params['integration']['stack'] or []
+            if len(itg_stack) == 0:
+                return []
+            if 'stack' in self.core.params['multiplicity']:
+                mpy_stack = self.core.params['multiplicity']['stack'] or []
+                if len(mpy_stack) > 0:
+                    for itg in itg_stack:
+                        for mpy in mpy_stack:
+                            if (itg['xL'] ==  mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):
+                                return []
+            return itg_stack
         else:
             return self.core.itg_table
 
@@ -216,6 +231,8 @@ class BaseComposer:
             return table
         elif self.core.params['multiplicity'].get('edited'):
             return []
+        elif 'stack' in self.core.params['multiplicity']:
+            return self.core.params['multiplicity']['stack']
         else:
             return self.core.mpy_itg_table
 
