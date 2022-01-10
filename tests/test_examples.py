@@ -4,6 +4,7 @@ from test_spectra_peaks import (
 
 
 params_0 = {
+    'simulatenrm': True
 }
 
 
