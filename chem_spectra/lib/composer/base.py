@@ -23,6 +23,7 @@ def coupling_string(js):
 
 
 TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'
+TEXT_DATA_TABLE_XY = '##XYDATA= (XY..XY)\n'
 TEXT_PEAK_AUTO = '$$ === CHEMSPECTRA PEAK TABLE AUTO ===\n'
 TEXT_PEAK_EDIT = '$$ === CHEMSPECTRA PEAK TABLE EDIT ===\n'
 TEXT_PEAK_TABLE = '##PEAKTABLE= (XY..XY)\n'
@@ -96,6 +97,11 @@ class BaseComposer:
         c_spectrum_orig = [
             '##NPOINTS={}\n'.format(self.core.xs.shape[0]),
             TEXT_DATA_TABLE
+        ]
+        if (self.core.data_format and self.core.data_format == '(XY..XY)'):
+            c_spectrum_orig = [
+            '##NPOINTS={}\n'.format(self.core.xs.shape[0]),
+            TEXT_DATA_TABLE_XY
         ]
         c_spectrum_orig.extend(self.core.datatable)
         return c_spectrum_orig
