@@ -3,7 +3,7 @@ from scipy import signal
 
 from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import to_float
-from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys
+from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
 
 
 THRESHOLD_IR = 0.93
@@ -19,6 +19,8 @@ class JcampNIConverter:  # nmr & IR
         self.params = base.params
         self.datatypes = base.datatypes
         self.datatype = base.datatype
+        self.dataclass = base.dataclass
+        self.data_format = base.data_format
         self.typ = base.typ
         self.target_idx = self.__index_target()
         self.dic = base.dic
@@ -39,10 +41,10 @@ class JcampNIConverter:  # nmr & IR
         self.block_count = self.__count_block()
         self.threshold = self.__thres()
         self.obs_freq = self.__set_obs_freq()
-        self.factor = self.__set_factor()
         self.x_unit = self.__set_x_unit()
         self.ys = self.__read_ys()
-        self.xs = self.__read_xs()
+        self.xs = self.__read_xs(base)
+        self.factor = self.__set_factor(base)
         self.__set_first_last_xs()
         self.clear = self.__refresh_solvent()
         self.boundary = self.__find_boundary()
@@ -110,7 +112,11 @@ class JcampNIConverter:  # nmr & IR
 
         return count
 
-    def __read_xs(self):  # TBD
+    def __read_xs(self, base):  # TBD
+        if (base.data_format == '(XY..XY)'):
+            xs = make_ni_data_xs(base)
+            return xs
+
         beg_pt = None
         end_pt = None
         idx = self.target_idx
@@ -166,7 +172,7 @@ class JcampNIConverter:  # nmr & IR
 
         if self.x_unit == 'HZ':
             x = x / self.obs_freq
-
+        
         return x
 
     def __read_ys(self):
@@ -231,11 +237,15 @@ class JcampNIConverter:  # nmr & IR
 
         return obs_freq
 
-    def __set_factor(self):
+    def __set_factor(self, base):
         factor = {
             'x': 1.0,
             'y': 1.0,
         }
+
+        if (self.data_format and self.data_format == '(XY..XY)'):
+            return factor
+        
 
         try:
             factor = {
@@ -245,6 +255,7 @@ class JcampNIConverter:  # nmr & IR
         except:  # noqa
             pass
 
+        
         if factor['y'] == 1.0 and not isinstance(self.data, dict):
             factor['y'] = self.data.max() / 1000000.0
 
@@ -443,6 +454,13 @@ class JcampNIConverter:  # nmr & IR
     def __set_datatable(self):
         y_factor = self.factor and self.factor['y']
         y_factor = y_factor or 1.0
+        if (self.data_format and self.data_format == '(XY..XY)'):
+            return DatatableModel().encode(
+                self.ys,
+                y_factor,
+                self.xs,
+                True
+            )
         return DatatableModel().encode(
             self.ys,
             y_factor

@@ -9,6 +9,11 @@ class JcampBaseConverter:
         self.dic, self.data = self.__read(path)
         self.datatypes = self.dic['DATATYPE']
         self.datatype = self.__set_datatype()
+        self.dataclasses = {}
+        if 'DATACLASS' in self.dic:
+            self.dataclasses = self.dic['DATACLASS']
+        self.dataclass = self.__set_dataclass()
+        self.data_format = self.__set_dataformat()
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = self.__typ()
         self.fname = self.params.get('fname')
@@ -79,6 +84,21 @@ class JcampBaseConverter:
         elif 'X-RAY DIFFRACTION' == dt:
             return 'X-RAY DIFFRACTION'
         return ''
+
+    def __set_dataclass(self):
+        data_class = self.dataclasses
+        if 'XYPOINTS' in data_class:
+            return 'XYPOINTS'
+        elif 'XYDATA' in data_class:
+            return 'XYDATA_OLD'
+        return ''
+
+    def __set_dataformat(self):
+        try:
+           return self.dic[self.dataclass][0].split('\n')[0]
+        except: # noqa
+            pass
+        return '(X++(Y..Y))'
 
     def __is_em_wave(self):
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']

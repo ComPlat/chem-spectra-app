@@ -10,6 +10,8 @@ class FidBaseConverter:
         self.dic, self.data = self.__read(target_dir, fname)
         self.datatypes = ['NMR SPECTRUM']
         self.datatype = 'NMR SPECTRUM'
+        self.dataclass = None
+        self.data_format = None
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = 'NMR'
         self.fname = '.'.join(params.get('fname').split('.')[:-1])
