@@ -1,5 +1,5 @@
 from rdkit import Chem
-from rdkit.Chem import Descriptors, AllChem, Draw, rdDepictor
+from rdkit.Chem import Descriptors, AllChem, Draw, rdDepictor   # noqa: F401
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp
 import chem_spectra.lib.chem.ifg as ifg
@@ -48,7 +48,7 @@ class MoleculeModel:
         drawer = Draw.MolDraw2DSVG(300, 150)
         drawer.DrawMolecule(self.mol)
         drawer.FinishDrawing()
-        svg = drawer.GetDrawingText().replace('svg:','')
+        svg = drawer.GetDrawingText().replace('svg:', '')
         return svg
 
     def __clear_mapnum(self, mol):

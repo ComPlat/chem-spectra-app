@@ -39,7 +39,7 @@ class ArtistLib:
         fgs = [x['sma'] for x in self.predictions]
         drawer = rdMolDraw2D.MolDraw2DSVG(400, 400)
         option = drawer.drawOptions()
-        option.padding=0.15
+        option.padding = 0.15
         option.bondLineWidth = 2
         option.annotationFontScale = 0.2
 

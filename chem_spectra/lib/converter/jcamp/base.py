@@ -8,6 +8,7 @@ class JcampBaseConverter:
         self.params = parse_params(params)
         self.dic, self.data = self.__read(path)
         self.datatypes = self.dic['DATATYPE']
+        self.datatypes = [datatype.upper() for datatype in self.datatypes]
         self.datatype = self.__set_datatype()
         self.dataclasses = {}
         if 'DATACLASS' in self.dic:
@@ -23,6 +24,7 @@ class JcampBaseConverter:
         self.is_uv_vis = self.__is_uv_vis()
         self.is_hplc_uv_vis = self.__is_hplc_uv_vis()
         self.is_xrd = self.__is_xrd()
+        self.is_cyclic_volta = self.__is_cyclic_volta()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
@@ -57,6 +59,8 @@ class JcampBaseConverter:
             return 'THERMOGRAVIMETRIC ANALYSIS'
         elif 'X-RAY DIFFRACTION' in dts:
             return 'X-RAY DIFFRACTION'
+        elif 'CYCLIC VOLTAMMETRY' in dts:
+            return 'CYCLIC VOLTAMMETRY'
         return ''
 
     def __typ(self):
@@ -83,6 +87,8 @@ class JcampBaseConverter:
             return 'THERMOGRAVIMETRIC ANALYSIS'
         elif 'X-RAY DIFFRACTION' == dt:
             return 'X-RAY DIFFRACTION'
+        elif 'CYCLIC VOLTAMMETRY' in dt:
+            return 'CYCLIC VOLTAMMETRY'
         return ''
 
     def __set_dataclass(self):
@@ -95,7 +101,7 @@ class JcampBaseConverter:
 
     def __set_dataformat(self):
         try:
-           return self.dic[self.dataclass][0].split('\n')[0]
+            return self.dic[self.dataclass][0].split('\n')[0]
         except: # noqa
             pass
         return '(X++(Y..Y))'
@@ -104,7 +110,7 @@ class JcampBaseConverter:
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION']
+        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION', 'CYCLIC VOLTAMMETRY']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -120,6 +126,9 @@ class JcampBaseConverter:
 
     def __is_xrd(self):
         return self.typ in ['X-RAY DIFFRACTION']
+
+    def __is_cyclic_volta(self):
+        return self.typ in ['CYCLIC VOLTAMMETRY']
 
     def __ncl(self):
         try:
@@ -159,4 +168,3 @@ class JcampBaseConverter:
                 return True
 
         return False
-

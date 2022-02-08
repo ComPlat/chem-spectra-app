@@ -3,6 +3,7 @@ import zipfile
 from flask import current_app
 import logging
 
+
 class FileContainer:
     def __init__(self, src=False):
         self.name = src and src.filename
@@ -18,8 +19,7 @@ class FileContainer:
                     logger.setLevel(logging.ERROR)
                     logger.error(f'This is maybe a zip bombs because its size is {total_size_in_MB} MB but maximum size of zip file is {max_zip_size} MB')
                     self.bcore = None
-                
-        
+
         self.core = self.bcore and self.bcore.decode('utf-8', errors='ignore')
 
     def from_str(self, core):
