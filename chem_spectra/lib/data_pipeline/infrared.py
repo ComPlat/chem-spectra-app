@@ -55,7 +55,7 @@ class InfraredLib:
 
         y_median = np.median(y_i)
         if y_median < 0.5:
-            y_o = y_i # 1 - y_i # TBD
+            y_o = y_i  # 1 - y_i # TBD
         return x_o, y_o
 
     def __chop(self, x_i, y_i):
