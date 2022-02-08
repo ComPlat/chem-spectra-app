@@ -19,6 +19,7 @@ def __parse_xy_points(base):
         pts = base.dic['XYDATA_OLD'][0].split('\n')[1:]
     return np.array([[float(p) for p in pt.split(',')]for pt in pts])
 
+
 def make_ni_data_ys(base, target_idx):
     if base.data is None and base.dic['XYPOINTS']:
         base.data = __parse_xy_points(base)
@@ -39,6 +40,7 @@ def make_ni_data_ys(base, target_idx):
     else:
         return base.data
 
+
 def make_ni_data_xs(base):
     if base.data_format and (base.data_format == '(XY..XY)'):
         data = __parse_xy_points(base)
@@ -49,8 +51,6 @@ def make_ni_data_xs(base):
             return xs
 
     return None
-
-    
 
 
 def make_ms_data_xsys(base):

@@ -4,10 +4,12 @@ matplotlib.use('Agg')
 import tempfile  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.path as mpath  # noqa: E402
-import re # noqa: E402
-import numpy as np # noqa: E402
+import re  # noqa: E402
+import numpy as np  # noqa: E402
+from matplotlib import ticker  # noqa: E402
+import csv
 
-from chem_spectra.lib.composer.base import (  # noqa: E402
+from chem_spectra.lib.composer.base import (  # noqa: E402, F401
     extrac_dic, calc_npoints, BaseComposer
 )
 from chem_spectra.lib.shared.calc import (  # noqa: E402
@@ -44,11 +46,10 @@ class NIComposer(BaseComposer):
         nucleus = '^1H' if abs(delta) < 40.0 else '^13C'
         return nucleus
 
-
     def __get_nucleus(self):
         nuc_orig = extrac_dic(self.core, '.OBSERVENUCLEUS')
         nuc_modf = re.sub('[^A-Za-z0-9]+', '', nuc_orig).lower()
-        is_valid = ('13c' in nuc_modf) or ('1h' in nuc_modf) or ('19f' in nuc_modf) or ('31p' in nuc_modf) or ('15n' in nuc_modf) or ('29si' in nuc_modf)
+        is_valid = ('13c' in nuc_modf) or ('1h' in nuc_modf) or ('19f' in nuc_modf) or ('31p' in nuc_modf) or ('15n' in nuc_modf) or ('29si' in nuc_modf)   # noqa: E501
         nucleus = nuc_orig if is_valid else self.__calc_nucleus_by_boundary()
         return nucleus
 
@@ -121,6 +122,67 @@ class NIComposer(BaseComposer):
             '##$CSSIMULATIONPEAKS=\n',
         ]
 
+    def __gen_header_cyclic_voltammetry(self):
+        return [
+            '$$ === CHEMSPECTRA CYCLIC VOLTAMMETRY ===\n',
+        ]
+
+    def __get_xy_of_peak(self, peak):
+        if peak is None:
+            return '', ''
+        x = peak['x'] or ''
+        y = peak['y'] or ''
+        return x, y
+
+    def __gen_cyclic_voltammetry_data_peaks(self):
+        content = ['##$CSCYCLICVOLTAMMETRYDATA=\n']
+        if self.core.is_cyclic_volta:
+            listMaxMinPeaks = self.core.max_min_peaks_table
+            if self.core.params['list_max_min_peaks'] is not None:
+                listMaxMinPeaks = self.core.params['list_max_min_peaks']
+
+            x_max = np.max(self.core.xs)
+            arr_max_x_indices = np.where(self.core.xs == x_max)
+            y_pecker = 0
+            if (arr_max_x_indices[0][0]):
+                idx = arr_max_x_indices[0][0]
+                y_pecker = self.core.ys[idx]
+
+            for peak in listMaxMinPeaks:
+                max_peak, min_peak = peak['max'], peak['min']
+                x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
+                x_min_peak, y_min_peak = self.__get_xy_of_peak(min_peak)
+
+                if (x_max_peak == '' and x_min_peak == ''):
+                    # ignore if missing both max and min peak
+                    continue
+
+                if (x_max_peak == '' or x_min_peak == ''):
+                    delta = ''
+                else:
+                    delta = abs(x_max_peak - x_min_peak)
+
+                x_pecker = ''
+                # calculate ratio
+                if (y_min_peak == '' or y_max_peak == ''):
+                    ratio = ''
+                else:
+                    if 'pecker' in peak and peak['pecker'] is not None:
+                        pecker = peak['pecker']
+                        x_pecker = pecker['x']
+                        y_pecker = pecker['y']
+                    first_expr = abs(y_min_peak) / abs(y_max_peak)
+                    second_expr = 0.485 * abs(y_pecker) / abs(y_max_peak)
+                    ratio = first_expr + second_expr + 0.086
+                    if (y_pecker) == 0:
+                        y_pecker = ''
+
+                content.append(
+                    '({x_max}, {y_max}, {x_min}, {y_min}, {ratio}, {delta}, {x_pecker}, {y_pecker})\n'.format(x_max=x_max_peak, y_max=y_max_peak, x_min=x_min_peak, y_min=y_min_peak, ratio=ratio, delta=delta, x_pecker=x_pecker, y_pecker=y_pecker)  # noqa: E501
+                )
+
+        return content
+
     def __compose(self):
         meta = []
         meta.extend(self.gen_headers_root())
@@ -136,6 +198,9 @@ class NIComposer(BaseComposer):
         meta.extend(self.gen_mpy_peaks_info())
         meta.extend(self.__gen_header_simulation())
         meta.extend(self.gen_simulation_info())
+        if self.core.is_cyclic_volta:
+            meta.extend(self.__gen_header_cyclic_voltammetry())
+            meta.extend(self.__gen_cyclic_voltammetry_data_peaks())
         meta.extend(self.gen_ending())
 
         meta.extend(self.gen_headers_peaktable_edit())
@@ -184,10 +249,11 @@ class NIComposer(BaseComposer):
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
+
         # PLOT data
         plt.plot(self.core.xs, self.core.ys)
-        x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']
-        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd) else [x_max, x_min]
+        x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
+        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd or self.core.is_cyclic_volta) else [x_max, x_min]    # noqa: E501
         plt.xlim(xlim_left, xlim_right)
         y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
         h = y_max - y_min
@@ -203,22 +269,78 @@ class NIComposer(BaseComposer):
         ]
         codes, verts = zip(*path_data)
         marker = mpath.Path(verts, codes)
+        x_peaks = []
+        y_peaks = []
         if self.core.edit_peaks:
-            plt.plot(
-                self.core.edit_peaks['x'],
-                self.core.edit_peaks['y'],
-                'rd',
-                marker=marker,
-                markersize=50,
-            )
+            x_peaks = self.core.edit_peaks['x']
+            y_peaks = self.core.edit_peaks['y']
         elif self.core.auto_peaks:
-            plt.plot(
-                self.core.auto_peaks['x'],
-                self.core.auto_peaks['y'],
-                'rd',
-                marker=marker,
-                markersize=50,
-            )
+            x_peaks = self.core.auto_peaks['x']
+            y_peaks = self.core.auto_peaks['y']
+
+        x_peckers = []
+        y_peckers = []
+        if self.core.is_cyclic_volta:
+            x_peaks = []
+            y_peaks = []
+            formatter = ticker.ScalarFormatter(useMathText=True)
+            formatter.set_scientific(True)
+            formatter.set_powerlimits((-1, 1))
+            plt.gca().yaxis.set_major_formatter(formatter)
+
+            listMaxMinPeaks = []
+            if self.core.params['list_max_min_peaks'] is not None:
+                listMaxMinPeaks = self.core.params['list_max_min_peaks']
+
+            for peak in listMaxMinPeaks:
+                max_peak, min_peak = peak['max'], peak['min']
+                x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
+                x_min_peak, y_min_peak = self.__get_xy_of_peak(min_peak)
+
+                if (x_max_peak == '' and x_min_peak == ''):
+                    # ignore if missing both max and min peak
+                    continue
+
+                if (x_max_peak == '' and y_max_peak == ''):
+                    x_peaks.extend([x_min_peak])
+                    y_peaks.extend([y_min_peak])
+                elif (x_min_peak == '' and y_min_peak == ''):
+                    x_peaks.extend([x_max_peak])
+                    y_peaks.extend([y_max_peak])
+                else:
+                    x_peaks.extend([x_max_peak, x_min_peak])
+                    y_peaks.extend([y_max_peak, y_min_peak])
+
+                if 'pecker' in peak and peak['pecker'] is not None:
+                    pecker = peak['pecker']
+                    x_pecker, y_pecker = pecker['x'], pecker['y']
+                    x_peckers.append(x_pecker)
+                    y_peckers.append(y_pecker)
+
+            # display x value of peak for cyclic voltammetry
+            for i in range(len(x_peaks)):
+                x_pos = x_peaks[i]
+                y_pos = y_peaks[i] + h * 0.1
+                x_float = '{:.2e}'.format(x_pos)
+                y_float = '{:.2e}'.format(y_peaks[i])
+                peak_label = 'x: {x}\ny: {y}'.format(x=x_float, y=y_float)
+                plt.text(x_pos, y_pos, peak_label)
+
+        plt.plot(
+            x_peaks,
+            y_peaks,
+            'rd',
+            marker=marker,
+            markersize=50,
+        )
+
+        plt.plot(
+            x_peckers,
+            y_peckers,
+            'gd',
+            marker=marker,
+            markersize=50,
+        )
 
         # ----- PLOT integration -----
         refShift, refArea = self.refShift, self.refArea
@@ -231,13 +353,13 @@ class NIComposer(BaseComposer):
                 clear_itg = clear_itg.replace(')', '')
                 split_itg = clear_itg.split(',')
                 if (len(split_itg) > 2):
-                  xLStr = split_itg[0].strip()
-                  xUStr = split_itg[1].strip()
-                  areaStr = split_itg[2].strip()
-                  self.all_itgs.append({'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)})
+                    xLStr = split_itg[0].strip()
+                    xUStr = split_itg[1].strip()
+                    areaStr = split_itg[2].strip()
+                    self.all_itgs.append({'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)})    # noqa: E501
         for itg in self.all_itgs:
             # integration marker
-            xL, xU, area = itg['xL'] - refShift, itg['xU'] - refShift, itg['area'] * refArea
+            xL, xU, area = itg['xL'] - refShift, itg['xU'] - refShift, itg['area'] * refArea    # noqa: E501
             # integration curve
             ks = calc_ks(self.core.ys, y_max, h)
             iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
@@ -247,7 +369,7 @@ class NIComposer(BaseComposer):
             if self.core.is_hplc_uv_vis:
                 # fill area under curve
                 cys = self.core.ys[iL:iU]
-                slope = cal_slope(cxs[0], cys[0], cxs[len(cxs)-1], cys[len(cys)-1])
+                slope = cal_slope(cxs[0], cys[0], cxs[len(cxs)-1], cys[len(cys)-1])  # noqa: E501
                 last_y = cys[0]
                 last_x = cxs[0]
                 aucys = [last_y]
@@ -257,13 +379,13 @@ class NIComposer(BaseComposer):
                     aucys.append(curr_y)
                     last_x = curr_x
                     last_y = curr_y
-                plt.fill_between(cxs, y1=cys, y2=aucys, alpha=0.2, color='#FF0000')
+                plt.fill_between(cxs, y1=cys, y2=aucys, alpha=0.2, color='#FF0000')  # noqa: E501
             else:
                 # display integration
                 plt.plot([xL, xU], [itg_h, itg_h], color='#228B22')
-                plt.plot([xL, xL], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
-                plt.plot([xU, xU], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
-                plt.text((xL + xU) / 2, itg_h + h * 0.015, '{:0.2f}'.format(area), color='#228B22', ha='center', size=12)
+                plt.plot([xL, xL], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')   # noqa: E501
+                plt.plot([xU, xU], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')   # noqa: E501
+                plt.text((xL + xU) / 2, itg_h + h * 0.015, '{:0.2f}'.format(area), color='#228B22', ha='center', size=12)   # noqa: E501
                 cys = (ks[iL:iU] - ref) * 1.5 + (y_max - h * 0.4)
                 # if self.core.is_uv_vis:
                 #     cys = (ref - ks[iL:iU]) * 0.5 + (y_max - h * 0.4)
@@ -309,20 +431,20 @@ class NIComposer(BaseComposer):
                     self.mpys.append(mpy_item)
         mpy_h = y_min - h * 0.08
         for mpy in self.mpys:
-            xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']
+            xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']    # noqa: E501
             plt.plot([xL, xU], [mpy_h, mpy_h], color='#DA70D6')
-            plt.plot([xL, xL], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')
-            plt.plot([xU, xU], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')
-            plt.text((xL + xU) / 2, mpy_h - h * 0.1, '({})'.format(typ), color='#DA70D6', ha='center', size=12)
-            plt.text((xL + xU) / 2, mpy_h - h * 0.06, '{:0.3f}'.format(calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType'])), color='#DA70D6', ha='center', size=12)
+            plt.plot([xL, xL], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
+            plt.plot([xU, xU], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
+            plt.text((xL + xU) / 2, mpy_h - h * 0.1, '({})'.format(typ), color='#DA70D6', ha='center', size=12)  # noqa: E501
+            plt.text((xL + xU) / 2, mpy_h - h * 0.06, '{:0.3f}'.format(calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType'])), color='#DA70D6', ha='center', size=12)  # noqa: E501
             for p in peaks:
                 x = p['x']
-                plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.05], color='#DA70D6')
+                plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.05], color='#DA70D6')  # noqa: E501
 
         # PLOT label
         if (self.core.is_xrd):
             waveLength = self.core.params['waveLength']
-            label = "X ({}), WL={} nm".format(self.core.label['x'], waveLength['value'], waveLength['unit'])
+            label = "X ({}), WL={} nm".format(self.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
             plt.xlabel((label), fontsize=18)
         else:
             plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
@@ -336,3 +458,67 @@ class NIComposer(BaseComposer):
         plt.clf()
         plt.cla()
         return tf_img
+
+    def tf_csv(self):
+        if self.core.is_cyclic_volta == False:
+            return None
+        tf_csv = tempfile.NamedTemporaryFile(suffix='.csv')
+        tf_csv.flush()
+        tf_csv.seek(0)
+
+        listMaxMinPeaks = self.core.max_min_peaks_table
+        if self.core.params['list_max_min_peaks'] is not None:
+            listMaxMinPeaks = self.core.params['list_max_min_peaks']
+
+        with open(tf_csv.name, 'w', newline='', encoding='utf-8') as csvfile:
+            # fieldnames = ['Max', 'Min', 'I λ0', 'I ratio', 'Pecker']
+            fieldnames = ['Max x', 'Max y', 'Min x', 'Min y', 'Delta Ep', 'I lambda0', 'I ratio']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            x_max = np.max(self.core.xs)
+            arr_max_x_indices = np.where(self.core.xs == x_max)
+            y_pecker = 0
+            if (arr_max_x_indices[0][0]):
+                idx = arr_max_x_indices[0][0]
+                y_pecker = self.core.ys[idx]
+
+            for peak in listMaxMinPeaks:
+                max_peak, min_peak = peak['max'], peak['min']
+                x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
+                x_min_peak, y_min_peak = self.__get_xy_of_peak(min_peak)
+
+                if (x_max_peak == '' and x_min_peak == ''):
+                    # ignore if missing both max and min peak
+                    continue
+
+                if (x_max_peak == '' or x_min_peak == ''):
+                    delta = ''
+                else:
+                    delta = abs(x_max_peak - x_min_peak)
+
+                x_pecker = ''
+                # calculate ratio
+                if (y_min_peak == '' or y_max_peak == ''):
+                    ratio = ''
+                else:
+                    if 'pecker' in peak and peak['pecker'] is not None:
+                        pecker = peak['pecker']
+                        x_pecker = pecker['x']
+                        y_pecker = pecker['y']
+                    first_expr = abs(y_min_peak) / abs(y_max_peak)
+                    second_expr = 0.485 * abs(y_pecker) / abs(y_max_peak)
+                    ratio = first_expr + second_expr + 0.086
+                    if (y_pecker) == 0:
+                        y_pecker = ''
+
+                writer.writerow({
+                    'Max x': '{x_max}'.format(x_max=x_max_peak),
+                    'Max y': '{y_max}'.format(y_max=y_max_peak),
+                    'Min x': '{x_min}'.format(x_min=x_min_peak),
+                    'Min y': '{y_min}'.format(y_min=y_min_peak),
+                    'Delta Ep': '{y_pecker}'.format(y_pecker=y_pecker),
+                    'I lambda0': '{ratio}'.format(ratio=ratio),
+                    'I ratio': '{delta}'.format(delta=delta)
+                })
+        return tf_csv

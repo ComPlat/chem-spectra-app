@@ -4,6 +4,7 @@ from chem_spectra.lib.shared.calc import (  # noqa: E402
     calc_mpy_center
 )
 
+
 def extrac_dic(core, key):
     query = core.dic.get(key, '')
     if type(query) is list:
@@ -15,6 +16,7 @@ def calc_npoints(peaks):
     if peaks:
         return len(peaks['x'])
     return 0
+
 
 def coupling_string(js):
     if len(js) == 0:
@@ -100,9 +102,9 @@ class BaseComposer:
         ]
         if (self.core.data_format and self.core.data_format == '(XY..XY)'):
             c_spectrum_orig = [
-            '##NPOINTS={}\n'.format(self.core.xs.shape[0]),
-            TEXT_DATA_TABLE_XY
-        ]
+                '##NPOINTS={}\n'.format(self.core.xs.shape[0]),
+                TEXT_DATA_TABLE_XY
+            ]
         c_spectrum_orig.extend(self.core.datatable)
         return c_spectrum_orig
 
@@ -175,7 +177,7 @@ class BaseComposer:
         for itg in itg_stack:
             skip = False
             for mpy in mpy_stack:
-                if (itg['xL'] ==  mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):
+                if (itg['xL'] == mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):     # noqa: E501
                     mpy['area'] = itg['area']
                     self.mpys.append(mpy)
                     skip = True
@@ -214,7 +216,7 @@ class BaseComposer:
                 if len(mpy_stack) > 0:
                     for itg in itg_stack:
                         for mpy in mpy_stack:
-                            if (itg['xL'] ==  mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):
+                            if (itg['xL'] == mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):     # noqa: E501
                                 return []
             return itg_stack
         else:
@@ -230,7 +232,7 @@ class BaseComposer:
                         idx + 1,
                         mpy['xExtent']['xL'] - self.refShift,
                         mpy['xExtent']['xU'] - self.refShift,
-                        calc_mpy_center(mpy['peaks'], self.refShift, mpy['mpyType']),
+                        calc_mpy_center(mpy['peaks'], self.refShift, mpy['mpyType']),   # noqa: E501
                         float(mpy['area']) * self.refArea,
                         idx + 1,
                         mpy['mpyType'],
@@ -255,7 +257,7 @@ class BaseComposer:
             for mk in mpy_stack:
                 mk_idx = 0
                 for idx, mpy in enumerate(self.mpys):
-                    if (mpy['xExtent']['xL'] == mk['xExtent']['xL']) and (mpy['xExtent']['xU'] == mk['xExtent']['xU']):
+                    if (mpy['xExtent']['xL'] == mk['xExtent']['xL']) and (mpy['xExtent']['xU'] == mk['xExtent']['xU']):     # noqa: E501
                         mk_idx = idx + 1
                         break
                 for p in mk['peaks']:
@@ -276,7 +278,7 @@ class BaseComposer:
         if len(self.core.simu_peaks) > 0:
             table = []
             for simu_peak in self.core.simu_peaks:
-                table.extend([ '{}\n'.format(simu_peak) ])
+                table.extend(['{}\n'.format(simu_peak)])
             return table
         else:
             return []
