@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.path as mpath  # noqa: E402
 import re # noqa: E402
 import numpy as np # noqa: E402
+from matplotlib import ticker # noqa: E402
 
 from chem_spectra.lib.composer.base import (  # noqa: E402
     extrac_dic, calc_npoints, BaseComposer
@@ -120,6 +121,46 @@ class NIComposer(BaseComposer):
             '$$ === CHEMSPECTRA SIMULATION ===\n',
             '##$CSSIMULATIONPEAKS=\n',
         ]
+    
+    def __gen_header_cyclic_voltammetry(self):
+        return [
+            '$$ === CHEMSPECTRA CYCLIC VOLTAMMETRY ===\n',
+        ]
+    
+    def __gen_cyclic_voltammetry_data_peaks(self):
+        content = ['##$CSCYCLICVOLTAMMETRYDATA=\n']
+        if self.core.is_cyclic_volta:
+            listMaxMinPeaks = self.core.max_min_peaks_table
+            if self.core.params['list_max_min_peaks'] is not None:
+                listMaxMinPeaks = self.core.params['list_max_min_peaks']
+
+
+            x_max = np.max(self.core.xs)
+            arr_max_x_indices = np.where(self.core.xs == x_max)
+            y_pecker = 0
+            if (arr_max_x_indices[0][0]):
+                idx = arr_max_x_indices[0][0]
+                y_pecker = self.core.ys[idx]
+            
+            for peak in listMaxMinPeaks:
+                max_peak, min_peak = peak['max'], peak['min']
+                if ((max_peak is None) or (min_peak is None)):
+                    #ignore if missing max or min peak
+                    continue
+                x_max_peak, x_min_peak = max_peak['x'], min_peak['x']
+                y_max_peak, y_min_peak = max_peak['y'], min_peak['y']
+                delta = abs(x_max_peak - x_min_peak)
+
+                #calculate ratio
+                first_expr = abs(y_min_peak) / abs(y_max_peak)
+                second_expr = 0.485 * abs(y_pecker) / abs(y_max_peak)
+                ratio = first_expr + second_expr + 0.086
+
+                content.append(
+                    '({x_max}, {y_max}, {x_min}, {y_min}, {ratio}, {delta})\n'.format(x_max=x_max_peak, y_max=y_max_peak, x_min=x_min_peak, y_min=y_min_peak, ratio=ratio, delta=delta)
+                )
+                
+        return content
 
     def __compose(self):
         meta = []
@@ -136,6 +177,9 @@ class NIComposer(BaseComposer):
         meta.extend(self.gen_mpy_peaks_info())
         meta.extend(self.__gen_header_simulation())
         meta.extend(self.gen_simulation_info())
+        if self.core.is_cyclic_volta:
+            meta.extend(self.__gen_header_cyclic_voltammetry())
+            meta.extend(self.__gen_cyclic_voltammetry_data_peaks())
         meta.extend(self.gen_ending())
 
         meta.extend(self.gen_headers_peaktable_edit())
@@ -184,10 +228,11 @@ class NIComposer(BaseComposer):
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
+
         # PLOT data
         plt.plot(self.core.xs, self.core.ys)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']
-        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd) else [x_max, x_min]
+        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd or  self.core.is_cyclic_volta) else [x_max, x_min]
         plt.xlim(xlim_left, xlim_right)
         y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
         h = y_max - y_min
@@ -203,22 +248,64 @@ class NIComposer(BaseComposer):
         ]
         codes, verts = zip(*path_data)
         marker = mpath.Path(verts, codes)
+        x_peaks = []
+        y_peaks = []
         if self.core.edit_peaks:
-            plt.plot(
-                self.core.edit_peaks['x'],
-                self.core.edit_peaks['y'],
-                'rd',
-                marker=marker,
-                markersize=50,
-            )
+            x_peaks = self.core.edit_peaks['x']
+            y_peaks = self.core.edit_peaks['y']
         elif self.core.auto_peaks:
-            plt.plot(
-                self.core.auto_peaks['x'],
-                self.core.auto_peaks['y'],
-                'rd',
-                marker=marker,
-                markersize=50,
-            )
+            x_peaks = self.core.auto_peaks['x']
+            y_peaks = self.core.auto_peaks['y']
+
+        
+        
+        if self.core.is_cyclic_volta:
+            x_peaks = []
+            y_peaks = []
+            formatter = ticker.ScalarFormatter(useMathText=True)
+            formatter.set_scientific(True)
+            formatter.set_powerlimits((-1,1))
+            plt.gca().yaxis.set_major_formatter(formatter)
+
+            listMaxMinPeaks = []
+            if self.core.params['list_max_min_peaks'] is not None:
+                listMaxMinPeaks = self.core.params['list_max_min_peaks']
+
+            x_max = np.max(self.core.xs)
+            arr_max_x_indices = np.where(self.core.xs == x_max)
+            y_pecker = 0
+            if (arr_max_x_indices[0][0]):
+                idx = arr_max_x_indices[0][0]
+                y_pecker = self.core.ys[idx]
+                x_pos = self.core.xs[idx]
+                limit_label = 'x: {x}\ny: {y}'.format(x=x_pos, y=y_pecker)
+                plt.text(x_pos, y_pecker, limit_label)
+            
+            for peak in listMaxMinPeaks:
+                max_peak, min_peak = peak['max'], peak['min']
+                if ((max_peak is None) or (min_peak is None)):
+                    #ignore if missing max or min peak
+                    continue
+                x_max_peak, x_min_peak = max_peak['x'], min_peak['x']
+                y_max_peak, y_min_peak = max_peak['y'], min_peak['y']
+                x_peaks.extend([x_max_peak, x_min_peak])
+                y_peaks.extend([y_max_peak, y_min_peak])
+
+            #display x value of peak for cyclic voltammetry
+            for i in range(len(x_peaks)):
+                x_pos = x_peaks[i]
+                y_pos = y_peaks[i] + h * 0.1
+                peak_label = 'x: {x}\ny: {y}'.format(x=x_pos, y=y_peaks[i])
+                plt.text(x_pos, y_pos, peak_label)
+        
+        plt.plot(
+            x_peaks,
+            y_peaks,
+            'rd',
+            marker=marker,
+            markersize=50,
+        )
+            
 
         # ----- PLOT integration -----
         refShift, refArea = self.refShift, self.refArea

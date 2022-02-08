@@ -32,6 +32,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_xrd = base.is_xrd
         self.is_uv_vis = base.is_uv_vis
         self.is_hplc_uv_vis = base.is_hplc_uv_vis
+        self.is_cyclic_volta = base.is_cyclic_volta
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.is_dept = base.is_dept
@@ -55,10 +56,12 @@ class JcampNIConverter:  # nmr & IR
         self.itg_table = []
         self.mpy_itg_table = []
         self.mpy_pks_table = []
+        self.max_min_peaks_table = []
         self.datatable = self.__set_datatable()
         self.__read_peak_from_file()
         self.__read_integration_from_file()
         self.__read_multiplicity_from_file()
+        self.__read_voltammetry_data_from_file()
 
     def __thres(self):
         dt = self.datatype
@@ -84,6 +87,8 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_TGA
         elif 'X-RAY DIFFRACTION' == dt:
             return THRESHOLD_XRD
+        elif 'CYCLIC VOLTAMMETRY' == dt:
+            return THRESHOLD_XRD
         return 0.5
 
     def __index_target(self):
@@ -92,7 +97,8 @@ class JcampNIConverter:  # nmr & IR
             'INFRARED SPECTRUM', 'RAMAN SPECTRUM',
             'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS',
             'HPLC UV-VIS', 'HPLC UV/VIS SPECTRUM',
-            'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION'
+            'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
+            'CYCLIC VOLTAMMETRY'
         ]
         for tp in target_topics:
             if tp in self.datatypes:
@@ -473,6 +479,19 @@ class JcampNIConverter:  # nmr & IR
             self.__run_auto_pick_peak()
         if self.params['peaks_str']:
             self.__parse_edit()
+
+    def __read_voltammetry_data_from_file(self):
+        target = self.dic.get('$CSCYCLICVOLTAMMETRYDATA')
+        if target:
+            target = target[0].split('\n')
+            if (len(target) > 0):
+                for item in target:
+                    splitted_item = item.replace('(', '').replace(')', '')
+                    splitted_item = [x.strip() for x in splitted_item.split(',')]
+                    splitted_item = [float(x) for x in splitted_item]
+                    max_peak = {'x': splitted_item[0], 'y': splitted_item[1]}
+                    min_peak = {'x': splitted_item[2], 'y': splitted_item[3]}
+                    self.max_min_peaks_table.append({'max': max_peak, 'min': min_peak})
 
     def __read_integration_from_file(self):
         target = self.dic.get('$OBSERVEDINTEGRALS')

@@ -20,6 +20,7 @@ def parse_params(params):
             'multiplicity': default_mpy,
             'fname': '',
             'waveLength': default_wavelength,
+            'list_max_min_peaks': None,
         }
 
     select_x = params.get('select_x', None)
@@ -41,6 +42,9 @@ def parse_params(params):
     fname = '.'.join(fname)
     waveLength = params.get('waveLength')
     waveLength = json.loads(waveLength) if waveLength else default_wavelength
+    listMaxMinPeaks = params.get('list_max_min_peaks')
+    listMaxMinPeaks = json.loads(listMaxMinPeaks) if listMaxMinPeaks else None
+    
 
     try:
         if select_x and float(select_x) != 0.0 and ref_name != '- - -':
@@ -63,6 +67,7 @@ def parse_params(params):
         'ext': ext,
         'fname': fname,
         'waveLength': waveLength,
+        'list_max_min_peaks': listMaxMinPeaks,
     }
 
 
