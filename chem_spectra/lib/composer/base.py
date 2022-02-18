@@ -210,6 +210,7 @@ class BaseComposer:
                 return []
             if 'stack' in self.core.params['multiplicity']:
                 mpy_stack = self.core.params['multiplicity']['stack'] or []
+
                 if len(mpy_stack) > 0:
                     for itg in itg_stack:
                         for mpy in mpy_stack:
@@ -241,6 +242,8 @@ class BaseComposer:
         elif self.core.params['multiplicity'].get('edited'):
             return []
         elif 'stack' in self.core.params['multiplicity']:
+            if ('originStack' not in self.core.params['integration']):
+                return self.core.mpy_itg_table
             return self.core.params['multiplicity']['stack']
         else:
             return self.core.mpy_itg_table

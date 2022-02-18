@@ -270,6 +270,43 @@ class NIComposer(BaseComposer):
                 plt.plot(cxs, cys, color='#228B22')
 
         # ----- PLOT multiplicity -----
+        if (len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
+            core_mpy_pks_table = self.core.mpy_pks_table[0]
+            mpy_pks_table = core_mpy_pks_table.split('\n')
+            tmp_dic_mpy_peaks = {}
+            for peak in mpy_pks_table:
+                clear_peak = peak.replace('(', '')
+                clear_peak = clear_peak.replace(')', '')
+                split_peak = clear_peak.split(',')
+                idx_peakStr = split_peak[0].strip()
+                xStr = split_peak[1].strip()
+                yStr = split_peak[2].strip()
+                if idx_peakStr not in tmp_dic_mpy_peaks:
+                    tmp_dic_mpy_peaks[idx_peakStr] = []
+                
+                tmp_dic_mpy_peaks[idx_peakStr].append({'x': float(xStr), 'y': float(yStr)})
+
+            core_mpy_itg_table = self.core.mpy_itg_table[0]
+            mpy_itg_table = core_mpy_itg_table.split('\n')
+            for mpy in mpy_itg_table:
+                clear_mpy = mpy.replace('(', '')
+                clear_mpy = clear_mpy.replace(')', '')
+                split_mpy = clear_mpy.split(',')
+                mpy_item = { 'mpyType': '', 'xExtent': {'xL': 0.0, 'xU': 0.0}, 'yExtent': {'yL': 0.0, 'yU': 0.0}, 'peaks': [], 'area': 1.0 }
+                if (len(split_mpy) > 7):
+                    idxStr = split_mpy[0].strip()
+                    xLStr = split_mpy[1].strip()
+                    xUStr = split_mpy[2].strip()
+                    mpy_item['xExtent']['xL'] = float(xLStr) + refShift
+                    mpy_item['xExtent']['xU'] = float(xUStr) + refShift
+                    yLStr = split_mpy[3].strip()
+                    yUStr = split_mpy[4].strip()
+                    mpy_item['yExtent']['yL'] = float(yLStr) + refShift
+                    mpy_item['yExtent']['yU'] = float(yUStr) + refShift
+                    typeStr = split_mpy[6].strip()
+                    mpy_item['mpyType'] = typeStr
+                    mpy_item['peaks'] = tmp_dic_mpy_peaks[idxStr]
+                    self.mpys.append(mpy_item)
         mpy_h = y_min - h * 0.08
         for mpy in self.mpys:
             xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']
