@@ -223,7 +223,7 @@ class NIComposer(BaseComposer):
         # ----- PLOT integration -----
         refShift, refArea = self.refShift, self.refArea
         itg_h = y_max + h * 0.1
-        if (len(self.all_itgs) == 0 and len(self.core.itg_table) > 0):
+        if (len(self.all_itgs) == 0 and len(self.core.itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
             core_itg_table = self.core.itg_table[0]
             itg_table = core_itg_table.split('\n')
             for itg in itg_table:
