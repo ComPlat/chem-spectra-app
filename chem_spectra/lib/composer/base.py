@@ -203,6 +203,9 @@ class BaseComposer:
             return []
         elif 'stack' in self.core.params['integration']:
             itg_stack = self.core.params['integration']['stack'] or []
+            if ('originStack' not in self.core.params['integration']):
+                itg_stack = self.core.itg_table
+                
             if len(itg_stack) == 0:
                 return []
             if 'stack' in self.core.params['multiplicity']:
