@@ -8,6 +8,7 @@ class JcampBaseConverter:
         self.params = parse_params(params)
         self.dic, self.data = self.__read(path)
         self.datatypes = self.dic['DATATYPE']
+        self.datatypes = [datatype.upper() for datatype in self.datatypes]
         self.datatype = self.__set_datatype()
         self.dataclasses = {}
         if 'DATACLASS' in self.dic:
