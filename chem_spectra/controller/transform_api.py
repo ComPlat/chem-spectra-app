@@ -5,10 +5,11 @@ from flask import (
 # from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.share import (
-    to_zip_response, extract_params
+    to_zip_response, extract_params, to_zip_bag_it_response
 )
 
 from chem_spectra.model.transformer import TransformerModel as TraModel
+from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 
 
 trans_api = Blueprint('transform_api', __name__)
@@ -31,17 +32,38 @@ def zip_jcamp_n_img():
         cmpsr = TraModel(file, molfile=molfile, params=params).to_composer()
         if ((type(cmpsr) is dict) and "invalid_molfile" in cmpsr):
             return json.dumps(cmpsr)
-        tf_jcamp, tf_img = cmpsr.tf_jcamp(), cmpsr.tf_img()
-        spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
-        memory = to_zip_response([tf_jcamp, tf_img])
-        rsp = make_response(
-            send_file(
-                memory,
-                attachment_filename='spectrum.zip',
-                as_attachment=True
+
+        if isinstance(cmpsr, BagItBaseConverter):
+            # check if composered model is in BagIt format
+            list_jcamps, list_images = cmpsr.data, cmpsr.images
+            dst_list = []
+            for idx in range(len(list_jcamps)):
+                tf_jcamp = list_jcamps[idx]
+                tf_img = list_images[idx]
+                tf_arr = [tf_jcamp, tf_img]
+                dst_list.append(tf_arr)
+
+            memory = to_zip_bag_it_response(dst_list)
+            rsp = make_response(
+                send_file(
+                    memory,
+                    attachment_filename='spectrum.zip',
+                    as_attachment=True
+                )
             )
-        )
-        rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type})
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit'})
+        else:
+            tf_jcamp, tf_img = cmpsr.tf_jcamp(), cmpsr.tf_img()
+            spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
+            memory = to_zip_response([tf_jcamp, tf_img])
+            rsp = make_response(
+                send_file(
+                    memory,
+                    attachment_filename='spectrum.zip',
+                    as_attachment=True
+                )
+            )
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type})
         return rsp
 
 
@@ -52,7 +74,17 @@ def zip_jcamp():
     params = extract_params(request)
     if file:  # and allowed_file(file):
         tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
-        memory = to_zip_response([tf_jcamp])
+        if isinstance(tf_jcamp, BagItBaseConverter):
+            # check if composered model is in BagIt format
+            list_jcamps = tf_jcamp.data
+            dst_list = []
+            for jcamp in list_jcamps:
+                tf_arr = [jcamp]
+                dst_list.append(tf_arr)
+
+            memory = to_zip_bag_it_response(dst_list)
+        else:
+            memory = to_zip_response([tf_jcamp])
         return send_file(
             memory,
             attachment_filename='spectrum.zip',
@@ -67,7 +99,17 @@ def zip_image():
     params = extract_params(request)
     if file:  # and allowed_file(file):
         tf_img = TraModel(file, molfile=molfile, params=params).convert2img()
-        memory = to_zip_response([tf_img])
+        if isinstance(tf_img, BagItBaseConverter):
+            # check if composered model is in BagIt format
+            list_images = tf_img.images
+            dst_list = []
+            for img in list_images:
+                tf_arr = [img]
+                dst_list.append(tf_arr)
+
+            memory = to_zip_bag_it_response(dst_list)
+        else:
+            memory = to_zip_response([tf_img])
         return send_file(
             memory,
             attachment_filename='spectrum.zip',

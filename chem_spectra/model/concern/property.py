@@ -8,8 +8,8 @@ def decorate_sim_property(jbcv, molfile, isSimulateNRM=False):
     #     return deco_jbcv
     if jbcv.ncl in ('1H', '13C') and molfile.name:
         if (not jbcv.simu_peaks) or isSimulateNRM:
-          deco_jbcv = __simulate_nmr(jbcv, molfile)
-          return deco_jbcv
+            deco_jbcv = __simulate_nmr(jbcv, molfile)
+            return deco_jbcv
 
     return jbcv
 
@@ -19,7 +19,7 @@ def __simulate_nmr(jbcv, molfile):
     mm = None
     try:
         mm = MoleculeModel(molfile, layout, decorate=True)
-    except Exception as error:
+    except Exception as error:  # noqa: F841
         return {'invalid_molfile': True}
     jbcv.simu_peaks = InferModel.simulate_nmr(
         mm=mm,

@@ -101,7 +101,7 @@ class JcampBaseConverter:
 
     def __set_dataformat(self):
         try:
-           return self.dic[self.dataclass][0].split('\n')[0]
+            return self.dic[self.dataclass][0].split('\n')[0]
         except: # noqa
             pass
         return '(X++(Y..Y))'
@@ -168,4 +168,3 @@ class JcampBaseConverter:
                 return True
 
         return False
-

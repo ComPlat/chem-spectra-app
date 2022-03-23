@@ -14,6 +14,7 @@ THRESHOLD_UVVIS = 0.05
 THRESHOLD_TGA = 1.05
 THRESHOLD_XRD = 1.00
 
+
 class JcampNIConverter:  # nmr & IR
     def __init__(self, base):
         self.params = base.params
@@ -178,7 +179,7 @@ class JcampNIConverter:  # nmr & IR
 
         if self.x_unit == 'HZ':
             x = x / self.obs_freq
-        
+
         return x
 
     def __read_ys(self):
@@ -251,7 +252,6 @@ class JcampNIConverter:  # nmr & IR
 
         if (self.data_format and self.data_format == '(XY..XY)'):
             return factor
-        
 
         try:
             factor = {
@@ -261,7 +261,6 @@ class JcampNIConverter:  # nmr & IR
         except:  # noqa
             pass
 
-        
         if factor['y'] == 1.0 and not isinstance(self.data, dict):
             factor['y'] = self.data.max() / 1000000.0
 
@@ -488,7 +487,7 @@ class JcampNIConverter:  # nmr & IR
                 for item in target:
                     splitted_item = item.replace('(', '').replace(')', '')
                     splitted_item = [x.strip() for x in splitted_item.split(',')]
-                    splitted_item = [float(x) for x in splitted_item]
+                    splitted_item = [float(x) if x != '' else x for x in splitted_item]
                     max_peak = {'x': splitted_item[0], 'y': splitted_item[1]}
                     min_peak = {'x': splitted_item[2], 'y': splitted_item[3]}
                     self.max_min_peaks_table.append({'max': max_peak, 'min': min_peak})
@@ -507,6 +506,7 @@ class JcampNIConverter:  # nmr & IR
         if target2:
             self.mpy_pks_table = target2
             self.mpy_pks_table.append('\n')
+
     #     if self.ncl == '13C' and not self.is_dept and len(self.mpy_itg_table) == 0 and len(self.mpy_pks_table) == 0:
     #         self.__add_13C_mpy_programmatically()
 
@@ -547,12 +547,12 @@ class JcampNIConverter:  # nmr & IR
             if ref_name and ref_name != '- - -':
                 return
             # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-            peak_idxs = self.__exec_peak_picking_logic(refresh_solvent=True)[:100]
-            auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx], 'idx': idx} for idx in peak_idxs]
+            peak_idxs = self.__exec_peak_picking_logic(refresh_solvent=True)[:100]  # noqa: E501
+            auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx], 'idx': idx} for idx in peak_idxs]  # noqa: E501
             auto_peaks.sort(key=lambda d: d['y'], reverse=True)
             # is acetone
             left, right = auto_peaks[0], auto_peaks[1]
-            if left['x'] < right['x']: left, right = right, left
+            if left['x'] < right['x']: left, right = right, left    # noqa: E701
             diff = abs(left['x'] - right['x'])
             if 175 < diff < 177:
                 self.dic['$CSSOLVENTNAME'] = ['Acetone-d6 (sep)']
@@ -561,11 +561,11 @@ class JcampNIConverter:  # nmr & IR
                 self.solv_peaks = [(27.0, 33.0), (203.7, 209.7)]
                 shift = 29.920 - right['x']
                 self.xs = self.xs + shift
-                return True # self.clear
+                return True  # self.clear
             # is chloroform
             for hpk in auto_peaks[:10]:
                 x_c = hpk['x']
-                peaks = [p for p in auto_peaks if x_c - 2.0 < p['x'] < x_c + 2.0]
+                peaks = [p for p in auto_peaks if x_c - 2.0 < p['x'] < x_c + 2.0]   # noqa: E501
                 if len(peaks) == 3:
                     pxs = sorted(map(lambda p: p['x'], peaks))
                     diff_one = abs(pxs[0] - pxs[1])
@@ -577,9 +577,9 @@ class JcampNIConverter:  # nmr & IR
                         self.solv_peaks = [(74.0, 80.0)]
                         shift = 77.00 - pxs[1]
                         self.xs = self.xs + shift
-                        return True # self.clear
+                        return True  # self.clear
 
-        return False # self.clear
+        return False  # self.clear
 
     def __set_first_last_xs(self):
         self.first_x = self.xs[0]
