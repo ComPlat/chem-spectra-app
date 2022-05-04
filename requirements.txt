@@ -14,7 +14,7 @@ importlib-metadata==0.19
 itsdangerous==1.1.0
 Jinja2==2.10.1
 MarkupSafe==1.1.1
-matplotlib==2.0.2
+matplotlib==3.0.0
 mccabe==0.6.1
 more-itertools==7.2.0
 #-e git+https://github.com/ComPlat/nmrglue.git@d9c0de6d3d7c852fc0d167442af395393a8ae513#egg=nmrglue
