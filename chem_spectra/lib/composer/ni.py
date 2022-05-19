@@ -161,19 +161,23 @@ class NIComposer(BaseComposer):
                 else:
                     delta = abs(x_max_peak - x_min_peak)
 
+                x_pecker = ''
                 # calculate ratio
                 if (y_min_peak == '' or y_max_peak == ''):
                     ratio = ''
                 else:
-                    if 'pecker' in peak:
+                    if 'pecker' in peak and peak['pecker'] is not None:
                         pecker = peak['pecker']
+                        x_pecker = pecker['x']
                         y_pecker = pecker['y']
                     first_expr = abs(y_min_peak) / abs(y_max_peak)
                     second_expr = 0.485 * abs(y_pecker) / abs(y_max_peak)
                     ratio = first_expr + second_expr + 0.086
+                    if (y_pecker) == 0:
+                        y_pecker = ''
 
                 content.append(
-                    '({x_max}, {y_max}, {x_min}, {y_min}, {ratio}, {delta})\n'.format(x_max=x_max_peak, y_max=y_max_peak, x_min=x_min_peak, y_min=y_min_peak, ratio=ratio, delta=delta)  # noqa: E501
+                    '({x_max}, {y_max}, {x_min}, {y_min}, {ratio}, {delta}, {x_pecker}, {y_pecker})\n'.format(x_max=x_max_peak, y_max=y_max_peak, x_min=x_min_peak, y_min=y_min_peak, ratio=ratio, delta=delta, x_pecker=x_pecker, y_pecker=y_pecker)  # noqa: E501
                 )
 
         return content
@@ -316,7 +320,7 @@ class NIComposer(BaseComposer):
                     x_peaks.extend([x_max_peak, x_min_peak])
                     y_peaks.extend([y_max_peak, y_min_peak])
 
-                if 'pecker' in peak:
+                if 'pecker' in peak and peak['pecker'] is not None:
                     pecker = peak['pecker']
                     x_pecker, y_pecker = pecker['x'], pecker['y']
                     x_peckers.append(x_pecker)

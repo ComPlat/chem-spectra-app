@@ -490,7 +490,12 @@ class JcampNIConverter:  # nmr & IR
                     splitted_item = [float(x) if x != '' else x for x in splitted_item]
                     max_peak = {'x': splitted_item[0], 'y': splitted_item[1]}
                     min_peak = {'x': splitted_item[2], 'y': splitted_item[3]}
-                    self.max_min_peaks_table.append({'max': max_peak, 'min': min_peak})
+                    pecker = {'x': splitted_item[6], 'y': splitted_item[7]}
+                    if pecker['x'] != '':
+                        self.max_min_peaks_table.append({'max': max_peak, 'min': min_peak, 'pecker': pecker})
+                    else:   
+                        self.max_min_peaks_table.append({'max': max_peak, 'min': min_peak})
+
 
     def __read_integration_from_file(self):
         target = self.dic.get('$OBSERVEDINTEGRALS')

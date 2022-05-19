@@ -64,6 +64,12 @@ def parse_float(val, default):
     except:  # noqa
         return float(default)
 
+def parse_int(val, default):
+    try:
+        return int(val)
+    except:  # noqa
+        return int(default)
+
 
 def parse_fname(request):
     fil_name = request.files.get('file') and request.files.get('file').filename
@@ -86,6 +92,7 @@ def extract_params(request):
     simulatenrm = bool(request.form.get('simulatenrm', default=False))
     waveLength = request.form.get('wave_length', default=None)
     cyclicvolta = request.form.get('cyclic_volta', default=None)
+    jcamp_idx = parse_int(request.form.get('jcamp_idx', default=0), 0)
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -105,6 +112,7 @@ def extract_params(request):
         'simulatenrm': simulatenrm,
         'waveLength': waveLength,
         'cyclic_volta': cyclicvolta,
+        'jcamp_idx': jcamp_idx,
     }
     has_params = (
         params.get('peaks_str') or
