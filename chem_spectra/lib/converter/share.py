@@ -49,8 +49,9 @@ def parse_params(params):
     listMaxMinPeaks = None
     if (cyclicvolta is not None):
         spectraList = cyclicvolta['spectraList']
-        spectra = spectraList[jcamp_idx]
-        listMaxMinPeaks = spectra['list']
+        if (len(spectraList) > 0):
+            spectra = spectraList[jcamp_idx]
+            listMaxMinPeaks = spectra['list']
 
     try:
         if select_x and float(select_x) != 0.0 and ref_name != '- - -':
