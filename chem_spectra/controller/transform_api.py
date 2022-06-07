@@ -54,9 +54,12 @@ def zip_jcamp_n_img():
             )
             rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit'})
         else:
-            tf_jcamp, tf_img = cmpsr.tf_jcamp(), cmpsr.tf_img()
+            tf_jcamp, tf_img, tf_csv = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
             spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
-            memory = to_zip_response([tf_jcamp, tf_img])
+            if (tf_csv is not None and tf_csv != False):
+                memory = to_zip_response([tf_jcamp, tf_img, tf_csv])
+            else:
+                memory = to_zip_response([tf_jcamp, tf_img])
             rsp = make_response(
                 send_file(
                     memory,

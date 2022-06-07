@@ -122,3 +122,6 @@ class MSComposer(BaseComposer):
         plt.clf()
         plt.cla()
         return tf
+    
+    def tf_csv(self):
+        return None

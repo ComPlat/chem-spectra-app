@@ -22,7 +22,7 @@ def chemspectra_file_convert():
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:
-        tf_jcamp, tf_img = TraModel(file, molfile=molfile, params=params).convert2jcamp_img()
+        tf_jcamp, tf_img, tf_csv = TraModel(file, molfile=molfile, params=params).convert2jcamp_img()
         if not tf_jcamp:
             if isinstance(tf_img, BagItBaseConverter):
                 list_jcamps = tf_img.get_base64_data()
@@ -58,7 +58,7 @@ def chemspectra_file_save():
             if dst:  # and allowed_file(file):
                 tm = TraModel(dst, molfile=molfile, params=params)
                 tf_jcamp, tf_img, tf_csv = tm.convert2jcamp_img()
-                if (tf_csv is not None):
+                if (tf_csv is not None and tf_csv != False):
                     tf_arr = [
                         src.temp_file(),
                         tf_jcamp,
@@ -84,13 +84,22 @@ def chemspectra_file_save():
         dst = FileContainer(request.files['dst'])
         if dst:  # and allowed_file(file):
             tm = TraModel(dst, molfile=molfile, params=params)
-            tf_jcamp, tf_img = tm.convert2jcamp_img()
-            tf_arr = [
-                src.temp_file(),
-                tf_jcamp,
-                tf_img,
-                tm.tf_predict(),
-            ]
+            tf_jcamp, tf_img, tf_csv = tm.convert2jcamp_img()
+            if (tf_csv is not None and tf_csv != False):
+                tf_arr = [
+                    src.temp_file(),
+                    tf_jcamp,
+                    tf_img,
+                    tm.tf_predict(),
+                    tf_csv,
+                ]
+            else:
+                tf_arr = [
+                    src.temp_file(),
+                    tf_jcamp,
+                    tf_img,
+                    tm.tf_predict(),
+                ]
             memory = to_zip_response(tf_arr, filename, src_idx=0)
             return send_file(
                 memory,
@@ -117,7 +126,7 @@ def chemspectra_file_refresh():
             if dst:  # and allowed_file(file):
                 tm = TraModel(dst, molfile=molfile, params=params)
                 tf_jcamp, tf_img, tf_csv = tm.convert2jcamp_img()
-                if (tf_csv is not None):
+                if (tf_csv is not None and tf_csv != False):
                     tf_arr = [
                         tf_jcamp,
                         tf_img,
