@@ -35,12 +35,13 @@ def zip_jcamp_n_img():
 
         if isinstance(cmpsr, BagItBaseConverter):
             # check if composered model is in BagIt format
-            list_jcamps, list_images = cmpsr.data, cmpsr.images
+            list_jcamps, list_images, list_csv = cmpsr.data, cmpsr.images, cmpsr.list_csv
             dst_list = []
             for idx in range(len(list_jcamps)):
                 tf_jcamp = list_jcamps[idx]
                 tf_img = list_images[idx]
-                tf_arr = [tf_jcamp, tf_img]
+                tf_csv = list_csv[idx]
+                tf_arr = [tf_jcamp, tf_img, tf_csv]
                 dst_list.append(tf_arr)
 
             memory = to_zip_bag_it_response(dst_list)

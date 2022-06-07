@@ -57,13 +57,22 @@ def chemspectra_file_save():
             params['jcamp_idx'] = index
             if dst:  # and allowed_file(file):
                 tm = TraModel(dst, molfile=molfile, params=params)
-                tf_jcamp, tf_img = tm.convert2jcamp_img()
-                tf_arr = [
-                    src.temp_file(),
-                    tf_jcamp,
-                    tf_img,
-                    tm.tf_predict(),
-                ]
+                tf_jcamp, tf_img, tf_csv = tm.convert2jcamp_img()
+                if (tf_csv is not None):
+                    tf_arr = [
+                        src.temp_file(),
+                        tf_jcamp,
+                        tf_img,
+                        tm.tf_predict(),
+                        tf_csv,
+                    ]
+                else:
+                    tf_arr = [
+                        src.temp_file(),
+                        tf_jcamp,
+                        tf_img,
+                        tm.tf_predict(),
+                    ]
                 dst_list.append(tf_arr)
         memory = to_zip_bag_it_response(dst_list, filename, src_idx=0)
         return send_file(
@@ -107,12 +116,20 @@ def chemspectra_file_refresh():
             params['jcamp_idx'] = index
             if dst:  # and allowed_file(file):
                 tm = TraModel(dst, molfile=molfile, params=params)
-                tf_jcamp, tf_img = tm.convert2jcamp_img()
-                tf_arr = [
-                    tf_jcamp,
-                    tf_img,
-                    tm.tf_predict(),
-                ]
+                tf_jcamp, tf_img, tf_csv = tm.convert2jcamp_img()
+                if (tf_csv is not None):
+                    tf_arr = [
+                        tf_jcamp,
+                        tf_img,
+                        tm.tf_predict(),
+                        tf_csv
+                    ]
+                else:
+                    tf_arr = [
+                        tf_jcamp,
+                        tf_img,
+                        tm.tf_predict(),
+                    ]
                 dst_list.append(tf_arr)
         memory = to_zip_bag_it_response(dst_list, 'spectrum.zip')
         return send_file(

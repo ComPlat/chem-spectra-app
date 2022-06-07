@@ -7,6 +7,7 @@ import matplotlib.path as mpath  # noqa: E402
 import re  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib import ticker  # noqa: E402
+import csv
 
 from chem_spectra.lib.composer.base import (  # noqa: E402, F401
     extrac_dic, calc_npoints, BaseComposer
@@ -291,16 +292,6 @@ class NIComposer(BaseComposer):
             if self.core.params['list_max_min_peaks'] is not None:
                 listMaxMinPeaks = self.core.params['list_max_min_peaks']
 
-            # x_max = np.max(self.core.xs)
-            # arr_max_x_indices = np.where(self.core.xs == x_max)
-            # y_pecker = 0
-            # if (arr_max_x_indices[0][0]):
-            #     idx = arr_max_x_indices[0][0]
-            #     y_pecker = self.core.ys[idx]
-            #     x_pos = self.core.xs[idx]
-            #     limit_label = 'x: {x}\ny: {y}'.format(x=x_pos, y=y_pecker)
-            #     plt.text(x_pos, y_pecker, limit_label)
-
             for peak in listMaxMinPeaks:
                 max_peak, min_peak = peak['max'], peak['min']
                 x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
@@ -430,3 +421,64 @@ class NIComposer(BaseComposer):
         plt.clf()
         plt.cla()
         return tf_img
+
+    def tf_csv(self):
+        if self.core.is_cyclic_volta == False:
+            return None
+        tf_csv = tempfile.NamedTemporaryFile(suffix='.csv')
+        tf_csv.flush()
+        tf_csv.seek(0)
+
+        listMaxMinPeaks = self.core.max_min_peaks_table
+        if self.core.params['list_max_min_peaks'] is not None:
+            listMaxMinPeaks = self.core.params['list_max_min_peaks']
+
+        with open(tf_csv.name, 'w', newline='', encoding='utf-8') as csvfile:
+            fieldnames = ['Max', 'Min', 'I λ0', 'I ratio', 'Pecker']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            x_max = np.max(self.core.xs)
+            arr_max_x_indices = np.where(self.core.xs == x_max)
+            y_pecker = 0
+            if (arr_max_x_indices[0][0]):
+                idx = arr_max_x_indices[0][0]
+                y_pecker = self.core.ys[idx]
+
+            for peak in listMaxMinPeaks:
+                max_peak, min_peak = peak['max'], peak['min']
+                x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
+                x_min_peak, y_min_peak = self.__get_xy_of_peak(min_peak)
+
+                if (x_max_peak == '' and x_min_peak == ''):
+                    # ignore if missing both max and min peak
+                    continue
+
+                if (x_max_peak == '' or x_min_peak == ''):
+                    delta = ''
+                else:
+                    delta = abs(x_max_peak - x_min_peak)
+
+                x_pecker = ''
+                # calculate ratio
+                if (y_min_peak == '' or y_max_peak == ''):
+                    ratio = ''
+                else:
+                    if 'pecker' in peak and peak['pecker'] is not None:
+                        pecker = peak['pecker']
+                        x_pecker = pecker['x']
+                        y_pecker = pecker['y']
+                    first_expr = abs(y_min_peak) / abs(y_max_peak)
+                    second_expr = 0.485 * abs(y_pecker) / abs(y_max_peak)
+                    ratio = first_expr + second_expr + 0.086
+                    if (y_pecker) == 0:
+                        y_pecker = ''
+
+                writer.writerow({
+                    'Max': 'x: {x_max}, y: {y_max}'.format(x_max=x_max_peak, y_max=y_max_peak),
+                    'Min': 'x: {x_min}, y: {y_min}'.format(x_min=x_min_peak, y_min=y_min_peak),
+                    'I λ0': '{ratio}'.format(ratio=ratio),
+                    'I ratio': '{delta}'.format(delta=delta),
+                    'Pecker': 'x: {x_pecker}, y (DeltaEp): {y_pecker}'.format(x_pecker=x_pecker, y_pecker=y_pecker)
+                })
+        return tf_csv

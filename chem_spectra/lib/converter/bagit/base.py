@@ -10,7 +10,7 @@ from chem_spectra.lib.converter.share import parse_params
 class BagItBaseConverter:
     def __init__(self, target_dir, params=False, fname=''):
         self.params = parse_params(params)
-        self.data, self.images = self.__read(target_dir, fname)
+        self.data, self.images, self.list_csv = self.__read(target_dir, fname)
 
     def __read(self, target_dir, fname):
         list_file_names = []
@@ -23,6 +23,7 @@ class BagItBaseConverter:
 
         list_files = []
         list_images = []
+        list_csv = []
         for file_name in list_file_names:
             jcamp_path = os.path.join(data_dir_path, file_name)
             base_cv = JcampBaseConverter(jcamp_path)
@@ -32,7 +33,9 @@ class BagItBaseConverter:
             list_files.append(tf_jcamp)
             tf_img = nicp.tf_img()
             list_images.append(tf_img)
-        return list_files, list_images
+            tf_csv = nicp.tf_csv()
+            list_csv.append(tf_csv)
+        return list_files, list_images, list_csv
 
     def get_base64_data(self):
         if self.data is None:

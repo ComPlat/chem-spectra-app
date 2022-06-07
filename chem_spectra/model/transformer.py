@@ -66,10 +66,10 @@ class TransformerModel:
     def convert2jcamp_img(self):
         cmpsr = self.to_composer()
         if not cmpsr:
-            return False, False
+            return False, False, False
         if isinstance(cmpsr, BagItBaseConverter):
-            return False, cmpsr
-        return cmpsr.tf_jcamp(), cmpsr.tf_img()
+            return False, cmpsr, False
+        return cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
 
     def to_composer(self):
         is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml', 'mzxml']     # noqa: E501
