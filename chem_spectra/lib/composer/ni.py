@@ -434,7 +434,8 @@ class NIComposer(BaseComposer):
             listMaxMinPeaks = self.core.params['list_max_min_peaks']
 
         with open(tf_csv.name, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['Max', 'Min', 'I λ0', 'I ratio', 'Pecker']
+            # fieldnames = ['Max', 'Min', 'I λ0', 'I ratio', 'Pecker']
+            fieldnames = ['Max x', 'Max y', 'Min x', 'Min y', 'Delta Ep', 'I lambda0', 'I ratio']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
 
@@ -475,10 +476,12 @@ class NIComposer(BaseComposer):
                         y_pecker = ''
 
                 writer.writerow({
-                    'Max': 'x: {x_max}, y: {y_max}'.format(x_max=x_max_peak, y_max=y_max_peak),
-                    'Min': 'x: {x_min}, y: {y_min}'.format(x_min=x_min_peak, y_min=y_min_peak),
-                    'I λ0': '{ratio}'.format(ratio=ratio),
-                    'I ratio': '{delta}'.format(delta=delta),
-                    'Pecker': 'x: {x_pecker}, y (DeltaEp): {y_pecker}'.format(x_pecker=x_pecker, y_pecker=y_pecker)
+                    'Max x': '{x_max}'.format(x_max=x_max_peak),
+                    'Max y': '{y_max}'.format(x_max=y_max_peak),
+                    'Min x': '{x_min}'.format(x_min=x_min_peak),
+                    'Min y': '{y_min}'.format(y_min=y_min_peak),
+                    'Delta Ep': '{y_pecker}'.format(y_pecker=y_pecker),
+                    'I lambda0': '{ratio}'.format(ratio=ratio),
+                    'I ratio': '{delta}'.format(delta=delta)
                 })
         return tf_csv
