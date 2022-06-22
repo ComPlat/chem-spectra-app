@@ -23,25 +23,30 @@ class DatatableModel:
 
         return ''.join(output) + '\n'
 
-    def encode(self, arr_ys, y_factor):
+    def encode(self, arr_ys, y_factor, arr_xs=None, is_xypoints=False):
         total_count = arr_ys.shape[0]
         calculate_ys = []
 
-        ys = []
-        line = None
-        line_x = None
-        for i, v in enumerate(arr_ys):
-            v = int(v / float(y_factor))
-            ys.append(v)
-            if line is None:
-                line = str(i)
-                line_x = i
-            line += str(abs(v))
-            if len(line) > 66 or i+1 == total_count:
-                output = self.__encode_row(total_count - line_x, ys)
-                calculate_ys.append(output)
-                ys = []
-                line = None
-                line_x = None
+        if (is_xypoints):
+            for idx in range(len(arr_xs)):
+                line = '{x}, {y}\n'.format(x=arr_xs[idx], y=arr_ys[idx])
+                calculate_ys.append(line)
+        else:
+            ys = []
+            line = None
+            line_x = None
+            for i, v in enumerate(arr_ys):
+                v = int(v / float(y_factor))
+                ys.append(v)
+                if line is None:
+                    line = str(i)
+                    line_x = i
+                line += str(abs(v))
+                if len(line) > 66 or i+1 == total_count:
+                    output = self.__encode_row(total_count - line_x, ys)
+                    calculate_ys.append(output)
+                    ys = []
+                    line = None
+                    line_x = None
 
         return calculate_ys

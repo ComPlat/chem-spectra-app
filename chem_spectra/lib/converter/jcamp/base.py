@@ -9,6 +9,11 @@ class JcampBaseConverter:
         self.dic, self.data = self.__read(path)
         self.datatypes = self.dic['DATATYPE']
         self.datatype = self.__set_datatype()
+        self.dataclasses = {}
+        if 'DATACLASS' in self.dic:
+            self.dataclasses = self.dic['DATACLASS']
+        self.dataclass = self.__set_dataclass()
+        self.data_format = self.__set_dataformat()
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = self.__typ()
         self.fname = self.params.get('fname')
@@ -16,6 +21,7 @@ class JcampBaseConverter:
         self.is_ir = self.__is_ir()
         self.is_tga = self.__is_tga()
         self.is_uv_vis = self.__is_uv_vis()
+        self.is_hplc_uv_vis = self.__is_hplc_uv_vis()
         self.is_xrd = self.__is_xrd()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
@@ -39,6 +45,10 @@ class JcampBaseConverter:
             return 'RAMAN SPECTRUM'
         elif 'MASS SPECTRUM' in dts:
             return 'MASS SPECTRUM'
+        elif 'HPLC UV/VIS SPECTRUM' in dts:
+            return 'HPLC UV/VIS SPECTRUM'
+        elif 'HPLC UV-VIS' in dts:
+            return 'HPLC UV/VIS SPECTRUM'
         elif 'UV/VIS SPECTRUM' in dts:
             return 'UV/VIS SPECTRUM'
         elif 'UV-VIS' in dts:
@@ -61,6 +71,10 @@ class JcampBaseConverter:
             return 'RAMAN'  # TBD
         elif 'MASS SPECTRUM' == dt:
             return 'MS'
+        elif 'HPLC UV/VIS SPECTRUM' == dt:
+            return 'HPLC UVVIS'
+        elif 'HPLC UV-VIS' == dt:
+            return 'HPLC UVVIS'
         elif 'UV/VIS SPECTRUM' == dt:
             return 'UVVIS'
         elif 'UV-VIS' == dt:
@@ -71,11 +85,26 @@ class JcampBaseConverter:
             return 'X-RAY DIFFRACTION'
         return ''
 
+    def __set_dataclass(self):
+        data_class = self.dataclasses
+        if 'XYPOINTS' in data_class:
+            return 'XYPOINTS'
+        elif 'XYDATA' in data_class:
+            return 'XYDATA_OLD'
+        return ''
+
+    def __set_dataformat(self):
+        try:
+           return self.dic[self.dataclass][0].split('\n')[0]
+        except: # noqa
+            pass
+        return '(X++(Y..Y))'
+
     def __is_em_wave(self):
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION']
+        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -85,6 +114,9 @@ class JcampBaseConverter:
 
     def __is_uv_vis(self):
         return self.typ in ['UVVIS']
+
+    def __is_hplc_uv_vis(self):
+        return self.typ in ['HPLC UVVIS']
 
     def __is_xrd(self):
         return self.typ in ['X-RAY DIFFRACTION']

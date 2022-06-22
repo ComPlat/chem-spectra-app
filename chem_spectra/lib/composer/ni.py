@@ -11,7 +11,7 @@ from chem_spectra.lib.composer.base import (  # noqa: E402
     extrac_dic, calc_npoints, BaseComposer
 )
 from chem_spectra.lib.shared.calc import (  # noqa: E402
-    calc_mpy_center, calc_ks, get_curve_endpoint
+    calc_mpy_center, calc_ks, get_curve_endpoint, cal_slope
 )
 
 
@@ -187,7 +187,7 @@ class NIComposer(BaseComposer):
         # PLOT data
         plt.plot(self.core.xs, self.core.ys)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']
-        xlim_left, xlim_right = [x_min, x_max] if self.core.is_tga or self.core.is_uv_vis else [x_max, x_min]
+        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd) else [x_max, x_min]
         plt.xlim(xlim_left, xlim_right)
         y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
         h = y_max - y_min
@@ -223,24 +223,90 @@ class NIComposer(BaseComposer):
         # ----- PLOT integration -----
         refShift, refArea = self.refShift, self.refArea
         itg_h = y_max + h * 0.1
+        if (len(self.all_itgs) == 0 and len(self.core.itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
+            core_itg_table = self.core.itg_table[0]
+            itg_table = core_itg_table.split('\n')
+            for itg in itg_table:
+                clear_itg = itg.replace('(', '')
+                clear_itg = clear_itg.replace(')', '')
+                split_itg = clear_itg.split(',')
+                if (len(split_itg) > 2):
+                  xLStr = split_itg[0].strip()
+                  xUStr = split_itg[1].strip()
+                  areaStr = split_itg[2].strip()
+                  self.all_itgs.append({'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)})
         for itg in self.all_itgs:
             # integration marker
             xL, xU, area = itg['xL'] - refShift, itg['xU'] - refShift, itg['area'] * refArea
-            plt.plot([xL, xU], [itg_h, itg_h], color='#228B22')
-            plt.plot([xL, xL], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
-            plt.plot([xU, xU], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
-            plt.text((xL + xU) / 2, itg_h + h * 0.015, '{:0.2f}'.format(area), color='#228B22', ha='center', size=12)
             # integration curve
             ks = calc_ks(self.core.ys, y_max, h)
             iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
             ref = ks[iL]
             cxs = self.core.xs[iL:iU]
-            cys = (ks[iL:iU] - ref) * 1.5 + (y_max - h * 0.4)
-            if self.core.typ == 'UVVIS':
-                cys = (ref - ks[iL:iU]) * 0.5 + (y_max - h * 0.4)
-            plt.plot(cxs, cys, color='#228B22')
+
+            if self.core.is_hplc_uv_vis:
+                # fill area under curve
+                cys = self.core.ys[iL:iU]
+                slope = cal_slope(cxs[0], cys[0], cxs[len(cxs)-1], cys[len(cys)-1])
+                last_y = cys[0]
+                last_x = cxs[0]
+                aucys = [last_y]
+                for i in range(1, len(cys)):
+                    curr_x = cxs[i]
+                    curr_y = slope*(curr_x-last_x) + last_y
+                    aucys.append(curr_y)
+                    last_x = curr_x
+                    last_y = curr_y
+                plt.fill_between(cxs, y1=cys, y2=aucys, alpha=0.2, color='#FF0000')
+            else:
+                # display integration
+                plt.plot([xL, xU], [itg_h, itg_h], color='#228B22')
+                plt.plot([xL, xL], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
+                plt.plot([xU, xU], [itg_h + h * 0.01, itg_h - h * 0.01], color='#228B22')
+                plt.text((xL + xU) / 2, itg_h + h * 0.015, '{:0.2f}'.format(area), color='#228B22', ha='center', size=12)
+                cys = (ks[iL:iU] - ref) * 1.5 + (y_max - h * 0.4)
+                # if self.core.is_uv_vis:
+                #     cys = (ref - ks[iL:iU]) * 0.5 + (y_max - h * 0.4)
+                plt.plot(cxs, cys, color='#228B22')
 
         # ----- PLOT multiplicity -----
+        if (len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
+            core_mpy_pks_table = self.core.mpy_pks_table[0]
+            mpy_pks_table = core_mpy_pks_table.split('\n')
+            tmp_dic_mpy_peaks = {}
+            for peak in mpy_pks_table:
+                clear_peak = peak.replace('(', '')
+                clear_peak = clear_peak.replace(')', '')
+                split_peak = clear_peak.split(',')
+                idx_peakStr = split_peak[0].strip()
+                xStr = split_peak[1].strip()
+                yStr = split_peak[2].strip()
+                if idx_peakStr not in tmp_dic_mpy_peaks:
+                    tmp_dic_mpy_peaks[idx_peakStr] = []
+                
+                tmp_dic_mpy_peaks[idx_peakStr].append({'x': float(xStr), 'y': float(yStr)})
+
+            core_mpy_itg_table = self.core.mpy_itg_table[0]
+            mpy_itg_table = core_mpy_itg_table.split('\n')
+            for mpy in mpy_itg_table:
+                clear_mpy = mpy.replace('(', '')
+                clear_mpy = clear_mpy.replace(')', '')
+                split_mpy = clear_mpy.split(',')
+                mpy_item = { 'mpyType': '', 'xExtent': {'xL': 0.0, 'xU': 0.0}, 'yExtent': {'yL': 0.0, 'yU': 0.0}, 'peaks': [], 'area': 1.0 }
+                if (len(split_mpy) > 7):
+                    idxStr = split_mpy[0].strip()
+                    xLStr = split_mpy[1].strip()
+                    xUStr = split_mpy[2].strip()
+                    mpy_item['xExtent']['xL'] = float(xLStr) + refShift
+                    mpy_item['xExtent']['xU'] = float(xUStr) + refShift
+                    yLStr = split_mpy[3].strip()
+                    yUStr = split_mpy[4].strip()
+                    mpy_item['yExtent']['yL'] = float(yLStr) + refShift
+                    mpy_item['yExtent']['yU'] = float(yUStr) + refShift
+                    typeStr = split_mpy[6].strip()
+                    mpy_item['mpyType'] = typeStr
+                    mpy_item['peaks'] = tmp_dic_mpy_peaks[idxStr]
+                    self.mpys.append(mpy_item)
         mpy_h = y_min - h * 0.08
         for mpy in self.mpys:
             xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']
@@ -254,7 +320,12 @@ class NIComposer(BaseComposer):
                 plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.05], color='#DA70D6')
 
         # PLOT label
-        plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
+        if (self.core.is_xrd):
+            waveLength = self.core.params['waveLength']
+            label = "X ({}), WL={} nm".format(self.core.label['x'], waveLength['value'], waveLength['unit'])
+            plt.xlabel((label), fontsize=18)
+        else:
+            plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
         plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
         plt.locator_params(nbins=self.__plt_nbins())
         plt.grid(False)

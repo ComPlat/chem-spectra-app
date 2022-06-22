@@ -58,3 +58,8 @@ def to_float(target):
         return float(target)
     except:
         return target
+
+def cal_slope(x1, y1, x2, y2):
+    if (x1 == x2):
+        return 0
+    return (y2-y1)/(x2-x1)

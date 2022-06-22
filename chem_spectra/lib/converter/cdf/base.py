@@ -9,6 +9,8 @@ class CdfBaseConverter:
         self.dic, self.data = self.__read(path)
         self.datatypes = ['MASS SPECTRUM']
         self.datatype = 'MASS SPECTRUM'
+        self.dataclass = None
+        self.data_format = None
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = 'MS'
         self.fname = '.'.join(params.get('fname').split('.')[:-1])

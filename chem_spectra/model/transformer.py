@@ -121,7 +121,10 @@ class TransformerModel:
             if not fbcv:
                 return False, False
         # assume NMR only
-        isSimulateNRM = self.params['simulatenrm']
+        # isSimulateNRM = self.params['simulatenrm']
+        isSimulateNRM = False
+        if self.params and 'simulatenrm' in self.params:
+            isSimulateNRM = self.params['simulatenrm']
         d_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNRM)
         if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
             #return if molfile is invalid
@@ -140,7 +143,10 @@ class TransformerModel:
             mscp = MSComposer(mscv)
             return mscv, mscp
         else:
-            isSimulateNRM = self.params['simulatenrm']
+            # isSimulateNRM = self.params['simulatenrm']
+            isSimulateNRM = False
+            if self.params and 'simulatenrm' in self.params:
+                isSimulateNRM = self.params['simulatenrm']
             d_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNRM)
             if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
                 #return if molfile is invalid

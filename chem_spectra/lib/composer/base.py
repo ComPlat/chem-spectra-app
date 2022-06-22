@@ -23,6 +23,7 @@ def coupling_string(js):
 
 
 TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'
+TEXT_DATA_TABLE_XY = '##XYDATA= (XY..XY)\n'
 TEXT_PEAK_AUTO = '$$ === CHEMSPECTRA PEAK TABLE AUTO ===\n'
 TEXT_PEAK_EDIT = '$$ === CHEMSPECTRA PEAK TABLE EDIT ===\n'
 TEXT_PEAK_TABLE = '##PEAKTABLE= (XY..XY)\n'
@@ -96,6 +97,11 @@ class BaseComposer:
         c_spectrum_orig = [
             '##NPOINTS={}\n'.format(self.core.xs.shape[0]),
             TEXT_DATA_TABLE
+        ]
+        if (self.core.data_format and self.core.data_format == '(XY..XY)'):
+            c_spectrum_orig = [
+            '##NPOINTS={}\n'.format(self.core.xs.shape[0]),
+            TEXT_DATA_TABLE_XY
         ]
         c_spectrum_orig.extend(self.core.datatable)
         return c_spectrum_orig
@@ -181,16 +187,36 @@ class BaseComposer:
         if len(self.itgs) > 0:
             table = []
             for itg in self.itgs:
+                absoluteArea = 0
+                if 'absoluteArea' in itg:
+                    absoluteArea = itg['absoluteArea']
                 table.extend([
-                    '({}, {}, {})\n'.format(
+                    '({}, {}, {}, {})\n'.format(
                         itg['xL'] - self.refShift,
                         itg['xU'] - self.refShift,
                         float(itg['area']) * self.refArea,
+                        absoluteArea,
                     ),
                 ])
             return table
         elif self.core.params['integration'].get('edited'):
             return []
+        elif 'stack' in self.core.params['integration']:
+            itg_stack = self.core.params['integration']['stack'] or []
+            if ('originStack' not in self.core.params['integration']):
+                itg_stack = self.core.itg_table
+                
+            if len(itg_stack) == 0:
+                return []
+            if 'stack' in self.core.params['multiplicity']:
+                mpy_stack = self.core.params['multiplicity']['stack'] or []
+
+                if len(mpy_stack) > 0:
+                    for itg in itg_stack:
+                        for mpy in mpy_stack:
+                            if (itg['xL'] ==  mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):
+                                return []
+            return itg_stack
         else:
             return self.core.itg_table
 
@@ -215,6 +241,10 @@ class BaseComposer:
             return table
         elif self.core.params['multiplicity'].get('edited'):
             return []
+        elif 'stack' in self.core.params['multiplicity']:
+            if ('originStack' not in self.core.params['integration']):
+                return self.core.mpy_itg_table
+            return self.core.params['multiplicity']['stack']
         else:
             return self.core.mpy_itg_table
 
