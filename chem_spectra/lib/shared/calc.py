@@ -1,7 +1,9 @@
 import numpy as np
 
+
 def calc_j(mpy, shift):
     return 0
+
 
 def calc_ks(ys, y_max, h):
     ks = np.zeros_like(ys)
@@ -15,6 +17,7 @@ def calc_ks(ys, y_max, h):
         ks[idx] = accum
     return ks
 
+
 def centerX(ps, shift):
     pxs = list(map(lambda p: p['x'], ps))
     pxs.sort()
@@ -22,6 +25,7 @@ def centerX(ps, shift):
     if cent_idx < 0:
         return 0
     return pxs[cent_idx] - shift
+
 
 def calc_mpy_center(ps, shift, typ):
     count = len(ps)
@@ -36,6 +40,7 @@ def calc_mpy_center(ps, shift, typ):
         return avgX
     else:
         return avgX
+
 
 def get_curve_endpoint(xs, ys, x1, x2):
     iL, iU = 0, 0
@@ -52,12 +57,14 @@ def get_curve_endpoint(xs, ys, x1, x2):
             iU = idx
     return iL, iU
 
+
 def to_float(target):
     try:
         target = target.replace(',', '.')
         return float(target)
     except:
         return target
+
 
 def cal_slope(x1, y1, x2, y2):
     if (x1 == x2):

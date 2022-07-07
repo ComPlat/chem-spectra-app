@@ -16,7 +16,7 @@ hdr_nsdb = {
 class InferencerModel:
     def __init__(
         self,
-        mm=False, tm=False, layout=False, peaks=False, shift=False, spectrum=False
+        mm=False, tm=False, layout=False, peaks=False, shift=False, spectrum=False      # noqa
     ):
         self.mm = mm
         self.tm = tm
@@ -33,21 +33,21 @@ class InferencerModel:
             mm=mm,
             layout=layout,
             peaks=[{'y': 0, 'x': -9999}],
-            shift={'ref': {'label': False, 'name': '- - -', 'value': 0}, 'peak': False, 'enable': False}
+            shift={'ref': {'label': False, 'name': '- - -', 'value': 0}, 'peak': False, 'enable': False}    # noqa: E501
         )
         try:
             rsp = instance.__predict_nmr(timeout=20)
             output = rsp.json()
             logger = logging.getLogger(__name__)
             logger.setLevel(logging.INFO)
-            log_msg = 'smiles: {smi} - nmrshiftdb_result: {nmrshiftdb}'.format(smi=mm.smi, nmrshiftdb=output)
+            log_msg = 'smiles: {smi} - nmrshiftdb_result: {nmrshiftdb}'.format(smi=mm.smi, nmrshiftdb=output)   # noqa: E501
             logger.info(log_msg)
-            simulations = sorted([shift['prediction'] for shift in output['result'][0]['shifts']])
+            simulations = sorted([shift['prediction'] for shift in output['result'][0]['shifts']])  # noqa: E501
             return simulations
         except Exception as error:
             logger = logging.getLogger(__name__)
             logger.setLevel(logging.ERROR)
-            log_msg = 'smiles: {smi} - nmrshiftdb_result: {nmrshiftdb}'.format(smi=mm.smi, nmrshiftdb=error)
+            log_msg = 'smiles: {smi} - nmrshiftdb_result: {nmrshiftdb}'.format(smi=mm.smi, nmrshiftdb=error)    # noqa: E501
             logger.error(log_msg)
             return []
 

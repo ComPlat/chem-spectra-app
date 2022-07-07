@@ -1,6 +1,7 @@
 import io
 import zipfile
 import math
+import os.path as os_path
 from os.path import basename
 
 
@@ -37,11 +38,37 @@ def to_zip_response(src_tmp_arr, filename=False, src_idx=-1):
     return memory
 
 
+def to_zip_bag_it_response(src_tmp_arr, filename=False, src_idx=-1):
+    tmp_arr = [el for el in src_tmp_arr if el]
+    memory = io.BytesIO()
+    with zipfile.ZipFile(memory, 'w') as zf:
+        for idx_sub, sub_arr in enumerate(tmp_arr):
+            folder_path = 'curve_' + str(idx_sub)
+            tmp_sub_arr = [el for el in sub_arr if el]
+            for idx, tmp in enumerate(tmp_sub_arr):
+                abs_path = tmp.name
+                is_src = idx == src_idx
+                fname = get_fname(abs_path, filename, is_src).replace(' ', '_')
+                fname = os_path.join(folder_path, fname)
+                zf.write(abs_path, fname)
+            for tmp in tmp_sub_arr:
+                tmp.close()
+    memory.seek(0)
+
+    return memory
+
+
 def parse_float(val, default):
     try:
         return float(val)
     except:  # noqa
         return float(default)
+
+def parse_int(val, default):
+    try:
+        return int(val)
+    except:  # noqa
+        return int(default)
 
 
 def parse_fname(request):
@@ -64,6 +91,8 @@ def extract_params(request):
     fname = parse_fname(request)
     simulatenrm = bool(request.form.get('simulatenrm', default=False))
     waveLength = request.form.get('wave_length', default=None)
+    cyclicvolta = request.form.get('cyclic_volta', default=None)
+    jcamp_idx = parse_int(request.form.get('jcamp_idx', default=0), 0)
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -81,7 +110,9 @@ def extract_params(request):
         'multiplicity': multiplicity,
         'fname': fname,
         'simulatenrm': simulatenrm,
-        'waveLength': waveLength
+        'waveLength': waveLength,
+        'cyclic_volta': cyclicvolta,
+        'jcamp_idx': jcamp_idx,
     }
     has_params = (
         params.get('peaks_str') or
@@ -104,10 +135,11 @@ def extract_params(request):
         params = False
     return params
 
+
 def parse_array_to_dict_xys(peaks):
     xs, ys = peaks['x'], peaks['y']
     xys = []
     for idx, x in enumerate(xs):
         y = ys[idx]
-        xys.append({ 'x': x, 'y': y })
+        xys.append({'x': x, 'y': y})
     return xys
