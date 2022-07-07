@@ -179,7 +179,7 @@ class JcampNIConverter:  # nmr & IR
 
         if self.x_unit == 'HZ':
             x = x / self.obs_freq
-
+        
         return x
 
     def __read_ys(self):
@@ -261,6 +261,7 @@ class JcampNIConverter:  # nmr & IR
         except:  # noqa
             pass
 
+        
         if factor['y'] == 1.0 and not isinstance(self.data, dict):
             factor['y'] = self.data.max() / 1000000.0
 
