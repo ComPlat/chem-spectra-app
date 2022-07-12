@@ -226,6 +226,8 @@ class JcampNIConverter:  # nmr & IR
 
         if 'absorb' in target['y'].lower() and not(self.is_uv_vis):  # IR ABS vs TRANS
             target['y'] = 'TRANSMITTANCE'
+        if (self.is_xrd):
+            target['x'] = '2Theta'
 
         return target
 
