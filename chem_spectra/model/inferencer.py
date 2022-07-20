@@ -154,15 +154,15 @@ class InferencerModel:
 
     def __build_data(self, typ, peak_xs, solvent):
         return {
-            'inputs': [
+            "inputs": [
                 {
-                    'id': 1,
-                    'type': typ,
-                    'shifts': peak_xs,
-                    'solvent': solvent,
+                    "id": 1,
+                    "type": typ,
+                    "shifts": peak_xs,
+                    "solvent": str(solvent),
                 },
             ],
-            'moltxt': self.mm.moltxt
+            "moltxt": self.mm.moltxt
         }
 
     @classmethod
