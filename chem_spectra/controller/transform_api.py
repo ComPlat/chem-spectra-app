@@ -1,4 +1,6 @@
 import json
+import collections.abc
+from multiprocessing.dummy import Array
 from flask import (
     Blueprint, request, send_file, make_response,
 )
@@ -53,6 +55,24 @@ def zip_jcamp_n_img():
                 )
             )
             rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit'})
+        elif isinstance(cmpsr, collections.abc.Sequence):
+            dst_list = []
+            spc_type = ''
+            for composer in cmpsr:
+                spc_type = composer.core.ncl if composer.core.typ == 'NMR' else composer.core.typ
+                tf_jcamp, tf_img = composer.tf_jcamp(), composer.tf_img()
+                tf_arr = [tf_jcamp, tf_img]
+                dst_list.extend(tf_arr)
+                
+            memory = to_zip_response(dst_list)
+            rsp = make_response(
+                send_file(
+                    memory,
+                    attachment_filename='spectrum.zip',
+                    as_attachment=True
+                )
+            )
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type})
         else:
             tf_jcamp, tf_img, tf_csv = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
             spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
