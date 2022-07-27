@@ -8,26 +8,13 @@ class FidBaseConverter:
     def __init__(self, target_dir, params=False, fname=''):
         self.params = parse_params(params)
         self.dic, self.data = self.__read(target_dir, fname)
-        self.datatypes = ['NMR SPECTRUM']
-        self.datatype = 'NMR SPECTRUM'
-        self.dataclass = None
-        self.data_format = None
-        self.title = self.dic.get('TITLE', [''])[0]
-        self.typ = 'NMR'
-        self.fname = '.'.join(params.get('fname').split('.')[:-1])
-        self.is_em_wave = self.__is_em_wave()
-        self.is_ir = self.__is_ir()
-        self.is_tga = self.__is_tga()
-        self.is_uv_vis = self.__is_uv_vis()
-        self.is_hplc_uv_vis = self.__is_hplc_uv_vis()
-        self.is_xrd = self.__is_xrd()
-        self.is_cyclic_volta = self.__is_cyclic_volta()
-        self.non_nmr = self.__non_nmr()
-        self.ncl = self.__ncl()
-        self.simu_peaks = self.__read_simu_peaks()
-        self.solv_peaks = []
-        self.is_dept = self.__is_dept()
-        self.__read_solvent()
+        self.__set_properties()
+
+    def __init__(self, dic, data, params=False, fname=''):
+        self.params = params
+        self.dic = dic
+        self.data = data
+        self.__set_properties()
 
     def __read(self, target_dir, fname):
         dic, data = ng.bruker.read(target_dir)
@@ -67,6 +54,28 @@ class FidBaseConverter:
         data = ng.proc_base.di(data)                # discard the imaginaries
         data = ng.proc_base.rev(data)               # reverse the data
         return dic, data
+
+    def __set_properties(self):
+        self.datatypes = ['NMR SPECTRUM']
+        self.datatype = 'NMR SPECTRUM'
+        self.dataclass = None
+        self.data_format = None
+        self.title = self.dic.get('TITLE', [''])[0]
+        self.typ = 'NMR'
+        self.fname = '.'.join(self.params.get('fname').split('.')[:-1])
+        self.is_em_wave = self.__is_em_wave()
+        self.is_ir = self.__is_ir()
+        self.is_tga = self.__is_tga()
+        self.is_uv_vis = self.__is_uv_vis()
+        self.is_hplc_uv_vis = self.__is_hplc_uv_vis()
+        self.is_xrd = self.__is_xrd()
+        self.is_cyclic_volta = self.__is_cyclic_volta()
+        self.non_nmr = self.__non_nmr()
+        self.ncl = self.__ncl()
+        self.simu_peaks = self.__read_simu_peaks()
+        self.solv_peaks = []
+        self.is_dept = self.__is_dept()
+        self.__read_solvent()
 
     def __is_em_wave(self):
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']

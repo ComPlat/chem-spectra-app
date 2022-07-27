@@ -11,6 +11,7 @@ from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.converter.cdf.base import CdfBaseConverter
 from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
+from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
@@ -29,13 +30,27 @@ def find_dir(path, name):
 
 def search_brucker_binary(td):
     try:
+        has_processed_files = search_processed_file(td)
         target_dir = find_dir(td, 'fid')
         if not target_dir:
             target_dir = find_dir(td, 'ser')
-        return target_dir
+        return target_dir, has_processed_files
     except:     # noqa: E722
+        return False, False
+
+def search_processed_file(td):
+    try:
+        pdata_dir = find_and_get_dir(td, 'pdata')
+        for root, dirs, _ in os.walk(pdata_dir):
+            return (len(dirs) > 0)
+    except:
         return False
 
+def find_and_get_dir(path, name):
+    for root, dirs, _ in os.walk(path):
+        if name in dirs:
+            return os.path.join(root, name)
+    return False
 
 def search_bag_it_file(td):
     try:
@@ -154,23 +169,25 @@ class TransformerModel:
             tz = store_byte_in_tmp(self.file.bcore, suffix='.zip')
             with zipfile.ZipFile(tz.name, 'r') as z:
                 z.extractall(td)
-            target_dir = search_brucker_binary(td)
+            target_dir, has_processed_files = search_brucker_binary(td)
             if target_dir:
                 # NMR data
-                fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
-                if not fbcv:
-                    return False, False
-                # isSimulateNRM = self.params['simulatenrm']
-                isSimulateNRM = False
-                if self.params and 'simulatenrm' in self.params:
-                    isSimulateNRM = self.params['simulatenrm']
-                d_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNRM)   # noqa: E501
-                if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
-                    # return if molfile is invalid
-                    return None, d_jbcv
-                nicv = JcampNIConverter(d_jbcv)
-                nicp = NIComposer(nicv)
-                return nicv, nicp
+                if (has_processed_files):
+                    return self.zip2cv_with_processed_file(target_dir, self.params, self.file.name)
+                else:
+                    fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
+                    if not fbcv:
+                        return False, False
+                    isSimulateNRM = False
+                    if self.params and 'simulatenrm' in self.params:
+                        isSimulateNRM = self.params['simulatenrm']
+                    d_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNRM)   # noqa: E501
+                    if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
+                        # return if molfile is invalid
+                        return None, d_jbcv
+                    nicv = JcampNIConverter(d_jbcv)
+                    nicp = NIComposer(nicv)
+                    return nicv, nicp
             else:
                 is_bagit = search_bag_it_file(td)
                 if is_bagit:
@@ -178,6 +195,28 @@ class TransformerModel:
                     return bagcv, bagcv
 
         return False, False
+
+    def zip2cv_with_processed_file(self, target_dir, params, file_name):
+        fid_brucker = FidHasBruckerProcessed(target_dir, params, file_name)
+        if not fid_brucker:
+            return False, False
+        isSimulateNRM = False
+        if params and 'simulatenrm' in params:
+            isSimulateNRM = params['simulatenrm']
+            
+        list_decorated_converters = []
+        list_decorated_composers = []
+        for conv in fid_brucker.data:
+            d_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNRM)   # noqa: E501
+            if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
+                # return if molfile is invalid
+                return None, d_jbcv
+            
+            list_decorated_converters.append(d_jbcv)
+            nicv = JcampNIConverter(d_jbcv)
+            nicp = NIComposer(nicv)
+            list_decorated_composers.append(nicp)
+        return list_decorated_converters, list_decorated_composers
 
     def jcamp2cvp(self):
         tf = store_str_in_tmp(self.file.core)
