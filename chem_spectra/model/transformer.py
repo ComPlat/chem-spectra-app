@@ -256,5 +256,5 @@ class TransformerModel:
     def tf_nmrium(self):
         converter = NMRiumDataConverter(self.file)
         nicp = NIComposer(converter)
-        print(nicp)
-        return converter.data
+        tf_jcamp = nicp.tf_jcamp()
+        return tf_jcamp
