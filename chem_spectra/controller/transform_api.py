@@ -178,13 +178,8 @@ def nmrium():
         # print(nmriumFile.bcore)
         transformModel = TraModel(file=nmriumFile)
         transformedData = transformModel.tf_nmrium()
-        # print(transformedData)
-        # return send_file(
-        #     nmriumFile,
-        #     attachment_filename='spectrum.nmrium',
-        #     as_attachment=True
-        # )
-        return json.dumps(transformedData)
-        # return (
-        #     'aaa'
-        # )
+        return send_file(
+            transformedData,
+            attachment_filename='spectrum.jdx',
+            as_attachment=True
+        )
