@@ -17,6 +17,7 @@ THRESHOLD_XRD = 1.00
 
 class JcampNIConverter:  # nmr & IR
     def __init__(self, base):
+        self.base = base
         self.params = base.params
         self.datatypes = base.datatypes
         self.datatype = base.datatype
@@ -263,10 +264,17 @@ class JcampNIConverter:  # nmr & IR
                 'y': to_float(self.dic['YFACTOR'][0]),
             }
         except:  # noqa
-            pass
-
+            try:
+                factor_line = self.dic['FACTOR']
+                real_factor = factor_line[0].split(",")
+                factor = {
+                    'x': to_float(real_factor[0]),
+                    'y': to_float(real_factor[1]),
+                }
+            except:
+                pass
         
-        if factor['y'] == 1.0 and not isinstance(self.data, dict):
+        if factor['y'] == 1.0 and not isinstance(self.base.data, dict):
             factor['y'] = self.data.max() / 1000000.0
 
         return factor

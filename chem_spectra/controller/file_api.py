@@ -150,7 +150,7 @@ def chemspectra_file_refresh():
         dst = FileContainer(request.files['dst'])
         if dst:  # and allowed_file(file):
             tm = TraModel(dst, molfile=molfile, params=params)
-            tf_jcamp, tf_img = tm.convert2jcamp_img()
+            tf_jcamp, tf_img, tf_csv = tm.convert2jcamp_img()
             if not tf_jcamp:
                 abort(400)
             jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
