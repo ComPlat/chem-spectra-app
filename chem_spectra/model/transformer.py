@@ -17,6 +17,7 @@ from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
+from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 
 from chem_spectra.model.concern.property import decorate_sim_property
 
@@ -251,3 +252,9 @@ class TransformerModel:
             suffix='.json',
         )
         return tf
+
+    def tf_nmrium(self):
+        converter = NMRiumDataConverter(self.file)
+        nicp = NIComposer(converter)
+        print(nicp)
+        return converter.data

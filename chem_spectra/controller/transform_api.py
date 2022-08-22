@@ -1,3 +1,5 @@
+from cmath import log
+from crypt import methods
 import json
 import collections.abc
 from multiprocessing.dummy import Array
@@ -168,3 +170,21 @@ def image():
             as_attachment=True,
             mimetype='image/png'
         )
+
+@trans_api.route('/nmrium', methods=['POST'])
+def nmrium():
+    nmriumFile = FileContainer(request.files['file'])
+    if nmriumFile:
+        # print(nmriumFile.bcore)
+        transformModel = TraModel(file=nmriumFile)
+        transformedData = transformModel.tf_nmrium()
+        # print(transformedData)
+        # return send_file(
+        #     nmriumFile,
+        #     attachment_filename='spectrum.nmrium',
+        #     as_attachment=True
+        # )
+        return json.dumps(transformedData)
+        # return (
+        #     'aaa'
+        # )
