@@ -175,7 +175,6 @@ def image():
 def nmrium():
     nmriumFile = FileContainer(request.files['file'])
     if nmriumFile:
-        # print(nmriumFile.bcore)
         transformModel = TraModel(file=nmriumFile)
         transformedData = transformModel.tf_nmrium()
         return send_file(
