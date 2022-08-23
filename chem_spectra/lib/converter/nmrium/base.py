@@ -2,17 +2,22 @@ import nmrglue as ng
 import json
 import numpy as np
 from chem_spectra.lib.converter.datatable import DatatableModel
+from chem_spectra.lib.shared.calc import (  # noqa: E402
+    calc_mpy_center
+)
+
+def coupling_string(js):
+    if len(js) == 0:
+        return ''
+    return ', ' + ' '.join([str(j) for j in js])
 
 class NMRiumDataConverter:
     def __init__(self, file):
+        self.params = {'integration':{}, 'multiplicity':{}, 'ref_name':'', 'ref_value':'', 'select_x':0}
         self.file = file
         self.data = self.__read_file()
-
-
-        self.params = {'integration':{}, 'multiplicity':{}, 'ref_name':'', 'ref_value':'', 'select_x':0}
+        
         self.itg_table = []
-        self.mpy_itg_table = []
-        self.mpy_pks_table = []
         self.simu_peaks = []
         self.is_cyclic_volta = False
         self.typ = ''
@@ -60,7 +65,8 @@ class NMRiumDataConverter:
         self.boundary = self.__find_boundary()
         self.datatable = self.__set_datatable()
 
-        self.mpys = self.__read_multiplicity(lastestSpectrum)
+        self.mpy_itg_table, self.mpy_pks_table = self.__read_multiplicity(lastestSpectrum)
+        
 
         return {"x":x_values, "y":y_values}
 
@@ -115,12 +121,16 @@ class NMRiumDataConverter:
         )
 
     def __read_multiplicity(self, spectrumData):
+        ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         dic_ranges = spectrumData['ranges']
         arr_values = dic_ranges['values']
         mpy_itg_table = []
-        for range_val in arr_values:
-            signalData = self.__read_signal(range_val['signals'])
-            rangeData = self.__read_range_data(range_val)
+        arr_multiplicites = []
+
+        mpy_pks_table = []
+        for rangeIdx, rangeVal in enumerate(arr_values):
+            signalData = self.__read_signal(rangeVal['signals'])
+            rangeData = self.__read_range_data(rangeVal)
             if ((signalData is not None) and (rangeData is not None)):
                 for signal in signalData:
                     mpy_item = {
@@ -128,10 +138,34 @@ class NMRiumDataConverter:
                         'xExtent': rangeData['xExtent'],
                         'yExtent': rangeData['yExtent'],
                         'peaks': signal['peaks'],
-                        'area': signal['area']}
-                    mpy_itg_table.append(mpy_item)
+                        'area': signal['area'],
+                        'js': ''}
+                    arr_multiplicites.append(mpy_item)
 
-        return mpy_itg_table
+        for idx, mpy in enumerate(arr_multiplicites):
+            mpy_itg_table.extend([
+                '({}, {}, {}, {}, {}, {}, {}, {}{})\n'.format(
+                    idx + 1,
+                    mpy['xExtent']['xL'],
+                    mpy['xExtent']['xU'] ,
+                    calc_mpy_center(mpy['peaks'], 0, mpy['mpyType']),   # noqa: E501
+                    float(mpy['area']) * 1.0,
+                    idx + 1,
+                    mpy['mpyType'],
+                    ascii_uppercase[idx],
+                    coupling_string(mpy['js']),
+                ),
+            ])
+
+            for p in mpy['peaks']:
+                mpy_pks_table.extend([
+                    '({}, {}, {})\n'.format(
+                                idx+1,
+                                p['x'],
+                                p['y'],
+                            ),
+                ])
+        return mpy_itg_table, mpy_pks_table
 
     def __read_signal(self, signals):
         if len(signals) <= 0:
@@ -141,7 +175,7 @@ class NMRiumDataConverter:
         for signalItem in signals:
             peaks = signalItem['peaks']
             mpyType = signalItem['multiplicity']
-            area = signalItem['delta']
+            area = signalItem['integration']
             parsedData.append({"mpyType": mpyType, "peaks": peaks, "area": area})
 
         return parsedData
