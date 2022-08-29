@@ -12,10 +12,24 @@ def coupling_string(js):
     return ', ' + ' '.join([str(j) for j in js])
 
 class NMRiumDataConverter:
-    def __init__(self, file):
+    def __init__(self, file=None):
         self.params = {'integration':{}, 'multiplicity':{}, 'ref_name':'', 'ref_value':'', 'select_x':0}
         self.file = file
-        self.data = self.__read_file()
+        self.fname = ''
+        self.is_em_wave = False
+        self.non_nmr = False
+        self.data = None
+
+        spectrum_data = self.__read_file()
+
+        if spectrum_data is not None:
+            self.data = self.__parsing_xy_values(spectrum_data)
+            self.__read_info(spectrum_data)
+
+            self.boundary = self.__find_boundary()
+            self.datatable = self.__set_datatable()
+
+            self.mpy_itg_table, self.mpy_pks_table = self.__read_multiplicity(spectrum_data)
         
         self.itg_table = []
         self.simu_peaks = []
@@ -36,6 +50,7 @@ class NMRiumDataConverter:
             return None
         
         parsedData = self.__parsing_spectra(rawData)
+
         return parsedData
 
 
@@ -44,16 +59,59 @@ class NMRiumDataConverter:
             return None
         
         spectra = jsonData['spectra']
-        numberOfSpectrum = len(spectra)
+        displaying_spectra = self.__find_displaying_spectra(spectra)
+        numberOfSpectrum = len(displaying_spectra)
 
         if numberOfSpectrum <= 0:
             return None
 
-        lastestSpectrum = spectra[numberOfSpectrum-1]
+        correlations = jsonData['correlations']
+        displaying_spectrum_id = self.__find_displaying_spectrum_id(correlations)
 
-        self.__read_info(lastestSpectrum)
+        displayingSpectrum = None
+        for spectrum in displaying_spectra:
+            if spectrum['id'] == displaying_spectrum_id:
+                displayingSpectrum = spectrum
+                break
 
-        x_values, y_values = self.__read_xy_values(lastestSpectrum)
+        return displayingSpectrum
+
+    def __find_displaying_spectra(self, spectra=None):
+        if spectra is None:
+            return None
+
+        filtered_spectra = filter(self.__check_displaying_spectrum, spectra)
+        filtered_spectra = list(filtered_spectra)
+        
+        return filtered_spectra
+
+    def __find_displaying_spectrum_id(self, correlations=None):
+        if correlations is None:
+            return ''
+        
+        try:
+            values = correlations['values']
+            if len(values) > 0:
+                first_value = values[0]
+                link = first_value['link']
+                if len(link) > 0:
+                    first_link = link[0]
+                    experimentID = first_link['experimentID']
+                    return experimentID
+            return ''
+        except Exception as e:
+            return ''
+
+    def __check_displaying_spectrum(self, spectrum):
+        try:
+            return spectrum['info']['isFid'] == False
+        except Exception as e:
+            return False
+
+    def __parsing_xy_values(self, spectrumData):
+        if spectrumData is None:
+            return None
+        x_values, y_values = self.__read_xy_values(spectrumData)
 
         self.xs = np.array(x_values)
         self.ys = np.array(y_values)
@@ -62,18 +120,14 @@ class NMRiumDataConverter:
         self.last_x = x_values[len(x_values)-1]
         self.data_format = '(XY..XY)'
 
-        self.boundary = self.__find_boundary()
-        self.datatable = self.__set_datatable()
-
-        self.mpy_itg_table, self.mpy_pks_table = self.__read_multiplicity(lastestSpectrum)
-        
-
         return {"x":x_values, "y":y_values}
 
+
     def __read_info(self, spectrumData):
+        if spectrumData is None:
+            return None
         self.fname = self.file.name
-        self.is_em_wave = False
-        self.non_nmr = False
+        
         self.label = {"x": "ppm", "y": "intensity"}
         self.factor = {"x": 1.0, "y": 1.0}
 
@@ -85,7 +139,7 @@ class NMRiumDataConverter:
 
     def __read_xy_values(self, spectrum):
         if spectrum is None:
-            return None
+            return None, None
 
         data = spectrum['data']
         x_values = data['x']
