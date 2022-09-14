@@ -1,0 +1,21 @@
+@startuml TransformGetJcamp
+' Endpoint: /jcamp [POST]
+
+actor       User
+boundary    TransformAPI
+control     TransformHandler
+entity      TranformerModel
+
+User -> TransformAPI
+alt file not found
+    TransformAPI --> User: Error 404 Bad request
+else
+    TransformAPI -> TransformHandler
+    TransformHandler -> TranformerModel: get jcamp, error
+    TranformerModel --> TransformHandler: jcamp file
+    TransformHandler --> TransformAPI: jcamp file
+    TransformAPI --> User: spectrum.jdx file
+end
+    
+
+@enduml

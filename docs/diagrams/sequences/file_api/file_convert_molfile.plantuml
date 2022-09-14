@@ -1,0 +1,16 @@
+@startuml FileConvertMolfile
+' Endpoint: /api/v1/chemspectra/molfile/convert [POST]
+
+actor       User
+boundary    FileAPI
+control     FileConvert
+entity      MoleculeModel
+
+User -> FileAPI
+FileAPI -> FileConvert
+FileConvert -> MoleculeModel: get molfile, error
+MoleculeModel --> FileConvert: molfile file
+FileConvert --> FileAPI: molfile file
+FileAPI --> User: molfile file
+
+@enduml

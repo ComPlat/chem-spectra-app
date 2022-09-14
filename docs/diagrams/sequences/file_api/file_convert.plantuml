@@ -1,0 +1,33 @@
+@startuml FileConvert
+' Endpoint: /api/v1/chemspectra/file/convert [POST]
+
+actor       User
+boundary    FileAPI
+control     FileConvert
+entity      TranformerModel
+control     BagItConverter
+
+User -> FileAPI
+alt file not found
+    FileAPI --> User: Error 404 Bad request
+else
+    FileAPI -> FileConvert
+    FileConvert -> TranformerModel: get jcamp, image files, error
+    alt jcamp is null
+        alt not BagIt format
+            FileConvert --> FileAPI: Error 400
+        else
+            FileConvert -> BagItConverter: get list jcamp files
+            BagItConverter --> FileConvert: list jcamp files
+            FileConvert --> FileAPI: list jcamp files
+            FileAPI --> User: list jcamp files
+        end
+    else
+        TranformerModel --> FileConvert: jcamp and image files
+        FileConvert --> FileAPI: jcamp and image files
+        FileAPI --> User: jcamp and image files
+    end
+end
+    
+
+@enduml

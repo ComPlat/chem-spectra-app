@@ -23,7 +23,8 @@ $ coverage run -m pytest --disable-pytest-warnings -k ./tests/test_spectra_im.py
 [demo & step-by-step manual](https://github.com/ComPlat/react-spectra-editor/blob/master/DEMO_MANUAL.md)
 
 
-
+### Architecture
+To see archicture, you can view it at [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 
 
 [LICENSE]: LICENSE
