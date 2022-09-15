@@ -1,0 +1,41 @@
+@startuml PredictMassSpectrum
+' Endpoint: /predict/ms [POST]
+' Endpoint: /api/v1/chemspectra/predict/ms [POST]
+
+actor       User
+boundary    InferenceAPI
+control     InferenceHandler
+entity      MoleculeModel
+entity      TranformerModel
+control     InferModel
+
+User -> InferenceAPI
+InferenceAPI -> InferenceHandler
+InferenceHandler -> MoleculeModel: get molecule model
+MoleculeModel --> InferenceHandler: molecule model
+InferenceHandler -> TranformerModel: get transformer model
+TranformerModel --> InferenceHandler: transformer model, error
+
+alt invalid molfile
+    TranformerModel --> InferenceHandler: json message invalid molfile
+    InferenceHandler --> InferenceAPI: json message invalid molfile
+    InferenceAPI --> User: json message invalid molfile
+else
+    InferenceHandler -> InferModel: predict mass spectrum
+    alt has error
+        InferModel --> InferenceHandler: error
+        InferenceHandler --> InferenceAPI: Error 400
+        InferenceAPI --> User: Error 400
+    else
+        InferModel --> InferenceHandler: predicted data
+        InferenceHandler --> InferenceAPI: predicted data
+        InferenceAPI --> User: predicted data
+    end
+end
+
+
+
+
+    
+
+@enduml
