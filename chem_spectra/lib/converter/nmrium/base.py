@@ -38,7 +38,6 @@ class NMRiumDataConverter:
         self.threshold = 1.0
         self.edit_peaks = []
         self.auto_peaks = []
-        
 
     def __read_file(self):
         if (self.file is None):
@@ -69,10 +68,14 @@ class NMRiumDataConverter:
         displaying_spectrum_id = self.__find_displaying_spectrum_id(correlations)
 
         displayingSpectrum = None
-        for spectrum in displaying_spectra:
-            if spectrum['id'] == displaying_spectrum_id:
-                displayingSpectrum = spectrum
-                break
+
+        if (displaying_spectrum_id == '' and len(displaying_spectra)):
+            displayingSpectrum = displaying_spectra[0]
+        else:
+            for spectrum in displaying_spectra:
+                if spectrum['id'] == displaying_spectrum_id:
+                    displayingSpectrum = spectrum
+                    break
 
         return displayingSpectrum
 
