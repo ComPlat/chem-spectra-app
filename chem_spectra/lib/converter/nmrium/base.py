@@ -21,6 +21,8 @@ class NMRiumDataConverter:
         self.data = None
 
         spectrum_data = self.__read_file()
+        self.edit_peaks = []
+        self.auto_peaks = []
 
         if spectrum_data is not None:
             self.data = self.__parsing_xy_values(spectrum_data)
@@ -30,14 +32,15 @@ class NMRiumDataConverter:
             self.datatable = self.__set_datatable()
 
             self.mpy_itg_table, self.mpy_pks_table = self.__read_multiplicity(spectrum_data)
+            self.edit_peaks = self.__read_peaks(spectrum_data)
         
         self.itg_table = []
         self.simu_peaks = []
         self.is_cyclic_volta = False
         self.typ = ''
         self.threshold = 1.0
-        self.edit_peaks = []
-        self.auto_peaks = []
+        
+        
 
     def __read_file(self):
         if (self.file is None):
@@ -244,5 +247,16 @@ class NMRiumDataConverter:
         xExtent = {"xL": rangeValue['from'], "xU": rangeValue['to']}
         yExtent = {"yL": 0.0, "yU": 0.0}
         return {"xExtent": xExtent, "yExtent": yExtent}
+    
+    def __read_peaks(self, spectrumData):
+        dic_ranges = spectrumData['peaks']
+        arr_values = dic_ranges['values']
+        peaks_x = []
+        peaks_y = []
+        for peak_value in arr_values:
+            peaks_x.append(peak_value['x'])
+            peaks_y.append(peak_value['y'])
+        return { 'x': peaks_x, 'y': peaks_y }
+        
         
 
