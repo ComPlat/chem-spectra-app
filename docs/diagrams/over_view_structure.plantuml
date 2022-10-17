@@ -1,0 +1,27 @@
+@startuml OverView
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "User", "An user uses Chemspectra")
+Container(standaloneClient, "Chemspectra Client", "Stand alone version")
+Container(chemotionELN, "ChemotionELN", "Embedded in ChemotionELN")
+
+Rel(user, chemotionELN, "uses")
+Rel(user, standaloneClient, "uses")
+
+System_Boundary(chemspectraSystem, "Chemspectra backend") {
+    Container(spectraBackend, "Backend", "Pyton/Flask", "Web service to process data")
+}
+
+Container(spectraEditor, "Frontend", "ReactJS", "Web package to view and analyse data")
+
+Rel(spectraEditor, chemotionELN, "embededed")
+Rel(spectraEditor, standaloneClient, "embededed")
+Rel(standaloneClient, spectraBackend, "uses")
+Rel(chemotionELN, spectraBackend, "uses")
+
+System_Ext(nmrshift, "NMRShiftDB")
+System_Ext(irprediction, "IR prediction")
+
+Rel(spectraBackend, nmrshift, "uses")
+Rel(spectraBackend, irprediction, "uses")
+@enduml

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="819px" preserveAspectRatio="none" style="width:1089px;height:819px;background:#FFFFFF;" version="1.1" viewBox="0 0 1089 819" width="1089px" zoomAndPan="magnify"><defs/><g><rect fill="none" height="135.6641" style="stroke:#000000;stroke-width:1.5;" width="601" x="110" y="141.4297"/><rect fill="none" height="75.3984" style="stroke:#000000;stroke-width:1.5;" width="278" x="423" y="194.6953"/><rect fill="none" height="430.9922" style="stroke:#000000;stroke-width:1.5;" width="1072.5" x="10" y="291.0938"/><rect fill="none" height="193.9297" style="stroke:#000000;stroke-width:1.5;" width="889" x="20" y="521.1563"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="49" x2="49" y1="81.2969" y2="739.0859"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="166" x2="166" y1="81.2969" y2="739.0859"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="495" x2="495" y1="81.2969" y2="739.0859"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="629" x2="629" y1="81.2969" y2="739.0859"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="756" x2="756" y1="81.2969" y2="739.0859"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="860" x2="860" y1="81.2969" y2="739.0859"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="1027.5" x2="1027.5" y1="81.2969" y2="739.0859"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="32" x="30" y="77.9951">User</text><ellipse cx="49" cy="13.5" fill="#E2E2F0" rx="8" ry="8" style="stroke:#181818;stroke-width:0.5;"/><path d="M49,21.5 L49,48.5 M36,29.5 L62,29.5 M49,48.5 L36,63.5 M49,48.5 L62,63.5 " fill="none" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="32" x="30" y="751.0811">User</text><ellipse cx="49" cy="762.8828" fill="#E2E2F0" rx="8" ry="8" style="stroke:#181818;stroke-width:0.5;"/><path d="M49,770.8828 L49,797.8828 M36,778.8828 L62,778.8828 M49,797.8828 L36,812.8828 M49,797.8828 L62,812.8828 " fill="none" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="86" x="120" y="77.9951">InferenceAPI</text><path d="M145.5,37 L145.5,61 M145.5,49 L162.5,49 " fill="none" style="stroke:#181818;stroke-width:0.5;"/><ellipse cx="174.5" cy="49" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="86" x="120" y="751.0811">InferenceAPI</text><path d="M145.5,758.3828 L145.5,782.3828 M145.5,770.3828 L162.5,770.3828 " fill="none" style="stroke:#181818;stroke-width:0.5;"/><ellipse cx="174.5" cy="770.3828" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="118" x="433" y="77.9951">InferenceHandler</text><ellipse cx="495" cy="49" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><polygon fill="#181818" points="491,37,497,32,495,37,497,42,491,37" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="118" x="433" y="751.0811">InferenceHandler</text><ellipse cx="495" cy="770.3828" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><polygon fill="#181818" points="491,758.3828,497,753.3828,495,758.3828,497,763.3828,491,758.3828" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="118" x="567" y="77.9951">TranformerModel</text><ellipse cx="629" cy="49" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><line style="stroke:#181818;stroke-width:0.5;" x1="617" x2="641" y1="63" y2="63"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="118" x="567" y="751.0811">TranformerModel</text><ellipse cx="629" cy="770.3828" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><line style="stroke:#181818;stroke-width:0.5;" x1="617" x2="641" y1="784.3828" y2="784.3828"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="104" x="701" y="77.9951">MoleculeModel</text><ellipse cx="756" cy="49" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><line style="stroke:#181818;stroke-width:0.5;" x1="744" x2="768" y1="63" y2="63"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="104" x="701" y="751.0811">MoleculeModel</text><ellipse cx="756" cy="770.3828" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><line style="stroke:#181818;stroke-width:0.5;" x1="744" x2="768" y1="784.3828" y2="784.3828"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="72" x="821" y="77.9951">InferModel</text><ellipse cx="860" cy="49" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><polygon fill="#181818" points="856,37,862,32,860,37,862,42,856,37" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="72" x="821" y="751.0811">InferModel</text><ellipse cx="860" cy="770.3828" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><polygon fill="#181818" points="856,758.3828,862,753.3828,860,758.3828,862,763.3828,856,758.3828" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="83" x="983.5" y="77.9951">NMRShiftDB</text><path d="M1007.5,37 L1007.5,61 M1007.5,49 L1024.5,49 " fill="none" style="stroke:#181818;stroke-width:0.5;"/><ellipse cx="1036.5" cy="49" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="83" x="983.5" y="751.0811">NMRShiftDB</text><path d="M1007.5,758.3828 L1007.5,782.3828 M1007.5,770.3828 L1024.5,770.3828 " fill="none" style="stroke:#181818;stroke-width:0.5;"/><ellipse cx="1036.5" cy="770.3828" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><polygon fill="#181818" points="154,93.2969,164,97.2969,154,101.2969,158,97.2969" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="49" x2="160" y1="97.2969" y2="97.2969"/><polygon fill="#181818" points="483,122.4297,493,126.4297,483,130.4297,487,126.4297" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="166" x2="489" y1="126.4297" y2="126.4297"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="305" x="173" y="121.3638">get peaks, layout and molfile from form request</text><path d="M110,141.4297 L180,141.4297 L180,148.5625 L170,158.5625 L110,158.5625 L110,141.4297 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="135.6641" style="stroke:#000000;stroke-width:1.5;" width="601" x="110" y="141.4297"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="25" x="125" y="154.4966">opt</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="91" x="195" y="153.6401">[peaks is null]</text><polygon fill="#181818" points="483,175.6953,493,179.6953,483,183.6953,487,179.6953" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="166" x2="489" y1="179.6953" y2="179.6953"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="195" x="173" y="174.6294">get spectrum file from request</text><path d="M423,194.6953 L493,194.6953 L493,201.8281 L483,211.8281 L423,211.8281 L423,194.6953 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="75.3984" style="stroke:#000000;stroke-width:1.5;" width="278" x="423" y="194.6953"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="25" x="438" y="207.7622">opt</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="174" x="508" y="206.9058">[has file and layout is 13C]</text><polygon fill="#181818" points="617,228.9609,627,232.9609,617,236.9609,621,232.9609" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="495" x2="623" y1="232.9609" y2="232.9609"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="67" x="502" y="227.895">get  peaks</text><polygon fill="#181818" points="506,258.0938,496,262.0938,506,266.0938,502,262.0938" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="500" x2="628" y1="262.0938" y2="262.0938"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="38" x="512" y="257.0278">peaks</text><path d="M10,291.0938 L74,291.0938 L74,298.2266 L64,308.2266 L10,308.2266 L10,291.0938 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="430.9922" style="stroke:#000000;stroke-width:1.5;" width="1072.5" x="10" y="291.0938"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="19" x="25" y="304.1606">alt</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="199" x="89" y="303.3042">[peaks is null or molfile is null]</text><polygon fill="#181818" points="177,325.3594,167,329.3594,177,333.3594,173,329.3594" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="171" x2="494" y1="329.3594" y2="329.3594"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="59" x="183" y="324.2935">Error 400</text><polygon fill="#181818" points="60,354.4922,50,358.4922,60,362.4922,56,358.4922" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="54" x2="165" y1="358.4922" y2="358.4922"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="59" x="66" y="353.4263">Error 400</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="10" x2="1082.5" y1="367.4922" y2="367.4922"/><polygon fill="#181818" points="744,385.625,754,389.625,744,393.625,748,389.625" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="495" x2="750" y1="389.625" y2="389.625"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="127" x="502" y="384.5591">get molecule model</text><polygon fill="#181818" points="506,414.7578,496,418.7578,506,422.7578,502,418.7578" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="500" x2="755" y1="418.7578" y2="418.7578"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="102" x="512" y="413.6919">molecule model</text><polygon fill="#181818" points="848,443.8906,858,447.8906,848,451.8906,852,447.8906" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="495" x2="854" y1="447.8906" y2="447.8906"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="74" x="502" y="442.8247">predict nmr</text><polygon fill="#181818" points="1016,473.0234,1026,477.0234,1016,481.0234,1020,477.0234" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="860" x2="1022" y1="477.0234" y2="477.0234"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="74" x="867" y="471.9575">predict nmr</text><polygon fill="#181818" points="871,502.1563,861,506.1563,871,510.1563,867,506.1563" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="865" x2="1027" y1="506.1563" y2="506.1563"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="144" x="877" y="501.0903">predicted values, error</text><path d="M20,521.1563 L84,521.1563 L84,528.2891 L74,538.2891 L20,538.2891 L20,521.1563 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="193.9297" style="stroke:#000000;stroke-width:1.5;" width="889" x="20" y="521.1563"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="19" x="35" y="534.2231">alt</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="68" x="99" y="533.3667">[has error]</text><polygon fill="#181818" points="506,555.4219,496,559.4219,506,563.4219,502,559.4219" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="500" x2="859" y1="559.4219" y2="559.4219"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="31" x="512" y="554.356">error</text><polygon fill="#181818" points="177,584.5547,167,588.5547,177,592.5547,173,588.5547" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="171" x2="494" y1="588.5547" y2="588.5547"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="59" x="183" y="583.4888">Error 400</text><polygon fill="#181818" points="60,613.6875,50,617.6875,60,621.6875,56,617.6875" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="54" x2="165" y1="617.6875" y2="617.6875"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="59" x="66" y="612.6216">Error 400</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="20" x2="909" y1="626.6875" y2="626.6875"/><polygon fill="#181818" points="506,644.8203,496,648.8203,506,652.8203,502,648.8203" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="500" x2="859" y1="648.8203" y2="648.8203"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="93" x="512" y="643.7544">predicted data</text><polygon fill="#181818" points="177,673.9531,167,677.9531,177,681.9531,173,677.9531" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="171" x2="494" y1="677.9531" y2="677.9531"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="93" x="183" y="672.8872">predicted data</text><polygon fill="#181818" points="60,703.0859,50,707.0859,60,711.0859,56,707.0859" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="54" x2="165" y1="707.0859" y2="707.0859"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="93" x="66" y="702.02">predicted data</text><!--MD5=[39894a77d04a4c9e924fcff564f46cbf]
+@startuml PredictNMRByPeaksFormRequest
+' Endpoint: /predict/by_peaks_form [POST]
+' Endpoint: /api/v1/chemspectra/predict/nmr_peaks_form [POST]
+
+actor       User
+boundary    InferenceAPI
+control     InferenceHandler
+entity      TranformerModel
+entity      MoleculeModel
+control     InferModel
+boundary    NMRShiftDB
+
+User -> InferenceAPI
+InferenceAPI -> InferenceHandler: get peaks, layout and molfile from form request
+
+opt peaks is null
+    InferenceAPI -> InferenceHandler: get spectrum file from request
+    opt has file and layout is 13C
+        InferenceHandler -> TranformerModel: get  peaks
+        TranformerModel - -> InferenceHandler: peaks
+    end
+end
+
+alt peaks is null or molfile is null
+    InferenceHandler - -> InferenceAPI: Error 400
+    InferenceAPI - -> User: Error 400
+else
+    InferenceHandler -> MoleculeModel: get molecule model
+    MoleculeModel - -> InferenceHandler: molecule model
+    InferenceHandler -> InferModel: predict nmr
+    InferModel -> NMRShiftDB: predict nmr
+    NMRShiftDB - -> InferModel: predicted values, error
+
+    alt has error
+        InferModel - -> InferenceHandler: error
+        InferenceHandler - -> InferenceAPI: Error 400
+        InferenceAPI - -> User: Error 400
+    else
+        InferModel - -> InferenceHandler: predicted data
+        InferenceHandler - -> InferenceAPI: predicted data
+        InferenceAPI - -> User: predicted data
+    end
+end
+
+@enduml
+
+@startuml PredictNMRByPeaksFormRequest
+
+actor       User
+boundary    InferenceAPI
+control     InferenceHandler
+entity      TranformerModel
+entity      MoleculeModel
+control     InferModel
+boundary    NMRShiftDB
+
+User -> InferenceAPI
+InferenceAPI -> InferenceHandler: get peaks, layout and molfile from form request
+
+opt peaks is null
+    InferenceAPI -> InferenceHandler: get spectrum file from request
+    opt has file and layout is 13C
+        InferenceHandler -> TranformerModel: get  peaks
+        TranformerModel - -> InferenceHandler: peaks
+    end
+end
+
+alt peaks is null or molfile is null
+    InferenceHandler - -> InferenceAPI: Error 400
+    InferenceAPI - -> User: Error 400
+else
+    InferenceHandler -> MoleculeModel: get molecule model
+    MoleculeModel - -> InferenceHandler: molecule model
+    InferenceHandler -> InferModel: predict nmr
+    InferModel -> NMRShiftDB: predict nmr
+    NMRShiftDB - -> InferModel: predicted values, error
+
+    alt has error
+        InferModel - -> InferenceHandler: error
+        InferenceHandler - -> InferenceAPI: Error 400
+        InferenceAPI - -> User: Error 400
+    else
+        InferModel - -> InferenceHandler: predicted data
+        InferenceHandler - -> InferenceAPI: predicted data
+        InferenceAPI - -> User: predicted data
+    end
+end
+
+@enduml
+
+PlantUML version 1.2022.7(Mon Aug 22 19:01:30 CEST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>

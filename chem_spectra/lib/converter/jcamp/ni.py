@@ -106,7 +106,9 @@ class JcampNIConverter:  # nmr & IR
                 idx = self.datatypes.index(tp)
 
         if 'LINK' in self.datatypes:
-            idx -= 1
+            count_link = self.datatypes.count('LINK')
+            # idx -= 1
+            idx -= count_link
 
         return idx
 

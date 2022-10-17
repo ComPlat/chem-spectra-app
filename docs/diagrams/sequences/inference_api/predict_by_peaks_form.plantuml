@@ -1,0 +1,45 @@
+@startuml PredictNMRByPeaksFormRequest
+' Endpoint: /predict/by_peaks_form [POST]
+' Endpoint: /api/v1/chemspectra/predict/nmr_peaks_form [POST]
+
+actor       User
+boundary    InferenceAPI
+control     InferenceHandler
+entity      TranformerModel
+entity      MoleculeModel
+control     InferModel
+boundary    NMRShiftDB
+
+User -> InferenceAPI
+InferenceAPI -> InferenceHandler: get peaks, layout and molfile from form request
+
+opt peaks is null
+    InferenceAPI -> InferenceHandler: get spectrum file from request
+    opt has file and layout is 13C
+        InferenceHandler -> TranformerModel: get  peaks
+        TranformerModel --> InferenceHandler: peaks
+    end
+end
+
+alt peaks is null or molfile is null
+    InferenceHandler --> InferenceAPI: Error 400
+    InferenceAPI --> User: Error 400
+else
+    InferenceHandler -> MoleculeModel: get molecule model
+    MoleculeModel --> InferenceHandler: molecule model
+    InferenceHandler -> InferModel: predict nmr
+    InferModel -> NMRShiftDB: predict nmr
+    NMRShiftDB --> InferModel: predicted values, error
+
+    alt has error
+        InferModel --> InferenceHandler: error
+        InferenceHandler --> InferenceAPI: Error 400
+        InferenceAPI --> User: Error 400
+    else
+        InferModel --> InferenceHandler: predicted data
+        InferenceHandler --> InferenceAPI: predicted data
+        InferenceAPI --> User: predicted data
+    end
+end
+
+@enduml

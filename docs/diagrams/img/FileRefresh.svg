@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" height="600px" preserveAspectRatio="none" style="width:918px;height:600px;background:#FFFFFF;" version="1.1" viewBox="0 0 918 600" width="918px" zoomAndPan="magnify"><defs/><g><rect fill="none" height="390.7266" style="stroke:#000000;stroke-width:1.5;" width="901" x="10" y="112.2969"/><rect fill="none" height="314.4609" style="stroke:#000000;stroke-width:1.5;" width="881" x="20" y="181.5625"/><rect fill="none" height="77.3984" style="stroke:#000000;stroke-width:1.5;" width="400.5" x="179" y="263.9609"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="49" x2="49" y1="81.2969" y2="520.0234"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="214" x2="214" y1="81.2969" y2="520.0234"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="527.5" x2="527.5" y1="81.2969" y2="520.0234"/><line style="stroke:#181818;stroke-width:0.5;stroke-dasharray:5.0,5.0;" x1="829" x2="829" y1="81.2969" y2="520.0234"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="32" x="30" y="77.9951">User</text><ellipse cx="49" cy="13.5" fill="#E2E2F0" rx="8" ry="8" style="stroke:#181818;stroke-width:0.5;"/><path d="M49,21.5 L49,48.5 M36,29.5 L62,29.5 M49,48.5 L36,63.5 M49,48.5 L62,63.5 " fill="none" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="32" x="30" y="532.0186">User</text><ellipse cx="49" cy="543.8203" fill="#E2E2F0" rx="8" ry="8" style="stroke:#181818;stroke-width:0.5;"/><path d="M49,551.8203 L49,578.8203 M36,559.8203 L62,559.8203 M49,578.8203 L36,593.8203 M49,578.8203 L62,593.8203 " fill="none" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="44" x="189" y="77.9951">FileAPI</text><path d="M193.5,37 L193.5,61 M193.5,49 L210.5,49 " fill="none" style="stroke:#181818;stroke-width:0.5;"/><ellipse cx="222.5" cy="49" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="44" x="189" y="532.0186">FileAPI</text><path d="M193.5,539.3203 L193.5,563.3203 M193.5,551.3203 L210.5,551.3203 " fill="none" style="stroke:#181818;stroke-width:0.5;"/><ellipse cx="222.5" cy="551.3203" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="77" x="486.5" y="77.9951">FileConvert</text><ellipse cx="528" cy="49" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><polygon fill="#181818" points="524,37,530,32,528,37,530,42,524,37" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="77" x="486.5" y="532.0186">FileConvert</text><ellipse cx="528" cy="551.3203" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><polygon fill="#181818" points="524,539.3203,530,534.3203,528,539.3203,530,544.3203,524,539.3203" style="stroke:#181818;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="118" x="767" y="77.9951">TranformerModel</text><ellipse cx="829" cy="49" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><line style="stroke:#181818;stroke-width:0.5;" x1="817" x2="841" y1="63" y2="63"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="118" x="767" y="532.0186">TranformerModel</text><ellipse cx="829" cy="551.3203" fill="#E2E2F0" rx="12" ry="12" style="stroke:#181818;stroke-width:0.5;"/><line style="stroke:#181818;stroke-width:0.5;" x1="817" x2="841" y1="565.3203" y2="565.3203"/><polygon fill="#181818" points="202,93.2969,212,97.2969,202,101.2969,206,97.2969" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="49" x2="208" y1="97.2969" y2="97.2969"/><path d="M10,112.2969 L74,112.2969 L74,119.4297 L64,129.4297 L10,129.4297 L10,112.2969 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="390.7266" style="stroke:#000000;stroke-width:1.5;" width="901" x="10" y="112.2969"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="19" x="25" y="125.3638">alt</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="97" x="89" y="124.5073">[file not found]</text><polygon fill="#181818" points="60,146.5625,50,150.5625,60,154.5625,56,150.5625" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="54" x2="213" y1="150.5625" y2="150.5625"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="141" x="66" y="145.4966">Error 404 Bad request</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="10" x2="911" y1="159.5625" y2="159.5625"/><polygon fill="#181818" points="516,162.5625,526,166.5625,516,170.5625,520,166.5625" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="214" x2="522" y1="166.5625" y2="166.5625"/><path d="M20,181.5625 L84,181.5625 L84,188.6953 L74,198.6953 L20,198.6953 L20,181.5625 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="314.4609" style="stroke:#000000;stroke-width:1.5;" width="881" x="20" y="181.5625"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="19" x="35" y="194.6294">alt</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="106" x="99" y="193.7729">[is a list of files]</text><polygon fill="#181818" points="817,215.8281,827,219.8281,817,223.8281,821,219.8281" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="528" x2="823" y1="219.8281" y2="219.8281"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="277" x="535" y="214.7622">get jcamp, image, predicted, csv files, error</text><polygon fill="#181818" points="539,244.9609,529,248.9609,539,252.9609,535,248.9609" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="533" x2="828" y1="248.9609" y2="248.9609"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="213" x="545" y="243.895">jcamp, image, predicted, csv files</text><path d="M179,263.9609 L243,263.9609 L243,271.0938 L233,281.0938 L179,281.0938 L179,263.9609 " fill="#EEEEEE" style="stroke:#000000;stroke-width:1.5;"/><rect fill="none" height="77.3984" style="stroke:#000000;stroke-width:1.5;" width="400.5" x="179" y="263.9609"/><text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing" textLength="19" x="194" y="277.0278">alt</text><text fill="#000000" font-family="sans-serif" font-size="11" font-weight="bold" lengthAdjust="spacing" textLength="99" x="258" y="276.1714">[csv file is null]</text><polygon fill="#181818" points="225,298.2266,215,302.2266,225,306.2266,221,302.2266" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="219" x2="527" y1="302.2266" y2="302.2266"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="237" x="231" y="297.1606">array of jcamp, predicted, image files</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="179" x2="579.5" y1="311.2266" y2="311.2266"/><polygon fill="#181818" points="225,329.3594,215,333.3594,225,337.3594,221,333.3594" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="219" x2="527" y1="333.3594" y2="333.3594"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="290" x="231" y="328.2935">array of jcamp, predicted, image and csv files</text><polygon fill="#181818" points="60,365.4922,50,369.4922,60,373.4922,56,369.4922" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="54" x2="213" y1="369.4922" y2="369.4922"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="105" x="66" y="364.4263">spectrum.zip file</text><line style="stroke:#000000;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="20" x2="901" y1="378.4922" y2="378.4922"/><polygon fill="#181818" points="817,396.625,827,400.625,817,404.625,821,400.625" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;" x1="528" x2="823" y1="400.625" y2="400.625"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="151" x="535" y="395.5591">get jcamp, image, error</text><polygon fill="#181818" points="539,425.7578,529,429.7578,539,433.7578,535,429.7578" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="533" x2="828" y1="429.7578" y2="429.7578"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="116" x="545" y="424.6919">jcamp, image files</text><polygon fill="#181818" points="225,454.8906,215,458.8906,225,462.8906,221,458.8906" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="219" x2="527" y1="458.8906" y2="458.8906"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="116" x="231" y="453.8247">jcamp, image files</text><polygon fill="#181818" points="60,484.0234,50,488.0234,60,492.0234,56,488.0234" style="stroke:#181818;stroke-width:1.0;"/><line style="stroke:#181818;stroke-width:1.0;stroke-dasharray:2.0,2.0;" x1="54" x2="213" y1="488.0234" y2="488.0234"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="116" x="66" y="482.9575">jcamp, image files</text><!--MD5=[cce660ed284416bf248834c7d57269dd]
+@startuml FileRefresh
+' Endpoint: /api/v1/chemspectra/file/refresh [POST]
+
+actor       User
+boundary    FileAPI
+control     FileConvert
+entity      TranformerModel
+
+User -> FileAPI
+alt file not found
+    FileAPI - -> User: Error 404 Bad request
+else
+    FileAPI -> FileConvert
+    alt is a list of files
+        FileConvert -> TranformerModel: get jcamp, image, predicted, csv files, error
+        TranformerModel - -> FileConvert: jcamp, image, predicted, csv files
+        alt csv file is null
+            FileConvert - -> FileAPI: array of jcamp, predicted, image files
+        else
+            FileConvert - -> FileAPI: array of jcamp, predicted, image and csv files
+        end
+        FileAPI - -> User: spectrum.zip file
+    else
+        FileConvert -> TranformerModel: get jcamp, image, error
+        TranformerModel - -> FileConvert: jcamp, image files
+        FileConvert - -> FileAPI: jcamp, image files
+        FileAPI - -> User: jcamp, image files
+    end
+end
+    
+
+@enduml
+
+@startuml FileRefresh
+
+actor       User
+boundary    FileAPI
+control     FileConvert
+entity      TranformerModel
+
+User -> FileAPI
+alt file not found
+    FileAPI - -> User: Error 404 Bad request
+else
+    FileAPI -> FileConvert
+    alt is a list of files
+        FileConvert -> TranformerModel: get jcamp, image, predicted, csv files, error
+        TranformerModel - -> FileConvert: jcamp, image, predicted, csv files
+        alt csv file is null
+            FileConvert - -> FileAPI: array of jcamp, predicted, image files
+        else
+            FileConvert - -> FileAPI: array of jcamp, predicted, image and csv files
+        end
+        FileAPI - -> User: spectrum.zip file
+    else
+        FileConvert -> TranformerModel: get jcamp, image, error
+        TranformerModel - -> FileConvert: jcamp, image files
+        FileConvert - -> FileAPI: jcamp, image files
+        FileAPI - -> User: jcamp, image files
+    end
+end
+    
+
+@enduml
+
+PlantUML version 1.2022.7(Mon Aug 22 19:01:30 CEST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>

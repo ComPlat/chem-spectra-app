@@ -1,0 +1,36 @@
+@startuml FileSave
+' Endpoint: /api/v1/chemspectra/file/save [POST]
+
+actor       User
+boundary    FileAPI
+control     FileConvert
+entity      TranformerModel
+
+User -> FileAPI
+alt file not found
+    FileAPI --> User: Error 404 Bad request
+else
+    FileAPI -> FileConvert
+    alt is a list of files
+        FileConvert -> TranformerModel: get jcamp, image, predicted, csv files, error
+        TranformerModel --> FileConvert: jcamp, image, predicted, csv files
+        alt csv file is null
+            FileConvert --> FileAPI: array of jcamp, predicted, image files
+        else
+            FileConvert --> FileAPI: array of jcamp, predicted, image and csv files
+        end
+        FileAPI --> User: spectrum.zip file
+    else
+        FileConvert -> TranformerModel: get jcamp, image, predicted, csv files, error
+        TranformerModel --> FileConvert: jcamp, image, predicted, csv files
+        alt csv file is null
+            FileConvert --> FileAPI: jcamp, predicted, image files
+        else
+            FileConvert --> FileAPI: jcamp, predicted, image and csv files
+        end
+        FileAPI --> User: spectrum.zip file
+    end
+end
+    
+
+@enduml

@@ -1,0 +1,28 @@
+@startuml TransformGetZipJcamp
+' Endpoint: /zip_jcamp [POST]
+
+actor       User
+boundary    TransformAPI
+control     TransformHandler
+entity      TranformerModel
+control     BagItConverter
+
+User -> TransformAPI
+alt file not found
+    TransformAPI --> User: Error 404 Bad request
+else
+    TransformAPI -> TransformHandler
+    TransformHandler -> TranformerModel: get jcamp, error
+    alt is BagIt
+        TransformHandler -> BagItConverter: get list jcamp files
+        BagItConverter --> TransformHandler: list jcamp files
+        TransformHandler --> TransformAPI: list jcamp files
+    else
+        TranformerModel --> TransformHandler: jcamp file
+        TransformHandler --> TransformAPI: jcamp file
+    end
+    TransformAPI --> User: spectrum.zip file
+end
+    
+
+@enduml
