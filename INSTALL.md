@@ -6,7 +6,7 @@ This guidance is tested on Linux Ubuntu 18.04 & Ubuntu 20.04
 
 ### 1.1. Install Anaconda & Docker
 
-Please refer to `https://www.anaconda.com/` & `https://docs.docker.com/install/`.
+Please refer to [https://www.anaconda.com/] & [https://docs.docker.com/install/].
 
 You can follow [unofficial Anaconda & Docker installations for Dummies](INSTALL_BASIC.md) for a test installation.
 
