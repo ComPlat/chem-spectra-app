@@ -67,6 +67,7 @@ im_params = {
 def test_im_params_meta_1H():
     im_meta_content = __generated_peaks_meta(H1_dx, im_params)
     meta_target = __target_peaks_meta('im/im_' + meta_H1_dx)
+    assert len(im_meta_content) == len(meta_target)
     assert im_meta_content == meta_target
 
 
