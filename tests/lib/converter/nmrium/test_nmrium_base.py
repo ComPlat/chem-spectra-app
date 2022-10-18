@@ -1,9 +1,6 @@
-import json
 import pytest
 from werkzeug.datastructures import FileStorage
-
 from chem_spectra.controller.helper.file_container import FileContainer
-
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 
 source = './tests/fixtures/source/nmrium/nmrium_test.nmrium'

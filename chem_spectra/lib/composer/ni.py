@@ -1,3 +1,6 @@
+import json
+from operator import truediv
+import uuid
 import matplotlib
 matplotlib.use('Agg')
 
@@ -522,3 +525,188 @@ class NIComposer(BaseComposer):
                     'I ratio': '{delta}'.format(delta=delta)
                 })
         return tf_csv
+
+    def generate_nmrium(self):
+        typ = self.core.typ
+        if 'NMR' != typ:
+            return None
+        
+        dic_data = {'actionType': 'INITIATE', 'version': 3}
+        spectra = self.__generate_nmrim_spectra()
+        dic_data['spectra'] = spectra
+
+        json_data = json.dumps(dic_data)
+        
+        tf_nmrium = tempfile.NamedTemporaryFile(suffix='.nmrium')
+        tf_nmrium.write(bytes(json_data, 'UTF-8'))
+        tf_nmrium.seek(0)
+        return tf_nmrium
+
+    def __generate_nmrim_spectra(self):
+        spectra = []
+        spectra_id = str(uuid.uuid4())
+
+        dic_spectra_data = {'id': spectra_id, 'source': {'jcampURL': None}}
+        display_attr = {
+            'name': spectra_id, 
+            'color':'#C10020', 
+            'isVisible':True, 
+            'isPeaksMarkersVisible':True, 
+            'isRealSpectrumVisible':True, 
+            'isVisibleInDomain':True}
+        dic_spectra_data['display'] = display_attr
+
+        spectra_info = {'nucleus':self.core.ncl, 'isFid':False, 'dimension':1, 'isFt':True}
+        dic_spectra_data['info'] = spectra_info
+        dic_spectra_data['meta'] = self.core.dic
+
+        x_values = np.flip(self.core.xs)
+        y_values = np.flip(self.core.ys)
+        dic_data_points = {'x':x_values.tolist(), 're':y_values.tolist(), 'im':None}
+        dic_spectra_data['data'] = dic_data_points
+
+        peaks = self.__generate_nmrim_peaks()
+        dic_spectra_data['peaks'] = peaks
+
+        integrals = self.__generate_nmrim_integrals()
+        dic_spectra_data['integrals'] = integrals
+
+        ranges = self.__generate_nmrim_ranges()
+        dic_spectra_data['ranges'] = ranges
+        
+        spectra = [dic_spectra_data]
+
+        return spectra
+
+    def __generate_nmrim_peaks(self):
+        dic_peaks = {'values':[], 'options':{}}
+
+        x_peaks = []
+        y_peaks = []
+        if self.core.edit_peaks:
+            x_peaks = self.core.edit_peaks['x']
+            y_peaks = self.core.edit_peaks['y']
+        elif self.core.auto_peaks:
+            x_peaks = self.core.auto_peaks['x']
+            y_peaks = self.core.auto_peaks['y']
+        
+        if len(x_peaks) != len(y_peaks):
+            return dic_peaks
+
+        for idx in range(len(x_peaks)):
+            x = x_peaks[idx]
+            y = y_peaks[idx]
+            peak_id = str(uuid.uuid4())
+            peak = {'id':peak_id, 'x':x, 'y':y}
+            dic_peaks['values'].append(peak)
+
+        return dic_peaks
+
+    def __generate_nmrim_integrals(self):
+        dic_integrals = {'values':[], 'options':{'isSumConstant':True, 'sumAuto':True, 'sum':100}}
+        
+        refShift, refArea = self.refShift, self.refArea
+        if (len(self.all_itgs) == 0 and len(self.core.itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
+            core_itg_table = self.core.itg_table[0]
+            itg_table = core_itg_table.split('\n')
+            for itg in itg_table:
+                clear_itg = itg.replace('(', '')
+                clear_itg = clear_itg.replace(')', '')
+                split_itg = clear_itg.split(',')
+                if (len(split_itg) > 2):
+                    xLStr = split_itg[0].strip()
+                    xUStr = split_itg[1].strip()
+                    areaStr = split_itg[2].strip()
+                    self.all_itgs.append({'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)})    # noqa: E501
+        for itg in self.all_itgs:
+            xL, xU, area = itg['xL'] - refShift, itg['xU'] - refShift, itg['area'] * refArea    # noqa: E501
+            iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
+            cxs = self.core.xs[iL:iU]
+            cys = self.core.ys[iL:iU]
+            
+            re_cxs = np.flip(cxs)
+            re_cys = np.flip(cys)
+            
+            integral_id = str(uuid.uuid4())
+            
+            # REF: https://github.com/mljs/spectra-processing/blob/master/src/xy/xyIntegration.ts
+            absoluteValue = 0
+            for i in range(0, len(re_cxs)-1):
+              absoluteValue += ((re_cxs[i + 1] - re_cxs[i]) * (re_cys[i + 1] + re_cys[i])) / 2
+
+            integral = {'id':integral_id, 'originFrom':re_cxs[0], 'originTo':re_cxs[len(re_cxs)-1], 'from':re_cxs[0], 'to':re_cxs[len(re_cxs)-1], 'kind':'signal', 'absolute':absoluteValue, 'integral':area*100}
+
+            dic_integrals['values'].append(integral)
+
+        return dic_integrals
+
+    def __generate_nmrim_ranges(self):
+        dic_ranges = {'values':[], 'options':{'isSumConstant':True, 'sumAuto':True, 'sum':100}}
+
+        refShift, refArea = self.refShift, self.refArea
+        if (len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
+            core_mpy_pks_table = self.core.mpy_pks_table[0]
+            mpy_pks_table = core_mpy_pks_table.split('\n')
+            tmp_dic_mpy_peaks = {}
+            for peak in mpy_pks_table:
+                clear_peak = peak.replace('(', '')
+                clear_peak = clear_peak.replace(')', '')
+                split_peak = clear_peak.split(',')
+                idx_peakStr = split_peak[0].strip()
+                xStr = split_peak[1].strip()
+                yStr = split_peak[2].strip()
+                if idx_peakStr not in tmp_dic_mpy_peaks:
+                    tmp_dic_mpy_peaks[idx_peakStr] = []
+                
+                tmp_dic_mpy_peaks[idx_peakStr].append({'x': float(xStr), 'y': float(yStr)})
+
+            core_mpy_itg_table = self.core.mpy_itg_table[0]
+            mpy_itg_table = core_mpy_itg_table.split('\n')
+            for mpy in mpy_itg_table:
+                clear_mpy = mpy.replace('(', '')
+                clear_mpy = clear_mpy.replace(')', '')
+                split_mpy = clear_mpy.split(',')
+                mpy_item = { 'mpyType': '', 'xExtent': {'xL': 0.0, 'xU': 0.0}, 'yExtent': {'yL': 0.0, 'yU': 0.0}, 'peaks': [], 'area': 1.0 }
+                if (len(split_mpy) > 7):
+                    idxStr = split_mpy[0].strip()
+                    xLStr = split_mpy[1].strip()
+                    xUStr = split_mpy[2].strip()
+                    mpy_item['xExtent']['xL'] = float(xLStr) + refShift
+                    mpy_item['xExtent']['xU'] = float(xUStr) + refShift
+                    yLStr = split_mpy[3].strip()
+                    yUStr = split_mpy[4].strip()
+                    mpy_item['yExtent']['yL'] = float(yLStr) + refShift
+                    mpy_item['yExtent']['yU'] = float(yUStr) + refShift
+                    areaStr = split_mpy[5].strip()
+                    mpy_item['area'] = float(areaStr)
+                    typeStr = split_mpy[6].strip()
+                    mpy_item['mpyType'] = typeStr
+                    mpy_item['peaks'] = tmp_dic_mpy_peaks[idxStr]
+                    self.mpys.append(mpy_item)
+
+        for mpy in self.mpys:
+            xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']    # noqa: E501
+
+            iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
+            cxs = self.core.xs[iL:iU]
+            cys = self.core.ys[iL:iU]
+            
+            re_cxs = np.flip(cxs)
+            re_cys = np.flip(cys)
+
+            ranges_id = str(uuid.uuid4())
+
+            # REF: https://github.com/mljs/spectra-processing/blob/master/src/xy/xyIntegration.ts
+            absoluteValue = 0
+            for i in range(0, len(re_cxs)-1):
+                absoluteValue += ((re_cxs[i + 1] - re_cxs[i]) * (re_cys[i + 1] + re_cys[i])) / 2
+            
+            orgin_x_from, orgin_x_to = re_cxs[0], re_cxs[len(re_cxs)-1]
+            signal_id = str(uuid.uuid4())
+            signal_delta = calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType'])
+            signal_item = {'id':signal_id,'originDelta':signal_delta, 'delta':signal_delta, 'kind':'signal', 'integration':area*100, 'multiplicity':typ, 'peaks':peaks}
+
+            rang_item = {'id':ranges_id, 'originFrom':orgin_x_from, 'originTo':orgin_x_to, 'from':orgin_x_from, 'to':orgin_x_to, 'kind':'signal', 'absolute':absoluteValue, 'integration':area*100, 'signals':[signal_item]}
+            dic_ranges['values'].append(rang_item)
+
+        return dic_ranges
