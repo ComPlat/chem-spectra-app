@@ -25,3 +25,4 @@ def test_zip2cv_with_processed_file():
         list_converters, list_composers = tranform_model.zip2cv_with_processed_file(target_dir=target_dir, params=params_1h, file_name=filename_1h)
         assert len(list_converters) == 2
         assert len(list_composers) == 2
+        
