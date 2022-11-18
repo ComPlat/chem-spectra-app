@@ -206,14 +206,21 @@ class TransformerModel:
             
         list_decorated_converters = []
         list_decorated_composers = []
+
+        d_jbcv = False
+        if isinstance(fid_brucker.data, list) and len(fid_brucker.data) > 0:
+            d_jbcv = decorate_sim_property(fid_brucker.data[0], self.molfile, isSimulateNRM)   # noqa: E501
+        
         for conv in fid_brucker.data:
-            d_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNRM)   # noqa: E501
             if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
                 # return if molfile is invalid
                 return None, d_jbcv
             
-            list_decorated_converters.append(d_jbcv)
-            nicv = JcampNIConverter(d_jbcv)
+            if d_jbcv:
+                conv.simu_peaks = d_jbcv.simu_peaks
+
+            list_decorated_converters.append(conv)
+            nicv = JcampNIConverter(conv)
             nicp = NIComposer(nicv)
             list_decorated_composers.append(nicp)
         return list_decorated_converters, list_decorated_composers
