@@ -50,7 +50,10 @@ class FidHasBruckerProcessed:
 
             processed_dic = self.__process_dic(processed_dic, processed_data, fname)
             
-            processed_data = ng.process.proc_bl.baseline_corrector(processed_data, wd=20)  # baseline correction     # noqa: E501
+            try:
+              processed_data = ng.process.proc_bl.baseline_corrector(processed_data, wd=20)  # baseline correction     # noqa: E501
+            except:
+              pass
             processed_data = ng.proc_base.di(processed_data)                # discard the imaginaries
 
             processed_fid_conv = FidBaseConverter(dic=processed_dic, data=processed_data, params=self.params, fname=fname)
