@@ -6,7 +6,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='chem-spectra-app',
-    version='0.10.17-patch.1',
+    version='0.10.17-patch.2',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
