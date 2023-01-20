@@ -157,4 +157,30 @@ def test_image(client):
     )
 
     assert response.status_code == 200
+    assert response.mimetype == 'text/html'
+    assert response.data == '{"invalid_molfile": true}'.encode('utf-8')
+    
+def test_combine_images_no_file(client):
+    response = client.post(
+        '/combine_images',
+        content_type='multipart/form-data',
+        data=None
+    )
+    
+    assert response.status_code == 400
+
+def test_combine_images(client):
+    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+        file_content = f.read()
+    data = dict(
+        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
+        molfile=(io.BytesIO(file_content), '13C-DEPT135.dx')
+    )
+    response = client.post(
+        '/combine_images',
+        content_type='multipart/form-data',
+        data=data
+    )
+
+    assert response.status_code == 200
     assert response.mimetype == 'image/png'

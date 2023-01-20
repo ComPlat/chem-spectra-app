@@ -26,6 +26,39 @@ def is_list_of_instance(list_data, cls):
             return False
     return True
 
+def test_init_with_single_file():
+    file = open(source_dir_1h, "rb")
+    molfile = open(source_dir_molfile, "r")
+    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h)
+    
+    assert tranform_model != None
+    
+def test_init_with_multiple_files():
+    file_1 = open(source_dir_1h, "rb")
+    file_2 = open(source_dir_1h, "rb")
+    molfile = open(source_dir_molfile, "r")
+    tranform_model = TransformerModel(None, molfile=molfile, params=params_1h, multiple_files=[file_1, file_2])
+    
+    assert tranform_model != None
+    
+def test_combine():
+    file_1 = open(source_dir_1h, "rb")
+    file_2 = open(source_dir_1h, "rb")
+    molfile = open(source_dir_molfile, "r")
+    tranform_model = TransformerModel(None, molfile=molfile, params=params_1h, multiple_files=[file_1, file_2])
+    
+    assert tranform_model != None
+    
+    tf = tranform_model.tf_combine()
+    assert tf is True
+
+# def test_zip2cv_with_processed_file():
+#     file = open(source_dir_1h, "rb")
+#     molfile = open(source_dir_molfile, "r")
+#     tranform_model = TransformerModel(file, molfile=molfile, params=params_1h)
+#     with tempfile.TemporaryDirectory() as td:
+#         with zipfile.ZipFile(source_dir_1h, 'r') as z:
+#             z.extractall(td)
 def test_zip2cv_with_processed_file():
     with open(source_dir_molfile, 'rb') as f:
         molfile = FileContainer(FileStorage(f))
@@ -39,7 +72,7 @@ def test_zip2cv_with_processed_file():
         with zipfile.ZipFile(source_dir_1h_bruker, 'r') as z:
             z.extractall(td)
         
-        target_dir = os.path.join(td, '1')
+#         target_dir = os.path.join(td, '1')
 
         list_converters, list_composers, invalid_molfile = tranform_model.zip2cv_with_processed_file(target_dir=target_dir, params=params_1h_bruker, file_name=filename_1h)
         assert len(list_converters) == 2

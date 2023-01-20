@@ -18,6 +18,7 @@ from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
+import matplotlib.pyplot as plt  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
 
@@ -62,10 +63,11 @@ def search_bag_it_file(td):
 
 
 class TransformerModel:
-    def __init__(self, file, molfile=None, params=False):
+    def __init__(self, file, molfile=None, params=False, multiple_files=False):
         self.file = file
         self.molfile = molfile
         self.params = params
+        self.multiple_files = multiple_files
 
     def convert2jcamp(self):
         cmpsr, _ = self.to_composer()
@@ -273,3 +275,34 @@ class TransformerModel:
         nicp = NIComposer(converter)
         tf_jcamp = nicp.tf_jcamp()
         return tf_jcamp
+      
+    def tf_combine(self, list_file_names=None):
+        if not self.multiple_files:
+            return False
+          
+        plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['font.size'] = 14
+        
+        for idx, file in enumerate(self.multiple_files):
+            tf = store_str_in_tmp(file.core)
+            jbcv = JcampBaseConverter(tf.name, self.params)
+            filename = file.name
+            if (list_file_names is not None) and idx < len(list_file_names):
+                filename = list_file_names[idx]
+            if jbcv.typ == 'MS':
+                mscv = JcampMSConverter(jbcv)
+                mscp = MSComposer(mscv)
+                plt.plot(mscp.core.xs, mscp.core.ys, label=filename)
+            else:
+                nicv = JcampNIConverter(jbcv)
+                nicp = NIComposer(nicv)
+                plt.plot(nicp.core.xs, nicp.core.ys, label=filename)
+            tf.close()
+        
+        plt.legend()
+        tf_img = tempfile.NamedTemporaryFile(suffix='.png')
+        plt.savefig(tf_img, format='png')
+        tf_img.seek(0)
+        plt.clf()
+        plt.cla()
+        return tf_img
