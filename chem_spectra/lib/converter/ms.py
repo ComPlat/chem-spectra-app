@@ -154,7 +154,33 @@ class MSConverter:
         spectra = []
         best_ratio, best_idx, backup_ratio, backup_idx = 0, 0, 0, 0
         best_y = 0
-        for idx, data in enumerate(runs):
+        # for idx, data in enumerate(runs):
+        #     spc = data.peaks('raw')
+        #     spectra.append(reduce_pts(spc))
+
+        #     ratio, noise_ratio, y = self.__get_ratio(spc)
+        #     if (best_ratio < ratio) and (noise_ratio <= 50.0):
+        #         best_idx = idx
+        #         best_ratio = ratio
+        #         best_y = y
+        #     elif (ratio == 100.0) and (noise_ratio <= 50.0) and (best_y < y):
+        #         best_idx = idx
+        #         best_ratio = ratio
+        #         best_y = y
+
+        #     if (backup_ratio < ratio):
+        #         backup_idx = idx
+        #         backup_ratio = ratio
+
+        spectrum_count = runs.get_spectrum_count()
+        for idx in range(0, spectrum_count):
+            try:
+                data = runs[idx+1]
+            except:
+                # cannot retrieve data from scan id, just add an empty spectra
+                spectra.append(np.array([]))
+                continue
+
             spc = data.peaks('raw')
             spectra.append(reduce_pts(spc))
 
@@ -187,7 +213,7 @@ class MSConverter:
                 try:
                     elapsed += 0.2
                     time.sleep(0.2)
-                    runs = pymzml.run.Reader(mzml_file)
+                    runs = pymzml.run.Reader(mzml_file, build_index_from_scratch=True)
                     spectra, auto_scan = self.__decode(runs)
                     break
                 # except Exception as e: print(e)
