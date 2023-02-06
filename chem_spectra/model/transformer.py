@@ -17,6 +17,7 @@ from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
+from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 
 from chem_spectra.model.concern.property import decorate_sim_property
 
@@ -188,18 +189,33 @@ class TransformerModel:
         list_decorated_converters = []
         list_decorated_composers = []
 
-        decorated_jbcv = False
-        if isinstance(fid_brucker.data, list) and len(fid_brucker.data) > 0:
-            decorated_jbcv = decorate_sim_property(fid_brucker.data[0], self.molfile, isSimulateNRM)   # noqa: E501
-
         invalid_molfile = False
         for conv in fid_brucker.data:
+            # d_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNRM)   # noqa: E501
+            # if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
+            #     # return if molfile is invalid
+            #     return None, d_jbcv
+
+            decorated_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNRM)   # noqa: E501
+            
             if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                 invalid_molfile = True
                 final_decorated_jbcv = decorated_jbcv['origin_jbcv']
             else:
                 final_decorated_jbcv = decorated_jbcv
-                final_decorated_jbcv.simu_peaks = decorated_jbcv.simu_peaks
+            
+        # decorated_jbcv = False
+        # if isinstance(fid_brucker.data, list) and len(fid_brucker.data) > 0:
+        #     decorated_jbcv = decorate_sim_property(fid_brucker.data[0], self.molfile, isSimulateNRM)   # noqa: E501
+
+        # invalid_molfile = False
+        # for conv in fid_brucker.data:
+        #     if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
+        #         invalid_molfile = True
+        #         final_decorated_jbcv = decorated_jbcv['origin_jbcv']
+        #     else:
+        #         final_decorated_jbcv = decorated_jbcv
+        #         final_decorated_jbcv.simu_peaks = decorated_jbcv.simu_peaks
 
             list_decorated_converters.append(final_decorated_jbcv)
             nicv = JcampNIConverter(final_decorated_jbcv)
@@ -249,3 +265,11 @@ class TransformerModel:
             suffix='.json',
         )
         return tf
+
+    def tf_nmrium(self):
+        converter = NMRiumDataConverter(self.file)
+        if converter.is_2d == True:
+            return None
+        nicp = NIComposer(converter)
+        tf_jcamp = nicp.tf_jcamp()
+        return tf_jcamp

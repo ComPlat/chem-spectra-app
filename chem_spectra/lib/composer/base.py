@@ -172,6 +172,7 @@ class BaseComposer:
         # = = = = =
         itg_stack = core_itg.get('stack') or []
         mpy_stack = core_mpy.get('stack') or []
+        
 
         self.all_itgs = itg_stack
         for itg in itg_stack:

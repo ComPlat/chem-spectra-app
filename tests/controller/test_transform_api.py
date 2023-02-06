@@ -55,6 +55,30 @@ def test_zip_jcamp_n_img_invalid_molfile(client):
     assert header_json['invalid_molfile'] is True
 
 
+def test_zip_jcamp_n_img_invalid_molfile(client):
+    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+        file_content = f.read()
+
+    with open(source_dir_invalid_molfile, 'rb') as f:
+        molfile = f.read()
+
+    data = dict(
+        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
+        molfile=(io.BytesIO(molfile), 'invalid_molfile.mol'),
+    )
+    response = client.post(
+        '/zip_jcamp_n_img',
+        content_type='multipart/form-data',
+        data=data
+    )
+
+    assert response.status_code == 200
+    assert response.mimetype == 'application/zip'
+
+    header_json = json.loads(response.headers['X-Extra-Info-JSON'])
+    assert header_json['invalid_molfile'] is True
+
+
 def test_zip_jcamp_n_img_with_peaks_str(client):
     with open(target_dir + source_dir + file_jdx, 'rb') as f:
         file_content = f.read()
@@ -134,5 +158,3 @@ def test_image(client):
 
     assert response.status_code == 200
     assert response.mimetype == 'image/png'
-
-    

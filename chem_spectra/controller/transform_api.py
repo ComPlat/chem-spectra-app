@@ -1,8 +1,10 @@
+from cmath import log
+from crypt import methods
 import json
 import collections.abc
 from multiprocessing.dummy import Array
 from flask import (
-    Blueprint, request, send_file, make_response,
+    Blueprint, request, send_file, make_response, abort
 )
 # from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
@@ -74,10 +76,12 @@ def zip_jcamp_n_img():
             )
             rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
         else:
-            tf_jcamp, tf_img, tf_csv = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
+            tf_jcamp, tf_img, tf_csv, tf_nmrium = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv(), cmpsr.generate_nmrium()
             spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
             if (tf_csv is not None and tf_csv != False):
                 memory = to_zip_response([tf_jcamp, tf_img, tf_csv])
+            elif (tf_nmrium is not None):
+                memory = to_zip_response([tf_jcamp, tf_img, tf_nmrium])
             else:
                 memory = to_zip_response([tf_jcamp, tf_img])
             rsp = make_response(
@@ -88,6 +92,7 @@ def zip_jcamp_n_img():
                 )
             )
             rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
+
         return rsp
 
 
@@ -167,4 +172,18 @@ def image():
             attachment_filename='spectrum.png',
             as_attachment=True,
             mimetype='image/png'
+        )
+
+@trans_api.route('/nmrium', methods=['POST'])
+def nmrium():
+    nmriumFile = FileContainer(request.files['file'])
+    if nmriumFile:
+        transformModel = TraModel(file=nmriumFile)
+        transformedData = transformModel.tf_nmrium()
+        if transformedData is None:
+            abort(404)
+        return send_file(
+            transformedData,
+            attachment_filename='spectrum.jdx',
+            as_attachment=True
         )
