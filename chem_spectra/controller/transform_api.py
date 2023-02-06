@@ -31,9 +31,9 @@ def zip_jcamp_n_img():
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:  # and allowed_file(file):
-        cmpsr = TraModel(file, molfile=molfile, params=params).to_composer()
-        if ((type(cmpsr) is dict) and "invalid_molfile" in cmpsr):
-            return json.dumps(cmpsr)
+        cmpsr, invalid_molfile = TraModel(file, molfile=molfile, params=params).to_composer()
+        # if ((type(cmpsr) is dict) and "invalid_molfile" in cmpsr):
+        #     return json.dumps(cmpsr)
 
         if isinstance(cmpsr, BagItBaseConverter):
             # check if composered model is in BagIt format
@@ -54,7 +54,7 @@ def zip_jcamp_n_img():
                     as_attachment=True
                 )
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit'})
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit', 'invalid_molfile': invalid_molfile})
         elif isinstance(cmpsr, collections.abc.Sequence):
             dst_list = []
             spc_type = ''
@@ -72,7 +72,7 @@ def zip_jcamp_n_img():
                     as_attachment=True
                 )
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type})
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
         else:
             tf_jcamp, tf_img, tf_csv = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
             spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
@@ -87,7 +87,7 @@ def zip_jcamp_n_img():
                     as_attachment=True
                 )
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type})
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
         return rsp
 
 
