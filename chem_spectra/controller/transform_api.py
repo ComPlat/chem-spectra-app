@@ -34,6 +34,8 @@ def zip_jcamp_n_img():
     params = extract_params(request)
     if file:  # and allowed_file(file):
         cmpsr, invalid_molfile = TraModel(file, molfile=molfile, params=params).to_composer()
+        # if ((type(cmpsr) is dict) and "invalid_molfile" in cmpsr):
+        #     return json.dumps(cmpsr)
 
         if isinstance(cmpsr, BagItBaseConverter):
             # check if composered model is in BagIt format

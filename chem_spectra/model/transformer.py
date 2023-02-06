@@ -204,6 +204,19 @@ class TransformerModel:
             else:
                 final_decorated_jbcv = decorated_jbcv
             
+        # decorated_jbcv = False
+        # if isinstance(fid_brucker.data, list) and len(fid_brucker.data) > 0:
+        #     decorated_jbcv = decorate_sim_property(fid_brucker.data[0], self.molfile, isSimulateNRM)   # noqa: E501
+
+        # invalid_molfile = False
+        # for conv in fid_brucker.data:
+        #     if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
+        #         invalid_molfile = True
+        #         final_decorated_jbcv = decorated_jbcv['origin_jbcv']
+        #     else:
+        #         final_decorated_jbcv = decorated_jbcv
+        #         final_decorated_jbcv.simu_peaks = decorated_jbcv.simu_peaks
+
             list_decorated_converters.append(final_decorated_jbcv)
             nicv = JcampNIConverter(final_decorated_jbcv)
             nicp = NIComposer(nicv)
