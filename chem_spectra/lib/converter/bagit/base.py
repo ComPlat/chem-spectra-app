@@ -3,7 +3,9 @@ import base64
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
+from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.composer.ni import NIComposer
+from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.converter.share import parse_params
 
 
@@ -27,14 +29,24 @@ class BagItBaseConverter:
         for file_name in list_file_names:
             jcamp_path = os.path.join(data_dir_path, file_name)
             base_cv = JcampBaseConverter(jcamp_path)
-            nicv = JcampNIConverter(base_cv)
-            nicp = NIComposer(nicv)
-            tf_jcamp = nicp.tf_jcamp()
-            list_files.append(tf_jcamp)
-            tf_img = nicp.tf_img()
-            list_images.append(tf_img)
-            tf_csv = nicp.tf_csv()
-            list_csv.append(tf_csv)
+            if base_cv.typ == 'MS':
+                mscv = JcampMSConverter(base_cv)
+                mscp = MSComposer(mscv)
+                tf_jcamp = mscp.tf_jcamp()
+                list_files.append(tf_jcamp)
+                tf_img = mscp.tf_img()
+                list_images.append(tf_img)
+                tf_csv = mscp.tf_csv()
+                list_csv.append(tf_csv)
+            else:
+                nicv = JcampNIConverter(base_cv)
+                nicp = NIComposer(nicv)
+                tf_jcamp = nicp.tf_jcamp()
+                list_files.append(tf_jcamp)
+                tf_img = nicp.tf_img()
+                list_images.append(tf_img)
+                tf_csv = nicp.tf_csv()
+                list_csv.append(tf_csv)
         return list_files, list_images, list_csv
 
     def get_base64_data(self):
