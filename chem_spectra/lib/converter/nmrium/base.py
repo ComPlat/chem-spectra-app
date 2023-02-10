@@ -58,7 +58,11 @@ class NMRiumDataConverter:
         except ValueError as e:
             return None
         
-        parsedData = self.__parsing_spectra(rawData)
+        
+        if 'data' in rawData.keys():
+          parsedData = self.__parsing_spectra(rawData['data'])
+        else:
+          parsedData = self.__parsing_spectra(rawData)
 
         return parsedData
 
@@ -66,7 +70,7 @@ class NMRiumDataConverter:
     def __parsing_spectra(self, jsonData=None):
         if jsonData is None:
             return None
-        
+          
         spectra = jsonData['spectra']
         displaying_spectra = self.__find_displaying_spectra(spectra)
         numberOfSpectrum = len(displaying_spectra)
@@ -282,7 +286,7 @@ class NMRiumDataConverter:
         return { 'x': peaks_x, 'y': peaks_y }
 
     def __read_integration(self, spectrumData):
-        integrals = spectrumData['ranges']
+        integrals = spectrumData['integrals']
         arr_values = integrals['values']
         itg_table_arr = []
         return_arr = []
