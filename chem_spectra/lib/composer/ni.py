@@ -634,7 +634,6 @@ class NIComposer(BaseComposer):
             integral = {'id':integral_id, 'originFrom':re_cxs[0], 'originTo':re_cxs[len(re_cxs)-1], 'from':re_cxs[0], 'to':re_cxs[len(re_cxs)-1], 'kind':'signal', 'absolute':absolute_value, 'integral':area*100}
 
             dic_integrals['values'].append(integral)
-
         return dic_integrals
 
     def __generate_nmrim_ranges(self):
