@@ -52,13 +52,6 @@ def test_combine():
     tf = tranform_model.tf_combine()
     assert tf is True
 
-# def test_zip2cv_with_processed_file():
-#     file = open(source_dir_1h, "rb")
-#     molfile = open(source_dir_molfile, "r")
-#     tranform_model = TransformerModel(file, molfile=molfile, params=params_1h)
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(source_dir_1h, 'r') as z:
-#             z.extractall(td)
 def test_zip2cv_with_processed_file():
     with open(source_dir_molfile, 'rb') as f:
         molfile = FileContainer(FileStorage(f))
