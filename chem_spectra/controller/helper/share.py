@@ -89,7 +89,8 @@ def extract_params(request):
     integration = request.form.get('integration', default='{}')
     multiplicity = request.form.get('multiplicity', default='{}')
     fname = parse_fname(request)
-    simulatenrm = bool(request.form.get('simulatenrm', default=False))
+    # simulatenmr = bool(request.form.get('simulatenmr', default=False))
+    simulatenmr = request.form.get('simulatenmr', default=False) == 'true'
     waveLength = request.form.get('wave_length', default=None)
     cyclicvolta = request.form.get('cyclic_volta', default=None)
     jcamp_idx = parse_int(request.form.get('jcamp_idx', default=0), 0)
@@ -109,7 +110,7 @@ def extract_params(request):
         'integration': integration,
         'multiplicity': multiplicity,
         'fname': fname,
-        'simulatenrm': simulatenrm,
+        'simulatenmr': simulatenmr,
         'waveLength': waveLength,
         'cyclic_volta': cyclicvolta,
         'jcamp_idx': jcamp_idx,
@@ -129,7 +130,7 @@ def extract_params(request):
         params.get('integration') or
         params.get('multiplicity') or
         params.get('fname') or
-        params.get('simulatenrm')
+        params.get('simulatenmr')
     )
     if not has_params:
         params = False
