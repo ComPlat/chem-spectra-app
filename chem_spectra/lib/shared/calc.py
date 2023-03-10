@@ -1,9 +1,9 @@
 import numpy as np
+from decimal import Decimal
 
 
-def calc_j(mpy, shift):
-    return 0
-
+# def calc_j(mpy, shift):
+#     return 0
 
 def calc_ks(ys, y_max, h):
     ks = np.zeros_like(ys)
@@ -19,6 +19,8 @@ def calc_ks(ys, y_max, h):
 
 
 def centerX(ps, shift):
+    if len(ps) == 0:
+        return 0
     pxs = list(map(lambda p: p['x'], ps))
     pxs.sort()
     cent_idx = int((len(pxs) - 1) / 2)
@@ -30,14 +32,8 @@ def centerX(ps, shift):
 def calc_mpy_center(ps, shift, typ):
     count = len(ps)
     avgX = sum(list(map(lambda p: p['x'], ps))) / count - shift
-    if typ == 's':
-        return avgX
-    elif typ == 'd':
-        return avgX
-    elif typ == 't':
+    if typ == 't':
         return centerX(ps, shift) if count == 3 else avgX
-    elif typ == 'm':
-        return avgX
     else:
         return avgX
 
@@ -63,10 +59,44 @@ def to_float(target):
         target = target.replace(',', '.')
         return float(target)
     except:
-        return target
+        return float(target)
 
 
 def cal_slope(x1, y1, x2, y2):
     if (x1 == x2):
         return 0
     return (y2-y1)/(x2-x1)
+
+def cal_xyIntegration(xs, ys):
+    if len(xs) != len(ys):
+        return 0
+    # REF: https://github.com/mljs/spectra-processing/blob/master/src/xy/xyIntegration.ts
+    integration = 0
+    for i in range(0, len(xs)-1):
+        integration += ((xs[i + 1] - ys[i]) * (xs[i + 1] + ys[i])) / 2
+    return integration
+
+def cal_area_multiplicity(xL, xU, data_xs, data_ys):
+    y_max, y_min = np.max(data_ys), np.min(data_ys)
+    h = y_max - y_min
+    
+    iL, iU = len(data_xs)-1, 0
+    for (idx, point_x) in enumerate(data_xs):
+        if (xL <= point_x and point_x <= xU):
+            if (iL > idx):
+                iL = idx
+            if (idx > iU):
+                iU = idx
+
+    ks = []
+    k = 0
+    for y_value in data_ys:
+        cy = y_value / y_max
+        if (cy > 0.0):
+            k += cy
+        ks.append(k)
+    
+    upper_value = Decimal(str(ks[iU]))
+    lower_value = Decimal(str(ks[iL]))
+
+    return float(abs(upper_value - lower_value))

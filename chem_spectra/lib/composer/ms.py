@@ -125,3 +125,7 @@ class MSComposer(BaseComposer):
     
     def tf_csv(self):
         return None
+
+    def generate_nmrium(self):
+        return None
+    

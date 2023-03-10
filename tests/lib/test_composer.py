@@ -17,7 +17,7 @@ def test_ni_composer():
         file = FileStorage(f)
         file = FileContainer(file)
         molfile = FileContainer(None)
-        composer = TraModel(file, molfile=molfile, params=params).to_composer()
+        composer, _ = TraModel(file, molfile=molfile, params=params).to_composer()
         assert composer.title == 'CHI-224_10'
 
 
@@ -40,7 +40,7 @@ def test_integrals():
         file = FileStorage(f)
         file = FileContainer(file)
         molfile = FileContainer(None)
-        composer = TraModel(file, molfile=molfile, params=params).to_composer()
+        composer, _ = TraModel(file, molfile=molfile, params=params).to_composer()
         integration = composer.gen_integration_info()
         assert integration == test_integration
 
@@ -50,6 +50,6 @@ def test_multiplicity():
         file = FileStorage(f)
         file = FileContainer(file)
         molfile = FileContainer(None)
-        composer = TraModel(file, molfile=molfile, params=params).to_composer()
+        composer, _ = TraModel(file, molfile=molfile, params=params).to_composer()
         multiplicity = composer.gen_mpy_integ_info()
         assert multiplicity == test_multi

@@ -27,7 +27,7 @@ def __generated_jcamp_temp(path, params=False):
     with open(path, 'rb') as f:
         file = FileContainer(FileStorage(f))
         molfile = FileContainer(FileStorage(None))
-        nicv, nicp = TraModel(file, molfile, params).jcamp2cvp()
+        nicv, nicp, _ = TraModel(file, molfile, params).jcamp2cvp()
         jcamp = nicp.tf_jcamp()
     return nicv, nicp, jcamp
 
