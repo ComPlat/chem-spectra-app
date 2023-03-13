@@ -186,7 +186,7 @@ def parse_solvent(base):
                 base.dic['$CSSOLVENTX'] = ['0']
                 base.solv_peaks = [(peak - delta, peak + delta)]
             elif 'chloroform-d' in orig_solv or 'cdcl3' in orig_solv:
-                peak = 7.27
+                peak = 7.26
                 delta = 0.01
                 base.dic['$CSSOLVENTNAME'] = ['Chloroform-d (s)']
                 base.dic['$CSSOLVENTVALUE'] = [str(peak)]
