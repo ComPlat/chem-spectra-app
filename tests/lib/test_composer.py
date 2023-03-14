@@ -10,7 +10,7 @@ result_dir = 'result/'
 file_inte_mpy_jdx = 'CHI-224_10.jdx'
 file_result_inte_mpy_jdx = 'result_CHI-224_10.jdx'
 
-params = {'peaks_str': '', 'select_x': '', 'ref_name': '', 'ref_value': '', 'scan': 0, 'thres': 0.0, 'mass': 78.046950192, 'molfile': None, 'clear': False, 'predict': '{}', 'ext': 'jdx', 'integration': '', 'multiplicity': '', 'fname': 'CHI-224_10.jdx', 'simulatenrm': False, 'waveLength': ''}
+params = {'peaks_str': '', 'select_x': '', 'ref_name': '', 'ref_value': '', 'scan': 0, 'thres': 0.0, 'mass': 78.046950192, 'molfile': None, 'clear': False, 'predict': '{}', 'ext': 'jdx', 'integration': '', 'multiplicity': '', 'fname': 'CHI-224_10.jdx', 'simulatenmr': False, 'waveLength': ''}
 
 def test_ni_composer():
     with open(target_dir + source_dir + file_inte_mpy_jdx, 'rb') as f:

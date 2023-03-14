@@ -154,10 +154,12 @@ class TransformerModel:
                     fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
                     if not fbcv:
                         return False, False, False
-                    isSimulateNRM = False
-                    if self.params and 'simulatenrm' in self.params:
-                        isSimulateNRM = self.params['simulatenrm']
-                    decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNRM)   # noqa: E501
+
+                    isSimulateNMR = False
+                    if self.params and 'simulatenmr' in self.params:
+                        isSimulateNMR = self.params['simulatenmr']
+                    decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNMR)   # noqa: E501
+
                     # if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                     #     # return if molfile is invalid
                     #     return None, decorated_jbcv
@@ -182,21 +184,18 @@ class TransformerModel:
         fid_brucker = FidHasBruckerProcessed(target_dir, params, file_name)
         if not fid_brucker:
             return False, False, False
-        isSimulateNRM = False
-        if params and 'simulatenrm' in params:
-            isSimulateNRM = params['simulatenrm']
+
+        isSimulateNMR = False
+        if params and 'simulatenmr' in params:
+            isSimulateNMR = params['simulatenmr']
+
             
         list_decorated_converters = []
         list_decorated_composers = []
 
         invalid_molfile = False
         for conv in fid_brucker.data:
-            # d_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNRM)   # noqa: E501
-            # if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
-            #     # return if molfile is invalid
-            #     return None, d_jbcv
-
-            decorated_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNRM)   # noqa: E501
+            decorated_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNMR)   # noqa: E501
             
             if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                 invalid_molfile = True
@@ -204,9 +203,6 @@ class TransformerModel:
             else:
                 final_decorated_jbcv = decorated_jbcv
             
-        # decorated_jbcv = False
-        # if isinstance(fid_brucker.data, list) and len(fid_brucker.data) > 0:
-        #     decorated_jbcv = decorate_sim_property(fid_brucker.data[0], self.molfile, isSimulateNRM)   # noqa: E501
 
         # invalid_molfile = False
         # for conv in fid_brucker.data:
@@ -234,15 +230,10 @@ class TransformerModel:
             mscp = MSComposer(mscv)
             return mscv, mscp, invalid_molfile
         else:
-            # isSimulateNRM = self.params['simulatenrm']
-            isSimulateNRM = False
-            if self.params and 'simulatenrm' in self.params:
-                isSimulateNRM = self.params['simulatenrm']
-            # d_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNRM)
-            # if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
-            #     # return if molfile is invalid
-            #     return None, d_jbcv
-            decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNRM)   # noqa: E501
+            isSimulateNMR = False
+            if self.params and 'simulatenmr' in self.params:
+                isSimulateNMR = self.params['simulatenmr']
+            decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNMR)   # noqa: E501
             
             if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                 invalid_molfile = True
