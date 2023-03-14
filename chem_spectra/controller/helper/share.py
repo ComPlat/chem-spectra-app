@@ -94,6 +94,7 @@ def extract_params(request):
     waveLength = request.form.get('wave_length', default=None)
     cyclicvolta = request.form.get('cyclic_volta', default=None)
     jcamp_idx = parse_int(request.form.get('jcamp_idx', default=0), 0)
+    list_file_names = request.form.getlist('list_file_names[]')
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -114,6 +115,7 @@ def extract_params(request):
         'waveLength': waveLength,
         'cyclic_volta': cyclicvolta,
         'jcamp_idx': jcamp_idx,
+        'list_file_names': list_file_names,
     }
     has_params = (
         params.get('peaks_str') or
