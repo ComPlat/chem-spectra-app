@@ -36,6 +36,7 @@ def zip_jcamp_n_img():
         cmpsr, invalid_molfile = TraModel(file, molfile=molfile, params=params).to_composer()
         if (not cmpsr):
             abort(403)
+
         # if ((type(cmpsr) is dict) and "invalid_molfile" in cmpsr):
         #     return json.dumps(cmpsr)
 

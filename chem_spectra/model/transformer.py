@@ -154,10 +154,12 @@ class TransformerModel:
                     fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
                     if not fbcv:
                         return False, False, False
+
                     isSimulateNMR = False
                     if self.params and 'simulatenmr' in self.params:
                         isSimulateNMR = self.params['simulatenmr']
                     decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNMR)   # noqa: E501
+
                     # if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                     #     # return if molfile is invalid
                     #     return None, decorated_jbcv
@@ -182,9 +184,11 @@ class TransformerModel:
         fid_brucker = FidHasBruckerProcessed(target_dir, params, file_name)
         if not fid_brucker:
             return False, False, False
+
         isSimulateNMR = False
         if params and 'simulatenmr' in params:
             isSimulateNMR = params['simulatenmr']
+
             
         list_decorated_converters = []
         list_decorated_composers = []
