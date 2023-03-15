@@ -81,9 +81,7 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_UVVIS
         elif 'HPLC UV-VIS' == dt:
             return THRESHOLD_UVVIS
-        elif 'UV/VIS SPECTRUM' == dt:
-            return THRESHOLD_UVVIS
-        elif 'UV-VIS' == dt:
+        elif 'UV/VIS SPECTRUM' == dt or 'UV-VIS' == dt or 'ULTRAVIOLET SPECTRUM' == dt:
             return THRESHOLD_UVVIS
         elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
             return THRESHOLD_TGA
@@ -97,7 +95,7 @@ class JcampNIConverter:  # nmr & IR
         target_topics = [
             'NMR SPECTRUM', 'NMRSPECTRUM',
             'INFRARED SPECTRUM', 'RAMAN SPECTRUM',
-            'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS',
+            'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM',
             'HPLC UV-VIS', 'HPLC UV/VIS SPECTRUM',
             'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
             'CYCLIC VOLTAMMETRY'
