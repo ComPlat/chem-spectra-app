@@ -39,6 +39,6 @@ requests==2.25.0
 scipy==1.2.0
 six==1.11.0
 urllib3==1.26.5
-Werkzeug==2.0.0
+Werkzeug==2.2.3
 zipp==0.5.2
 pyopenms==2.6.0
