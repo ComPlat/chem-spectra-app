@@ -111,7 +111,7 @@ $ gunicorn -w 4 -b 0.0.0.0:3007 server:app --daemon
 
 ```
 # for local development only
-$ export FLASK_APP=chem_spectra && export FLASK_ENV=development && flask run --host=0.0.0.0 --port=3007
+$ export FLASK_APP=chem_spectra && export FLASK_DEBUG=true && flask run --host=0.0.0.0 --port=3007
 ```
 
 ### 1.6 Quick test
