@@ -2,8 +2,9 @@ import json
 
 
 def parse_params(params):
-    default_itg = { 'stack': [], 'refArea': 1, 'refFactor': 1, 'shift': 0 }
-    default_mpy = { 'stack': [], 'smExtext': False, 'shift': 0 }
+    default_itg = {'stack': [], 'refArea': 1, 'refFactor': 1, 'shift': 0}
+    default_mpy = {'stack': [], 'smExtext': False, 'shift': 0}
+    default_wavelength = {'name': 'CuKalpha', 'value': 0.15406, 'label': 'Cu K-alpha', 'unit': 'nm'}
     if not params:
         return {
             'select_x': None,
@@ -18,6 +19,8 @@ def parse_params(params):
             'integration': default_itg,
             'multiplicity': default_mpy,
             'fname': '',
+            'waveLength': default_wavelength,
+            'list_max_min_peaks': None,
         }
 
     select_x = params.get('select_x', None)
@@ -37,6 +40,18 @@ def parse_params(params):
     fname = params.get('fname', '').split('.')
     fname = fname[:-2] if (len(fname) > 2 and (fname[-2] in ['edit', 'peak'])) else fname[:-1]
     fname = '.'.join(fname)
+    waveLength = params.get('waveLength')
+    waveLength = json.loads(waveLength) if waveLength else default_wavelength
+
+    jcamp_idx = params.get('jcamp_idx', 0)
+    cyclicvolta = params.get('cyclic_volta')
+    cyclicvolta = json.loads(cyclicvolta) if cyclicvolta else None
+    listMaxMinPeaks = None
+    if (cyclicvolta is not None):
+        spectraList = cyclicvolta['spectraList']
+        if (len(spectraList) > 0):
+            spectra = spectraList[jcamp_idx]
+            listMaxMinPeaks = spectra['list']
 
     try:
         if select_x and float(select_x) != 0.0 and ref_name != '- - -':
@@ -58,6 +73,8 @@ def parse_params(params):
         'multiplicity': multiplicity,
         'ext': ext,
         'fname': fname,
+        'waveLength': waveLength,
+        'list_max_min_peaks': listMaxMinPeaks,
     }
 
 
@@ -68,7 +85,7 @@ def parse_solvent(base):
             base.dic.get('$CSSOLVENTNAME', [''])[0]
         )
         # if ref_name and ref_name != '- - -':
-        if ref_name: # skip when the solvent is exist.
+        if ref_name:  # skip when the solvent is exist.
             return
 
         sn = base.dic.get('.SOLVENTNAME', [''])

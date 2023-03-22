@@ -1,0 +1,28 @@
+@startuml TransformGetZipImage
+' Endpoint: /zip_image [POST]
+
+actor       User
+boundary    TransformAPI
+control     TransformHandler
+entity      TranformerModel
+control     BagItConverter
+
+User -> TransformAPI
+alt file not found
+    TransformAPI --> User: Error 404 Bad request
+else
+    TransformAPI -> TransformHandler
+    TransformHandler -> TranformerModel: get image, error
+    alt is BagIt
+        TransformHandler -> BagItConverter: get list image files
+        BagItConverter --> TransformHandler: list image files
+        TransformHandler --> TransformAPI: list image files
+    else
+        TranformerModel --> TransformHandler: image file
+        TransformHandler --> TransformAPI: image file
+    end
+    TransformAPI --> User: spectrum.zip file
+end
+    
+
+@enduml

@@ -1,0 +1,21 @@
+@startuml TransformGetImage
+' Endpoint: /image [POST]
+
+actor       User
+boundary    TransformAPI
+control     TransformHandler
+entity      TranformerModel
+
+User -> TransformAPI
+alt file not found
+    TransformAPI --> User: Error 404 Bad request
+else
+    TransformAPI -> TransformHandler
+    TransformHandler -> TranformerModel: get image, error
+    TranformerModel --> TransformHandler: image file
+    TransformHandler --> TransformAPI: image file
+    TransformAPI --> User: spectrum.png file
+end
+    
+
+@enduml

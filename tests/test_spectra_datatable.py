@@ -11,6 +11,7 @@ H1_dx = '1H.dx'
 C13_CPD_dx = '13C-CPD.dx'
 C13_DEPT135_dx = '13C-DEPT135.dx'
 SVS_790A_13C_jdx = 'SVS-790A_13C.jdx'
+JPK_948_jdx = 'JPK-948.jdx'
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -26,7 +27,7 @@ def __generated_jcamp_temp(path, params=False):
     with open(path, 'rb') as f:
         file = FileContainer(FileStorage(f))
         molfile = FileContainer(FileStorage(None))
-        nicv, nicp = TraModel(file, molfile, params).jcamp2cvp()
+        nicv, nicp, _ = TraModel(file, molfile, params).jcamp2cvp()
         jcamp = nicp.tf_jcamp()
     return nicv, nicp, jcamp
 
@@ -115,3 +116,15 @@ def test_datatable_SVS_790A_13C_jdx():
 
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count, 1/10000)
+
+def test_datatable_JPK_948_jdx():
+    nicv_ori, nicp_ori, jcamp_ori = __generated_jcamp_temp(
+        __fixture_path(JPK_948_jdx)
+    )
+    nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
+    total_count = nicv_ori.ys.shape[0]
+    ori_bd = nicv_ori.boundary
+    ref = abs(ori_bd['x']['max'] - ori_bd['x']['min'])
+
+    assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
+    assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)

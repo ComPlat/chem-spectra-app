@@ -3,6 +3,7 @@ import requests
 import numpy as np
 import json
 from flask import current_app
+import logging
 
 from chem_spectra.lib.data_pipeline.infrared import InfraredLib
 from chem_spectra.lib.chem.artist import ArtistLib
@@ -15,7 +16,7 @@ hdr_nsdb = {
 class InferencerModel:
     def __init__(
         self,
-        mm=False, tm=False, layout=False, peaks=False, shift=False, spectrum=False
+        mm=False, tm=False, layout=False, peaks=False, shift=False, spectrum=False      # noqa
     ):
         self.mm = mm
         self.tm = tm
@@ -32,14 +33,22 @@ class InferencerModel:
             mm=mm,
             layout=layout,
             peaks=[{'y': 0, 'x': -9999}],
-            shift={'ref': {'label': False, 'name': '- - -', 'value': 0}, 'peak': False, 'enable': False}
+            shift={'ref': {'label': False, 'name': '- - -', 'value': 0}, 'peak': False, 'enable': False}    # noqa: E501
         )
         try:
             rsp = instance.__predict_nmr(timeout=20)
             output = rsp.json()
-            simulations = sorted([shift['prediction'] for shift in output['result'][0]['shifts']])
+            logger = logging.getLogger(__name__)
+            logger.setLevel(logging.INFO)
+            log_msg = 'smiles: {smi} - nmrshiftdb_result: {nmrshiftdb}'.format(smi=mm.smi, nmrshiftdb=output)   # noqa: E501
+            logger.info(log_msg)
+            simulations = sorted([shift['prediction'] for shift in output['result'][0]['shifts']])  # noqa: E501
             return simulations
-        except:
+        except Exception as error:
+            logger = logging.getLogger(__name__)
+            logger.setLevel(logging.ERROR)
+            log_msg = 'smiles: {smi} - nmrshiftdb_result: {nmrshiftdb}'.format(smi=mm.smi, nmrshiftdb=error)    # noqa: E501
+            logger.error(log_msg)
             return []
 
     @classmethod
@@ -85,6 +94,9 @@ class InferencerModel:
                 }
             }
         except requests.ConnectionError:
+            logger = logging.getLogger(__name__)
+            logger.setLevel(logging.ERROR)
+            logger.error('cannot connect with NRMShiftDB')
             return {
                 'outline': {
                     'code': 503,
@@ -142,15 +154,15 @@ class InferencerModel:
 
     def __build_data(self, typ, peak_xs, solvent):
         return {
-            'inputs': [
+            "inputs": [
                 {
-                    'id': 1,
-                    'type': typ,
-                    'shifts': peak_xs,
-                    'solvent': solvent,
+                    "id": 1,
+                    "type": typ,
+                    "shifts": peak_xs,
+                    "solvent": str(solvent),
                 },
             ],
-            'moltxt': self.mm.moltxt
+            "moltxt": self.mm.moltxt
         }
 
     @classmethod

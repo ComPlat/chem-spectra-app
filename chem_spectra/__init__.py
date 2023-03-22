@@ -2,6 +2,7 @@ import os
 
 from flask import Flask
 
+import logging
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -19,6 +20,18 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    #create logging
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    log_file = app.config.get('LOGS_FILE')
+    if not log_file:
+        log_file = './instance/logging.log'
+    ch = logging.FileHandler(log_file)
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
     # ping api
     @app.route('/ping')

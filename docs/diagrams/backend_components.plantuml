@@ -1,0 +1,39 @@
+@startuml BackendComponents
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Person(user, "User", "An user uses Chemspectra")
+Container(standaloneClient, "Chemspectra Client", "Stand alone version")
+Container(chemotionELN, "ChemotionELN", "Embedded in ChemotionELN")
+
+Rel(user, chemotionELN, "uses")
+Rel(user, standaloneClient, "uses")
+Container(spectraEditor, "Frontend", "ReactJS", "Web package to view and analyse data")
+
+System_Boundary(backend, "Chemspectra Backend") {
+    Component(comController, "Controllers", "Python", "API controllers for processing file, inference, transforming data")
+    Component(comModel, "Models", "Python", "Model to handle and process analyse files")
+    Component(comLib, "Libraries, Converters, Composers", "Python", "Libraries to process files, convert, prepare data")
+}
+
+Rel(comController, comLib, "uses")
+Rel(comController, comModel, "uses")
+Rel(comModel, comLib, "uses")
+
+Rel(spectraEditor, chemotionELN, "embedded")
+Rel(spectraEditor, standaloneClient, "embedded")
+Rel(standaloneClient, comController, "uses")
+Rel(chemotionELN, comController, "uses")
+
+System_Ext(nmrshift, "NMRShiftDB")
+System_Ext(irprediction, "IR prediction")
+System_Ext(msconver, "Mass spectra converter", "Docker container for converting mass spectra")
+System_Ext(rdkit, "RDKit", "Open-Source Cheminformatics Software")
+System_Ext(nmrglue, "NMRGlue", "Library for read nmr files")
+
+Rel(comModel, nmrshift, "uses")
+Rel(comModel, irprediction, "uses")
+Rel(comModel, rdkit, "uses")
+Rel(comLib, nmrglue, "uses")
+Rel(comLib, msconver, "uses")
+
+@enduml

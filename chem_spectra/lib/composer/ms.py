@@ -28,9 +28,9 @@ class MSComposer(BaseComposer):
             '##ORIGIN=\n',
             '##OWNER=\n',
             '##SPECTROMETER/DATA SYSTEM=\n',
-            '##.SPECTROMETER TYPE={}\n'.format(self.core.dic.get('SPECTROMETER TYPE', '')), # TRAP
-            '##.INLET={}\n'.format(self.core.dic.get('INLET', '')), # GC
-            '##.IONIZATION MODE={}\n'.format(self.core.dic.get('IONIZATION MODE', '')), # EI+
+            '##.SPECTROMETER TYPE={}\n'.format(self.core.dic.get('SPECTROMETER TYPE', '')),  # TRAP     # noqa: E501
+            '##.INLET={}\n'.format(self.core.dic.get('INLET', '')),  # GC
+            '##.IONIZATION MODE={}\n'.format(self.core.dic.get('IONIZATION MODE', '')),  # EI+  # noqa: E501
             '##$CSCATEGORY=SPECTRUM\n',
             '##$CSSCANAUTOTARGET={}\n'.format(self.core.auto_scan),
             '##$CSSCANEDITTARGET={}\n'.format(
@@ -84,7 +84,7 @@ class MSComposer(BaseComposer):
     def __prism(self, spc):
         blues_x, blues_y, greys_x, greys_y = [], [], [], []
         thres = 0
-        if spc.shape[0] > 0: # RESOLVE_VSMBNAN2
+        if spc.shape[0] > 0:  # RESOLVE_VSMBNAN2
             thres = spc[:, 1].max() * (self.core.thres / 100)
 
         for pt in spc:
@@ -122,3 +122,10 @@ class MSComposer(BaseComposer):
         plt.clf()
         plt.cla()
         return tf
+    
+    def tf_csv(self):
+        return None
+
+    def generate_nmrium(self):
+        return None
+    

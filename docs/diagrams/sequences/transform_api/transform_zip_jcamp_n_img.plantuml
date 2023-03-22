@@ -1,0 +1,47 @@
+@startuml TransformGetZipJcampAndImage
+' Endpoint: /zip_jcamp_n_img [POST]
+
+actor       User
+boundary    TransformAPI
+control     TransformHandler
+entity      TranformerModel
+entity      ComposerModel
+control     BagItConverter
+
+User -> TransformAPI
+alt file not found
+    TransformAPI --> User: Error 404 Bad request
+else
+    TransformAPI -> TransformHandler
+    TransformHandler -> TranformerModel: get composer, error
+    TranformerModel -> ComposerModel: get composer, error
+    ComposerModel --> TranformerModel: composer
+    alt invalid molfile
+        TranformerModel --> TransformHandler: json message invalid molfile
+        TransformHandler --> TransformAPI: json message invalid molfile
+        TransformAPI --> User: json message invalid molfile
+    else
+        alt composer is not BagIt or array
+            TranformerModel -> ComposerModel: get jcamp, image, csv files
+            ComposerModel --> TranformerModel: jcamp, image, csv files
+            TranformerModel --> TransformHandler: jcamp, image, csv files
+            TransformHandler --> TransformAPI: jcamp, image, csv files
+            
+        else
+            alt composer is BagIt
+                TransformHandler -> BagItConverter: get list jcamp, images, csv files
+                BagItConverter --> TransformHandler: list jcamp, images, csv files
+                TransformHandler --> TransformAPI: list jcamp, images, csv files
+            else
+                TranformerModel -> ComposerModel: get list jcamp, images files
+                ComposerModel --> TranformerModel: list jcamp, images files
+                TranformerModel --> TransformHandler: list jcamp, images files
+                TransformHandler --> TransformAPI: list jcamp, images files
+            end
+        end
+        TransformAPI --> User: spectrum.zip file
+    end
+end
+    
+
+@enduml

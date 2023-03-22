@@ -8,7 +8,13 @@ class JcampBaseConverter:
         self.params = parse_params(params)
         self.dic, self.data = self.__read(path)
         self.datatypes = self.dic['DATATYPE']
+        self.datatypes = [datatype.upper() for datatype in self.datatypes]
         self.datatype = self.__set_datatype()
+        self.dataclasses = {}
+        if 'DATACLASS' in self.dic:
+            self.dataclasses = self.dic['DATACLASS']
+        self.dataclass = self.__set_dataclass()
+        self.data_format = self.__set_dataformat()
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = self.__typ()
         self.fname = self.params.get('fname')
@@ -16,6 +22,9 @@ class JcampBaseConverter:
         self.is_ir = self.__is_ir()
         self.is_tga = self.__is_tga()
         self.is_uv_vis = self.__is_uv_vis()
+        self.is_hplc_uv_vis = self.__is_hplc_uv_vis()
+        self.is_xrd = self.__is_xrd()
+        self.is_cyclic_volta = self.__is_cyclic_volta()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
@@ -38,12 +47,22 @@ class JcampBaseConverter:
             return 'RAMAN SPECTRUM'
         elif 'MASS SPECTRUM' in dts:
             return 'MASS SPECTRUM'
+        elif 'HPLC UV/VIS SPECTRUM' in dts:
+            return 'HPLC UV/VIS SPECTRUM'
+        elif 'HPLC UV-VIS' in dts:
+            return 'HPLC UV/VIS SPECTRUM'
         elif 'UV/VIS SPECTRUM' in dts:
             return 'UV/VIS SPECTRUM'
         elif 'UV-VIS' in dts:
             return 'UV/VIS SPECTRUM'
+        elif 'ULTRAVIOLET SPECTRUM' in dts:
+            return 'UV/VIS SPECTRUM'
         elif 'THERMOGRAVIMETRIC ANALYSIS' in dts:
             return 'THERMOGRAVIMETRIC ANALYSIS'
+        elif 'X-RAY DIFFRACTION' in dts:
+            return 'X-RAY DIFFRACTION'
+        elif 'CYCLIC VOLTAMMETRY' in dts:
+            return 'CYCLIC VOLTAMMETRY'
         return ''
 
     def __typ(self):
@@ -58,19 +77,40 @@ class JcampBaseConverter:
             return 'RAMAN'  # TBD
         elif 'MASS SPECTRUM' == dt:
             return 'MS'
-        elif 'UV/VIS SPECTRUM' == dt:
-            return 'UVVIS'
-        elif 'UV-VIS' == dt:
+        elif 'HPLC UV/VIS SPECTRUM' == dt:
+            return 'HPLC UVVIS'
+        elif 'HPLC UV-VIS' == dt:
+            return 'HPLC UVVIS'
+        elif 'UV/VIS SPECTRUM' == dt or 'UV-VIS' == dt or 'ULTRAVIOLET SPECTRUM' == dt:
             return 'UVVIS'
         elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
             return 'THERMOGRAVIMETRIC ANALYSIS'
+        elif 'X-RAY DIFFRACTION' == dt:
+            return 'X-RAY DIFFRACTION'
+        elif 'CYCLIC VOLTAMMETRY' in dt:
+            return 'CYCLIC VOLTAMMETRY'
         return ''
+
+    def __set_dataclass(self):
+        data_class = self.dataclasses
+        if 'XYPOINTS' in data_class:
+            return 'XYPOINTS'
+        elif 'XYDATA' in data_class:
+            return 'XYDATA_OLD'
+        return ''
+
+    def __set_dataformat(self):
+        try:
+            return self.dic[self.dataclass][0].split('\n')[0]
+        except: # noqa
+            pass
+        return '(X++(Y..Y))'
 
     def __is_em_wave(self):
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS']
+        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION', 'CYCLIC VOLTAMMETRY']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -81,6 +121,15 @@ class JcampBaseConverter:
     def __is_uv_vis(self):
         return self.typ in ['UVVIS']
 
+    def __is_hplc_uv_vis(self):
+        return self.typ in ['HPLC UVVIS']
+
+    def __is_xrd(self):
+        return self.typ in ['X-RAY DIFFRACTION']
+
+    def __is_cyclic_volta(self):
+        return self.typ in ['CYCLIC VOLTAMMETRY']
+
     def __ncl(self):
         try:
             ncls = self.dic['.OBSERVENUCLEUS']
@@ -90,6 +139,12 @@ class JcampBaseConverter:
                 return '13C'
             elif '^19F' in ncls:
                 return '19F'
+            elif '31P' in ncls:
+                return '31P'
+            elif '15N' in ncls:
+                return '15N'
+            elif '29Si' in ncls:
+                return '29Si'
         except: # noqa
             pass
         return ''
@@ -113,4 +168,3 @@ class JcampBaseConverter:
                 return True
 
         return False
-

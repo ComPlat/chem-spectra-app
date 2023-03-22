@@ -39,7 +39,7 @@ class ArtistLib:
         fgs = [x['sma'] for x in self.predictions]
         drawer = rdMolDraw2D.MolDraw2DSVG(400, 400)
         option = drawer.drawOptions()
-        option.padding=0.15
+        option.padding = 0.15
         option.bondLineWidth = 2
         option.annotationFontScale = 0.2
 
@@ -103,6 +103,12 @@ class ArtistLib:
             atom_symbol = 'H'
         elif self.layout == '19F':
             atom_symbol = 'F'
+        elif self.layout == '31P':
+            atom_symbol = 'P'
+        elif self.layout == '15N':
+            atom_symbol = 'N'
+        elif self.layout == '29Si':
+            atom_symbol = 'Si'
 
         targets = []
         for idx in range(self.mol.GetNumAtoms()):
