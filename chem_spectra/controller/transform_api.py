@@ -55,7 +55,7 @@ def zip_jcamp_n_img():
             rsp = make_response(
                 send_file(
                     memory,
-                    attachment_filename='spectrum.zip',
+                    download_name='spectrum.zip',
                     as_attachment=True
                 )
             )
@@ -73,7 +73,7 @@ def zip_jcamp_n_img():
             rsp = make_response(
                 send_file(
                     memory,
-                    attachment_filename='spectrum.zip',
+                    download_name='spectrum.zip',
                     as_attachment=True
                 )
             )
@@ -90,7 +90,7 @@ def zip_jcamp_n_img():
             rsp = make_response(
                 send_file(
                     memory,
-                    attachment_filename='spectrum.zip',
+                    download_name='spectrum.zip',
                     as_attachment=True
                 )
             )
@@ -119,7 +119,7 @@ def zip_jcamp():
             memory = to_zip_response([tf_jcamp])
         return send_file(
             memory,
-            attachment_filename='spectrum.zip',
+            download_name='spectrum.zip',
             as_attachment=True
         )
 
@@ -144,7 +144,7 @@ def zip_image():
             memory = to_zip_response([tf_img])
         return send_file(
             memory,
-            attachment_filename='spectrum.zip',
+            download_name='spectrum.zip',
             as_attachment=True
         )
 
@@ -158,7 +158,7 @@ def jcamp():
         tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
         return send_file(
             tf_jcamp,
-            attachment_filename='spectrum.jdx',
+            download_name='spectrum.jdx',
             as_attachment=True
         )
 
@@ -172,7 +172,7 @@ def image():
         tf_img = TraModel(file, molfile=molfile, params=params).convert2img()
         return send_file(
             tf_img,
-            attachment_filename='spectrum.png',
+            download_name='spectrum.png',
             as_attachment=True,
             mimetype='image/png'
         )
@@ -187,7 +187,7 @@ def nmrium():
             abort(404)
         return send_file(
             transformedData,
-            attachment_filename='spectrum.jdx',
+            download_name='spectrum.jdx',
             as_attachment=True
         )
 
@@ -211,6 +211,6 @@ def combine_images():
     memory = to_zip_response([tf_combine])
     return send_file(
         memory,
-        attachment_filename='spectrum.zip',
+        download_name='spectrum.zip',
         as_attachment=True
     )

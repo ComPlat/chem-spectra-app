@@ -77,7 +77,7 @@ def chemspectra_file_save():
         memory = to_zip_bag_it_response(dst_list, filename, src_idx=0)
         return send_file(
             memory,
-            attachment_filename='spectrum.zip',
+            download_name='spectrum.zip',
             as_attachment=True
         )
     else:
@@ -103,7 +103,7 @@ def chemspectra_file_save():
             memory = to_zip_response(tf_arr, filename, src_idx=0)
             return send_file(
                 memory,
-                attachment_filename='spectrum.zip',
+                download_name='spectrum.zip',
                 as_attachment=True
             )
 
@@ -143,7 +143,7 @@ def chemspectra_file_refresh():
         memory = to_zip_bag_it_response(dst_list, 'spectrum.zip')
         return send_file(
             memory,
-            attachment_filename='spectrum.zip',
+            download_name='spectrum.zip',
             as_attachment=True
         )
     else:
