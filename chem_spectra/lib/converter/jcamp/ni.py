@@ -81,9 +81,7 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_UVVIS
         elif 'HPLC UV-VIS' == dt:
             return THRESHOLD_UVVIS
-        elif 'UV/VIS SPECTRUM' == dt:
-            return THRESHOLD_UVVIS
-        elif 'UV-VIS' == dt:
+        elif 'UV/VIS SPECTRUM' == dt or 'UV-VIS' == dt or 'ULTRAVIOLET SPECTRUM' == dt:
             return THRESHOLD_UVVIS
         elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
             return THRESHOLD_TGA
@@ -97,7 +95,7 @@ class JcampNIConverter:  # nmr & IR
         target_topics = [
             'NMR SPECTRUM', 'NMRSPECTRUM',
             'INFRARED SPECTRUM', 'RAMAN SPECTRUM',
-            'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS',
+            'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM',
             'HPLC UV-VIS', 'HPLC UV/VIS SPECTRUM',
             'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
             'CYCLIC VOLTAMMETRY'
@@ -161,6 +159,17 @@ class JcampNIConverter:  # nmr & IR
 
         if beg_pt is None:
             try:
+                beg_pt = to_float(self.dic['FIRSTX'][idx])
+                end_pt = to_float(self.dic['LASTX'][idx])
+            except:  # noqa
+                pass
+            
+        if beg_pt is None:
+            try:
+                while len(self.dic['FIRSTX']) <= idx:
+                    self.dic['FIRSTX'].insert(0, '')
+                while len(self.dic['LASTX']) <= idx:
+                    self.dic['LASTX'].insert(0, '')
                 beg_pt = to_float(self.dic['FIRSTX'][idx])
                 end_pt = to_float(self.dic['LASTX'][idx])
             except:  # noqa

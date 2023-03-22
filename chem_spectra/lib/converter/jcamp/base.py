@@ -55,6 +55,8 @@ class JcampBaseConverter:
             return 'UV/VIS SPECTRUM'
         elif 'UV-VIS' in dts:
             return 'UV/VIS SPECTRUM'
+        elif 'ULTRAVIOLET SPECTRUM' in dts:
+            return 'UV/VIS SPECTRUM'
         elif 'THERMOGRAVIMETRIC ANALYSIS' in dts:
             return 'THERMOGRAVIMETRIC ANALYSIS'
         elif 'X-RAY DIFFRACTION' in dts:
@@ -79,9 +81,7 @@ class JcampBaseConverter:
             return 'HPLC UVVIS'
         elif 'HPLC UV-VIS' == dt:
             return 'HPLC UVVIS'
-        elif 'UV/VIS SPECTRUM' == dt:
-            return 'UVVIS'
-        elif 'UV-VIS' == dt:
+        elif 'UV/VIS SPECTRUM' == dt or 'UV-VIS' == dt or 'ULTRAVIOLET SPECTRUM' == dt:
             return 'UVVIS'
         elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
             return 'THERMOGRAVIMETRIC ANALYSIS'

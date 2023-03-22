@@ -233,7 +233,7 @@ class MSConverter:
             # RESOLVE_VSMBNAN2 a valid spectrum must be np.array (N, 2)
             if not spc.shape[0] > 0:
                 spc = np.array([[1000.0, 0.0], [2000.0, 0.0]])  # placeholder
-                if self.auto_scan == (idx + 1):  # move selected scan
+                if self.auto_scan == (idx + 1) and (idx < len(self.spectra) - 1):  # move selected scan
                     self.auto_scan += 1
             xs = spc[:, 0]
             ys = spc[:, 1]

@@ -34,6 +34,9 @@ def zip_jcamp_n_img():
     params = extract_params(request)
     if file:  # and allowed_file(file):
         cmpsr, invalid_molfile = TraModel(file, molfile=molfile, params=params).to_composer()
+        if (not cmpsr):
+            abort(403)
+
         # if ((type(cmpsr) is dict) and "invalid_molfile" in cmpsr):
         #     return json.dumps(cmpsr)
 
@@ -187,3 +190,27 @@ def nmrium():
             attachment_filename='spectrum.jdx',
             as_attachment=True
         )
+
+@trans_api.route('/combine_images', methods=['POST'])
+def combine_images():
+    request_files = request.files
+    if (not request_files):
+        abort(400)
+        
+    list_files = []
+    for file in request_files.getlist('files[]'):
+        file_container = FileContainer(file)
+        list_files.append(file_container)
+    
+    params = extract_params(request)
+    transform_model = TraModel(None, params=params, multiple_files=list_files)  
+    tf_combine = transform_model.tf_combine(list_file_names=params['list_file_names'])
+    if (not tf_combine):
+        abort(400)
+    
+    memory = to_zip_response([tf_combine])
+    return send_file(
+        memory,
+        attachment_filename='spectrum.zip',
+        as_attachment=True
+    )

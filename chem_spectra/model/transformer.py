@@ -18,6 +18,7 @@ from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
+import matplotlib.pyplot as plt  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
 
@@ -62,10 +63,11 @@ def search_bag_it_file(td):
 
 
 class TransformerModel:
-    def __init__(self, file, molfile=None, params=False):
+    def __init__(self, file, molfile=None, params=False, multiple_files=False):
         self.file = file
         self.molfile = molfile
         self.params = params
+        self.multiple_files = multiple_files
 
     def convert2jcamp(self):
         cmpsr, _ = self.to_composer()
@@ -154,10 +156,12 @@ class TransformerModel:
                     fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
                     if not fbcv:
                         return False, False, False
-                    isSimulateNRM = False
-                    if self.params and 'simulatenrm' in self.params:
-                        isSimulateNRM = self.params['simulatenrm']
-                    decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNRM)   # noqa: E501
+
+                    isSimulateNMR = False
+                    if self.params and 'simulatenmr' in self.params:
+                        isSimulateNMR = self.params['simulatenmr']
+                    decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNMR)   # noqa: E501
+
                     # if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                     #     # return if molfile is invalid
                     #     return None, decorated_jbcv
@@ -182,21 +186,18 @@ class TransformerModel:
         fid_brucker = FidHasBruckerProcessed(target_dir, params, file_name)
         if not fid_brucker:
             return False, False, False
-        isSimulateNRM = False
-        if params and 'simulatenrm' in params:
-            isSimulateNRM = params['simulatenrm']
+
+        isSimulateNMR = False
+        if params and 'simulatenmr' in params:
+            isSimulateNMR = params['simulatenmr']
+
             
         list_decorated_converters = []
         list_decorated_composers = []
 
         invalid_molfile = False
         for conv in fid_brucker.data:
-            # d_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNRM)   # noqa: E501
-            # if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
-            #     # return if molfile is invalid
-            #     return None, d_jbcv
-
-            decorated_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNRM)   # noqa: E501
+            decorated_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNMR)   # noqa: E501
             
             if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                 invalid_molfile = True
@@ -204,9 +205,6 @@ class TransformerModel:
             else:
                 final_decorated_jbcv = decorated_jbcv
             
-        # decorated_jbcv = False
-        # if isinstance(fid_brucker.data, list) and len(fid_brucker.data) > 0:
-        #     decorated_jbcv = decorate_sim_property(fid_brucker.data[0], self.molfile, isSimulateNRM)   # noqa: E501
 
         # invalid_molfile = False
         # for conv in fid_brucker.data:
@@ -234,15 +232,10 @@ class TransformerModel:
             mscp = MSComposer(mscv)
             return mscv, mscp, invalid_molfile
         else:
-            # isSimulateNRM = self.params['simulatenrm']
-            isSimulateNRM = False
-            if self.params and 'simulatenrm' in self.params:
-                isSimulateNRM = self.params['simulatenrm']
-            # d_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNRM)
-            # if ((type(d_jbcv) is dict) and "invalid_molfile" in d_jbcv):
-            #     # return if molfile is invalid
-            #     return None, d_jbcv
-            decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNRM)   # noqa: E501
+            isSimulateNMR = False
+            if self.params and 'simulatenmr' in self.params:
+                isSimulateNMR = self.params['simulatenmr']
+            decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNMR)   # noqa: E501
             
             if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                 invalid_molfile = True
@@ -273,3 +266,34 @@ class TransformerModel:
         nicp = NIComposer(converter)
         tf_jcamp = nicp.tf_jcamp()
         return tf_jcamp
+      
+    def tf_combine(self, list_file_names=None):
+        if not self.multiple_files:
+            return False
+          
+        plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['font.size'] = 14
+        
+        for idx, file in enumerate(self.multiple_files):
+            tf = store_str_in_tmp(file.core)
+            jbcv = JcampBaseConverter(tf.name, self.params)
+            filename = file.name
+            if (list_file_names is not None) and idx < len(list_file_names):
+                filename = list_file_names[idx]
+            if jbcv.typ == 'MS':
+                mscv = JcampMSConverter(jbcv)
+                mscp = MSComposer(mscv)
+                plt.plot(mscp.core.xs, mscp.core.ys, label=filename)
+            else:
+                nicv = JcampNIConverter(jbcv)
+                nicp = NIComposer(nicv)
+                plt.plot(nicp.core.xs, nicp.core.ys, label=filename)
+            tf.close()
+        
+        plt.legend()
+        tf_img = tempfile.NamedTemporaryFile(suffix='.png')
+        plt.savefig(tf_img, format='png')
+        tf_img.seek(0)
+        plt.clf()
+        plt.cla()
+        return tf_img

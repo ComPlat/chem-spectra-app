@@ -2,11 +2,14 @@ from chem_spectra.model.inferencer import InferencerModel as InferModel
 from chem_spectra.model.molecule import MoleculeModel
 
 
-def decorate_sim_property(jbcv, molfile, isSimulateNRM=False):
+def decorate_sim_property(jbcv, molfile, isSimulateNMR=False):
     if molfile is None:
         return jbcv
     if jbcv.ncl in ('1H', '13C') and molfile.name:
-        if (not jbcv.simu_peaks) or isSimulateNRM:
+        # if (not jbcv.simu_peaks) or isSimulateNMR:
+        #     deco_jbcv = __simulate_nmr(jbcv, molfile)
+        #     return deco_jbcv
+        if isSimulateNMR:
             deco_jbcv = __simulate_nmr(jbcv, molfile)
             return deco_jbcv
 
