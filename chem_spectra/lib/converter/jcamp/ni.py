@@ -302,10 +302,18 @@ class JcampNIConverter:  # nmr & IR
     def __set_x_unit(self):
         x_unit = None
 
-        try:
-            x_unit = self.dic['XUNITS'][0].upper()
-        except:  # noqa
+        try: # jcamp version 6
+            units = self.dic['UNITS']
+            array_unit = units[0].split(',')
+            x_unit = (array_unit[0].upper()).strip()
+        except: # noqa
             pass
+
+        if (x_unit is None):
+            try:
+                x_unit = self.dic['XUNITS'][self.target_idx].upper()
+            except:  # noqa
+                pass
 
         return x_unit
 
