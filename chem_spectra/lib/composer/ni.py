@@ -256,7 +256,7 @@ class NIComposer(BaseComposer):
         # PLOT data
         plt.plot(self.core.xs, self.core.ys)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
-        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd or self.core.is_cyclic_volta) else [x_max, x_min]    # noqa: E501
+        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd or self.core.is_cyclic_volta or self.core.is_sec) else [x_max, x_min]    # noqa: E501
         plt.xlim(xlim_left, xlim_right)
         y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
         h = y_max - y_min
@@ -461,6 +461,33 @@ class NIComposer(BaseComposer):
         plt.clf()
         plt.cla()
         return tf_img
+    
+    def __prepare_metadata_info_for_csv(self, csv_writer: csv.DictWriter):
+        csv_writer.writerow({
+            'Max x': 'Measurement type',
+            'Max y': 'Cyclic Voltammetry',
+        })
+        csv_writer.writerow({
+            'Max x': 'Measurement type ID',
+        })
+        csv_writer.writerow({
+            'Max x': 'Sample ID',
+        })
+        csv_writer.writerow({
+            'Max x': 'Analysis ID',
+        })
+        csv_writer.writerow({
+            'Max x': 'Dataset ID',
+        })
+        csv_writer.writerow({
+            'Max x': 'Dataset name',
+        })
+        csv_writer.writerow({
+            'Max x': 'Link to sample',
+        })
+        csv_writer.writerow({
+        })
+        
 
     def tf_csv(self):
         if self.core.is_cyclic_volta == False:
@@ -477,6 +504,9 @@ class NIComposer(BaseComposer):
             # fieldnames = ['Max', 'Min', 'I λ0', 'I ratio', 'Pecker']
             fieldnames = ['Max x', 'Max y', 'Min x', 'Min y', 'Delta Ep', 'I lambda0', 'I ratio']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            self.__prepare_metadata_info_for_csv(writer)
+
             writer.writeheader()
 
             x_max = np.max(self.core.xs)

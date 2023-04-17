@@ -93,4 +93,5 @@ dependencies:
     - urllib3==1.24.2
     - werkzeug==0.15.5
     - zipp==0.5.2
+    - -e git+https://github.com/ComPlat/nmrglue.git@c5a7d4d0073fedff68808b4e9c95836a8c20413e#egg=nmrglue
 prefix: /home/eln/anaconda3/envs/chem-spectra

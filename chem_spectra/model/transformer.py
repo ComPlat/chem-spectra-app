@@ -166,6 +166,8 @@ class TransformerModel:
                     #     # return if molfile is invalid
                     #     return None, decorated_jbcv
                     invalid_molfile = False
+                    if self.molfile is None:
+                        invalid_molfile = True
                     if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                         invalid_molfile = True
                         final_decorated_jbcv = decorated_jbcv['origin_jbcv']
