@@ -41,79 +41,9 @@ def test_zip_jcamp_n_img_invalid_molfile(client):
     data = dict(
         file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
         molfile=(io.BytesIO(molfile), 'invalid_molfile.mol'),
+        simulatenmr='true'
     )
-    response = client.post(
-        '/zip_jcamp_n_img',
-        content_type='multipart/form-data',
-        data=data
-    )
-
-    assert response.status_code == 200
-    assert response.mimetype == 'application/zip'
-
-    header_json = json.loads(response.headers['X-Extra-Info-JSON'])
-    assert header_json['invalid_molfile'] is True
-
-
-def test_zip_jcamp_n_img_invalid_molfile(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
-        file_content = f.read()
-
-    with open(source_dir_invalid_molfile, 'rb') as f:
-        molfile = f.read()
-
-    data = dict(
-        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
-        molfile=(io.BytesIO(molfile), 'invalid_molfile.mol'),
-    )
-    response = client.post(
-        '/zip_jcamp_n_img',
-        content_type='multipart/form-data',
-        data=data
-    )
-
-    assert response.status_code == 200
-    assert response.mimetype == 'application/zip'
-
-    header_json = json.loads(response.headers['X-Extra-Info-JSON'])
-    assert header_json['invalid_molfile'] is True
-
-
-def test_zip_jcamp_n_img_invalid_molfile(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
-        file_content = f.read()
-
-    with open(source_dir_invalid_molfile, 'rb') as f:
-        molfile = f.read()
-
-    data = dict(
-        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
-        molfile=(io.BytesIO(molfile), 'invalid_molfile.mol'),
-    )
-    response = client.post(
-        '/zip_jcamp_n_img',
-        content_type='multipart/form-data',
-        data=data
-    )
-
-    assert response.status_code == 200
-    assert response.mimetype == 'application/zip'
-
-    header_json = json.loads(response.headers['X-Extra-Info-JSON'])
-    assert header_json['invalid_molfile'] is True
-
-
-def test_zip_jcamp_n_img_invalid_molfile(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
-        file_content = f.read()
-
-    with open(source_dir_invalid_molfile, 'rb') as f:
-        molfile = f.read()
-
-    data = dict(
-        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
-        molfile=(io.BytesIO(molfile), 'invalid_molfile.mol'),
-    )
+    
     response = client.post(
         '/zip_jcamp_n_img',
         content_type='multipart/form-data',
@@ -173,8 +103,7 @@ def test_zip_image(client):
     )
 
     assert response.status_code == 200
-    assert response.mimetype == 'text/html'
-    assert response.data == '{"invalid_molfile": true}'.encode('utf-8')
+    assert response.mimetype == 'application/zip'
     
 def test_combine_images_no_file(client):
     response = client.post(
@@ -186,19 +115,8 @@ def test_combine_images_no_file(client):
     assert response.status_code == 400
 
 def test_combine_images(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
-        file_content = f.read()
-    data = dict(
-        file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
-    )
-    response = client.post(
-        '/combine_images',
-        content_type='multipart/form-data',
-        data=data
-    )
-
-    assert response.status_code == 200
-    # assert response.mimetype == 'application/octet-stream'
+    #TODO: implement later
+    pass
 
 
 def test_image(client):

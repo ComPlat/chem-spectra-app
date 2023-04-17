@@ -35,6 +35,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_uv_vis = base.is_uv_vis
         self.is_hplc_uv_vis = base.is_hplc_uv_vis
         self.is_cyclic_volta = base.is_cyclic_volta
+        self.is_sec = base.is_sec if hasattr(base, 'is_sec') else False
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.is_dept = base.is_dept
@@ -98,7 +99,7 @@ class JcampNIConverter:  # nmr & IR
             'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM',
             'HPLC UV-VIS', 'HPLC UV/VIS SPECTRUM',
             'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
-            'CYCLIC VOLTAMMETRY'
+            'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY'
         ]
         for tp in target_topics:
             if tp in self.datatypes:
@@ -257,10 +258,12 @@ class JcampNIConverter:  # nmr & IR
     def __set_obs_freq(self):
         obs_freq = None
         try:
-            obs_freq = float(self.dic['.OBSERVEFREQUENCY'][0])
+            obs_freq = float(self.dic['.OBSERVEFREQUENCY'][self.target_idx])
         except:  # noqa
-            pass
-
+            try:
+                 obs_freq = float(self.dic['.OBSERVEFREQUENCY'][0])
+            except:  # noqa
+              pass
         try:
             if obs_freq is None:
                 obs_freq = float(self.dic['$SFO1'][0])
@@ -302,10 +305,21 @@ class JcampNIConverter:  # nmr & IR
     def __set_x_unit(self):
         x_unit = None
 
-        try:
-            x_unit = self.dic['XUNITS'][0].upper()
-        except:  # noqa
+        try: # jcamp version 6
+            units = self.dic['UNITS']
+            array_unit = units[0].split(',')
+            x_unit = (array_unit[0].upper()).strip()
+        except: # noqa
             pass
+
+        if (x_unit is None):
+            try:
+                x_unit = self.dic['XUNITS'][self.target_idx].upper()
+            except:  # noqa
+                try:
+                     x_unit = self.dic['XUNITS'][0].upper()
+                except:
+                    pass
 
         return x_unit
 

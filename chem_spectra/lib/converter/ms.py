@@ -149,54 +149,112 @@ class MSConverter:
         noise_ratio = 100 * max_oorg / max_base
 
         return ratio, noise_ratio, max_seed
+    
+    def __get_best_ratio(self, old_ratio, new_ratio, noise_ratio, current_index, current_backup_idx, curr_backup_ratio, old_y, new_y):
+        best_ratio, best_idx, backup_ratio, backup_idx = old_ratio, current_index, curr_backup_ratio, current_backup_idx
+        best_y = old_y
+        if (best_ratio < new_ratio) and (noise_ratio <= 50.0):
+            best_idx = current_index
+            best_ratio = new_ratio
+            best_y = new_y
+        elif (new_ratio == 100.0) and (noise_ratio <= 50.0) and (best_y < new_y):
+            best_idx = current_index
+            best_ratio = new_ratio
+            best_y = new_y
 
-    def __decode(self, runs):
+        if (backup_ratio < new_ratio):
+            backup_idx = current_index
+            backup_ratio = new_ratio
+        
+        return best_ratio, best_idx, backup_ratio, backup_idx, best_y
+
+
+    def __decode(self, runs, decoded_count=1):
         spectra = []
         best_ratio, best_idx, backup_ratio, backup_idx = 0, 0, 0, 0
         best_y = 0
+        # print('this')
         # for idx, data in enumerate(runs):
-        #     spc = data.peaks('raw')
-        #     spectra.append(reduce_pts(spc))
+        #     try:
+        #         spc = data.peaks('raw')
+        #         spectra.append(reduce_pts(spc))
+        #     except:
+        #         spectra.append(np.array([]))
+        #         continue
+            
 
         #     ratio, noise_ratio, y = self.__get_ratio(spc)
-        #     if (best_ratio < ratio) and (noise_ratio <= 50.0):
-        #         best_idx = idx
-        #         best_ratio = ratio
-        #         best_y = y
-        #     elif (ratio == 100.0) and (noise_ratio <= 50.0) and (best_y < y):
-        #         best_idx = idx
-        #         best_ratio = ratio
-        #         best_y = y
+        #     best_ratio, best_idx, backup_ratio, backup_idx, best_y = self.__get_best_ratio(
+        #         old_ratio=best_ratio,
+        #         new_ratio=ratio,
+        #         noise_ratio=noise_ratio,
+        #         current_index=idx,
+        #         current_backup_idx=backup_idx,
+        #         curr_backup_ratio=backup_ratio,
+        #         old_y=best_y,
+        #         new_y=y
+        #     )
+        # print('this2')
 
-        #     if (backup_ratio < ratio):
-        #         backup_idx = idx
-        #         backup_ratio = ratio
 
-        spectrum_count = runs.get_spectrum_count()
-        for idx in range(0, spectrum_count):
-            try:
-                data = runs[idx+1]
-            except:
-                # cannot retrieve data from scan id, just add an empty spectra
-                spectra.append(np.array([]))
-                continue
+        if decoded_count == 1:
+            for idx, data in enumerate(runs):
+                try:
+                    spc = data.peaks('raw')
+                    spectra.append(reduce_pts(spc))
+                except:
+                    spectra.append(np.array([]))
+                    continue
 
-            spc = data.peaks('raw')
-            spectra.append(reduce_pts(spc))
+                
 
-            ratio, noise_ratio, y = self.__get_ratio(spc)
-            if (best_ratio < ratio) and (noise_ratio <= 50.0):
-                best_idx = idx
-                best_ratio = ratio
-                best_y = y
-            elif (ratio == 100.0) and (noise_ratio <= 50.0) and (best_y < y):
-                best_idx = idx
-                best_ratio = ratio
-                best_y = y
+                ratio, noise_ratio, y = self.__get_ratio(spc)
+                best_ratio, best_idx, backup_ratio, backup_idx, best_y = self.__get_best_ratio(
+                    old_ratio=best_ratio,
+                    new_ratio=ratio,
+                    noise_ratio=noise_ratio,
+                    current_index=idx,
+                    current_backup_idx=backup_idx,
+                    curr_backup_ratio=backup_ratio,
+                    old_y=best_y,
+                    new_y=y
+                )
+        else:
+            spectrum_count = runs.get_spectrum_count()
+            for idx in range(spectrum_count):
+                try:
+                    data = runs[idx+1]
+                except Exception as e:
+                    # cannot retrieve data from scan id, just add an empty spectra
+                    spectra.append(np.array([]))
+                    continue
 
-            if (backup_ratio < ratio):
-                backup_idx = idx
-                backup_ratio = ratio
+                spc = data.peaks('raw')
+                spectra.append(reduce_pts(spc))
+
+                ratio, noise_ratio, y = self.__get_ratio(spc)
+                # if (best_ratio < ratio) and (noise_ratio <= 50.0):
+                #     best_idx = idx
+                #     best_ratio = ratio
+                #     best_y = y
+                # elif (ratio == 100.0) and (noise_ratio <= 50.0) and (best_y < y):
+                #     best_idx = idx
+                #     best_ratio = ratio
+                #     best_y = y
+
+                # if (backup_ratio < ratio):
+                #     backup_idx = idx
+                #     backup_ratio = ratio
+                best_ratio, best_idx, backup_ratio, backup_idx, best_y = self.__get_best_ratio(
+                    old_ratio=best_ratio,
+                    new_ratio=ratio,
+                    noise_ratio=noise_ratio,
+                    current_index=idx,
+                    current_backup_idx=backup_idx,
+                    curr_backup_ratio=backup_ratio,
+                    old_y=best_y,
+                    new_y=y
+                )
 
         output_idx = best_idx if best_ratio > 10.0 else backup_idx
 
@@ -208,16 +266,17 @@ class MSConverter:
 
         runs, spectra, auto_scan = None, None, 0
         elapsed = 0.0
+        decoded_count = 1
         while True:
             if mzml_path.exists():
                 try:
                     elapsed += 0.2
                     time.sleep(0.2)
                     runs = pymzml.run.Reader(mzml_file, build_index_from_scratch=True)
-                    spectra, auto_scan = self.__decode(runs)
+                    spectra, auto_scan = self.__decode(runs, decoded_count)
                     break
-                # except Exception as e: print(e)
                 except:  # noqa
+                    decoded_count += 1
                     pass
             else:
                 elapsed += 0.1
