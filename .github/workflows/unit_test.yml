@@ -18,4 +18,4 @@ jobs:
     - name: Test with pytest
       run: |
         # pip install -r requirements.txt
-        # $CONDA/bin/python -m pytest
+        $CONDA/bin/python -m pytest

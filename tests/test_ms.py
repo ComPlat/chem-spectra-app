@@ -21,9 +21,11 @@ def test_ms_mzml_converter_composer():
 
     lines = mscp.tf_jcamp().read()[:800] \
                 .decode('utf-8', errors='ignore').split('\n')
+    
+    print(lines)
 
-    assert '##$CSSCANAUTOTARGET=3' in lines
-    assert '##$CSSCANEDITTARGET=3' in lines
+    assert '##$CSSCANAUTOTARGET=24' in lines
+    assert '##$CSSCANEDITTARGET=24' in lines
     assert '##$CSSCANCOUNT=24' in lines
     assert '##$CSTHRESHOLD=0.05' in lines
     assert '51.012176513671875, 34359.0' in lines

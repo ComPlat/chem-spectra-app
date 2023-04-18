@@ -26,6 +26,7 @@ class JcampBaseConverter:
         self.is_xrd = self.__is_xrd()
         self.is_cyclic_volta = self.__is_cyclic_volta()
         self.is_sec = self.__is_sec()
+        self.is_cds = self.__is_cds()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
@@ -66,6 +67,8 @@ class JcampBaseConverter:
             return 'CYCLIC VOLTAMMETRY'
         elif 'SIZE EXCLUSION CHROMATOGRAPHY' in dts:
             return 'SIZE EXCLUSION CHROMATOGRAPHY'
+        elif 'CIRCULAR DICHROISM SPECTROSCOPY' in dts:
+            return 'CIRCULAR DICHROISM SPECTROSCOPY'
         return ''
 
     def __typ(self):
@@ -94,6 +97,8 @@ class JcampBaseConverter:
             return 'CYCLIC VOLTAMMETRY'
         elif 'SIZE EXCLUSION CHROMATOGRAPHY' in dt:
             return 'SIZE EXCLUSION CHROMATOGRAPHY'
+        elif 'CIRCULAR DICHROISM SPECTROSCOPY' in dt:
+            return 'CIRCULAR DICHROISM SPECTROSCOPY'
         return ''
 
     def __set_dataclass(self):
@@ -115,7 +120,7 @@ class JcampBaseConverter:
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION', 'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY']
+        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION', 'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY', 'CIRCULAR DICHROISM SPECTROSCOPY']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -137,6 +142,9 @@ class JcampBaseConverter:
 
     def __is_sec(self):
         return self.typ in ['SIZE EXCLUSION CHROMATOGRAPHY']
+    
+    def __is_cds(self):
+        return self.typ in ['CIRCULAR DICHROISM SPECTROSCOPY']
 
     def __ncl(self):
         try:
