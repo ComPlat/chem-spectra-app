@@ -10,6 +10,8 @@ def create_app(test_config=None):
         SECRET_KEY='dev',
         IP_WHITE_LIST=''
     )
+    
+    app.config.from_prefixed_env()
 
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
