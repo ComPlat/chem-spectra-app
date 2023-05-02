@@ -7,7 +7,7 @@ coverage==4.5.3
 cycler==0.10.0
 entrypoints==0.3
 flake8==3.7.7
-Flask==2.2.3
+Flask==2.3.2
 gunicorn==19.9.0
 idna==2.7
 importlib-metadata==3.6.0
