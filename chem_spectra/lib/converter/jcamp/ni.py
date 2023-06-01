@@ -37,6 +37,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_cyclic_volta = base.is_cyclic_volta
         self.is_sec = base.is_sec if hasattr(base, 'is_sec') else False
         self.is_cds = base.is_cds if hasattr(base, 'is_cds') else False
+        self.is_aif = base.is_aif if hasattr(base, 'is_aif') else False
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.is_dept = base.is_dept
@@ -87,9 +88,7 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_UVVIS
         elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
             return THRESHOLD_TGA
-        elif 'X-RAY DIFFRACTION' == dt or 'CIRCULAR DICHROISM SPECTROSCOPY' == dt:
-            return THRESHOLD_XRD
-        elif 'CYCLIC VOLTAMMETRY' == dt:
+        elif 'X-RAY DIFFRACTION' == dt or 'CIRCULAR DICHROISM SPECTROSCOPY' == dt or 'CYCLIC VOLTAMMETRY' == dt or 'SORPTION-DESORPTION MEASUREMENT' == dt:
             return THRESHOLD_XRD
         return 0.5
 
@@ -100,7 +99,8 @@ class JcampNIConverter:  # nmr & IR
             'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM',
             'HPLC UV-VIS', 'HPLC UV/VIS SPECTRUM',
             'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
-            'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY', 'CIRCULAR DICHROISM SPECTROSCOPY'
+            'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY',
+            'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT'
         ]
         for tp in target_topics:
             if tp in self.datatypes:

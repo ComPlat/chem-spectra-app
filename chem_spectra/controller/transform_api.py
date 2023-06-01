@@ -37,12 +37,9 @@ def zip_jcamp_n_img():
         if (not cmpsr):
             abort(403)
 
-        # if ((type(cmpsr) is dict) and "invalid_molfile" in cmpsr):
-        #     return json.dumps(cmpsr)
-
         if isinstance(cmpsr, BagItBaseConverter):
             # check if composered model is in BagIt format
-            list_jcamps, list_images, list_csv = cmpsr.data, cmpsr.images, cmpsr.list_csv
+            list_jcamps, list_images, list_csv, combined_image = cmpsr.data, cmpsr.images, cmpsr.list_csv, cmpsr.combined_image
             dst_list = []
             for idx in range(len(list_jcamps)):
                 tf_jcamp = list_jcamps[idx]
@@ -50,6 +47,9 @@ def zip_jcamp_n_img():
                 tf_csv = list_csv[idx]
                 tf_arr = [tf_jcamp, tf_img, tf_csv]
                 dst_list.append(tf_arr)
+                
+            if combined_image is not None:
+                dst_list.append(combined_image)
 
             memory = to_zip_bag_it_response(dst_list)
             rsp = make_response(
