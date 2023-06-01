@@ -289,7 +289,21 @@ class TransformerModel:
             else:
                 nicv = JcampNIConverter(jbcv)
                 nicp = NIComposer(nicv)
-                plt.plot(nicp.core.xs, nicp.core.ys, label=filename)
+                xs, ys = nicp.core.xs, nicp.core.ys
+                marker = ''
+                if nicp.core.is_aif:
+                    first_x, last_x = xs[0], xs[len(xs)-1]
+                    if first_x <= last_x:
+                        filename = 'ADSORPTION'
+                        marker = '^'
+                    else:
+                        filename = 'DESORPTION'
+                        marker = 'v'
+                plt.plot(xs, ys, label=filename, marker=marker)
+
+                # PLOT label
+                plt.xlabel("X ({})".format(nicp.core.label['x']), fontsize=18)
+                plt.ylabel("Y ({})".format(nicp.core.label['y']), fontsize=18)
             tf.close()
         
         plt.legend()

@@ -22,7 +22,7 @@ def chemspectra_file_convert():
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:
-        tf_jcamp, tf_img, tf_csv = TraModel(file, molfile=molfile, params=params).convert2jcamp_img()
+        tf_jcamp, tf_img, _ = TraModel(file, molfile=molfile, params=params).convert2jcamp_img()
         if not tf_jcamp:
             if isinstance(tf_img, BagItBaseConverter):
                 list_jcamps = tf_img.get_base64_data()
@@ -51,9 +51,11 @@ def chemspectra_file_save():
     if 'dst_list' in request_files:
         request_dst = request_files.getlist('dst_list')
         dst_list = []
+        list_file_items = []
         for index in range(len(request_dst)):
             item = request_dst[index]
             dst = FileContainer(item)
+            list_file_items.append(dst)
             params['jcamp_idx'] = index
             if dst:  # and allowed_file(file):
                 tm = TraModel(dst, molfile=molfile, params=params)
@@ -74,6 +76,12 @@ def chemspectra_file_save():
                         tm.tf_predict(),
                     ]
                 dst_list.append(tf_arr)
+
+        transform_model = TraModel(None, params=params, multiple_files=list_file_items)
+        tf_combined = transform_model.tf_combine()
+        if tf_combined is not None:
+            dst_list.append(tf_combined)
+
         memory = to_zip_bag_it_response(dst_list, filename, src_idx=0)
         return send_file(
             memory,
@@ -119,9 +127,11 @@ def chemspectra_file_refresh():
     if 'dst_list' in request_files:
         request_dst = request_files.getlist('dst_list')
         dst_list = []
+        list_file_items = []
         for index in range(len(request_dst)):
             item = request_dst[index]
             dst = FileContainer(item)
+            list_file_items.append(dst)
             params['jcamp_idx'] = index
             if dst:  # and allowed_file(file):
                 tm = TraModel(dst, molfile=molfile, params=params)
@@ -140,6 +150,11 @@ def chemspectra_file_refresh():
                         tm.tf_predict(),
                     ]
                 dst_list.append(tf_arr)
+
+        transform_model = TraModel(None, params=params, multiple_files=list_file_items)
+        tf_combined = transform_model.tf_combine()
+        if tf_combined is not None:
+            dst_list.append(tf_combined)
         memory = to_zip_bag_it_response(dst_list, 'spectrum.zip')
         return send_file(
             memory,
