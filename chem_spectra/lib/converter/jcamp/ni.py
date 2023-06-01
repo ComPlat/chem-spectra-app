@@ -36,6 +36,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_hplc_uv_vis = base.is_hplc_uv_vis
         self.is_cyclic_volta = base.is_cyclic_volta
         self.is_sec = base.is_sec if hasattr(base, 'is_sec') else False
+        self.is_cds = base.is_cds if hasattr(base, 'is_cds') else False
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.is_dept = base.is_dept
@@ -86,7 +87,7 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_UVVIS
         elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
             return THRESHOLD_TGA
-        elif 'X-RAY DIFFRACTION' == dt:
+        elif 'X-RAY DIFFRACTION' == dt or 'CIRCULAR DICHROISM SPECTROSCOPY' == dt:
             return THRESHOLD_XRD
         elif 'CYCLIC VOLTAMMETRY' == dt:
             return THRESHOLD_XRD
@@ -99,7 +100,7 @@ class JcampNIConverter:  # nmr & IR
             'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM',
             'HPLC UV-VIS', 'HPLC UV/VIS SPECTRUM',
             'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
-            'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY'
+            'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY', 'CIRCULAR DICHROISM SPECTROSCOPY'
         ]
         for tp in target_topics:
             if tp in self.datatypes:
@@ -160,6 +161,17 @@ class JcampNIConverter:  # nmr & IR
 
         if beg_pt is None:
             try:
+                beg_pt = to_float(self.dic['FIRSTX'][idx])
+                end_pt = to_float(self.dic['LASTX'][idx])
+            except:  # noqa
+                pass
+            
+        if beg_pt is None:
+            try:
+                while len(self.dic['FIRSTX']) <= idx:
+                    self.dic['FIRSTX'].insert(0, '')
+                while len(self.dic['LASTX']) <= idx:
+                    self.dic['LASTX'].insert(0, '')
                 beg_pt = to_float(self.dic['FIRSTX'][idx])
                 end_pt = to_float(self.dic['LASTX'][idx])
             except:  # noqa
@@ -417,7 +429,7 @@ class JcampNIConverter:  # nmr & IR
         peak_idxs = signal.find_peaks(corr_data_ys, height=corr_height)[0]
 
         min_y = np.min(self.ys)
-        if not self.is_ir and (max_y * 0.4 < -min_y):
+        if not (self.is_ir or self.is_cds) and (max_y * 0.4 < -min_y):
             dept_corr_data_ys = 1 - self.ys
             dept_corr_height = height
             dept_peak_idxs = signal.find_peaks(dept_corr_data_ys, height=dept_corr_height)[0]
