@@ -256,7 +256,7 @@ class NIComposer(BaseComposer):
         # PLOT data
         plt.plot(self.core.xs, self.core.ys)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
-        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd or self.core.is_cyclic_volta or self.core.is_sec or self.core.is_cds or self.core.is_aif or self.core.is_emissions or self.core.is_dls_acf) else [x_max, x_min]    # noqa: E501
+        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd or self.core.is_cyclic_volta or self.core.is_sec or self.core.is_cds or self.core.is_aif or self.core.is_emissions or self.core.is_dls_acf or self.core.is_dls_intensity) else [x_max, x_min]    # noqa: E501
         plt.xlim(xlim_left, xlim_right)
         y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
         h = y_max - y_min
