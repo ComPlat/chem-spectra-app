@@ -29,6 +29,7 @@ class JcampBaseConverter:
         self.is_cds = self.__is_cds()
         self.is_aif = self.__is_aif()
         self.is_emissions = self.__is_emissions()
+        self.is_dls_acf = self.__is_dls_acf()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
@@ -75,6 +76,8 @@ class JcampBaseConverter:
             return 'SORPTION-DESORPTION MEASUREMENT'
         elif 'Emissions' in dts or 'EMISSIONS' in dts:
             return 'Emissions'
+        elif 'DLS ACF' in dts:
+            return 'DLS ACF'
         return ''
 
     def __typ(self):
@@ -109,6 +112,8 @@ class JcampBaseConverter:
             return 'SORPTION-DESORPTION MEASUREMENT'
         elif 'Emissions' in dt or 'EMISSIONS' in dt:
             return 'Emissions'
+        elif 'DLS ACF' in dt:
+            return 'DLS ACF'
         return ''
 
     def __set_dataclass(self):
@@ -134,7 +139,8 @@ class JcampBaseConverter:
             'INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS',
             'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION',
             'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY',
-            'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT', 'Emissions']
+            'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT', 'Emissions', 
+            'DLS ACF']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -165,6 +171,9 @@ class JcampBaseConverter:
     
     def __is_emissions(self):
         return self.typ in ['Emissions', 'EMISSIONS']
+    
+    def __is_dls_acf(self):
+        return self.typ in ['DLS ACF']
 
     def __ncl(self):
         try:
