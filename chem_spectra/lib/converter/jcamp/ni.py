@@ -13,6 +13,7 @@ THRESHOLD_MS = 0.05
 THRESHOLD_UVVIS = 0.05
 THRESHOLD_TGA = 1.05
 THRESHOLD_XRD = 1.00
+THRESHOLD_EMISSION = 0.5
 
 
 class JcampNIConverter:  # nmr & IR
@@ -38,6 +39,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_sec = base.is_sec if hasattr(base, 'is_sec') else False
         self.is_cds = base.is_cds if hasattr(base, 'is_cds') else False
         self.is_aif = base.is_aif if hasattr(base, 'is_aif') else False
+        self.is_emissions = base.is_emissions if hasattr(base, 'is_emissions') else False
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.is_dept = base.is_dept
@@ -84,12 +86,14 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_UVVIS
         elif 'HPLC UV-VIS' == dt:
             return THRESHOLD_UVVIS
-        elif 'UV/VIS SPECTRUM' == dt or 'UV-VIS' == dt or 'ULTRAVIOLET SPECTRUM' == dt:
+        elif dt in ['UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM']:
             return THRESHOLD_UVVIS
         elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
             return THRESHOLD_TGA
-        elif 'X-RAY DIFFRACTION' == dt or 'CIRCULAR DICHROISM SPECTROSCOPY' == dt or 'CYCLIC VOLTAMMETRY' == dt or 'SORPTION-DESORPTION MEASUREMENT' == dt:
+        elif dt in ['X-RAY DIFFRACTION', 'CIRCULAR DICHROISM SPECTROSCOPY', 'CYCLIC VOLTAMMETRY', 'SORPTION-DESORPTION MEASUREMENT']:
             return THRESHOLD_XRD
+        elif dt in ['Emissions', 'EMISSIONS']:
+            return THRESHOLD_EMISSION
         return 0.5
 
     def __index_target(self):
@@ -100,7 +104,8 @@ class JcampNIConverter:  # nmr & IR
             'HPLC UV-VIS', 'HPLC UV/VIS SPECTRUM',
             'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
             'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY',
-            'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT'
+            'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT',
+            'Emissions', 'EMISSIONS'
         ]
         for tp in target_topics:
             if tp in self.datatypes:
