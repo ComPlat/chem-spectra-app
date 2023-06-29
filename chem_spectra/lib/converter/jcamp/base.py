@@ -27,6 +27,10 @@ class JcampBaseConverter:
         self.is_cyclic_volta = self.__is_cyclic_volta()
         self.is_sec = self.__is_sec()
         self.is_cds = self.__is_cds()
+        self.is_aif = self.__is_aif()
+        self.is_emissions = self.__is_emissions()
+        self.is_dls_acf = self.__is_dls_acf()
+        self.is_dls_intensity = self.__is_dls_intensity()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
@@ -69,6 +73,14 @@ class JcampBaseConverter:
             return 'SIZE EXCLUSION CHROMATOGRAPHY'
         elif 'CIRCULAR DICHROISM SPECTROSCOPY' in dts:
             return 'CIRCULAR DICHROISM SPECTROSCOPY'
+        elif 'SORPTION-DESORPTION MEASUREMENT' in dts:
+            return 'SORPTION-DESORPTION MEASUREMENT'
+        elif 'Emissions' in dts or 'EMISSIONS' in dts:
+            return 'Emissions'
+        elif 'DLS ACF' in dts:
+            return 'DLS ACF'
+        elif 'DLS INTENSITY' in dts or 'DLS intensity' in dts:
+            return 'DLS intensity'
         return ''
 
     def __typ(self):
@@ -99,6 +111,14 @@ class JcampBaseConverter:
             return 'SIZE EXCLUSION CHROMATOGRAPHY'
         elif 'CIRCULAR DICHROISM SPECTROSCOPY' in dt:
             return 'CIRCULAR DICHROISM SPECTROSCOPY'
+        elif 'SORPTION-DESORPTION MEASUREMENT' in dt:
+            return 'SORPTION-DESORPTION MEASUREMENT'
+        elif 'Emissions' in dt or 'EMISSIONS' in dt:
+            return 'Emissions'
+        elif 'DLS ACF' in dt:
+            return 'DLS ACF'
+        elif 'DLS INTENSITY' in dt or 'DLS intensity' in dt:
+            return 'DLS intensity'
         return ''
 
     def __set_dataclass(self):
@@ -120,7 +140,12 @@ class JcampBaseConverter:
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION', 'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY', 'CIRCULAR DICHROISM SPECTROSCOPY']
+        return self.typ in [
+            'INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS',
+            'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION',
+            'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY',
+            'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT', 'Emissions', 
+            'DLS ACF', 'DLS intensity']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -145,6 +170,18 @@ class JcampBaseConverter:
     
     def __is_cds(self):
         return self.typ in ['CIRCULAR DICHROISM SPECTROSCOPY']
+
+    def __is_aif(self):
+        return self.typ in ['SORPTION-DESORPTION MEASUREMENT']
+        
+    def __is_emissions(self):
+        return self.typ in ['Emissions', 'EMISSIONS']
+    
+    def __is_dls_acf(self):
+        return self.typ in ['DLS ACF']
+
+    def __is_dls_intensity(self):
+        return self.typ in ['DLS INTENSITY', 'DLS intensity']
 
     def __ncl(self):
         try:

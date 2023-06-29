@@ -5,7 +5,7 @@ import json
 target_dir = './tests/fixtures/'
 source_dir = 'source/'
 file_jdx = '13C-DEPT135.dx'
-bagit_file = 'cyclicvoltammetry/File053_BagIt.zip'
+bagit_file = 'bagit/cv/File053_BagIt.zip'
 cv_file_jdx = 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'
 
 def test_api_chemspectra_file_convert_without_file(client):

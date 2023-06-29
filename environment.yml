@@ -1,4 +1,4 @@
-name: chem-spectra
+name: chem-spectra-dev
 channels:
   - rdkit
   - defaults
@@ -105,4 +105,4 @@ dependencies:
     - werkzeug==2.2.3
     - zipp==0.5.2
     - -e git+https://github.com/ComPlat/nmrglue.git@c5a7d4d0073fedff68808b4e9c95836a8c20413e#egg=nmrglue
-prefix: /home/eln/anaconda3/envs/chem-spectra
+prefix: /home/eln/anaconda3/envs/chem-spectra-dev
