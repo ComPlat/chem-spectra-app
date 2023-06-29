@@ -41,6 +41,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_aif = base.is_aif if hasattr(base, 'is_aif') else False
         self.is_emissions = base.is_emissions if hasattr(base, 'is_emissions') else False
         self.is_dls_acf = base.is_dls_acf if hasattr(base, 'is_dls_acf') else False
+        self.is_dls_intensity = base.is_dls_intensity if hasattr(base, 'is_dls_intensity') else False
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.is_dept = base.is_dept
@@ -91,7 +92,8 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_UVVIS
         elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
             return THRESHOLD_TGA
-        elif dt in ['X-RAY DIFFRACTION', 'CIRCULAR DICHROISM SPECTROSCOPY', 'CYCLIC VOLTAMMETRY', 'SORPTION-DESORPTION MEASUREMENT', 'DLS ACF']:
+        elif dt in ['X-RAY DIFFRACTION', 'CIRCULAR DICHROISM SPECTROSCOPY', 'CYCLIC VOLTAMMETRY', 'SORPTION-DESORPTION MEASUREMENT', 
+                    'DLS ACF', 'DLS INTENSITY', 'DLS intensity']:
             return THRESHOLD_XRD
         elif dt in ['Emissions', 'EMISSIONS']:
             return THRESHOLD_EMISSION
@@ -106,7 +108,7 @@ class JcampNIConverter:  # nmr & IR
             'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
             'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY',
             'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT',
-            'Emissions', 'EMISSIONS', 'DLS ACF'
+            'Emissions', 'EMISSIONS', 'DLS ACF', 'DLS INTENSITY', 'DLS intensity'
         ]
         for tp in target_topics:
             if tp in self.datatypes:
