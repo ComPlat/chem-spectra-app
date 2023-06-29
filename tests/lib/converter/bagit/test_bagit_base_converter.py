@@ -7,6 +7,7 @@ target_dir = './tests/fixtures/source/bagit/'
 cv_layout_path = target_dir + 'cv/File053_BagIt.zip'
 aif_layout_path = target_dir + 'aif/aif.zip'
 emissions_layout_path = target_dir + 'emissions/emissions.zip'
+dls_acf_layout_path = target_dir + 'dls_acf/dls_acf.zip'
 
 def assertFileType(file, mimeStr):
     assert mimetypes.guess_type(file.name)[0] == mimeStr
@@ -58,6 +59,15 @@ def test_bagit_convert_to_jcamp_emissions_layout():
         converter = BagItConveter(td)
         jcamp = converter.data[0]
         assertJcampContent(jcamp, '##DATA TYPE=Emissions')
+
+def test_bagit_convert_to_jcamp_dls_acf_layout():
+    with tempfile.TemporaryDirectory() as td:
+        with zipfile.ZipFile(dls_acf_layout_path, 'r') as z:
+            z.extractall(td)
+
+        converter = BagItConveter(td)
+        jcamp = converter.data[0]
+        assertJcampContent(jcamp, '##DATA TYPE=DLS ACF')
 
 def test_bagit_convert_to_images():
     with tempfile.TemporaryDirectory() as td:
