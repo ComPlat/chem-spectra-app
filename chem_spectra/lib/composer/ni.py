@@ -627,7 +627,7 @@ class NIComposer(BaseComposer):
             x = x_peaks[idx]
             y = y_peaks[idx]
             peak_id = str(uuid.uuid4())
-            peak = {'id':peak_id, 'x':x, 'y':y}
+            peak = {'id':peak_id, 'x':x, 'y':y, 'originalX': x}
             dic_peaks['values'].append(peak)
 
         return dic_peaks
