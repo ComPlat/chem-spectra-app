@@ -90,10 +90,10 @@ class JcampNIConverter:  # nmr & IR
             return THRESHOLD_UVVIS
         elif dt in ['UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM']:
             return THRESHOLD_UVVIS
-        elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
+        elif dt in ['THERMOGRAVIMETRIC ANALYSIS', 'DLS ACF']:
             return THRESHOLD_TGA
         elif dt in ['X-RAY DIFFRACTION', 'CIRCULAR DICHROISM SPECTROSCOPY', 'CYCLIC VOLTAMMETRY', 'SORPTION-DESORPTION MEASUREMENT', 
-                    'DLS ACF', 'DLS INTENSITY', 'DLS intensity']:
+                    'DLS INTENSITY', 'DLS intensity']:
             return THRESHOLD_XRD
         elif dt in ['Emissions', 'EMISSIONS']:
             return THRESHOLD_EMISSION
