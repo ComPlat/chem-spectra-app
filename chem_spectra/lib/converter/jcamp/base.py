@@ -75,7 +75,7 @@ class JcampBaseConverter:
             return 'CIRCULAR DICHROISM SPECTROSCOPY'
         elif 'SORPTION-DESORPTION MEASUREMENT' in dts:
             return 'SORPTION-DESORPTION MEASUREMENT'
-        elif 'Emissions' in dts or 'EMISSIONS' in dts:
+        elif 'Emissions' in dts or 'EMISSIONS' in dts or 'FLUORESCENCE SPECTRUM' in dts:
             return 'Emissions'
         elif 'DLS ACF' in dts:
             return 'DLS ACF'
@@ -113,7 +113,7 @@ class JcampBaseConverter:
             return 'CIRCULAR DICHROISM SPECTROSCOPY'
         elif 'SORPTION-DESORPTION MEASUREMENT' in dt:
             return 'SORPTION-DESORPTION MEASUREMENT'
-        elif 'Emissions' in dt or 'EMISSIONS' in dt:
+        elif 'Emissions' in dt or 'EMISSIONS' in dt or 'FLUORESCENCE SPECTRUM' in dt:
             return 'Emissions'
         elif 'DLS ACF' in dt:
             return 'DLS ACF'
@@ -175,7 +175,7 @@ class JcampBaseConverter:
         return self.typ in ['SORPTION-DESORPTION MEASUREMENT']
         
     def __is_emissions(self):
-        return self.typ in ['Emissions', 'EMISSIONS']
+        return self.typ in ['Emissions', 'EMISSIONS', 'FLUORESCENCE SPECTRUM']
     
     def __is_dls_acf(self):
         return self.typ in ['DLS ACF']
