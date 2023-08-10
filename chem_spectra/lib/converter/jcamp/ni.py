@@ -95,7 +95,7 @@ class JcampNIConverter:  # nmr & IR
         elif dt in ['X-RAY DIFFRACTION', 'CIRCULAR DICHROISM SPECTROSCOPY', 'CYCLIC VOLTAMMETRY', 'SORPTION-DESORPTION MEASUREMENT', 
                     'DLS INTENSITY', 'DLS intensity']:
             return THRESHOLD_XRD
-        elif dt in ['Emissions', 'EMISSIONS']:
+        elif dt in ['Emissions', 'EMISSIONS', 'FLUORESCENCE SPECTRUM']:
             return THRESHOLD_EMISSION
         return 0.5
 
@@ -108,7 +108,7 @@ class JcampNIConverter:  # nmr & IR
             'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
             'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY',
             'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT',
-            'Emissions', 'EMISSIONS', 'DLS ACF', 'DLS INTENSITY', 'DLS intensity'
+            'Emissions', 'EMISSIONS', 'FLUORESCENCE SPECTRUM', 'DLS ACF', 'DLS INTENSITY', 'DLS intensity'
         ]
         for tp in target_topics:
             if tp in self.datatypes:
