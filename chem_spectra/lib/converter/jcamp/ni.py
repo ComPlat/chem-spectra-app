@@ -184,7 +184,6 @@ class JcampNIConverter:  # nmr & IR
                 end_pt = to_float(self.dic['LASTX'][idx])
             except:  # noqa
                 pass
-            
 
         if self.is_em_wave and beg_pt < end_pt:
             buf = beg_pt
