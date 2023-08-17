@@ -72,6 +72,8 @@ class BagItBaseConverter:
     def __combine_images(self, list_composer, list_file_names = None):
         if len(list_composer) == 0:
             return None
+        if isinstance(list_composer[0].core, JcampMSConverter):
+            return None
 
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
