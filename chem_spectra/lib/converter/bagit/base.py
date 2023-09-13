@@ -22,6 +22,7 @@ class BagItBaseConverter:
         list_file_names = []
         data_dir_path = os.path.join(target_dir, 'data')
         for (dirpath, dirnames, filenames) in os.walk(data_dir_path):
+            filenames.sort()
             list_file_names.extend(filenames)
             break
         if (len(list_file_names) == 0):
@@ -70,7 +71,7 @@ class BagItBaseConverter:
         return list_jcamps
 
     def __combine_images(self, list_composer, list_file_names = None):
-        if len(list_composer) == 0:
+        if len(list_composer) <= 1:
             return None
         if isinstance(list_composer[0].core, JcampMSConverter):
             return None

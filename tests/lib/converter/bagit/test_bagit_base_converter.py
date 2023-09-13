@@ -130,3 +130,11 @@ def test_get_combined_image():
         converter = BagItConveter(td)
         combined_image = converter.combined_image
         assertFileType(combined_image, 'image/png')
+
+def test_bagit_has_one_file_no_combined_image():
+    with tempfile.TemporaryDirectory() as td:
+        with zipfile.ZipFile(dls_acf_layout_path, 'r') as z:
+            z.extractall(td)
+
+        converter = BagItConveter(td)
+        assert converter.combined_image is None
