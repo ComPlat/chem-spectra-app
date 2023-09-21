@@ -4,7 +4,8 @@ from scipy import signal
 from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import to_float
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
-
+import json
+import os
 
 THRESHOLD_IR = 0.93
 THRESHOLD_RAMAN = 0.07
@@ -14,7 +15,7 @@ THRESHOLD_UVVIS = 0.05
 THRESHOLD_TGA = 1.05
 THRESHOLD_XRD = 1.00
 THRESHOLD_EMISSION = 0.5
-
+data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
 class JcampNIConverter:  # nmr & IR
     def __init__(self, base):
@@ -74,42 +75,34 @@ class JcampNIConverter:  # nmr & IR
 
     def __thres(self):
         dt = self.datatype
-        if 'NMR SPECTRUM' == dt:
-            return THRESHOLD_NMR
-        elif 'NMRSPECTRUM' == dt:  # MNova
-            return THRESHOLD_NMR
-        elif 'INFRARED SPECTRUM' == dt:
-            return THRESHOLD_IR
-        elif 'RAMAN SPECTRUM' == dt:
-            return THRESHOLD_RAMAN
-        elif 'MASS SPECTRUM' == dt:
-            return THRESHOLD_MS
-        elif 'HPLC UV/VIS SPECTRUM' == dt:
-            return THRESHOLD_UVVIS
-        elif 'HPLC UV-VIS' == dt:
-            return THRESHOLD_UVVIS
-        elif dt in ['UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM']:
-            return THRESHOLD_UVVIS
-        elif dt in ['THERMOGRAVIMETRIC ANALYSIS', 'DLS ACF']:
-            return THRESHOLD_TGA
-        elif dt in ['X-RAY DIFFRACTION', 'CIRCULAR DICHROISM SPECTROSCOPY', 'CYCLIC VOLTAMMETRY', 'SORPTION-DESORPTION MEASUREMENT', 
-                    'DLS INTENSITY', 'DLS intensity']:
-            return THRESHOLD_XRD
-        elif dt in ['Emissions', 'EMISSIONS', 'FLUORESCENCE SPECTRUM', 'FL SPECTRUM']:
-            return THRESHOLD_EMISSION
-        return 0.5
+        threshold_values = {
+            "NMR": THRESHOLD_NMR,
+            "INFRARED": THRESHOLD_IR,
+            "RAMAN": THRESHOLD_RAMAN,
+            "MS": THRESHOLD_MS,
+            "HPLC UVVIS": THRESHOLD_UVVIS,
+            "UVVIS": THRESHOLD_UVVIS,
+            "THERMOGRAVIMETRIC ANALYSIS": THRESHOLD_TGA,
+            "DLS ACF": THRESHOLD_TGA,
+            "X-RAY DIFFRACTION": THRESHOLD_XRD,
+            "CIRCULAR DICHROISM SPECTROSCOPY": THRESHOLD_XRD,
+            "CYCLIC VOLTAMMETRY": THRESHOLD_XRD,
+            "SORPTION-DESORPTION MEASUREMENT": THRESHOLD_XRD,
+            "DLS intensity": THRESHOLD_XRD,
+            "Emissions": THRESHOLD_EMISSION
+        }
+        with open(data_type_json, 'r') as mapping_file:
+            data_type_mappings = json.load(mapping_file)["datatypes"]
+        key = next((k for k, v in data_type_mappings.items() if dt in v), None)
+
+        return threshold_values.get(key, 0.5)
+    
 
     def __index_target(self):
-        target_topics = [
-            'NMR SPECTRUM', 'NMRSPECTRUM',
-            'INFRARED SPECTRUM', 'RAMAN SPECTRUM',
-            'MASS SPECTRUM', 'UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM',
-            'HPLC UV-VIS', 'HPLC UV/VIS SPECTRUM',
-            'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
-            'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY',
-            'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT',
-            'Emissions', 'EMISSIONS', 'FLUORESCENCE SPECTRUM', 'FL SPECTRUM', 'DLS ACF', 'DLS INTENSITY', 'DLS intensity'
-        ]
+        with open(data_type_json, 'r') as mapping_file:
+            target = json.load(mapping_file).get("datatypes").values()
+            target_topics = [value for values in target for value in values]
+    
         for tp in target_topics:
             if tp in self.datatypes:
                 idx = self.datatypes.index(tp)
