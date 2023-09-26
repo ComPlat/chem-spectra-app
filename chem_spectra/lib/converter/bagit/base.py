@@ -101,9 +101,15 @@ class BagItBaseConverter:
                 waveLength = composer.core.params['waveLength']
                 label = "X ({}), WL={} nm".format(composer.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
                 plt.xlabel((label), fontsize=18)
+            elif (composer.core.is_cyclic_volta):
+                plt.xlabel("{}".format(composer.core.label['x']), fontsize=18)
             else:
                 plt.xlabel("X ({})".format(composer.core.label['x']), fontsize=18)
-            plt.ylabel("Y ({})".format(composer.core.label['y']), fontsize=18)
+
+            if (composer.core.is_cyclic_volta):
+                plt.ylabel("{}".format(composer.core.label['y']), fontsize=18)
+            else:
+                plt.ylabel("Y ({})".format(composer.core.label['y']), fontsize=18)
         
         plt.legend()
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')

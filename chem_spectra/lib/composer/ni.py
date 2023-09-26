@@ -449,9 +449,15 @@ class NIComposer(BaseComposer):
             waveLength = self.core.params['waveLength']
             label = "X ({}), WL={} nm".format(self.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
             plt.xlabel((label), fontsize=18)
+        elif (self.core.is_cyclic_volta):
+            plt.xlabel("{}".format(self.core.label['x']), fontsize=18)
         else:
             plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
-        plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
+
+        if (self.core.is_cyclic_volta):
+            plt.ylabel("{}".format(self.core.label['y']), fontsize=18)
+        else:
+            plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
         plt.locator_params(nbins=self.__plt_nbins())
         plt.grid(False)
         # Save
