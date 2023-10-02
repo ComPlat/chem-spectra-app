@@ -97,46 +97,46 @@ def parse_solvent(base):
         if base.ncl == '13C':
             if 'acetone' in orig_solv:
                 base.dic['$CSSOLVENTNAME'] = ['Acetone-d6 (sep)']
-                base.dic['$CSSOLVENTVALUE'] = ['29.920']
+                base.dic['$CSSOLVENTVALUE'] = ['29.640']
                 base.dic['$CSSOLVENTX'] = ['0']
                 base.solv_peaks = [(27.0, 33.0), (203.7, 209.7)]
             elif 'dmso' in orig_solv:
-                peak = 39.51
+                peak = 39.52
                 delta = 3
                 base.dic['$CSSOLVENTNAME'] = ['DMSO-d6']
                 base.dic['$CSSOLVENTVALUE'] = [str(peak)]
                 base.dic['$CSSOLVENTX'] = ['0']
                 base.solv_peaks = [(peak - delta, peak + delta)]
             elif 'methanol-d4' in orig_solv or 'meod' in orig_solv:
-                peak = 49.15
+                peak = 49.00
                 delta = 5
                 base.dic['$CSSOLVENTNAME'] = ['Methanol-d4 (sep)']
                 base.dic['$CSSOLVENTVALUE'] = [str(peak)]
                 base.dic['$CSSOLVENTX'] = ['0']
                 base.solv_peaks = [(peak - delta, peak + delta)]
             elif 'dichloromethane-d2' in orig_solv:
-                peak = 54.0
+                peak = 53.84
                 delta = 3
                 base.dic['$CSSOLVENTNAME'] = ['Dichloromethane-d2 (quin)']
                 base.dic['$CSSOLVENTVALUE'] = [str(peak)]
                 base.dic['$CSSOLVENTX'] = ['0']
                 base.solv_peaks = [(peak - delta, peak + delta)]
             elif 'acetonitrile-d3' in orig_solv:
-                peak = 1.39
+                peak = 1.32
                 delta = 3
                 base.dic['$CSSOLVENTNAME'] = ['Acetonitrile-d3 (sep)']
                 base.dic['$CSSOLVENTVALUE'] = [str(peak)]
                 base.dic['$CSSOLVENTX'] = ['0']
                 base.solv_peaks = [(peak - delta, peak + delta)]
             elif 'benzene' in orig_solv:
-                peak = 128.39
+                peak = 128.06
                 delta = 3
                 base.dic['$CSSOLVENTNAME'] = ['Benzene (t)']
                 base.dic['$CSSOLVENTVALUE'] = [str(peak)]
                 base.dic['$CSSOLVENTX'] = ['0']
                 base.solv_peaks = [(peak - delta, peak + delta)]
             elif 'chloroform-d' in orig_solv or 'cdcl3' in orig_solv:
-                peak = 77.0
+                peak = 77.16
                 delta = 3
                 base.dic['$CSSOLVENTNAME'] = ['Chloroform-d (t)']
                 base.dic['$CSSOLVENTVALUE'] = [str(peak)]
@@ -165,9 +165,9 @@ def parse_solvent(base):
                 base.dic['$CSSOLVENTX'] = ['0']
                 base.solv_peaks = [(peak - delta, peak + delta)]
             elif 'deuterium' in orig_solv:
-                peak = 4.75
+                peak = 4.79
                 delta = 0.01
-                base.dic['$CSSOLVENTNAME'] = ['Deuterium oxide (s)']
+                base.dic['$CSSOLVENTNAME'] = ['D2O (s)']
                 base.dic['$CSSOLVENTVALUE'] = [str(peak)]
                 base.dic['$CSSOLVENTX'] = ['0']
                 base.solv_peaks = [(peak - delta, peak + delta)]
