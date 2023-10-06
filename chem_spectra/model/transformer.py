@@ -275,13 +275,23 @@ class TransformerModel:
           
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
+        curve_idx = self.params.get('jcamp_idx', 0)
+
+        xlabel, ylabel = '', ''
+        xlabel_set, ylabel_set = [], []
+        dic_x_label, dic_y_label = {}, {}
+
+        for idx, file in enumerate(self.multiple_files):
+            if (list_file_names is not None) and idx < len(list_file_names):
+                file.name = list_file_names[idx]
+                self.multiple_files[idx] = file
+
+        self.multiple_files.sort(key=lambda file: file.name)
         
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
             filename = file.name
-            if (list_file_names is not None) and idx < len(list_file_names):
-                filename = list_file_names[idx]
             if jbcv.typ == 'MS':
                 mscv = JcampMSConverter(jbcv)
                 mscp = MSComposer(mscv)
@@ -302,10 +312,26 @@ class TransformerModel:
                 plt.plot(xs, ys, label=filename, marker=marker)
 
                 # PLOT label
-                plt.xlabel("X ({})".format(nicp.core.label['x']), fontsize=18)
-                plt.ylabel("Y ({})".format(nicp.core.label['y']), fontsize=18)
+                core_label_x = nicp.core.label['x']
+                core_label_y = nicp.core.label['y']
+                if nicp.core.is_cyclic_volta:
+                    if core_label_x not in dic_x_label:
+                        xlabel_set.append(core_label_x)
+                        dic_x_label[core_label_x] = 1
+                    if core_label_y not in dic_y_label:
+                        ylabel_set.append(core_label_y)
+                        dic_y_label[core_label_y] = 1
+                    if (idx == len(self.multiple_files) - 1):
+                        xlabel = ', '.join(xlabel_set)
+                        ylabel = ', '.join(ylabel_set)
+                else:
+                    xlabel = "X ({})".format(core_label_x)
+                    ylabel = "Y ({})".format(core_label_y)
+
             tf.close()
         
+        plt.xlabel(xlabel, fontsize=18)
+        plt.ylabel(ylabel, fontsize=18)
         plt.legend()
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')
