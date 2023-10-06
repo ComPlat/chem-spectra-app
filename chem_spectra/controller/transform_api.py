@@ -203,7 +203,7 @@ def combine_images():
         list_files.append(file_container)
     
     params = extract_params(request)
-    transform_model = TraModel(None, params=params, multiple_files=list_files)  
+    transform_model = TraModel(None, params=params, multiple_files=list_files)
     tf_combine = transform_model.tf_combine(list_file_names=params['list_file_names'])
     if (not tf_combine):
         abort(400)

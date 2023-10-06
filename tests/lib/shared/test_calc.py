@@ -1,4 +1,5 @@
 from chem_spectra.lib.shared.calc import *
+import pytest
 
 # def test_calc_j():
 #     #TODO: implement later
@@ -101,3 +102,13 @@ def test_cal_area_multiplicity():
     data_ys = [2.0, 4.0]
     area = cal_area_multiplicity(xL, xU, data_xs=data_xs, data_ys=data_ys)
     assert area == 1.0
+    
+@pytest.fixture
+def cyclic_data():
+    cyclic_data = {'spectraList':[{'list':[{'min':{'x':-1.48904,'y':-1.10686e-05},'max':{'x':1.80895,'y':9.51171e-06},'isRef':True,'e12':0.15995500000000007,'pecker':{'x':-0.129871,'y':7.78418e-07}}],'selectedIdx':0,'isWorkMaxPeak':True,'jcampIdx':0,'shift':{'ref':None,'val':0,'prevValue': 2.5,}},{'list':[{'min':{'x':-1.48904,'y':-3.3747399999999995e-05},'max':{'x':0.929483,'y':0.00023741},'isRef':True,'e12':-0.27977849999999993}],'selectedIdx':0,'isWorkMaxPeak':True,'jcampIdx':1,'shift':{'ref':None,'val':5}},{'list':[{'min':{'x':0.45977,'y':-0.000226347},'max':{'x':1.00943,'y':0.000371349},'isRef':False,'e12':0.7346}],'selectedIdx':0,'isWorkMaxPeak':True,'jcampIdx':2,'shift':{'ref':None,'val':0}}]}
+    return cyclic_data
+
+def test_cal_cyclic_volta_shift_prev_offset_at_index(cyclic_data):
+    expected_offset = 2.5
+    offset = cal_cyclic_volta_shift_prev_offset_at_index(cyclic_data, 0)
+    assert offset == expected_offset

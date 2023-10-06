@@ -2,7 +2,7 @@ import numpy as np
 from scipy import signal
 
 from chem_spectra.lib.converter.datatable import DatatableModel
-from chem_spectra.lib.shared.calc import to_float
+from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
 import json
 import os
@@ -55,6 +55,8 @@ class JcampNIConverter:  # nmr & IR
         self.x_unit = self.__set_x_unit()
         self.ys = self.__read_ys()
         self.xs = self.__read_xs(base)
+        self.__check_cylic_volta_shifted_info()
+
         self.factor = self.__set_factor(base)
         self.__set_first_last_xs()
         self.clear = self.__refresh_solvent()
@@ -258,6 +260,14 @@ class JcampNIConverter:  # nmr & IR
             target['y'] = 'TRANSMITTANCE'
         if (self.is_xrd):
             target['x'] = '2Theta'
+            
+        if 'axesUnits' in self.params and self.params['axesUnits'] is not None:
+          axesUnits = self.params['axesUnits']
+          xUnit, yUnit = axesUnits['xUnit'], axesUnits['yUnit']
+          if xUnit != '':
+            target['x'] = xUnit
+          if yUnit != '':
+            target['y'] = yUnit
 
         return target
 
@@ -310,6 +320,12 @@ class JcampNIConverter:  # nmr & IR
 
     def __set_x_unit(self):
         x_unit = None
+        
+        if 'axesUnits' in self.params and self.params['axesUnits'] is not None:
+          axesUnits = self.params['axesUnits']
+          xUnit = axesUnits['xUnit']
+          if xUnit != '':
+            return xUnit
 
         try: # jcamp version 6
             units = self.dic['UNITS']
@@ -642,3 +658,12 @@ class JcampNIConverter:  # nmr & IR
     def __set_first_last_xs(self):
         self.first_x = self.xs[0]
         self.last_x = self.xs[-1]
+
+    def __check_cylic_volta_shifted_info(self):
+        if self.is_cyclic_volta == False:
+            return
+        
+        cyclicvolta_data = self.params['cyclicvolta']
+        current_jcamp_idx = self.params['jcamp_idx']
+        offset = cal_cyclic_volta_shift_prev_offset_at_index(cyclicvolta_data, current_jcamp_idx)
+        self.xs = np.array([x - offset for x in self.xs])
