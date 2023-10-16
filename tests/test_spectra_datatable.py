@@ -74,7 +74,7 @@ def test_datatable_1H():
     nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
     total_count = nicv_ori.ys.shape[0]
     ori_bd = nicv_ori.boundary
-    ref = 0
+    ref = 1
 
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)

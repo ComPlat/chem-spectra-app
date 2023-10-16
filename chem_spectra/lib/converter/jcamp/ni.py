@@ -100,11 +100,13 @@ class JcampNIConverter:  # nmr & IR
             "DLS intensity": THRESHOLD_XRD,
             "Emissions": THRESHOLD_EMISSION
         }
+
         if self.params.get('user_data_type_mapping'):
             data_type_mappings = self.__read_user_data_type_mapping()
         else:
             with open(data_type_json, 'r') as mapping_file:
                 data_type_mappings = json.load(mapping_file)["datatypes"]
+
         key = next((k for k, v in data_type_mappings.items() if dt in v), None)
 
         return threshold_values.get(key, 0.5)
@@ -119,7 +121,7 @@ class JcampNIConverter:  # nmr & IR
             with open(data_type_json, 'r') as mapping_file:
                 target = json.load(mapping_file).get("datatypes").values()
                 target_topics = [value.upper() for values in target for value in values]
-    
+
         for tp in target_topics:
             if tp in self.datatypes:
                 idx = self.datatypes.index(tp)
@@ -202,6 +204,7 @@ class JcampNIConverter:  # nmr & IR
             self.ys = self.ys[::-1]
 
         num_pt = self.ys.shape[0]
+        
         x = np.linspace(
             beg_pt + self.params['delta'],
             end_pt + self.params['delta'],

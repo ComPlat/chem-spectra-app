@@ -350,7 +350,8 @@ class NIComposer(BaseComposer):
         plt.plot(
             x_peaks,
             y_peaks,
-            'rd',
+            'r',
+            ls='',
             marker=marker,
             markersize=50,
         )
@@ -358,7 +359,8 @@ class NIComposer(BaseComposer):
         plt.plot(
             x_peckers,
             y_peckers,
-            'gd',
+            'g',
+            ls='',
             marker=marker,
             markersize=50,
         )
