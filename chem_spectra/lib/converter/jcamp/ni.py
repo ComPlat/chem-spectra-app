@@ -622,10 +622,10 @@ class JcampNIConverter:  # nmr & IR
                     diff_two = abs(pxs[1] - pxs[2])
                     if 0.2 < diff_one < 0.6 and 0.2 < diff_two < 0.6:
                         self.dic['$CSSOLVENTNAME'] = ['Chloroform-d (t)']
-                        self.dic['$CSSOLVENTVALUE'] = ['77.00']
+                        self.dic['$CSSOLVENTVALUE'] = ['77.16']
                         self.dic['$CSSOLVENTX'] = ['0']
                         self.solv_peaks = [(74.0, 80.0)]
-                        shift = 77.00 - pxs[1]
+                        shift = 77.16 - pxs[1]
                         self.xs = self.xs + shift
                         return True  # self.clear
 
