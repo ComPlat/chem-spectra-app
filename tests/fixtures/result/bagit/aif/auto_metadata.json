@@ -1,0 +1,33 @@
+{
+  "table_01.jdx": {
+    "DATA CLASS": "XYPOINTS",
+    "DATA TYPE": "SORPTION-DESORPTION MEASUREMENT",
+    "XUNITS": "p/p0",
+    "YUNITS": "ml/g",
+    "OPERATOR": "Volodymyr",
+    "DATE": "2020-04-30T00:00:00",
+    "SERIAL": "BEL 00218",
+    "ADSORPTIVE": "CH4",
+    "TEMPERATURE": 384.15,
+    "AMOUNT": "0.00980",
+    "SAMPLE_CID": "aus der BOX",
+    "SAMPLE_MAT_ID": "DUT-140(Cu)",
+    "SOFTWARE": "raw2aif",
+    "SOFTWARE_VERSION": "v004"
+  },
+  "table_02.jdx": {
+    "DATA CLASS": "XYPOINTS",
+    "DATA TYPE": "SORPTION-DESORPTION MEASUREMENT",
+    "XUNITS": "p/p0",
+    "YUNITS": "ml/g",
+    "OPERATOR": "Volodymyr",
+    "DATE": "2020-04-30T00:00:00",
+    "SERIAL": "BEL 00218",
+    "ADSORPTIVE": "CH4",
+    "AMOUNT": "0.00980",
+    "SAMPLE_CID": "aus der BOX",
+    "SAMPLE_MAT_ID": "DUT-140(Cu)",
+    "SOFTWARE": "raw2aif",
+    "SOFTWARE_VERSION": "v004"
+  }
+}

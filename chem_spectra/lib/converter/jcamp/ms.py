@@ -25,6 +25,7 @@ class JcampMSConverter:  # nmr & IR
         self.fname = base.fname
         self.runs, self.spectra, self.auto_scan = self.__read_mz_ml()
         self.datatables = self.__set_datatables()
+        self.auto_metadata = base.auto_metadata
 
     def __set_params(self, params):
         exact_mz = params.get('mass', 0) if params else 0

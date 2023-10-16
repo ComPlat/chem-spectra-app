@@ -29,6 +29,7 @@ TEXT_DATA_TABLE_XY = '##XYDATA= (XY..XY)\n'
 TEXT_PEAK_AUTO = '$$ === CHEMSPECTRA PEAK TABLE AUTO ===\n'
 TEXT_PEAK_EDIT = '$$ === CHEMSPECTRA PEAK TABLE EDIT ===\n'
 TEXT_PEAK_TABLE = '##PEAKTABLE= (XY..XY)\n'
+TEXT_AUTO_METADATA = '$$ === CHEMSPECTRA AUTO METADATA ===\n'
 
 
 class BaseComposer:
@@ -79,6 +80,13 @@ class BaseComposer:
         ]
 
         return spl_desc
+    
+    def __header_auto_metadata(self):
+        return [
+            '\n',
+            TEXT_AUTO_METADATA,
+            '##$CSAUTOMETADATA=\n'
+        ]
 
     def gen_headers_root(self):
         return [
@@ -283,3 +291,13 @@ class BaseComposer:
             return table
         else:
             return []
+
+    def generate_auto_metadata(self):
+        content = self.__header_auto_metadata()
+        if self.core.auto_metadata is None: return content
+
+        for key, value in self.core.auto_metadata.items():
+            content.append(
+                '{}={}\n'.format(key.upper(), value)
+            )
+        return content

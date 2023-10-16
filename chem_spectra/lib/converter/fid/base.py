@@ -77,6 +77,7 @@ class FidBaseConverter:
         self.solv_peaks = []
         self.is_dept = self.__is_dept()
         self.__read_solvent()
+        self.auto_metadata = None
 
     def __is_em_wave(self):
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
