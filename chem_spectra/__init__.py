@@ -22,7 +22,7 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-
+    
     #create logging
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
@@ -51,5 +51,9 @@ def create_app(test_config=None):
     # transform api
     from chem_spectra.controller.transform_api import trans_api
     app.register_blueprint(trans_api)
+
+    # spectra layout api
+    from chem_spectra.controller.spectra_layout_api import spectra_layout_api
+    app.register_blueprint(spectra_layout_api)
 
     return app
