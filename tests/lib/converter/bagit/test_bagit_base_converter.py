@@ -9,6 +9,7 @@ aif_layout_path = target_dir + 'aif/aif.zip'
 emissions_layout_path = target_dir + 'emissions/emissions.zip'
 dls_acf_layout_path = target_dir + 'dls_acf/dls_acf.zip'
 dls_intensity_layout_path = target_dir + 'dls_intensity/dls_intensity.zip'
+mass_chromatogram_layout_path = target_dir + 'mass_chromatogram/mass_chromatogram.zip'
 
 def assertFileType(file, mimeStr):
     assert mimetypes.guess_type(file.name)[0] == mimeStr
@@ -78,6 +79,15 @@ def test_bagit_convert_to_jcamp_dls_intensity_layout():
         converter = BagItConveter(td)
         jcamp = converter.data[0]
         assertJcampContent(jcamp, '##DATA TYPE=DLS intensity')
+
+def test_bagit_convert_to_jcamp_mass_chromatogram_layout():
+    with tempfile.TemporaryDirectory() as td:
+        with zipfile.ZipFile(mass_chromatogram_layout_path, 'r') as z:
+            z.extractall(td)
+
+        converter = BagItConveter(td)
+        jcamp = converter.data[0]
+        assertJcampContent(jcamp, '##DATA TYPE=MASS CHROMATOGRAM')
 
 def test_bagit_convert_to_images():
     with tempfile.TemporaryDirectory() as td:

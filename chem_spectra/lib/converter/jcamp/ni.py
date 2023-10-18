@@ -42,6 +42,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_emissions = base.is_emissions if hasattr(base, 'is_emissions') else False
         self.is_dls_acf = base.is_dls_acf if hasattr(base, 'is_dls_acf') else False
         self.is_dls_intensity = base.is_dls_intensity if hasattr(base, 'is_dls_intensity') else False
+        self.is_mass_chromatogram = base.is_mass_chromatogram if hasattr(base, 'is_mass_chromatogram') else False
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.is_dept = base.is_dept
@@ -108,7 +109,8 @@ class JcampNIConverter:  # nmr & IR
             'THERMOGRAVIMETRIC ANALYSIS', 'X-RAY DIFFRACTION',
             'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY',
             'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT',
-            'Emissions', 'EMISSIONS', 'FLUORESCENCE SPECTRUM', 'FL SPECTRUM', 'DLS ACF', 'DLS INTENSITY', 'DLS intensity'
+            'Emissions', 'EMISSIONS', 'FLUORESCENCE SPECTRUM', 'FL SPECTRUM', 'DLS ACF', 'DLS INTENSITY',
+            'DLS intensity', 'MASS CHROMATOGRAM'
         ]
         for tp in target_topics:
             if tp in self.datatypes:

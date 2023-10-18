@@ -31,6 +31,7 @@ class JcampBaseConverter:
         self.is_emissions = self.__is_emissions()
         self.is_dls_acf = self.__is_dls_acf()
         self.is_dls_intensity = self.__is_dls_intensity()
+        self.is_mass_chromatogram= self.__is_mass_chromatogram()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
@@ -81,6 +82,8 @@ class JcampBaseConverter:
             return 'DLS ACF'
         elif 'DLS INTENSITY' in dts or 'DLS intensity' in dts:
             return 'DLS intensity'
+        elif 'MASS CHROMATOGRAM' in dts:
+            return 'MASS CHROMATOGRAM'
         return ''
 
     def __typ(self):
@@ -119,6 +122,8 @@ class JcampBaseConverter:
             return 'DLS ACF'
         elif 'DLS INTENSITY' in dt or 'DLS intensity' in dt:
             return 'DLS intensity'
+        elif 'MASS CHROMATOGRAM' in dt:
+            return 'MASS CHROMATOGRAM'
         return ''
 
     def __set_dataclass(self):
@@ -145,7 +150,7 @@ class JcampBaseConverter:
             'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION',
             'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY',
             'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT', 'Emissions', 
-            'DLS ACF', 'DLS intensity']
+            'DLS ACF', 'DLS intensity', 'MASS CHROMATOGRAM']
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -182,6 +187,9 @@ class JcampBaseConverter:
 
     def __is_dls_intensity(self):
         return self.typ in ['DLS INTENSITY', 'DLS intensity']
+    
+    def __is_mass_chromatogram(self):
+        return self.typ in ['MASS CHROMATOGRAM']
 
     def __ncl(self):
         try:
