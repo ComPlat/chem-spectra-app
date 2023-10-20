@@ -6,7 +6,7 @@ test_json_path = './tests/fixtures/test_data_types.json'
 orig_json_path = 'chem_spectra.controller.spectra_layout_api.data_type_json_path'
 
 def fetch_access_token(client):
-    response = client.post('/login')
+    response = client.post('/api/v1/chemspectra/login')
     data = response.json
     access_token = data.get('access_token')
     return access_token

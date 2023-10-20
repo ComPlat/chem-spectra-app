@@ -101,7 +101,7 @@ class JcampNIConverter:  # nmr & IR
     def __index_target(self):
         with open(data_type_json, 'r') as mapping_file:
             target = json.load(mapping_file).get("datatypes").values()
-            target_topics = [value for values in target for value in values]
+            target_topics = [value.upper() for values in target for value in values]
     
         for tp in target_topics:
             if tp in self.datatypes:

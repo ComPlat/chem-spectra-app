@@ -59,6 +59,7 @@ class JcampBaseConverter:
         with open(data_type_json, 'r') as mapping_file:
             data_type_mappings = json.load(mapping_file)["datatypes"]
         for key, values in data_type_mappings.items():
+            values = [value.upper() for value in values]
             for dt in dts:
                 if dt in values and key in dt_dict:
                     return dt_dict[key]
@@ -73,7 +74,8 @@ class JcampBaseConverter:
             data_type_mappings = json.load(mapping_file)["datatypes"]
 
         for key, values in data_type_mappings.items():
-            if dt in values:
+            values = [value.upper() for value in values]
+            if dt.upper() in values:
                 return key
         return ''
 
