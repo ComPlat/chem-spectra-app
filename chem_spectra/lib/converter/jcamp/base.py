@@ -1,6 +1,10 @@
 import nmrglue as ng
+import json
 
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
+import os
+
+data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
 
 class JcampBaseConverter:
@@ -43,82 +47,36 @@ class JcampBaseConverter:
 
     def __set_datatype(self):
         dts = self.datatypes
-        if 'NMR SPECTRUM' in dts:
-            return 'NMR SPECTRUM'
-        elif 'NMRSPECTRUM' in dts:  # MNova
-            return 'NMR SPECTRUM'
-        elif 'INFRARED SPECTRUM' in dts:
-            return 'INFRARED SPECTRUM'
-        elif 'RAMAN SPECTRUM' in dts:
-            return 'RAMAN SPECTRUM'
-        elif 'MASS SPECTRUM' in dts:
-            return 'MASS SPECTRUM'
-        elif 'HPLC UV/VIS SPECTRUM' in dts:
-            return 'HPLC UV/VIS SPECTRUM'
-        elif 'HPLC UV-VIS' in dts:
-            return 'HPLC UV/VIS SPECTRUM'
-        elif 'UV/VIS SPECTRUM' in dts:
-            return 'UV/VIS SPECTRUM'
-        elif 'UV-VIS' in dts:
-            return 'UV/VIS SPECTRUM'
-        elif 'ULTRAVIOLET SPECTRUM' in dts:
-            return 'UV/VIS SPECTRUM'
-        elif 'THERMOGRAVIMETRIC ANALYSIS' in dts:
-            return 'THERMOGRAVIMETRIC ANALYSIS'
-        elif 'X-RAY DIFFRACTION' in dts:
-            return 'X-RAY DIFFRACTION'
-        elif 'CYCLIC VOLTAMMETRY' in dts:
-            return 'CYCLIC VOLTAMMETRY'
-        elif 'SIZE EXCLUSION CHROMATOGRAPHY' in dts:
-            return 'SIZE EXCLUSION CHROMATOGRAPHY'
-        elif 'CIRCULAR DICHROISM SPECTROSCOPY' in dts:
-            return 'CIRCULAR DICHROISM SPECTROSCOPY'
-        elif 'SORPTION-DESORPTION MEASUREMENT' in dts:
-            return 'SORPTION-DESORPTION MEASUREMENT'
-        elif 'Emissions' in dts or 'EMISSIONS' in dts or 'FLUORESCENCE SPECTRUM' in dts or 'FL SPECTRUM' in dts:
-            return 'Emissions'
-        elif 'DLS ACF' in dts:
-            return 'DLS ACF'
-        elif 'DLS INTENSITY' in dts or 'DLS intensity' in dts:
-            return 'DLS intensity'
+        dt_dict = {
+            'NMR': 'NMR SPECTRUM',
+            'INFRARED': 'INFRARED SPECTRUM',
+            'RAMAN': 'RAMAN SPECTRUM',
+            'MS': 'MASS SPECTRUM',
+            'HPLC UVVIS': 'HPLC UV/VIS SPECTRUM',
+            'UVVIS': 'UV/VIS SPECTRUM',
+        }
+
+        with open(data_type_json, 'r') as mapping_file:
+            data_type_mappings = json.load(mapping_file)["datatypes"]
+        for key, values in data_type_mappings.items():
+            values = [value.upper() for value in values]
+            for dt in dts:
+                if dt in values and key in dt_dict:
+                    return dt_dict[key]
+                elif dt in values and not key in dt_dict:
+                    return key
         return ''
 
     def __typ(self):
         dt = self.datatype
-        if 'NMR SPECTRUM' == dt:
-            return 'NMR'
-        elif 'NMRSPECTRUM' == dt:  # MNova
-            return 'NMR'
-        elif 'INFRARED SPECTRUM' == dt:
-            return 'INFRARED'  # TBD
-        elif 'RAMAN SPECTRUM' == dt:
-            return 'RAMAN'  # TBD
-        elif 'MASS SPECTRUM' == dt:
-            return 'MS'
-        elif 'HPLC UV/VIS SPECTRUM' == dt:
-            return 'HPLC UVVIS'
-        elif 'HPLC UV-VIS' == dt:
-            return 'HPLC UVVIS'
-        elif 'UV/VIS SPECTRUM' == dt or 'UV-VIS' == dt or 'ULTRAVIOLET SPECTRUM' == dt:
-            return 'UVVIS'
-        elif 'THERMOGRAVIMETRIC ANALYSIS' == dt:
-            return 'THERMOGRAVIMETRIC ANALYSIS'
-        elif 'X-RAY DIFFRACTION' == dt:
-            return 'X-RAY DIFFRACTION'
-        elif 'CYCLIC VOLTAMMETRY' in dt:
-            return 'CYCLIC VOLTAMMETRY'
-        elif 'SIZE EXCLUSION CHROMATOGRAPHY' in dt:
-            return 'SIZE EXCLUSION CHROMATOGRAPHY'
-        elif 'CIRCULAR DICHROISM SPECTROSCOPY' in dt:
-            return 'CIRCULAR DICHROISM SPECTROSCOPY'
-        elif 'SORPTION-DESORPTION MEASUREMENT' in dt:
-            return 'SORPTION-DESORPTION MEASUREMENT'
-        elif 'Emissions' in dt or 'EMISSIONS' in dt or 'FLUORESCENCE SPECTRUM' in dt or 'FL SPECTRUM' in dt:
-            return 'Emissions'
-        elif 'DLS ACF' in dt:
-            return 'DLS ACF'
-        elif 'DLS INTENSITY' in dt or 'DLS intensity' in dt:
-            return 'DLS intensity'
+
+        with open(data_type_json, 'r') as mapping_file:
+            data_type_mappings = json.load(mapping_file)["datatypes"]
+
+        for key, values in data_type_mappings.items():
+            values = [value.upper() for value in values]
+            if dt.upper() in values:
+                return key
         return ''
 
     def __set_dataclass(self):
@@ -140,12 +98,10 @@ class JcampBaseConverter:
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        return self.typ in [
-            'INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS',
-            'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION',
-            'CYCLIC VOLTAMMETRY', 'SIZE EXCLUSION CHROMATOGRAPHY',
-            'CIRCULAR DICHROISM SPECTROSCOPY', 'SORPTION-DESORPTION MEASUREMENT', 'Emissions', 
-            'DLS ACF', 'DLS intensity']
+        with open(data_type_json, 'r') as mapping_file:
+            data_type_mappings = json.load(mapping_file).get("datatypes")
+        dts = [dt for dt in data_type_mappings.keys() if dt != 'NMR']
+        return self.typ in dts
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -175,13 +131,13 @@ class JcampBaseConverter:
         return self.typ in ['SORPTION-DESORPTION MEASUREMENT']
         
     def __is_emissions(self):
-        return self.typ in ['Emissions', 'EMISSIONS', 'FLUORESCENCE SPECTRUM', 'FL SPECTRUM']
+        return self.typ in ['Emissions']
     
     def __is_dls_acf(self):
         return self.typ in ['DLS ACF']
 
     def __is_dls_intensity(self):
-        return self.typ in ['DLS INTENSITY', 'DLS intensity']
+        return self.typ in ['DLS intensity']
 
     def __ncl(self):
         try:
