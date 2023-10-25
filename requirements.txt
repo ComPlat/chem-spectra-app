@@ -14,15 +14,15 @@ importlib-metadata==3.6.0
 itsdangerous==2.0
 Jinja2==3.1.2
 MarkupSafe==2.1.2
-matplotlib==3.0.0
+matplotlib==3.8.0
 mccabe==0.6.1
 more-itertools==7.2.0
-#-e git+https://github.com/ComPlat/nmrglue.git@d9c0de6d3d7c852fc0d167442af395393a8ae513#egg=nmrglue
--e git+https://github.com/ComPlat/nmrglue.git@c5a7d4d0073fedff68808b4e9c95836a8c20413e#egg=nmrglue
-netCDF4==1.5.3
-numpy==1.21.5
+# -e git+https://github.com/ComPlat/nmrglue.git@c5a7d4d0073fedff68808b4e9c95836a8c20413e#egg=nmrglue
+-e git+https://github.com/ComPlat/nmrglue.git@development#egg=nmrglue
+netCDF4==1.6.4
+numpy==1.26.0
 olefile==0.46
-pandas==0.23.4
+pandas==2.1.1
 pathlib2==2.3.4
 Pillow==9.3.0
 pluggy==0.12.0
@@ -31,12 +31,12 @@ pycodestyle==2.5.0
 pyflakes==2.1.1
 pymzml==2.5.2
 pyparsing==2.4.2
-pytest==4.0.0
-python-dateutil==2.7.3
-pytz==2019.1
+pytest==7.4.2
+python-dateutil==2.8.2
+pytz==2023.3.post1
 regex==2019.4.9
 requests==2.25.0
-scipy==1.2.0
+scipy==1.10.0
 six==1.11.0
 urllib3==1.26.5
 Werkzeug==2.2.3

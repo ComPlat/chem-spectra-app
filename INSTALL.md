@@ -17,12 +17,12 @@ However, it is highly recommended to refer to official websites.
 _Logout & login to load installations._
 
 ```
-$ conda create --name chem-spectra python=3.7
+$ conda create --name chem-spectra python=3.9
 $ source activate chem-spectra
 ```
 
 ```
-$ conda install -c rdkit rdkit=2020.09.1.0
+$ conda install -c conda-forge rdkit
 ```
 
 ```

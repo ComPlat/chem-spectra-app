@@ -2,6 +2,7 @@ import nmrglue as ng
 import json
 
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
+from chem_spectra.lib.converter.jcamp.data_parse import read_parsed_jdx_data
 import os
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
@@ -43,7 +44,9 @@ class JcampBaseConverter:
         self.__read_solvent()
 
     def __read(self, path):
-        return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
+        parsed_data = ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
+        return_dic, return_data = read_parsed_jdx_data(parsed_data)
+        return return_dic, return_data
 
     def __set_datatype(self):
         dts = self.datatypes

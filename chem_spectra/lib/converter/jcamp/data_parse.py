@@ -51,8 +51,6 @@ def make_ni_data_xs(base):
 
     return None
 
-    
-
 
 def make_ni_data_xs(base):
     if base.data_format and (base.data_format == '(XY..XY)'):
@@ -67,11 +65,39 @@ def make_ni_data_xs(base):
 
 
 def make_ms_data_xsys(base):
-    if base.data is None and base.dic['XYPOINTS']:
-        base.data = [__parse_xy_points(base)]
+    if base.data is None:
+        if 'XYPOINTS' in base.dic and base.dic['XYPOINTS']:
+            base.data = [__parse_xy_points(base)]
+        elif 'DATATABLE' in base.dic and base.dic['DATATABLE']:
+            base.data_format = '(XY..XY)'
+            base.data = [__parse_xy_points(base)]
 
     # base.data type is dict
     if isinstance(base.data, dict):
         return base.data['real']
 
     return base.data
+
+def read_parsed_jdx_data(parsed_data):
+    return_dic = {}
+    dic, data = parsed_data
+    for key in dic.keys():
+        if '_datatype_' in key:
+            return_dic = dic[key][0]
+            try:
+                data_table = return_dic['DATATABLE']
+                for idx in range(len(data_table)):
+                    if '(XY..XY)' in data_table[idx]:
+                        pts = data_table[idx].split('\n')[1:]
+                        convert_data = np.array([[float(p) for p in pt.split(',')]for pt in pts])
+                        if data is None:
+                            data = []
+                        data.append(convert_data)
+            except:
+                pass
+            
+            break
+        else:
+            return_dic[key] = dic[key]
+
+    return return_dic, data
