@@ -73,6 +73,13 @@ class JcampNIConverter:  # nmr & IR
         self.__read_multiplicity_from_file()
         self.__read_voltammetry_data_from_file()
 
+    def __read_user_data_type_mapping(self):
+        user_dt_mapping = self.params.get('user_data_type_mapping')
+        if user_dt_mapping == '' or user_dt_mapping is None:
+            return ''
+        else:
+            return json.loads(user_dt_mapping)['datatypes']
+
     def __thres(self):
         dt = self.datatype
         threshold_values = {
@@ -91,17 +98,25 @@ class JcampNIConverter:  # nmr & IR
             "DLS intensity": THRESHOLD_XRD,
             "Emissions": THRESHOLD_EMISSION
         }
-        with open(data_type_json, 'r') as mapping_file:
-            data_type_mappings = json.load(mapping_file)["datatypes"]
+        if self.params.get('user_data_type_mapping'):
+            data_type_mappings = self.__read_user_data_type_mapping()
+        else:
+            with open(data_type_json, 'r') as mapping_file:
+                data_type_mappings = json.load(mapping_file)["datatypes"]
         key = next((k for k, v in data_type_mappings.items() if dt in v), None)
 
         return threshold_values.get(key, 0.5)
     
 
     def __index_target(self):
-        with open(data_type_json, 'r') as mapping_file:
-            target = json.load(mapping_file).get("datatypes").values()
+        if self.params.get('user_data_type_mapping'):
+            data_type_mappings = self.__read_user_data_type_mapping()
+            target = data_type_mappings.values()
             target_topics = [value.upper() for values in target for value in values]
+        else:
+            with open(data_type_json, 'r') as mapping_file:
+                target = json.load(mapping_file).get("datatypes").values()
+                target_topics = [value.upper() for values in target for value in values]
     
         for tp in target_topics:
             if tp in self.datatypes:

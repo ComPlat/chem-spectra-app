@@ -6,7 +6,6 @@ import os
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
-
 class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = parse_params(params)
@@ -41,9 +40,17 @@ class JcampBaseConverter:
         self.solv_peaks = []
         self.is_dept = self.__is_dept()
         self.__read_solvent()
+        self.__read_user_data_type_mapping()
 
     def __read(self, path):
         return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
+    
+    def __read_user_data_type_mapping(self):
+        user_dt_mapping = self.params.get('user_data_type_mapping')
+        if user_dt_mapping == '' or user_dt_mapping is None:
+            return ''
+        else:
+            return json.loads(user_dt_mapping)['datatypes']
 
     def __set_datatype(self):
         dts = self.datatypes
@@ -56,8 +63,11 @@ class JcampBaseConverter:
             'UVVIS': 'UV/VIS SPECTRUM',
         }
 
-        with open(data_type_json, 'r') as mapping_file:
-            data_type_mappings = json.load(mapping_file)["datatypes"]
+        if self.params.get('user_data_type_mapping'):
+            data_type_mappings = self.__read_user_data_type_mapping()
+        else:
+            with open(data_type_json, 'r') as mapping_file:
+                data_type_mappings = json.load(mapping_file)["datatypes"]
         for key, values in data_type_mappings.items():
             values = [value.upper() for value in values]
             for dt in dts:
@@ -70,8 +80,11 @@ class JcampBaseConverter:
     def __typ(self):
         dt = self.datatype
 
-        with open(data_type_json, 'r') as mapping_file:
-            data_type_mappings = json.load(mapping_file)["datatypes"]
+        if self.params.get('user_data_type_mapping'):
+            data_type_mappings = self.__read_user_data_type_mapping()
+        else:
+            with open(data_type_json, 'r') as mapping_file:
+                data_type_mappings = json.load(mapping_file)["datatypes"]
 
         for key, values in data_type_mappings.items():
             values = [value.upper() for value in values]
@@ -98,8 +111,11 @@ class JcampBaseConverter:
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        with open(data_type_json, 'r') as mapping_file:
-            data_type_mappings = json.load(mapping_file).get("datatypes")
+        if self.params.get('user_data_type_mapping'):
+            data_type_mappings = self.__read_user_data_type_mapping()
+        else:
+            with open(data_type_json, 'r') as mapping_file:
+                data_type_mappings = json.load(mapping_file).get("datatypes")
         dts = [dt for dt in data_type_mappings.keys() if dt != 'NMR']
         return self.typ in dts
 

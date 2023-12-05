@@ -1,8 +1,6 @@
 import os
 
 from flask import Flask
-from flask_jwt_extended import JWTManager
-from datetime import timedelta
 
 import logging
 
@@ -24,11 +22,6 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-
-    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)
-    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
-
-    jwt = JWTManager(app)
     
     #create logging
     logger = logging.getLogger(__name__)
@@ -46,10 +39,6 @@ def create_app(test_config=None):
     @app.route('/ping')
     def ping():
         return 'pong'
-    
-    # Refresh token api
-    from chem_spectra.controller.refresh_token_api import refresh_token_api
-    app.register_blueprint(refresh_token_api)
 
     # file api
     from chem_spectra.controller.file_api import file_api

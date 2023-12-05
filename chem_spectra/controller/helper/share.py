@@ -104,6 +104,7 @@ def extract_params(request):
     cyclicvolta = request.form.get('cyclic_volta', default=None)
     jcamp_idx = parse_int(request.form.get('jcamp_idx', default=0), 0)
     list_file_names = request.form.getlist('list_file_names[]')
+    data_type_mapping = request.form.get('data_type_mapping', default='')
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -125,6 +126,7 @@ def extract_params(request):
         'cyclic_volta': cyclicvolta,
         'jcamp_idx': jcamp_idx,
         'list_file_names': list_file_names,
+        'data_type_mapping': data_type_mapping,
     }
     has_params = (
         params.get('peaks_str') or

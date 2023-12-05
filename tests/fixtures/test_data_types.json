@@ -1,17 +1,17 @@
 {
     "datatypes": {
+        "INFRARED": [
+            "INFRARED SPECTRUM"
+        ],
+        "MS": [
+            "MASS SPECTRUM"
+        ],
         "NMR": [
             "NMR SPECTRUM",
             "NMRSPECTRUM"
         ],
-        "INFRARED": [
-            "INFRARED SPECTRUM"
-        ],
         "RAMAN": [
             "RAMAN"
-        ],
-        "MS": [
-            "MASS SPECTRUM"
         ]
     }
 }
