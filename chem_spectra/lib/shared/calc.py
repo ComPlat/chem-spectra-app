@@ -100,3 +100,60 @@ def cal_area_multiplicity(xL, xU, data_xs, data_ys):
     lower_value = Decimal(str(ks[iL]))
 
     return float(abs(upper_value - lower_value))
+
+def cal_cyclic_volta_shift_offset(cyclic_data):
+    if cyclic_data is None:
+        return []
+    if isinstance(cyclic_data, dict) ==  False:
+        return []
+    if 'spectraList' not in cyclic_data:
+        return []
+    
+    spectra_list = cyclic_data['spectraList']
+    if isinstance(spectra_list, list) ==  False:
+        return []
+    
+    list_offsets = []
+    
+    for spectra in spectra_list:
+        offset = 0.0
+        analysed_data = spectra['list']
+        arr_has_ref_value = list(filter(lambda x: x['isRef'] == True,  analysed_data))
+        if len(arr_has_ref_value) > 0:
+            shift = spectra['shift']
+            val = shift['val']
+            ref_value = arr_has_ref_value[0]
+            e12 = ref_value['e12']
+            offset = e12 - val
+        list_offsets.append(offset)
+    
+    return list_offsets
+
+def cal_cyclic_volta_shift_prev_offset_at_index(cyclic_data, index=0):
+    if cyclic_data is None:
+        return 0.0
+    if isinstance(cyclic_data, dict) ==  False:
+        return 0.0
+    if 'spectraList' not in cyclic_data:
+        return 0.0
+
+    spectra_list = cyclic_data['spectraList']
+    if isinstance(spectra_list, list) ==  False:
+        return 0.0
+    if len(spectra_list) <  index:
+        return 0.0
+
+    offset = 0.0
+    
+    if index == len(spectra_list):
+      return 0.0
+    
+    spectra = spectra_list[index]
+    analysed_data = spectra['list']
+    arr_has_ref_value = list(filter(lambda x: ('isRef' in x and x['isRef'] == True),  analysed_data))
+    if len(arr_has_ref_value) > 0:
+        shift = spectra['shift']
+        if 'prevValue' in shift:
+            offset = shift['prevValue']
+
+    return offset

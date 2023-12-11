@@ -16,7 +16,7 @@ from chem_spectra.lib.composer.base import (  # noqa: E402, F401
     extrac_dic, calc_npoints, BaseComposer
 )
 from chem_spectra.lib.shared.calc import (  # noqa: E402
-    calc_mpy_center, calc_ks, get_curve_endpoint, cal_slope, cal_xyIntegration
+    calc_mpy_center, calc_ks, get_curve_endpoint, cal_slope, cal_xyIntegration,
 )
 
 
@@ -141,6 +141,8 @@ class NIComposer(BaseComposer):
         content = ['##$CSCYCLICVOLTAMMETRYDATA=\n']
         if self.core.is_cyclic_volta:
             listMaxMinPeaks = self.core.max_min_peaks_table
+            cyclicvolta_data = self.core.params['cyclicvolta']
+            current_jcamp_idx = self.core.params['jcamp_idx']
             if self.core.params['list_max_min_peaks'] is not None:
                 listMaxMinPeaks = self.core.params['list_max_min_peaks']
 
@@ -152,11 +154,22 @@ class NIComposer(BaseComposer):
                 y_pecker = self.core.ys[idx]
 
             for peak in listMaxMinPeaks:
-                max_peak, min_peak = peak['max'], peak['min']
+                max_peak, min_peak = None, None
+                if 'max' in peak:
+                    max_peak = peak['max']
+                if 'min' in peak:
+                    min_peak = peak['min']
                 x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
                 x_min_peak, y_min_peak = self.__get_xy_of_peak(min_peak)
 
-                if (x_max_peak == '' and x_min_peak == ''):
+                x_pecker = ''
+                if 'pecker' in peak and peak['pecker'] is not None:
+                    pecker = peak['pecker']
+                    x_pecker = pecker['x']
+                    y_pecker = pecker['y']
+                    x_pecker = f"{float(x_pecker)}"
+
+                if (x_max_peak == '' and x_min_peak == '' and x_pecker == ''):
                     # ignore if missing both max and min peak
                     continue
 
@@ -164,24 +177,21 @@ class NIComposer(BaseComposer):
                     delta = ''
                 else:
                     delta = abs(x_max_peak - x_min_peak)
-
-                x_pecker = ''
+                
                 # calculate ratio
                 if (y_min_peak == '' or y_max_peak == ''):
                     ratio = ''
                 else:
-                    if 'pecker' in peak and peak['pecker'] is not None:
-                        pecker = peak['pecker']
-                        x_pecker = pecker['x']
-                        y_pecker = pecker['y']
                     first_expr = abs(y_min_peak) / abs(y_max_peak)
                     second_expr = 0.485 * abs(y_pecker) / abs(y_max_peak)
                     ratio = first_expr + second_expr + 0.086
                     if (y_pecker) == 0:
                         y_pecker = ''
 
+                is_ref = peak.get('isRef', False)
+                is_ref_in_number = 1 if is_ref else 0
                 content.append(
-                    '({x_max}, {y_max}, {x_min}, {y_min}, {ratio}, {delta}, {x_pecker}, {y_pecker})\n'.format(x_max=x_max_peak, y_max=y_max_peak, x_min=x_min_peak, y_min=y_min_peak, ratio=ratio, delta=delta, x_pecker=x_pecker, y_pecker=y_pecker)  # noqa: E501
+                    '({x_max}, {y_max}, {x_min}, {y_min}, {ratio}, {delta}, {x_pecker}, {y_pecker}, {is_ref})\n'.format(x_max=x_max_peak, y_max=y_max_peak, x_min=x_min_peak, y_min=y_min_peak, ratio=ratio, delta=delta, x_pecker=x_pecker, y_pecker=y_pecker, is_ref=is_ref_in_number)  # noqa: E501
                 )
 
         return content
@@ -256,6 +266,7 @@ class NIComposer(BaseComposer):
         # PLOT data
         plt.plot(self.core.xs, self.core.ys)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
+
         xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd or self.core.is_cyclic_volta or self.core.is_sec or self.core.is_cds or self.core.is_aif or self.core.is_emissions or self.core.is_dls_acf or self.core.is_dls_intensity) else [x_max, x_min]    # noqa: E501
         plt.xlim(xlim_left, xlim_right)
         y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
@@ -296,7 +307,11 @@ class NIComposer(BaseComposer):
                 listMaxMinPeaks = self.core.params['list_max_min_peaks']
 
             for peak in listMaxMinPeaks:
-                max_peak, min_peak = peak['max'], peak['min']
+                max_peak, min_peak = None, None
+                if 'max' in peak:
+                    max_peak = peak['max']
+                if 'min' in peak:
+                    min_peak = peak['min']
                 x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
                 x_min_peak, y_min_peak = self.__get_xy_of_peak(min_peak)
 
@@ -470,26 +485,26 @@ class NIComposer(BaseComposer):
     
     def __prepare_metadata_info_for_csv(self, csv_writer: csv.DictWriter):
         csv_writer.writerow({
-            'Max x': 'Measurement type',
-            'Max y': 'Cyclic Voltammetry',
+            'Ox E(V)': 'Measurement type',
+            'Red E(V)': 'Cyclic Voltammetry',
         })
         csv_writer.writerow({
-            'Max x': 'Measurement type ID',
+            'Ox E(V)': 'Measurement type ID',
         })
         csv_writer.writerow({
-            'Max x': 'Sample ID',
+            'Ox E(V)': 'Sample ID',
         })
         csv_writer.writerow({
-            'Max x': 'Analysis ID',
+            'Ox E(V)': 'Analysis ID',
         })
         csv_writer.writerow({
-            'Max x': 'Dataset ID',
+            'Ox E(V)': 'Dataset ID',
         })
         csv_writer.writerow({
-            'Max x': 'Dataset name',
+            'Ox E(V)': 'Dataset name',
         })
         csv_writer.writerow({
-            'Max x': 'Link to sample',
+            'Ox E(V)': 'Link to sample',
         })
         csv_writer.writerow({
         })
@@ -507,8 +522,7 @@ class NIComposer(BaseComposer):
             listMaxMinPeaks = self.core.params['list_max_min_peaks']
 
         with open(tf_csv.name, 'w', newline='', encoding='utf-8') as csvfile:
-            # fieldnames = ['Max', 'Min', 'I λ0', 'I ratio', 'Pecker']
-            fieldnames = ['Max x', 'Max y', 'Min x', 'Min y', 'Delta Ep', 'I lambda0', 'I ratio']
+            fieldnames = ['Ox E(V)', 'Ox I(A)', 'Red E(V)', 'Red I(A)', 'I lambda0(A)', 'I ratio', 'E1/2(V)', 'Delta Ep(mV)']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             self.__prepare_metadata_info_for_csv(writer)
@@ -523,7 +537,13 @@ class NIComposer(BaseComposer):
                 y_pecker = self.core.ys[idx]
 
             for peak in listMaxMinPeaks:
-                max_peak, min_peak = peak['max'], peak['min']
+                max_peak, min_peak, e12 = None, None, None
+                if 'max' in peak:
+                    max_peak = peak['max']
+                if 'min' in peak:
+                    min_peak = peak['min']
+                if 'e12' in peak:
+                    e12 = peak['e12']
                 x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
                 x_min_peak, y_min_peak = self.__get_xy_of_peak(min_peak)
 
@@ -534,7 +554,7 @@ class NIComposer(BaseComposer):
                 if (x_max_peak == '' or x_min_peak == ''):
                     delta = ''
                 else:
-                    delta = abs(x_max_peak - x_min_peak)
+                    delta = abs(x_max_peak - x_min_peak) * 1000
 
                 x_pecker = ''
                 # calculate ratio
@@ -552,13 +572,14 @@ class NIComposer(BaseComposer):
                         y_pecker = ''
 
                 writer.writerow({
-                    'Max x': '{x_max}'.format(x_max=x_max_peak),
-                    'Max y': '{y_max}'.format(y_max=y_max_peak),
-                    'Min x': '{x_min}'.format(x_min=x_min_peak),
-                    'Min y': '{y_min}'.format(y_min=y_min_peak),
-                    'Delta Ep': '{y_pecker}'.format(y_pecker=y_pecker),
-                    'I lambda0': '{ratio}'.format(ratio=ratio),
-                    'I ratio': '{delta}'.format(delta=delta)
+                    'Ox E(V)': '{x_max}'.format(x_max=x_max_peak),
+                    'Ox I(A)': '{y_max}'.format(y_max=y_max_peak),
+                    'Red E(V)': '{x_min}'.format(x_min=x_min_peak),
+                    'Red I(A)': '{y_min}'.format(y_min=y_min_peak),
+                    'I lambda0(A)': '{y_pecker}'.format(y_pecker=y_pecker),
+                    'I ratio': '{ratio}'.format(ratio=ratio),
+                    'E1/2(V)': '{e12}'.format(e12=e12),
+                    'Delta Ep(mV)': '{delta}'.format(delta=delta)
                 })
         return tf_csv
 

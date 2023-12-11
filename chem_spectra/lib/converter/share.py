@@ -21,6 +21,9 @@ def parse_params(params):
             'fname': '',
             'waveLength': default_wavelength,
             'list_max_min_peaks': None,
+            'cyclicvolta': None,
+            'jcamp_idx': 0,
+            'axesUnits': None,
         }
 
     select_x = params.get('select_x', None)
@@ -42,6 +45,8 @@ def parse_params(params):
     fname = '.'.join(fname)
     waveLength = params.get('waveLength')
     waveLength = json.loads(waveLength) if waveLength else default_wavelength
+    axesUnits = params.get('axesUnits')
+    axesUnits = json.loads(axesUnits) if axesUnits else None
 
     jcamp_idx = params.get('jcamp_idx', 0)
     cyclicvolta = params.get('cyclic_volta')
@@ -75,6 +80,9 @@ def parse_params(params):
         'fname': fname,
         'waveLength': waveLength,
         'list_max_min_peaks': listMaxMinPeaks,
+        'cyclicvolta': cyclicvolta,
+        'jcamp_idx': jcamp_idx,
+        'axesUnits': axesUnits,
     }
 
 
