@@ -95,13 +95,13 @@ class FidBaseConverter:
 
     def __is_hplc_uv_vis(self):
         return self.typ in ['HPLC UVVIS']
-    
+
     def __is_xrd(self):
         return self.typ in ['X-RAY DIFFRACTION']
 
     def __is_cyclic_volta(self):
         return self.typ in ['CYCLIC VOLTAMMETRY']
-    
+
     def __is_cds(self):
         return self.typ in ['CIRCULAR DICHROISM SPECTROSCOPY']
 
