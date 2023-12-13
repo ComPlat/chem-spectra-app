@@ -1,6 +1,8 @@
 import os
 
 from flask import Flask
+from flask_jwt_extended import JWTManager
+from datetime import timedelta
 
 import logging
 
@@ -39,6 +41,10 @@ def create_app(test_config=None):
     @app.route('/ping')
     def ping():
         return 'pong'
+    
+    # Refresh token api
+    from chem_spectra.controller.refresh_token_api import refresh_token_api
+    app.register_blueprint(refresh_token_api)
 
     # file api
     from chem_spectra.controller.file_api import file_api

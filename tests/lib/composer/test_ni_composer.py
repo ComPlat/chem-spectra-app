@@ -20,6 +20,10 @@ def jcamp_file_1h_edit():
 def jcamp_file_ir():
     return source_ir
 
+@pytest.fixture
+def auto_metadata_dic():
+    return {"TEST_KEY": "just a string value"}
+
 def test_init_ni_composer_failed():
     with pytest.raises(Exception) as error:
         _ = NIComposer(None)
@@ -33,6 +37,26 @@ def test_init_ni_composer_success(jcamp_file_1h):
     
     assert ni_composer is not None
     assert ni_composer.core == ni_converter
+
+def test_init_ni_composer_success_with_auto_metadata(jcamp_file_1h, auto_metadata_dic):
+    base_converter = JcampBaseConverter(jcamp_file_1h)
+    base_converter.auto_metadata = auto_metadata_dic
+    ni_converter = JcampNIConverter(base=base_converter)
+    ni_composer = NIComposer(core=ni_converter)
+    
+    assert ni_composer is not None
+    assert ni_composer.core.auto_metadata == auto_metadata_dic
+
+def test_composer_auto_metadata(jcamp_file_1h, auto_metadata_dic):
+    base_converter = JcampBaseConverter(jcamp_file_1h)
+    base_converter.auto_metadata = auto_metadata_dic
+    ni_converter = JcampNIConverter(base=base_converter)
+    ni_composer = NIComposer(core=ni_converter)
+    
+    assert ni_composer is not None
+    assert '$$ === CHEMSPECTRA AUTO METADATA ===\n' in ni_composer.meta
+    assert '##$CSAUTOMETADATA=\n' in ni_composer.meta
+    assert 'TEST_KEY=just a string value\n' in ni_composer.meta
 
 def test_ni_composer_header(jcamp_file_1h):
     base_converter = JcampBaseConverter(jcamp_file_1h)

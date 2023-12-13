@@ -224,6 +224,9 @@ class NIComposer(BaseComposer):
         meta.extend(self.gen_auto_peaktable())
         meta.extend(self.gen_ending())
 
+        meta.extend(self.generate_auto_metadata())
+        meta.extend(self.gen_ending())
+
         meta.extend(self.gen_ending())
         return meta
 

@@ -9,6 +9,7 @@ from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.converter.share import parse_params
 import matplotlib.pyplot as plt  # noqa: E402
+import json
 
 class BagItBaseConverter:
     def __init__(self, target_dir, params=False, fname=''):
@@ -17,6 +18,31 @@ class BagItBaseConverter:
             self.data, self.images, self.list_csv, self.combined_image = None, None, None, None
         else:
             self.data, self.images, self.list_csv, self.combined_image = self.__read(target_dir, fname)
+
+    def __read_metadata(self, target_dir):
+        metadata_dir_path = os.path.join(target_dir, 'metadata/')
+        metadata_json_filename = None
+        for (dirpath, dirnames, filenames) in os.walk(metadata_dir_path):
+            if len(filenames) > 0: metadata_json_filename = filenames[0]
+            break
+        
+        auto_metadata = {}
+        if metadata_json_filename is not None:
+            json_path = os.path.join(metadata_dir_path, metadata_json_filename)
+            with open(json_path) as json_file:
+                try:
+                    metadata = json.loads(json_file.read())
+                    tables = metadata["tables"]
+                    for table in tables:
+                        table_filename = table["fileName"].replace("data/", "")
+                        table_header = table["header"]
+                        metadata_values = {}
+                        for table_key in table_header.keys():
+                            metadata_values[table_key.upper()] = table_header[table_key]
+                        auto_metadata[table_filename] = metadata_values
+                except Exception as e:
+                    pass
+        return auto_metadata
 
     def __read(self, target_dir, fname):
         list_file_names = []
@@ -32,9 +58,14 @@ class BagItBaseConverter:
         list_images = []
         list_csv = []
         list_composer = []
+        auto_metadata = self.__read_metadata(target_dir)
         for file_name in list_file_names:
             jcamp_path = os.path.join(data_dir_path, file_name)
             base_cv = JcampBaseConverter(jcamp_path)
+            metadata = None
+            if file_name in auto_metadata:
+                metadata = auto_metadata[file_name]
+
             if base_cv.typ == 'MS':
                 mscv = JcampMSConverter(base_cv)
                 mscp = MSComposer(mscv)
@@ -47,6 +78,7 @@ class BagItBaseConverter:
                 list_csv.append(tf_csv)
             else:
                 nicv = JcampNIConverter(base_cv)
+                if nicv.auto_metadata == None: nicv.auto_metadata = metadata
                 nicp = NIComposer(nicv)
                 list_composer.append(nicp)
                 tf_jcamp = nicp.tf_jcamp()
@@ -56,7 +88,6 @@ class BagItBaseConverter:
                 tf_csv = nicp.tf_csv()
                 list_csv.append(tf_csv)
         
-            
         combined_image = self.__combine_images(list_composer)
 
         return list_files, list_images, list_csv, combined_image

@@ -74,6 +74,7 @@ class JcampNIConverter:  # nmr & IR
         self.__read_integration_from_file()
         self.__read_multiplicity_from_file()
         self.__read_voltammetry_data_from_file()
+        self.auto_metadata = base.auto_metadata
 
     def __read_user_data_type_mapping(self):
         user_dt_mapping = self.params.get('user_data_type_mapping')
@@ -100,11 +101,13 @@ class JcampNIConverter:  # nmr & IR
             "DLS intensity": THRESHOLD_XRD,
             "Emissions": THRESHOLD_EMISSION
         }
+
         if self.params.get('user_data_type_mapping'):
             data_type_mappings = self.__read_user_data_type_mapping()
         else:
             with open(data_type_json, 'r') as mapping_file:
                 data_type_mappings = json.load(mapping_file)["datatypes"]
+
         key = next((k for k, v in data_type_mappings.items() if dt in v), None)
 
         return threshold_values.get(key, 0.5)

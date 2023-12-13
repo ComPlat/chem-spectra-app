@@ -41,6 +41,7 @@ class JcampBaseConverter:
         self.is_dept = self.__is_dept()
         self.__read_solvent()
         self.__read_user_data_type_mapping()
+        self.auto_metadata = self.__read_auto_metadata()
 
     def __read(self, path):
         return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
@@ -68,6 +69,7 @@ class JcampBaseConverter:
         else:
             with open(data_type_json, 'r') as mapping_file:
                 data_type_mappings = json.load(mapping_file)["datatypes"]
+
         for key, values in data_type_mappings.items():
             values = [value.upper() for value in values]
             for dt in dts:
@@ -116,6 +118,7 @@ class JcampBaseConverter:
         else:
             with open(data_type_json, 'r') as mapping_file:
                 data_type_mappings = json.load(mapping_file).get("datatypes")
+
         dts = [dt for dt in data_type_mappings.keys() if dt != 'NMR']
         return self.typ in dts
 
@@ -193,3 +196,15 @@ class JcampBaseConverter:
                 return True
 
         return False
+
+    def __read_auto_metadata(self):
+        target = self.dic.get('$CSAUTOMETADATA', [])
+        if target:
+            target = [t for t in target[0].split('\n')]
+            result = {}
+            for value in target:
+                splited = value.split('=')
+                if len(splited) > 1:
+                    result[splited[0]] = splited[1]
+            return result
+        return None

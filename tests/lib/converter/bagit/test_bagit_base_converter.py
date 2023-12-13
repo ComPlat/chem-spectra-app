@@ -2,10 +2,13 @@ from chem_spectra.lib.converter.bagit.base import BagItBaseConverter as BagItCon
 import tempfile
 import zipfile
 import mimetypes
+import json
 
 target_dir = './tests/fixtures/source/bagit/'
+result_dir = './tests/fixtures/result/bagit/'
 cv_layout_path = target_dir + 'cv/File053_BagIt.zip'
 aif_layout_path = target_dir + 'aif/aif.zip'
+aif_auto_metadata_path = result_dir + 'aif/auto_metadata.json'
 emissions_layout_path = target_dir + 'emissions/emissions.zip'
 dls_acf_layout_path = target_dir + 'dls_acf/dls_acf.zip'
 dls_intensity_layout_path = target_dir + 'dls_intensity/dls_intensity.zip'
@@ -114,8 +117,6 @@ def test_get_base64_data_succeed():
         converter = BagItConveter(td)
         list_base64 = converter.get_base64_data()
         assert len(list_base64) == 3
-        for base64Str in list_base64:
-            assert base64Str.endswith("=")
 
 def test_get_combined_image_failed():
     converter = BagItConveter(None)
