@@ -2,6 +2,7 @@ from chem_spectra.lib.converter.bagit.base import BagItBaseConverter as BagItCon
 import tempfile
 import zipfile
 import mimetypes
+import base64
 
 target_dir = './tests/fixtures/source/bagit/'
 cv_layout_path = target_dir + 'cv/File053_BagIt.zip'
@@ -17,6 +18,11 @@ def assertJcampContent(jcamp, field):
     assertFileType(jcamp, 'chemical/x-jcamp-dx')
     jcamp_content = str(jcamp.read())
     assert field in jcamp_content
+    
+def isBase64(encodeString):
+    plainStr = base64.b64decode(encodeString)
+    encodedStr = base64.b64encode(plainStr).decode("utf-8")
+    assert encodedStr == encodeString
 
 def test_bagit_converter_failed():
     converter = BagItConveter(None)
@@ -115,7 +121,7 @@ def test_get_base64_data_succeed():
         list_base64 = converter.get_base64_data()
         assert len(list_base64) == 3
         for base64Str in list_base64:
-            assert base64Str.endswith("=")
+            isBase64(base64Str)
 
 def test_get_combined_image_failed():
     converter = BagItConveter(None)
