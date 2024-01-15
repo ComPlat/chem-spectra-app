@@ -106,6 +106,7 @@ def extract_params(request):
     jcamp_idx = parse_int(request.form.get('jcamp_idx', default=0), 0)
     list_file_names = request.form.getlist('list_file_names[]')
     data_type_mapping = request.form.get('data_type_mapping', default='')
+    detector = request.form.get('detector', default=None)
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -129,6 +130,7 @@ def extract_params(request):
         'list_file_names': list_file_names,
         'axesUnits': axesUnits,
         'data_type_mapping': data_type_mapping,
+        'detector': detector,
     }
     has_params = (
         params.get('peaks_str') or
