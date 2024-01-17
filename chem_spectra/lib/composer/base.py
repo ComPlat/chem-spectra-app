@@ -83,6 +83,19 @@ class BaseComposer:
             '##$CSSOLVENTX={}\n'.format(select_x or '0'),
         ]
 
+        detector = self.core.params.get('detector')
+        
+        if detector:
+            jcamp_idx = self.core.params.get('jcamp_idx')
+            curve = detector['curves'][jcamp_idx]
+            selected_detector = curve.get('selectedDetector', {})
+            
+            if isinstance(selected_detector, dict):
+                name = selected_detector.get('name')
+                
+                if name:
+                    spl_desc.append('##$DETECTOR={}\n'.format(name))
+
         return spl_desc
 
     def __header_original_metadata(self):
