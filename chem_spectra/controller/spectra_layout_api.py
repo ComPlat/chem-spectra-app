@@ -18,7 +18,6 @@ def load_data_types():
             return json.load(mapping_file)
 
 @spectra_layout_api.route('/api/v1/chemspectra/spectra_layouts', methods=['GET'])
-
 def fetch_mapping():
     if request.method == 'GET':
          existing_data_types = load_data_types()

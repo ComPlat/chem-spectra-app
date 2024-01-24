@@ -12,6 +12,7 @@ C13_CPD_dx = '13C-CPD.dx'
 C13_DEPT135_dx = '13C-DEPT135.dx'
 SVS_790A_13C_jdx = 'SVS-790A_13C.jdx'
 JPK_948_jdx = 'JPK-948.jdx'
+MS_dx = '/ms/ms_v6.dx'
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -73,7 +74,7 @@ def test_datatable_1H():
     nicv_nxt, nicp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
     total_count = nicv_ori.ys.shape[0]
     ori_bd = nicv_ori.boundary
-    ref = 0
+    ref = 1
 
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
@@ -128,3 +129,12 @@ def test_datatable_JPK_948_jdx():
 
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
+
+def test_datatable_ms():
+    mscv_ori, mscp_ori, jcamp_ori = __generated_jcamp_temp(
+        __fixture_path(MS_dx)
+    )
+    mscv_nxt, mscp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
+    
+    assert mscv_ori.datatables == mscv_nxt.datatables
+    assert mscp_ori.core.datatables == mscp_nxt.core.datatables

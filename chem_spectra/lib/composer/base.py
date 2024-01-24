@@ -24,11 +24,16 @@ def coupling_string(js):
     return ', ' + ' '.join([str(j) for j in js])
 
 
+def is_metadata_to_be_ignored(keyword):
+    return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE', 'DATACLASS']
+
+
 TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'
 TEXT_DATA_TABLE_XY = '##XYDATA= (XY..XY)\n'
 TEXT_PEAK_AUTO = '$$ === CHEMSPECTRA PEAK TABLE AUTO ===\n'
 TEXT_PEAK_EDIT = '$$ === CHEMSPECTRA PEAK TABLE EDIT ===\n'
 TEXT_PEAK_TABLE = '##PEAKTABLE= (XY..XY)\n'
+TEXT_ORIGINAL_METADATA = '$$ === CHEMSPECTRA ORIGINAL METADATA ===\n'
 
 
 class BaseComposer:
@@ -78,7 +83,26 @@ class BaseComposer:
             '##$CSSOLVENTX={}\n'.format(select_x or '0'),
         ]
 
+        detector = self.core.params.get('detector')
+        
+        if detector:
+            jcamp_idx = self.core.params.get('jcamp_idx')
+            curve = detector['curves'][jcamp_idx]
+            selected_detector = curve.get('selectedDetector', {})
+            
+            if isinstance(selected_detector, dict):
+                name = selected_detector.get('name')
+                
+                if name:
+                    spl_desc.append('##$DETECTOR={}\n'.format(name))
+
         return spl_desc
+
+    def __header_original_metadata(self):
+        return [
+            '\n',
+            TEXT_ORIGINAL_METADATA,
+        ]
 
     def gen_headers_root(self):
         return [
@@ -89,6 +113,25 @@ class BaseComposer:
             '\n'
         ]
 
+    def generate_original_metadata(self):
+        content = self.__header_original_metadata()
+        if self.core.dic is None: return content
+
+        for key, value in self.core.dic.items():
+            if is_metadata_to_be_ignored(key):
+                continue
+            str_value = value
+            str_key = key
+            if isinstance(value, list):
+                str_value = ', '.join([str(val) for val in value])
+
+            if str_key.startswith('#'):
+                str_key = str_key[1:]
+
+            content.append(
+                '###{}= {}\n'.format(str_key.upper(), str_value)
+            )
+        return content
     def gen_ending(self):
         return [
             '##END=\n',
@@ -172,13 +215,12 @@ class BaseComposer:
         # = = = = =
         itg_stack = core_itg.get('stack') or []
         mpy_stack = core_mpy.get('stack') or []
-        
 
         self.all_itgs = itg_stack
         for itg in itg_stack:
             skip = False
             for mpy in mpy_stack:
-                if (itg['xL'] == mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):     # noqa: E501
+                if (itg['xL'] == mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):     # pylint: disable=c0301
                     mpy['area'] = itg['area']
                     self.mpys.append(mpy)
                     skip = True
@@ -206,9 +248,9 @@ class BaseComposer:
             return []
         elif 'stack' in self.core.params['integration']:
             itg_stack = self.core.params['integration']['stack'] or []
-            if ('originStack' not in self.core.params['integration']):
+            if 'originStack' not in self.core.params['integration']:
                 itg_stack = self.core.itg_table
-                
+
             if len(itg_stack) == 0:
                 return []
             if 'stack' in self.core.params['multiplicity']:
@@ -217,7 +259,7 @@ class BaseComposer:
                 if len(mpy_stack) > 0:
                     for itg in itg_stack:
                         for mpy in mpy_stack:
-                            if (itg['xL'] == mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):     # noqa: E501
+                            if (itg['xL'] == mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):     # pylint: disable=c0301
                                 return []
             return itg_stack
         else:
@@ -245,7 +287,7 @@ class BaseComposer:
         elif self.core.params['multiplicity'].get('edited'):
             return []
         elif 'stack' in self.core.params['multiplicity']:
-            if ('originStack' not in self.core.params['integration']):
+            if 'originStack' not in self.core.params['integration']:
                 return self.core.mpy_itg_table
             return self.core.params['multiplicity']['stack']
         else:
@@ -258,7 +300,7 @@ class BaseComposer:
             for mk in mpy_stack:
                 mk_idx = 0
                 for idx, mpy in enumerate(self.mpys):
-                    if (mpy['xExtent']['xL'] == mk['xExtent']['xL']) and (mpy['xExtent']['xU'] == mk['xExtent']['xU']):     # noqa: E501
+                    if (mpy['xExtent']['xL'] == mk['xExtent']['xL']) and (mpy['xExtent']['xU'] == mk['xExtent']['xU']):     # pylint: disable=c0301
                         mk_idx = idx + 1
                         break
                 for p in mk['peaks']:
@@ -281,5 +323,5 @@ class BaseComposer:
             for simu_peak in self.core.simu_peaks:
                 table.extend(['{}\n'.format(simu_peak)])
             return table
-        else:
-            return []
+
+        return []

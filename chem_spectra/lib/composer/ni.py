@@ -177,7 +177,7 @@ class NIComposer(BaseComposer):
                     delta = ''
                 else:
                     delta = abs(x_max_peak - x_min_peak)
-                
+
                 # calculate ratio
                 if (y_min_peak == '' or y_max_peak == ''):
                     ratio = ''
@@ -222,6 +222,9 @@ class NIComposer(BaseComposer):
 
         meta.extend(self.gen_headers_peaktable_auto())
         meta.extend(self.gen_auto_peaktable())
+        meta.extend(self.gen_ending())
+
+        meta.extend(self.generate_original_metadata())
         meta.extend(self.gen_ending())
 
         meta.extend(self.gen_ending())
@@ -347,7 +350,8 @@ class NIComposer(BaseComposer):
         plt.plot(
             x_peaks,
             y_peaks,
-            'rd',
+            'r',
+            ls='',
             marker=marker,
             markersize=50,
         )
@@ -355,7 +359,8 @@ class NIComposer(BaseComposer):
         plt.plot(
             x_peckers,
             y_peckers,
-            'gd',
+            'g',
+            ls='',
             marker=marker,
             markersize=50,
         )
@@ -482,7 +487,7 @@ class NIComposer(BaseComposer):
         plt.clf()
         plt.cla()
         return tf_img
-    
+
     def __prepare_metadata_info_for_csv(self, csv_writer: csv.DictWriter):
         csv_writer.writerow({
             'Ox E(V)': 'Measurement type',
@@ -630,7 +635,7 @@ class NIComposer(BaseComposer):
 
         ranges = self.__generate_nmrim_ranges()
         dic_spectra_data['ranges'] = ranges
-        
+
         spectra = [dic_spectra_data]
 
         return spectra
@@ -710,7 +715,7 @@ class NIComposer(BaseComposer):
                 yStr = split_peak[2].strip()
                 if idx_peakStr not in tmp_dic_mpy_peaks:
                     tmp_dic_mpy_peaks[idx_peakStr] = []
-                
+
                 tmp_dic_mpy_peaks[idx_peakStr].append({'x': float(xStr), 'y': float(yStr)})
 
             core_mpy_itg_table = self.core.mpy_itg_table[0]
@@ -745,7 +750,7 @@ class NIComposer(BaseComposer):
             iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
             cxs = self.core.xs[iL:iU]
             cys = self.core.ys[iL:iU]
-            
+
             re_cxs = np.flip(cxs)
             re_cys = np.flip(cys)
 
@@ -755,7 +760,7 @@ class NIComposer(BaseComposer):
             absolute_value = cal_xyIntegration(xs=re_cxs, ys=re_cys)
             mpy['absolute_value'] = absolute_value
             total_integration_absolute += absolute_value
-            
+
             orgin_x_from, orgin_x_to = re_cxs[0], re_cxs[len(re_cxs)-1]
             mpy['orgin_x_from'] = orgin_x_from
             mpy['orgin_x_to'] = orgin_x_to
@@ -764,12 +769,12 @@ class NIComposer(BaseComposer):
             typ, peaks = mpy['mpyType'], mpy['peaks']    # noqa: E501
             ranges_id, absolute_value = mpy['ranges_id'], mpy['absolute_value']
             orgin_x_from, orgin_x_to = mpy['orgin_x_from'], mpy['orgin_x_to']
-            
+
             signal_id = str(uuid.uuid4())
             signal_delta = calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType'])
-            
+
             integration_value = (absolute_value / total_integration_absolute)*100
-            
+
             signal_item = {'id':signal_id,'originDelta':signal_delta, 'delta':signal_delta, 'kind':'signal', 'integration':integration_value, 'multiplicity':typ, 'peaks':peaks}
 
             rang_item = {'id':ranges_id, 'originFrom':orgin_x_from, 'originTo':orgin_x_to, 'from':orgin_x_from, 'to':orgin_x_to, 'kind':'signal', 'absolute':absolute_value, 'integration':integration_value, 'signals':[signal_item]}

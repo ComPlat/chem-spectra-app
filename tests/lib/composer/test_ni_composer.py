@@ -34,6 +34,14 @@ def test_init_ni_composer_success(jcamp_file_1h):
     assert ni_composer is not None
     assert ni_composer.core == ni_converter
 
+def test_ni_composer_original_metadata(jcamp_file_1h):
+    base_converter = JcampBaseConverter(jcamp_file_1h)
+    ni_converter = JcampNIConverter(base=base_converter)
+    ni_composer = NIComposer(core=ni_converter)
+
+    assert ni_composer is not None
+    assert '$$ === CHEMSPECTRA ORIGINAL METADATA ===\n' in ni_composer.meta
+
 def test_ni_composer_header(jcamp_file_1h):
     base_converter = JcampBaseConverter(jcamp_file_1h)
     ni_converter = JcampNIConverter(base=base_converter)

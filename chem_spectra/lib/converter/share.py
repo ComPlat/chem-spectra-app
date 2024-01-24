@@ -24,6 +24,7 @@ def parse_params(params):
             'cyclicvolta': None,
             'jcamp_idx': 0,
             'axesUnits': None,
+            'detector': None,
         }
 
     select_x = params.get('select_x', None)
@@ -53,6 +54,8 @@ def parse_params(params):
     cyclicvolta = json.loads(cyclicvolta) if cyclicvolta else None
     listMaxMinPeaks = None
     user_data_type_mapping = params.get('data_type_mapping')
+    detector = params.get('detector')
+    detector = json.loads(detector) if detector else None
     if (cyclicvolta is not None):
         spectraList = cyclicvolta['spectraList']
         if (len(spectraList) > 0):
@@ -85,6 +88,7 @@ def parse_params(params):
         'jcamp_idx': jcamp_idx,
         'axesUnits': axesUnits,
         'user_data_type_mapping': user_data_type_mapping,
+        'detector': detector,
     }
 
 

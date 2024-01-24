@@ -68,6 +68,7 @@ class JcampBaseConverter:
         else:
             with open(data_type_json, 'r') as mapping_file:
                 data_type_mappings = json.load(mapping_file)["datatypes"]
+
         for key, values in data_type_mappings.items():
             values = [value.upper() for value in values]
             for dt in dts:
@@ -116,6 +117,7 @@ class JcampBaseConverter:
         else:
             with open(data_type_json, 'r') as mapping_file:
                 data_type_mappings = json.load(mapping_file).get("datatypes")
+
         dts = [dt for dt in data_type_mappings.keys() if dt != 'NMR']
         return self.typ in dts
 
