@@ -84,17 +84,20 @@ class BaseComposer:
         ]
 
         detector = self.core.params.get('detector')
+        jcamp_idx = self.core.params.get('jcamp_idx')
         
         if detector:
-            jcamp_idx = self.core.params.get('jcamp_idx')
-            curve = detector['curves'][jcamp_idx]
-            selected_detector = curve.get('selectedDetector', {})
+            curves = detector['curves']
+            curve_to_update = next((curve for curve in curves if curve.get('curveIdx') == jcamp_idx), None)
+
+            if curve_to_update:
+                selected_detector = curve_to_update.get('selectedDetector', {})
             
-            if isinstance(selected_detector, dict):
-                name = selected_detector.get('name')
-                
-                if name:
-                    spl_desc.append('##$DETECTOR={}\n'.format(name))
+                if isinstance(selected_detector, dict):
+                    name = selected_detector.get('name')
+                    
+                    if name:
+                        spl_desc.append('##$DETECTOR={}\n'.format(name))
 
         return spl_desc
 
