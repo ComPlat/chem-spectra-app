@@ -134,6 +134,7 @@ class BaseComposer:
             content.append(
                 '###{}= {}\n'.format(str_key.upper(), str_value)
             )
+        content.append('\n\n')
         return content
     def gen_ending(self):
         return [

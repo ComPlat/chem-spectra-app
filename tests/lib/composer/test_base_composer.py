@@ -36,4 +36,5 @@ def test_base_composer_generate_original_metadata(jcamp_file_1h):
       '###.AVERAGES= 16\n',
       '###.SHIFT REFERENCE= INTERNAL, CDCl3, 1, 15.91938\n',
       '###.AVERAGES= 16\n',
+      '\n\n'
     ]
