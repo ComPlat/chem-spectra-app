@@ -225,7 +225,6 @@ class NIComposer(BaseComposer):
         meta.extend(self.gen_ending())
 
         meta.extend(self.generate_original_metadata())
-        meta.extend(self.gen_ending())
 
         meta.extend(self.gen_ending())
         return meta
@@ -490,26 +489,26 @@ class NIComposer(BaseComposer):
 
     def __prepare_metadata_info_for_csv(self, csv_writer: csv.DictWriter):
         csv_writer.writerow({
-            'Ox E(V)': 'Measurement type',
-            'Red E(V)': 'Cyclic Voltammetry',
+            'Anodic E(V)': 'Measurement type',
+            'Cathodic E(V)': 'Cyclic Voltammetry',
         })
         csv_writer.writerow({
-            'Ox E(V)': 'Measurement type ID',
+            'Anodic E(V)': 'Measurement type ID',
         })
         csv_writer.writerow({
-            'Ox E(V)': 'Sample ID',
+            'Anodic E(V)': 'Sample ID',
         })
         csv_writer.writerow({
-            'Ox E(V)': 'Analysis ID',
+            'Anodic E(V)': 'Analysis ID',
         })
         csv_writer.writerow({
-            'Ox E(V)': 'Dataset ID',
+            'Anodic E(V)': 'Dataset ID',
         })
         csv_writer.writerow({
-            'Ox E(V)': 'Dataset name',
+            'Anodic E(V)': 'Dataset name',
         })
         csv_writer.writerow({
-            'Ox E(V)': 'Link to sample',
+            'Anodic E(V)': 'Link to sample',
         })
         csv_writer.writerow({
         })
@@ -527,7 +526,7 @@ class NIComposer(BaseComposer):
             listMaxMinPeaks = self.core.params['list_max_min_peaks']
 
         with open(tf_csv.name, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['Ox E(V)', 'Ox I(A)', 'Red E(V)', 'Red I(A)', 'I lambda0(A)', 'I ratio', 'E1/2(V)', 'Delta Ep(mV)']
+            fieldnames = ['Anodic E(V)', 'Anodic I(A)', 'Cathodic E(V)', 'Cathodic I(A)', 'I lambda0(A)', 'I ratio', 'E1/2(V)', 'Delta Ep(mV)']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             self.__prepare_metadata_info_for_csv(writer)
@@ -577,10 +576,10 @@ class NIComposer(BaseComposer):
                         y_pecker = ''
 
                 writer.writerow({
-                    'Ox E(V)': '{x_max}'.format(x_max=x_max_peak),
-                    'Ox I(A)': '{y_max}'.format(y_max=y_max_peak),
-                    'Red E(V)': '{x_min}'.format(x_min=x_min_peak),
-                    'Red I(A)': '{y_min}'.format(y_min=y_min_peak),
+                    'Anodic E(V)': '{x_max}'.format(x_max=x_max_peak),
+                    'Anodic I(A)': '{y_max}'.format(y_max=y_max_peak),
+                    'Cathodic E(V)': '{x_min}'.format(x_min=x_min_peak),
+                    'Cathodic I(A)': '{y_min}'.format(y_min=y_min_peak),
                     'I lambda0(A)': '{y_pecker}'.format(y_pecker=y_pecker),
                     'I ratio': '{ratio}'.format(ratio=ratio),
                     'E1/2(V)': '{e12}'.format(e12=e12),
