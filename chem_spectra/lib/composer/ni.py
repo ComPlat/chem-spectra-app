@@ -587,14 +587,15 @@ class NIComposer(BaseComposer):
                 })
         return tf_csv
 
-    def generate_nmrium(self):
+    def generate_nmrium(self, version=4):
         typ = self.core.typ
         if 'NMR' != typ:
             return None
         
-        dic_data = {'actionType': 'INITIATE', 'version': 3}
-        spectra = self.__generate_nmrim_spectra()
-        dic_data['spectra'] = spectra
+        if version == 3:
+            dic_data = self.__generate_nmrium_version_3()
+        else:
+            dic_data = self.__generate_nmrium_data(version)
 
         json_data = json.dumps(dic_data)
         
@@ -602,6 +603,18 @@ class NIComposer(BaseComposer):
         tf_nmrium.write(bytes(json_data, 'UTF-8'))
         tf_nmrium.seek(0)
         return tf_nmrium
+      
+    def __generate_nmrium_version_3(self):
+        dic_data = {'actionType': 'INITIATE', 'version': 3}
+        spectra = self.__generate_nmrim_spectra()
+        dic_data['spectra'] = spectra
+        return dic_data
+      
+    def __generate_nmrium_data(self, version):
+        dic_data = {'version': version, 'data': {}, 'view': {}}
+        spectra = self.__generate_nmrim_spectra()
+        dic_data['data']['spectra'] = spectra
+        return dic_data
 
     def __generate_nmrim_spectra(self):
         spectra = []
