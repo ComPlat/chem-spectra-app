@@ -22,6 +22,7 @@ dependencies:
   - xz=5.4.2=h5eee18b_0
   - zlib=1.2.13=h5eee18b_0
   - pip:
+      - astroid==2.15.8
       - atomicwrites==1.3.0
       - attrs==23.1.0
       - certifi==2023.7.22
@@ -32,6 +33,7 @@ dependencies:
       - contourpy==1.1.1
       - coverage==4.5.3
       - cycler==0.10.0
+      - dill==0.3.7
       - entrypoints==0.3
       - exceptiongroup==1.1.3
       - flake8==3.7.7
@@ -43,9 +45,11 @@ dependencies:
       - importlib-metadata==3.6.0
       - importlib-resources==5.1.3
       - iniconfig==2.0.0
+      - isort==5.13.2
       - itsdangerous==2.0.0
       - jinja2==3.1.2
       - kiwisolver==1.4.5
+      - lazy-object-proxy==1.10.0
       - markupsafe==2.1.2
       - matplotlib==3.7.3
       - mccabe==0.6.1
@@ -57,11 +61,13 @@ dependencies:
       - pandas==2.0.3
       - pathlib2==2.3.4
       - pillow==10.0.1
+      - platformdirs==4.1.0
       - pluggy==0.12.0
       - py==1.11.0
       - pycodestyle==2.5.0
       - pyflakes==2.1.1
       - pyjwt==2.8.0
+      - pylint==2.17.7
       - pymzml==2.5.2
       - pyopenms==2.6.0
       - pyparsing==2.4.2
@@ -74,9 +80,12 @@ dependencies:
       - scipy==1.7.3
       - six==1.11.0
       - tomli==2.0.1
+      - tomlkit==0.12.3
+      - typing-extensions==4.9.0
       - tzdata==2023.3
       - urllib3==1.26.18
       - werkzeug==3.0.1
+      - wrapt==1.16.0
       - zipp==0.5.2
       - -e git+https://github.com/ComPlat/nmrglue.git@e6e8a63b1848ae0525f07de0a6ec0cfdb900ba60#egg=nmrglue
 prefix: /home/eln/anaconda3/envs/python-v38
