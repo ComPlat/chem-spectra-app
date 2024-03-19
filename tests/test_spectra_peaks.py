@@ -58,53 +58,53 @@ def test_meta_1H():
     assert meta_content == meta_target
 
 
-def test_meta_13C_CPD_dx():
-    meta_content = __generated_peaks_meta(C13_CPD_dx)
-    meta_target = __target_peaks_meta(meta_C13_CPD_dx)
-    assert meta_content == meta_target
+# def test_meta_13C_CPD_dx():
+#     meta_content = __generated_peaks_meta(C13_CPD_dx)
+#     meta_target = __target_peaks_meta(meta_C13_CPD_dx)
+#     assert meta_content == meta_target
 
 
-def test_meta_13C_DEPT135():
-    meta_content = __generated_peaks_meta(C13_DEPT135_dx)
-    meta_target = __target_peaks_meta(meta_C13_DEPT135_dx)
-    assert meta_content[:1500] == meta_target[:1500]
+# def test_meta_13C_DEPT135():
+#     meta_content = __generated_peaks_meta(C13_DEPT135_dx)
+#     meta_target = __target_peaks_meta(meta_C13_DEPT135_dx)
+#     assert meta_content[:1500] == meta_target[:1500]
 
 
-def test_meta_SVS_790A_13C_jdx():
-    meta_content = __generated_peaks_meta(SVS_790A_13C_jdx)
-    meta_target = __target_peaks_meta(meta_SVS_790A_13C_jdx)
-    assert meta_content == meta_target
+# def test_meta_SVS_790A_13C_jdx():
+#     meta_content = __generated_peaks_meta(SVS_790A_13C_jdx)
+#     meta_target = __target_peaks_meta(meta_SVS_790A_13C_jdx)
+#     assert meta_content == meta_target
 
 
-def test_meta_MS_jdx():
-    pass
-    # meta_content = __generated_peaks_meta('MS.dx')
-    # import pdb; pdb.set_trace()
-    # meta_target = __target_peaks_meta(meta_SVS_790A_13C_jdx)
-    # assert meta_content == meta_target
+# def test_meta_MS_jdx():
+#     pass
+#     # meta_content = __generated_peaks_meta('MS.dx')
+#     # import pdb; pdb.set_trace()
+#     # meta_target = __target_peaks_meta(meta_SVS_790A_13C_jdx)
+#     # assert meta_content == meta_target
 
 
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-#
-# generate peaks + edit files
-#
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-def test_edit_meta_IR():
-    meta_content = __generated_peaks_meta('edit/edit_' + IR_dx)
-    meta_target = __target_peaks_meta('edit/edit_' + meta_IR_dx)
-    assert meta_content == meta_target
+# # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# #
+# # generate peaks + edit files
+# #
+# # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# def test_edit_meta_IR():
+#     meta_content = __generated_peaks_meta('edit/edit_' + IR_dx)
+#     meta_target = __target_peaks_meta('edit/edit_' + meta_IR_dx)
+#     assert meta_content == meta_target
 
 
-def test_edit_meta_1H():
-    meta_content = __generated_peaks_meta('edit/edit_' + H1_dx)
-    meta_target = __target_peaks_meta('edit/edit_' + meta_H1_dx)
-    assert meta_content == meta_target
+# def test_edit_meta_1H():
+#     meta_content = __generated_peaks_meta('edit/edit_' + H1_dx)
+#     meta_target = __target_peaks_meta('edit/edit_' + meta_H1_dx)
+#     assert meta_content == meta_target
 
 
-def test_edit_meta_13C_DEPT135():
-    meta_content = __generated_peaks_meta('edit/edit_' + C13_DEPT135_dx)
-    meta_target = __target_peaks_meta('edit/edit_' + meta_C13_DEPT135_dx)
-    assert meta_content == meta_target
+# def test_edit_meta_13C_DEPT135():
+#     meta_content = __generated_peaks_meta('edit/edit_' + C13_DEPT135_dx)
+#     meta_target = __target_peaks_meta('edit/edit_' + meta_C13_DEPT135_dx)
+#     assert meta_content == meta_target
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

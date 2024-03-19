@@ -18,9 +18,9 @@ MarkupSafe==2.1.2
 matplotlib==3.7.3
 mccabe==0.6.1
 more-itertools==7.2.0
-# -e git+https://github.com/ComPlat/nmrglue.git@c5a7d4d0073fedff68808b4e9c95836a8c20413e#egg=nmrglue
--e git+https://github.com/ComPlat/nmrglue.git@e6e8a63b1848ae0525f07de0a6ec0cfdb900ba60#egg=nmrglue
-netCDF4==1.5.3
+# -e git+https://github.com/ComPlat/nmrglue.git@e6e8a63b1848ae0525f07de0a6ec0cfdb900ba60#egg=nmrglue
+-e git+https://github.com/ComPlat/nmrglue.git@development#egg=nmrglue
+netCDF4==1.6.5
 numpy==1.22.4
 olefile==0.46
 pandas==2.0.3

@@ -30,12 +30,18 @@ def make_ni_data_ys(base, target_idx):
     if isinstance(base.data, dict):
         return base.data['real'][target_idx]
 
+    if isinstance(base.data, np.ndarray) == False:
+        base.data = np.asarray(base.data)
+
     # base.data type is array
     data_shape = base.data.shape
     if len(data_shape) == 1:
         return base.data
     elif len(data_shape) == 2:
-        [_, ys] = base.data.T
+        try:
+            [_, ys] = base.data.T
+        except:
+            [_, ys] = base.data
         return ys
     else:
         return base.data
