@@ -302,10 +302,10 @@ class NIComposer(BaseComposer):
 
         x_peckers = []
         y_peckers = []
+        x_peaks_ref, y_peaks_ref = [], []
         if self.core.is_cyclic_volta:
             x_peaks = []
             y_peaks = []
-            x_peaks_ref, y_peaks_ref = [], []
             formatter = ticker.ScalarFormatter(useMathText=True)
             formatter.set_scientific(True)
             formatter.set_powerlimits((-1, 1))
