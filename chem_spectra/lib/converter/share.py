@@ -33,23 +33,35 @@ def parse_params(params):
     peaks_str = params.get('peaks_str', None)
     delta = 0.0
     mass = params.get('mass', 0)
+    mass = mass if mass else 0
     scan = params.get('scan', None)
     thres = params.get('thres', None)
     clear = params.get('clear', False)
+    clear = clear if clear else False
     integration = params.get('integration')
     integration = json.loads(integration) if integration else default_itg
     multiplicity = params.get('multiplicity')
     multiplicity = json.loads(multiplicity) if multiplicity else default_mpy
     ext = params.get('ext', '')
+    ext = ext if ext else ''
     fname = params.get('fname', '').split('.')
     fname = fname[:-2] if (len(fname) > 2 and (fname[-2] in ['edit', 'peak'])) else fname[:-1]
     fname = '.'.join(fname)
     waveLength = params.get('waveLength')
     waveLength = json.loads(waveLength) if waveLength else default_wavelength
-    axesUnits = params.get('axesUnits')
-    axesUnits = json.loads(axesUnits) if axesUnits else None
 
     jcamp_idx = params.get('jcamp_idx', 0)
+    jcamp_idx = jcamp_idx if jcamp_idx else 0
+    axesUnitsJson = params.get('axesUnits')
+    axesUnitsDic = json.loads(axesUnitsJson) if axesUnitsJson else None
+    axesUnits = None
+    if axesUnitsDic != None and 'axes' in axesUnitsDic:
+        axes = axesUnitsDic.get('axes', [{'xUnit': '', 'yUnit': ''}])
+        try:
+            axesUnits = axes[jcamp_idx]
+        except:
+            pass
+
     cyclicvolta = params.get('cyclic_volta')
     cyclicvolta = json.loads(cyclicvolta) if cyclicvolta else None
     listMaxMinPeaks = None
