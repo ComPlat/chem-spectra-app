@@ -10,7 +10,7 @@ entrypoints==0.3
 flake8==3.7.7
 Flask==2.2.5
 gunicorn==19.9.0
-idna==2.7
+idna==3.7
 importlib-metadata==3.6.0
 itsdangerous==2.0
 Jinja2==3.1.2
