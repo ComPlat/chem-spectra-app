@@ -3,13 +3,20 @@ from werkzeug.datastructures import FileStorage
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 
-source = './tests/fixtures/source/nmrium/nmrium_test.nmrium'
+source_files = [
+    './tests/fixtures/source/nmrium/nmrium_test_v3.nmrium',
+    './tests/fixtures/source/nmrium/nmrium_test_v4.nmrium',
+    './tests/fixtures/source/nmrium/nmrium_test_v5.nmrium'
+]
 
 @pytest.fixture
-def nmrium_file():
-    with open(source, 'rb') as f:
-        nmriumFile = FileContainer(FileStorage(f))
-    return nmriumFile
+def nmrium_files():
+    files = []
+    for source in source_files:
+        with open(source, 'rb') as f:
+            nmriumFile = FileContainer(FileStorage(f))
+            files.append(nmriumFile)
+    return files
 
 @pytest.fixture
 def parsed_json_nmrium_data():
@@ -77,17 +84,19 @@ def test_parsing_spectra(parsed_json_nmrium_data):
     assert spectrum_data != None
     assert spectrum_data == expected_value
 
-def test_read_file(nmrium_file):
-    nmrium_converter = NMRiumDataConverter()
-    nmrium_converter.file = nmrium_file
-    spectrum_data = nmrium_converter._NMRiumDataConverter__read_file()
-    assert spectrum_data != None
+def test_read_file(nmrium_files):
+    for file in nmrium_files:
+        nmrium_converter = NMRiumDataConverter()
+        nmrium_converter.file = file
+        spectrum_data = nmrium_converter._NMRiumDataConverter__read_file()
+        assert spectrum_data is not None
 
-def test_read_file_content(nmrium_file):
-    nmrium_converter = NMRiumDataConverter(nmrium_file)
-    assert nmrium_converter.data != None
-    assert len(nmrium_converter.data['x']) == 65536
-    assert len(nmrium_converter.data['x']) == len(nmrium_converter.data['y'])
+def test_read_file_content(nmrium_files):
+    for file in nmrium_files:
+        nmrium_converter = NMRiumDataConverter(file)
+        assert nmrium_converter.data != None
+        assert len(nmrium_converter.data['x']) == 65536
+        assert len(nmrium_converter.data['x']) == len(nmrium_converter.data['y'])
 
 def test_read_xy_values_failed():
     nmrium_converter = NMRiumDataConverter()
