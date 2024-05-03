@@ -587,15 +587,15 @@ class NIComposer(BaseComposer):
                 })
         return tf_csv
 
-    def generate_nmrium(self, version=4):
+    def generate_nmrium(self, version=4, molfile_data=None):
         typ = self.core.typ
         if 'NMR' != typ:
             return None
         
         if version == 3:
-            dic_data = self.__generate_nmrium_version_3()
+            dic_data = self.__generate_nmrium_version_3(molfile_data=molfile_data)
         else:
-            dic_data = self.__generate_nmrium_data(version)
+            dic_data = self.__generate_nmrium_data(version=version, molfile_data=molfile_data)
 
         json_data = json.dumps(dic_data)
         
@@ -604,16 +604,18 @@ class NIComposer(BaseComposer):
         tf_nmrium.seek(0)
         return tf_nmrium
       
-    def __generate_nmrium_version_3(self):
+    def __generate_nmrium_version_3(self, molfile_data=None):
         dic_data = {'actionType': 'INITIATE', 'version': 3}
         spectra = self.__generate_nmrim_spectra()
         dic_data['spectra'] = spectra
+        dic_data['molecules'] = self.__generate_molecules(molfile_data)
         return dic_data
       
-    def __generate_nmrium_data(self, version):
+    def __generate_nmrium_data(self, version, molfile_data=None):
         dic_data = {'version': version, 'data': {}, 'view': {}}
         spectra = self.__generate_nmrim_spectra()
         dic_data['data']['spectra'] = spectra
+        dic_data['data']['molecules'] = self.__generate_molecules(molfile_data)
         return dic_data
 
     def __generate_nmrim_spectra(self):
@@ -793,3 +795,16 @@ class NIComposer(BaseComposer):
             dic_ranges['values'].append(rang_item)
 
         return dic_ranges
+    
+    def __generate_molecules(self, molfile_data):
+        if molfile_data is None:
+          return []
+        
+        molecule_id = str(uuid.uuid4())
+        return [
+            {
+                'id': molecule_id,
+                'label': 'P1',
+                'molfile': molfile_data
+            }
+        ]

@@ -14,6 +14,7 @@ from chem_spectra.controller.helper.share import (
 
 from chem_spectra.model.transformer import TransformerModel as TraModel
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
+from chem_spectra.model.molecule import MoleculeModel
 
 
 trans_api = Blueprint('transform_api', __name__)
@@ -33,7 +34,8 @@ def zip_jcamp_n_img():
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:  # and allowed_file(file):
-        cmpsr, invalid_molfile = TraModel(file, molfile=molfile, params=params).to_composer()
+        transform_model = TraModel(file, molfile=molfile, params=params)
+        cmpsr, invalid_molfile = transform_model.to_composer()
         if (not cmpsr):
             abort(403)
 
@@ -79,7 +81,14 @@ def zip_jcamp_n_img():
             )
             rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
         else:
-            tf_jcamp, tf_img, tf_csv, tf_nmrium = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv(), cmpsr.generate_nmrium()
+            tf_jcamp, tf_img, tf_csv = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
+            tf_nmrium = None
+            try:
+                molecule_model = MoleculeModel(molfile, cmpsr.core.ncl, decorate=False)
+                tf_nmrium = cmpsr.generate_nmrium(molfile_data=molecule_model.moltxt)
+            except Exception:
+                pass
+
             spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
             if (tf_csv is not None and tf_csv != False):
                 memory = to_zip_response([tf_jcamp, tf_img, tf_csv])
