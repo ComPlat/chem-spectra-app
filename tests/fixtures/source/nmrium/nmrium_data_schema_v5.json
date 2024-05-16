@@ -1,7 +1,8 @@
 {
   "version": 5,
   "data": {
-    "spectra": []
+    "spectra": [],
+    "molecules": []
   },
   "view": {}
 }

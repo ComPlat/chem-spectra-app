@@ -4,10 +4,12 @@ import numpy as np
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 from chem_spectra.lib.composer.ni import NIComposer
+from chem_spectra.controller.helper.file_container import FileContainer
 
 source_nmr = './tests/fixtures/source/1H.dx'
 source_nmr_edit = './tests/fixtures/source/1H.edit.jdx'
 source_ir = './tests/fixtures/source/IR.dx'
+source_dir_molfile = './tests/fixtures/source/molfile/c60h57fn4.mol'
 
 @pytest.fixture
 def data_schema():
@@ -28,6 +30,12 @@ def jcamp_file_1h_edit():
 @pytest.fixture
 def jcamp_file_ir():
     return source_ir
+
+@pytest.fixture
+def molfile_data():
+    molfile = open(source_dir_molfile, "r")
+    molfile_str = molfile.read()
+    return molfile_str
 
 def test_init_ni_composer_failed():
     with pytest.raises(Exception) as error:
@@ -203,3 +211,42 @@ def test_ni_composer_generate_nmrium(jcamp_file_1h):
         y_value = xy_points['re']
         assert len(x_values) == 65536
         assert len(y_value) == 65536
+
+def test_ni_composer_generate_nmrium_without_molfile(jcamp_file_1h):
+    base_converter = JcampBaseConverter(jcamp_file_1h)
+    ni_converter = JcampNIConverter(base=base_converter)
+    ni_composer = NIComposer(core=ni_converter)
+    nmrium_file = ni_composer.generate_nmrium()
+    
+    assert nmrium_file is not None
+    with open(nmrium_file.name) as file:
+        file_content = file.read()
+        assert file_content != ""
+
+        dic_content = json.loads(file_content)
+        dic_data = dic_content['data']
+        molecules = dic_data['molecules']
+        assert molecules is not None
+        assert len(molecules) == 0
+
+def test_ni_composer_generate_nmrium_with_molfile(jcamp_file_1h, molfile_data):
+    base_converter = JcampBaseConverter(jcamp_file_1h)
+    ni_converter = JcampNIConverter(base=base_converter)
+    ni_composer = NIComposer(core=ni_converter)
+    nmrium_file = ni_composer.generate_nmrium(molfile_data=molfile_data)
+    
+    assert nmrium_file is not None
+    with open(nmrium_file.name) as file:
+        file_content = file.read()
+        assert file_content != ""
+
+        dic_content = json.loads(file_content)
+        dic_data = dic_content['data']
+        molecules = dic_data['molecules']
+        assert molecules is not None
+        assert len(molecules) == 1
+
+        molecule_data = molecules[0]
+        assert 'id' in molecule_data.keys()
+        assert molecule_data['label'] == 'P1'
+        assert molecule_data['molfile'] == molfile_data
