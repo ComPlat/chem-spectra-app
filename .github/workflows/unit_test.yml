@@ -1,21 +1,24 @@
-name: Test with pytest
+name: Tests
 
 on: [push]
 
 jobs:
-  build-linux:
+  run-unit-tests:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:
         python-version: 3.8
     - name: Install dependencies
-      run: |
-        $CONDA/bin/conda env update --file environment.yml --name base
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        activate-environment: python-v38
+        environment-file: environment.yml
+        miniforge-version: latest
     - name: Test with pytest
+      shell: bash -el {0}
       run: |
-        # pip install -r requirements.txt
-        $CONDA/bin/python -m pytest
+        conda activate python-v38
+        python -m pytest

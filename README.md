@@ -2,6 +2,9 @@
 
 This backend web service provides NMR/IR/MS processing for jcamp/RAW/mzML files.
 
+![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg)
+![Testing](https://github.com/ComPlat/chem-spectra-app/actions/workflows/unit_test.yml/badge.svg)
+
 The frontend is provided by chem-spectra-client.
 
 ### Install
