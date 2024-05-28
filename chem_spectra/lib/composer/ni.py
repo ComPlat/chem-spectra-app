@@ -285,6 +285,12 @@ class NIComposer(BaseComposer):
         ]
         codes, verts = zip(*path_data)
         marker = mpath.Path(verts, codes)
+
+        circle = mpath.Path.unit_circle()
+        cirle_verts = np.concatenate([circle.vertices, verts])
+        cirle_codes = np.concatenate([circle.codes, codes])
+        cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
+
         x_peaks = []
         y_peaks = []
         if self.core.edit_peaks:
@@ -296,6 +302,7 @@ class NIComposer(BaseComposer):
 
         x_peckers = []
         y_peckers = []
+        x_peaks_ref, y_peaks_ref = [], []
         if self.core.is_cyclic_volta:
             x_peaks = []
             y_peaks = []
@@ -328,8 +335,13 @@ class NIComposer(BaseComposer):
                     x_peaks.extend([x_max_peak])
                     y_peaks.extend([y_max_peak])
                 else:
-                    x_peaks.extend([x_max_peak, x_min_peak])
-                    y_peaks.extend([y_max_peak, y_min_peak])
+                    is_ref = peak.get('isRef', False) if 'isRef' in peak else False
+                    if is_ref:
+                        x_peaks_ref.extend([x_max_peak, x_min_peak])
+                        y_peaks_ref.extend([y_max_peak, y_min_peak])
+                    else:
+                        x_peaks.extend([x_max_peak, x_min_peak])
+                        y_peaks.extend([y_max_peak, y_min_peak])
 
                 if 'pecker' in peak and peak['pecker'] is not None:
                     pecker = peak['pecker']
@@ -343,6 +355,15 @@ class NIComposer(BaseComposer):
                 y_pos = y_peaks[i] + h * 0.1
                 x_float = '{:.2e}'.format(x_pos)
                 y_float = '{:.2e}'.format(y_peaks[i])
+                peak_label = 'x: {x}\ny: {y}'.format(x=x_float, y=y_float)
+                plt.text(x_pos, y_pos, peak_label)
+
+            # display x value of ref peak for cyclic voltammetry
+            for i in range(len(x_peaks_ref)):
+                x_pos = x_peaks_ref[i]
+                y_pos = y_peaks_ref[i] + h * 0.1
+                x_float = '{:.2e}'.format(x_pos)
+                y_float = '{:.2e}'.format(y_peaks_ref[i])
                 peak_label = 'x: {x}\ny: {y}'.format(x=x_float, y=y_float)
                 plt.text(x_pos, y_pos, peak_label)
 
@@ -361,6 +382,15 @@ class NIComposer(BaseComposer):
             'g',
             ls='',
             marker=marker,
+            markersize=50,
+        )
+
+        plt.plot(
+            x_peaks_ref,
+            y_peaks_ref,
+            'r',
+            ls='',
+            marker=cut_star_marker,
             markersize=50,
         )
 
