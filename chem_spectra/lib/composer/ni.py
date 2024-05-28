@@ -166,6 +166,17 @@ class NIComposer(BaseComposer):
         y = peak['y'] or ''
         return x, y
 
+    def __gen_cyclic_voltammetry_medadata(self):
+        scan_rate = self.core.dic.get('SCANRATE', [0.1])[0]
+        x_values = self.core.xs
+        spectrum_direction = ''
+        if len(x_values) > 2:
+            spectrum_direction = 'NEGATIVE' if x_values[0] > x_values[1] else 'POSITIVE'
+        return [
+            f"##$CSSCANRATE={scan_rate}\n",
+            f"##$CSSPECTRUMDIRECTION={spectrum_direction}\n"
+        ]
+
     def __gen_cyclic_voltammetry_data_peaks(self):
         content = ['##$CSCYCLICVOLTAMMETRYDATA=\n']
         if self.core.is_cyclic_volta:
@@ -245,6 +256,7 @@ class NIComposer(BaseComposer):
         meta.extend(self.gen_simulation_info())
         if self.core.is_cyclic_volta:
             meta.extend(self.__gen_header_cyclic_voltammetry())
+            meta.extend(self.__gen_cyclic_voltammetry_medadata())
             meta.extend(self.__gen_cyclic_voltammetry_data_peaks())
         meta.extend(self.gen_ending())
 
