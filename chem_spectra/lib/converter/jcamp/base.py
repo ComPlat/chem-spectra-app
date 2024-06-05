@@ -34,6 +34,7 @@ class JcampBaseConverter:
         self.is_emissions = self.__is_emissions()
         self.is_dls_acf = self.__is_dls_acf()
         self.is_dls_intensity = self.__is_dls_intensity()
+        self.is_dsc = self.__is_dsc()
         self.non_nmr = self.__non_nmr()
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
@@ -156,6 +157,9 @@ class JcampBaseConverter:
 
     def __is_dls_intensity(self):
         return self.typ in ['DLS intensity']
+    
+    def __is_dsc(self):
+        return self.typ in ['DIFFERENTIAL SCANNING CALORIMETRY']
 
     def __ncl(self):
         try:

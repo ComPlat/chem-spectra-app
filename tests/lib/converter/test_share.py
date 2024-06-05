@@ -28,6 +28,7 @@ def expected_default_params():
         'jcamp_idx': 0,
         'axesUnits': None,
         'detector': None,
+        'dsc_meta_data': None,
     }
 
 def test_parse_params_without_params(expected_default_params):
@@ -222,6 +223,11 @@ def test_parse_params_detector():
 def test_parse_solvent():
     #TODO: need to be updated
     assert 1==1
+
+def test_parse_dsc_meta_data():
+    params = {'dsc_meta_data': '{"meltingPoint": "1.0", "tg": "1.0"}'}
+    parsed_data = parse_params(params)
+    assert parsed_data['dsc_meta_data'] == {"meltingPoint": "1.0", "tg": "1.0"}
     
 def test_reduce_pts_when_does_not_have_any_x():
     array_data = []

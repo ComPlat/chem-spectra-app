@@ -25,6 +25,7 @@ def parse_params(params):
             'jcamp_idx': 0,
             'axesUnits': None,
             'detector': None,
+            'dsc_meta_data': None,
         }
 
     select_x = params.get('select_x', None)
@@ -68,6 +69,8 @@ def parse_params(params):
     user_data_type_mapping = params.get('data_type_mapping')
     detector = params.get('detector')
     detector = json.loads(detector) if detector else None
+    dsc_meta_data = params.get('dsc_meta_data')
+    dsc_meta_data = json.loads(dsc_meta_data) if dsc_meta_data else None
     if (cyclicvolta is not None):
         spectraList = cyclicvolta['spectraList']
         if (len(spectraList) > 0):
@@ -101,6 +104,7 @@ def parse_params(params):
         'axesUnits': axesUnits,
         'user_data_type_mapping': user_data_type_mapping,
         'detector': detector,
+        'dsc_meta_data': dsc_meta_data,
     }
 
 

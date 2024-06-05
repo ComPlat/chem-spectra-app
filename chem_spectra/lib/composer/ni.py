@@ -141,6 +141,24 @@ class NIComposer(BaseComposer):
             result.append(key_str)
         return result
 
+    def __gen_header_user_input_meta_data(self):
+        if self.core.is_dsc:
+            dsc_meta_data = self.core.params.get('dsc_meta_data', None)
+            melting_point, tg_value = '', ''
+            if dsc_meta_data is not None:
+                melting_point = dsc_meta_data.get('meltingPoint', '')
+                tg_value = dsc_meta_data.get('tg', '')
+            else:
+                melting_point_arr = self.core.dic.get('MELTINGPOINT', [''])
+                tg_value_arr = self.core.dic.get('TG', [''])
+                melting_point = melting_point_arr[0]
+                tg_value = tg_value_arr[0]
+            return [
+                f'##MELTINGPOINT={melting_point}\n',
+                f'##TG={tg_value}\n'
+            ]
+        return []
+
     def __get_xy_of_peak(self, peak):
         if peak is None:
             return '', ''
@@ -214,6 +232,7 @@ class NIComposer(BaseComposer):
         meta.extend(self.__gen_headers_spectrum_orig())
         if self.core.is_sec:
             meta.extend(self.__gen_header_sec())
+        meta.extend(self.__gen_header_user_input_meta_data())
         meta.extend(self.gen_spectrum_orig())
         meta.extend(self.__gen_headers_im())
         meta.extend(self.__gen_headers_integration())
@@ -243,35 +262,12 @@ class NIComposer(BaseComposer):
         return meta
 
     def __plt_nbins(self):
-        typ = self.core.typ
-        if 'NMR' == typ:
-            return 20
-        elif 'INFRARED' == typ:
-            return 20
-        elif 'RAMAN' == typ:
-            return 20
-        elif 'UVVIS' == typ:
-            return 20
-        elif 'THERMOGRAVIMETRIC ANALYSIS' == typ:
-            return 20
-        elif 'MS' == typ:
-            return 20
         return 20
 
     def __fakto(self):
         typ = self.core.typ
-        if 'NMR' == typ:
-            return 1
-        elif 'MS' == typ:
-            return 1
-        elif 'INFRARED' == typ:
+        if 'INFRARED' == typ:
             return -1
-        elif 'RAMAN' == typ:
-            return 1
-        elif 'UVVIS' == typ:
-            return 1
-        elif 'THERMOGRAVIMETRIC ANALYSIS' == typ:
-            return 1
         return 1
 
     def tf_img(self):
@@ -666,16 +662,32 @@ class NIComposer(BaseComposer):
 
 
     def __generate_info_box(self, plotlib):
-        if not self.core.is_sec:
+        if not (self.core.is_sec or self.core.is_dsc):
             return
         core_dic = self.core.dic
-        sec_data_key = ['MN', 'MW', 'MP', 'D']
         result = []
-        for key in sec_data_key:
-            dic_value = core_dic.get(key, [])
-            key_str = f"{key}={dic_value[0]}" if len(dic_value) > 0 else None
-            if key_str is not None:
-                result.append(key_str)
+        if self.core.is_sec:
+            sec_data_key = ['MN', 'MW', 'MP', 'D']
+            for key in sec_data_key:
+                dic_value = core_dic.get(key, [])
+                key_str = f"{key}={dic_value[0]}" if len(dic_value) > 0 else None
+                if key_str is not None:
+                    result.append(key_str)
+        else:
+            dsc_meta_data = self.core.params.get('dsc_meta_data', None)
+            melting_point, tg_value = '', ''
+            if dsc_meta_data is not None:
+                melting_point = dsc_meta_data.get('meltingPoint', '')
+                tg_value = dsc_meta_data.get('tg', '')
+            else:
+                melting_point_arr = self.core.dic.get('MELTINGPOINT', [''])
+                tg_value_arr = self.core.dic.get('TG', [''])
+                melting_point = melting_point_arr[0]
+                tg_value = tg_value_arr[0]
+            
+            melting_point_str = f"MELTING POINT={melting_point}"
+            tg_str = f"TG={tg_value}"
+            result.extend([melting_point_str, tg_str])
 
         info_str = '\n'.join(result)
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
