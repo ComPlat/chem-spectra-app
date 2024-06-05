@@ -1,15 +1,19 @@
 import json
 import pytest
 import numpy as np
+import tempfile
+import zipfile
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.controller.helper.file_container import FileContainer
+from chem_spectra.lib.converter.bagit.base import BagItBaseConverter as BagItConveter
 
 source_nmr = './tests/fixtures/source/1H.dx'
 source_nmr_edit = './tests/fixtures/source/1H.edit.jdx'
 source_ir = './tests/fixtures/source/IR.dx'
 source_dir_molfile = './tests/fixtures/source/molfile/c60h57fn4.mol'
+source_sec =  './tests/fixtures/source/sec/SEC-ExFile.zip'
 
 @pytest.fixture
 def data_schema():
@@ -36,6 +40,10 @@ def molfile_data():
     molfile = open(source_dir_molfile, "r")
     molfile_str = molfile.read()
     return molfile_str
+
+@pytest.fixture
+def bagit_file_sec():
+    return source_sec
 
 def test_init_ni_composer_failed():
     with pytest.raises(Exception) as error:
@@ -250,3 +258,19 @@ def test_ni_composer_generate_nmrium_with_molfile(jcamp_file_1h, molfile_data):
         assert 'id' in molecule_data.keys()
         assert molecule_data['label'] == 'P1'
         assert molecule_data['molfile'] == molfile_data
+
+def test_ni_composer_generate_jcamp(bagit_file_sec):
+    with tempfile.TemporaryDirectory() as td:
+        with zipfile.ZipFile(bagit_file_sec, 'r') as z:
+            z.extractall(td)
+
+        converter = BagItConveter(td)
+        for jcamp_file in converter.data:
+            base_converter = JcampBaseConverter(jcamp_file.name)
+            ni_converter = JcampNIConverter(base=base_converter)
+            ni_composer = NIComposer(core=ni_converter)
+            headers = ni_composer._NIComposer__gen_header_sec()
+            assert headers in [
+                ['##MN=1.287E+3\n', '##MW=1.465E+3\n', '##MP=1.345E+3\n', '##D=1.139E+0\n'],
+                ['##MN=\n', '##MW=\n', '##MP=\n', '##D=\n']
+            ]

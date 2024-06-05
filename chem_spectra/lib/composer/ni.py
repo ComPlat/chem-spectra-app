@@ -130,6 +130,16 @@ class NIComposer(BaseComposer):
             '$$ === CHEMSPECTRA CYCLIC VOLTAMMETRY ===\n',
         ]
 
+    def __gen_header_sec(self):
+        core_dic = self.core.dic
+        sec_data_key = ['MN', 'MW', 'MP', 'D']
+        result = []
+        for key in sec_data_key:
+            dic_value = core_dic.get(key, [])
+            key_str = f"##{key}={dic_value[0]}\n" if len(dic_value) > 0 else f'##{key}=\n'
+            result.append(key_str)
+        return result
+
     def __get_xy_of_peak(self, peak):
         if peak is None:
             return '', ''
@@ -201,6 +211,8 @@ class NIComposer(BaseComposer):
         meta.extend(self.gen_headers_root())
 
         meta.extend(self.__gen_headers_spectrum_orig())
+        if self.core.is_sec:
+            meta.extend(self.__gen_header_sec())
         meta.extend(self.gen_spectrum_orig())
         meta.extend(self.__gen_headers_im())
         meta.extend(self.__gen_headers_integration())
@@ -509,6 +521,9 @@ class NIComposer(BaseComposer):
             plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
         plt.locator_params(nbins=self.__plt_nbins())
         plt.grid(False)
+
+        self.__generate_info_box(plt)
+
         # Save
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')
@@ -516,6 +531,25 @@ class NIComposer(BaseComposer):
         plt.clf()
         plt.cla()
         return tf_img
+
+
+    def __generate_info_box(self, plotlib):
+        if not self.core.is_sec:
+            return
+        core_dic = self.core.dic
+        sec_data_key = ['MN', 'MW', 'MP', 'D']
+        result = []
+        for key in sec_data_key:
+            dic_value = core_dic.get(key, [])
+            key_str = f"{key}={dic_value[0]}" if len(dic_value) > 0 else None
+            if key_str is not None:
+                result.append(key_str)
+
+        info_str = '\n'.join(result)
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax = plotlib.gca()
+        ax.text(0.05, 0.95, info_str, fontsize=14, verticalalignment='top', bbox=props, transform=ax.transAxes)
+
 
     def __prepare_metadata_info_for_csv(self, csv_writer: csv.DictWriter):
         csv_writer.writerow({
