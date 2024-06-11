@@ -60,13 +60,22 @@ class MSComposer(BaseComposer):
 
     def __gen_ms_spectra(self):
         msspcs = []
+        ms_tempfile = tempfile.TemporaryFile()
         for idx, dt in enumerate(self.core.datatables):
             msspc = [
                 '##PAGE={}\n'.format(idx + 1),
                 '##NPOINTS={}\n'.format(dt['pts']),
                 TEXT_MS_DATA_TABLE,
             ]
-            msspcs = msspcs + msspc + dt['dt']
+            my_content = msspc + dt['dt']
+            file_content = ''.join(my_content)
+            ms_tempfile.write(file_content.encode('utf-8'))
+
+        ms_tempfile.seek(0)
+        lines = ms_tempfile.readlines()
+        decoded_lines = [line.decode('utf-8').strip() for line in lines]
+        msspcs = '\n'.join(decoded_lines)
+        ms_tempfile.close()
         return msspcs
 
     def __compose(self):

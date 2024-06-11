@@ -130,6 +130,16 @@ class NIComposer(BaseComposer):
             '$$ === CHEMSPECTRA CYCLIC VOLTAMMETRY ===\n',
         ]
 
+    def __gen_header_sec(self):
+        core_dic = self.core.dic
+        sec_data_key = ['MN', 'MW', 'MP', 'D']
+        result = []
+        for key in sec_data_key:
+            dic_value = core_dic.get(key, [])
+            key_str = f"##{key}={dic_value[0]}\n" if len(dic_value) > 0 else f'##{key}=\n'
+            result.append(key_str)
+        return result
+
     def __get_xy_of_peak(self, peak):
         if peak is None:
             return '', ''
@@ -201,6 +211,8 @@ class NIComposer(BaseComposer):
         meta.extend(self.gen_headers_root())
 
         meta.extend(self.__gen_headers_spectrum_orig())
+        if self.core.is_sec:
+            meta.extend(self.__gen_header_sec())
         meta.extend(self.gen_spectrum_orig())
         meta.extend(self.__gen_headers_im())
         meta.extend(self.__gen_headers_integration())
@@ -285,6 +297,12 @@ class NIComposer(BaseComposer):
         ]
         codes, verts = zip(*path_data)
         marker = mpath.Path(verts, codes)
+
+        circle = mpath.Path.unit_circle()
+        cirle_verts = np.concatenate([circle.vertices, verts])
+        cirle_codes = np.concatenate([circle.codes, codes])
+        cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
+
         x_peaks = []
         y_peaks = []
         if self.core.edit_peaks:
@@ -296,6 +314,7 @@ class NIComposer(BaseComposer):
 
         x_peckers = []
         y_peckers = []
+        x_peaks_ref, y_peaks_ref = [], []
         if self.core.is_cyclic_volta:
             x_peaks = []
             y_peaks = []
@@ -328,8 +347,13 @@ class NIComposer(BaseComposer):
                     x_peaks.extend([x_max_peak])
                     y_peaks.extend([y_max_peak])
                 else:
-                    x_peaks.extend([x_max_peak, x_min_peak])
-                    y_peaks.extend([y_max_peak, y_min_peak])
+                    is_ref = peak.get('isRef', False) if 'isRef' in peak else False
+                    if is_ref:
+                        x_peaks_ref.extend([x_max_peak, x_min_peak])
+                        y_peaks_ref.extend([y_max_peak, y_min_peak])
+                    else:
+                        x_peaks.extend([x_max_peak, x_min_peak])
+                        y_peaks.extend([y_max_peak, y_min_peak])
 
                 if 'pecker' in peak and peak['pecker'] is not None:
                     pecker = peak['pecker']
@@ -343,6 +367,15 @@ class NIComposer(BaseComposer):
                 y_pos = y_peaks[i] + h * 0.1
                 x_float = '{:.2e}'.format(x_pos)
                 y_float = '{:.2e}'.format(y_peaks[i])
+                peak_label = 'x: {x}\ny: {y}'.format(x=x_float, y=y_float)
+                plt.text(x_pos, y_pos, peak_label)
+
+            # display x value of ref peak for cyclic voltammetry
+            for i in range(len(x_peaks_ref)):
+                x_pos = x_peaks_ref[i]
+                y_pos = y_peaks_ref[i] + h * 0.1
+                x_float = '{:.2e}'.format(x_pos)
+                y_float = '{:.2e}'.format(y_peaks_ref[i])
                 peak_label = 'x: {x}\ny: {y}'.format(x=x_float, y=y_float)
                 plt.text(x_pos, y_pos, peak_label)
 
@@ -361,6 +394,15 @@ class NIComposer(BaseComposer):
             'g',
             ls='',
             marker=marker,
+            markersize=50,
+        )
+
+        plt.plot(
+            x_peaks_ref,
+            y_peaks_ref,
+            'r',
+            ls='',
+            marker=cut_star_marker,
             markersize=50,
         )
 
@@ -479,6 +521,9 @@ class NIComposer(BaseComposer):
             plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
         plt.locator_params(nbins=self.__plt_nbins())
         plt.grid(False)
+
+        self.__generate_info_box(plt)
+
         # Save
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')
@@ -486,6 +531,25 @@ class NIComposer(BaseComposer):
         plt.clf()
         plt.cla()
         return tf_img
+
+
+    def __generate_info_box(self, plotlib):
+        if not self.core.is_sec:
+            return
+        core_dic = self.core.dic
+        sec_data_key = ['MN', 'MW', 'MP', 'D']
+        result = []
+        for key in sec_data_key:
+            dic_value = core_dic.get(key, [])
+            key_str = f"{key}={dic_value[0]}" if len(dic_value) > 0 else None
+            if key_str is not None:
+                result.append(key_str)
+
+        info_str = '\n'.join(result)
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax = plotlib.gca()
+        ax.text(0.05, 0.95, info_str, fontsize=14, verticalalignment='top', bbox=props, transform=ax.transAxes)
+
 
     def __prepare_metadata_info_for_csv(self, csv_writer: csv.DictWriter):
         csv_writer.writerow({

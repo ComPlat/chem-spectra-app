@@ -19,6 +19,8 @@ from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.path as mpath  # noqa: E402
+import numpy as np  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
 
@@ -268,13 +270,45 @@ class TransformerModel:
         nicp = NIComposer(converter)
         tf_jcamp = nicp.tf_jcamp()
         return tf_jcamp
-      
-    def tf_combine(self, list_file_names=None):
+
+    def __get_cyclic_volta_ref_peaks(self, curve_idx, extraParams):
+        x_peaks, y_peaks = [], []
+        try:
+            extras_dict = json.loads(extraParams) if extraParams else None
+            cyclic_volta_str = extras_dict['cyclicvolta'] if extras_dict else None
+            cyclic_volta = json.loads(cyclic_volta_str) if cyclic_volta_str else None
+            spectra_list = cyclic_volta['spectraList'] if cyclic_volta else None
+            spectra_extra = spectra_list[curve_idx] if spectra_list and curve_idx < len(spectra_list) else None
+            list_peaks = spectra_extra['list'] if spectra_extra else []
+            x_peaks, y_peaks = [], []
+            for peak in list_peaks:
+                min_peak, max_peak, isRef = peak['min'], peak['max'], peak['isRef']
+                if isRef == True:
+                    x_peaks.extend([min_peak['x'], max_peak['x']])
+                    y_peaks.extend([min_peak['y'], max_peak['y']])
+        except:
+            pass
+
+        return x_peaks, y_peaks
+
+    def tf_combine(self, list_file_names=None, extraParams=None):
         if not self.multiple_files:
             return False
+
+        path_data = [
+            (mpath.Path.MOVETO, (0, 5)),
+            (mpath.Path.LINETO, (0, 20)),
+        ]
+        codes, verts = zip(*path_data)
+
+        circle = mpath.Path.unit_circle()
+        cirle_verts = np.concatenate([circle.vertices, verts])
+        cirle_codes = np.concatenate([circle.codes, codes])
+        cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
           
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
+        plt.rcParams['legend.loc'] = 'upper left'
         curve_idx = self.params.get('jcamp_idx', 0)
 
         xlabel, ylabel = '', ''
@@ -315,6 +349,17 @@ class TransformerModel:
                 core_label_x = nicp.core.label['x']
                 core_label_y = nicp.core.label['y']
                 if nicp.core.is_cyclic_volta:
+                    x_peaks, y_peaks = self.__get_cyclic_volta_ref_peaks(curve_idx, extraParams)
+
+                    plt.plot(
+                        x_peaks,
+                        y_peaks,
+                        'r',
+                        ls='',
+                        marker=cut_star_marker,
+                        markersize=50,
+                    )
+
                     if core_label_x not in dic_x_label:
                         xlabel_set.append(core_label_x)
                         dic_x_label[core_label_x] = 1
