@@ -149,6 +149,26 @@ logger.error('message to log')
 ```
 Note: You need to use function as the same as your logger level, which named as lowercased of level's name, to write your log message to the logs file
 
+
+### 2.3. Automatic startup in crontab
+
+To make sure ChemSpectra is started on reboot you can use this BASH script in your root crontab (if required, adapt Chemotion ELN username and home directory):
+
+```sh
+#!/bin/bash
+
+sudo -H -u production bash -c "cd /home/production/chem-spectra-app && \
+  source /home/production/anaconda3/bin/activate chem-spectra && \
+  gunicorn -w 4 -b 0.0.0.0:3007 server:app --daemon"
+
+# Remember to modify path according to your installation
+docker run --detach --name msconvert_docker \
+    --rm -it \
+    -e WINEDEBUG=-all \
+    -v /home/production/chem-spectra-app/chem_spectra/tmp:/data chambm/pwiz-skyline-i-agree-to-the-vendor-licenses \
+    bash
+```
+
 ## 3. Run test
 
 ```
