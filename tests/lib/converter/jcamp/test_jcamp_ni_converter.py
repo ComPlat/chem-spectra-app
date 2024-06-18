@@ -20,4 +20,10 @@ def test_init_jcamp_ni_success(jcamp_file_1h):
     
     assert ni_converter is not None
     assert ni_converter.base == base_converter
+
+def test_init_jcamp_ni_nmr_label(jcamp_file_1h):
+    base_converter = JcampBaseConverter(jcamp_file_1h)
+    ni_converter = JcampNIConverter(base=base_converter)
+
+    assert ni_converter.label == {'x': 'PPM', 'y': 'ARBITRARY'}
     
