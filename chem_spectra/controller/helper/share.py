@@ -107,6 +107,7 @@ def extract_params(request):
     list_file_names = request.form.getlist('list_file_names[]')
     data_type_mapping = request.form.get('data_type_mapping', default='')
     detector = request.form.get('detector', default=None)
+    dsc_meta_data = request.form.get('dsc_meta_data', default=None)
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -131,6 +132,7 @@ def extract_params(request):
         'axesUnits': axesUnits,
         'data_type_mapping': data_type_mapping,
         'detector': detector,
+        'dsc_meta_data': dsc_meta_data,
     }
     has_params = (
         params.get('peaks_str') or

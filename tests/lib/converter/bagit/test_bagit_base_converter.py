@@ -10,6 +10,7 @@ aif_layout_path = target_dir + 'aif/aif.zip'
 emissions_layout_path = target_dir + 'emissions/emissions.zip'
 dls_acf_layout_path = target_dir + 'dls_acf/dls_acf.zip'
 dls_intensity_layout_path = target_dir + 'dls_intensity/dls_intensity.zip'
+dsc_layout_path = target_dir + 'dsc/dsc.zip'
 
 def assertFileType(file, mimeStr):
     assert mimetypes.guess_type(file.name)[0] == mimeStr
@@ -144,3 +145,12 @@ def test_bagit_has_one_file_no_combined_image():
 
         converter = BagItConveter(td)
         assert converter.combined_image is None
+
+def test_bagit_convert_to_jcamp_dsc_layout():
+    with tempfile.TemporaryDirectory() as td:
+        with zipfile.ZipFile(dsc_layout_path, 'r') as z:
+            z.extractall(td)
+
+        converter = BagItConveter(td)
+        jcamp = converter.data[0]
+        assertJcampContent(jcamp, '##DATA TYPE=DIFFERENTIAL SCANNING CALORIMETRY')

@@ -43,6 +43,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_emissions = base.is_emissions if hasattr(base, 'is_emissions') else False
         self.is_dls_acf = base.is_dls_acf if hasattr(base, 'is_dls_acf') else False
         self.is_dls_intensity = base.is_dls_intensity if hasattr(base, 'is_dls_intensity') else False
+        self.is_dsc = base.is_dsc if hasattr(base, 'is_dsc') else False
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.is_dept = base.is_dept
@@ -98,7 +99,8 @@ class JcampNIConverter:  # nmr & IR
             "CYCLIC VOLTAMMETRY": THRESHOLD_XRD,
             "SORPTION-DESORPTION MEASUREMENT": THRESHOLD_XRD,
             "DLS intensity": THRESHOLD_XRD,
-            "Emissions": THRESHOLD_EMISSION
+            "Emissions": THRESHOLD_EMISSION,
+            "DIFFERENTIAL SCANNING CALORIMETRY": THRESHOLD_TGA,
         }
 
         if self.params.get('user_data_type_mapping'):
