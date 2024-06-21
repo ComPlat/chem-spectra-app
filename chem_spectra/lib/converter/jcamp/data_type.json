@@ -14,6 +14,7 @@
         "SORPTION-DESORPTION MEASUREMENT": ["SORPTION-DESORPTION MEASUREMENT"],
         "Emissions": ["Emissions", "EMISSIONS", "FLUORESCENCE SPECTRUM", "FL SPECTRUM"],
         "DLS ACF": ["DLS ACF"],
-        "DLS intensity": ["DLS INTENSITY", "DLS intensity"]
+        "DLS intensity": ["DLS INTENSITY", "DLS intensity"],
+        "DIFFERENTIAL SCANNING CALORIMETRY": ["DIFFERENTIAL SCANNING CALORIMETRY"]
     }
 }
