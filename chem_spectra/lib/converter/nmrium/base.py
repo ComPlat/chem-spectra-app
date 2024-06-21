@@ -46,6 +46,8 @@ class NMRiumDataConverter:
         
         self.simu_peaks = []
         self.is_cyclic_volta = False
+        self.is_sec = False
+        self.is_dsc = False
         self.typ = ''
         self.threshold = 1.0
 
