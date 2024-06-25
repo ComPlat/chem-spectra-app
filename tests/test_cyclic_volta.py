@@ -28,4 +28,6 @@ def test_cv_compose():
     nicv = JcampNIConverter(jbcv)
     nicmpsr = NIComposer(nicv)
     assert "$$ === CHEMSPECTRA CYCLIC VOLTAMMETRY ===\n" in nicmpsr.meta
+    assert "##$CSSCANRATE=0.09\n" in nicmpsr.meta
+    assert "##$CSSPECTRUMDIRECTION=NEGATIVE\n" in nicmpsr.meta
     assert "##$CSCYCLICVOLTAMMETRYDATA=\n" in nicmpsr.meta
