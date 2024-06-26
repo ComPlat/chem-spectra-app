@@ -24,6 +24,7 @@ class JcampBaseConverter:
         self.is_em_wave = self.__is_em_wave()
         self.is_ir = self.__is_ir()
         self.is_tga = self.__is_tga()
+        self.is_gc = self.__is_gc()
         self.is_uv_vis = self.__is_uv_vis()
         self.is_hplc_uv_vis = self.__is_hplc_uv_vis()
         self.is_xrd = self.__is_xrd()
@@ -127,6 +128,9 @@ class JcampBaseConverter:
 
     def __is_tga(self):
         return self.typ in ['THERMOGRAVIMETRIC ANALYSIS']
+
+    def __is_gc(self):
+        return self.typ in ['GAS CHROMATOGRAPHY']
 
     def __is_uv_vis(self):
         return self.typ in ['UVVIS']
