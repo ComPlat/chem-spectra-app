@@ -33,6 +33,7 @@ class JcampNIConverter:  # nmr & IR
         self.is_em_wave = base.is_em_wave
         self.is_ir = base.is_ir
         self.is_tga = base.is_tga
+        self.is_gc = base.is_gc
         self.is_xrd = base.is_xrd
         self.is_uv_vis = base.is_uv_vis
         self.is_hplc_uv_vis = base.is_hplc_uv_vis
