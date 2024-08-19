@@ -369,6 +369,9 @@ class TransformerModel:
                     if (idx == len(self.multiple_files) - 1):
                         xlabel = ', '.join(xlabel_set)
                         ylabel = ', '.join(ylabel_set)
+                elif (nicp.core.non_nmr == False):
+                    xlabel = "Chemical shift ({})".format(core_label_x.lower())
+                    ylabel = "Intensity ({})".format(core_label_y.lower())
                 else:
                     xlabel = "X ({})".format(core_label_x)
                     ylabel = "Y ({})".format(core_label_y)
