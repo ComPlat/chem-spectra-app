@@ -13,9 +13,11 @@ from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
+from chem_spectra.lib.converter.lcms.base import LCMSBaseConverter
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
+from chem_spectra.lib.composer.lcms import LCMSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 import matplotlib.pyplot as plt  # noqa: E402
@@ -59,6 +61,13 @@ def find_and_get_dir(path, name):
 def search_bag_it_file(td):
     try:
         target_dir = find_dir(td, 'bagit.txt')
+        return target_dir
+    except:     # noqa: E722
+        return False
+
+def search_lcms_file(td):
+    try:
+        target_dir = find_dir(td, 'MZ_Spectra.csv')
         return target_dir
     except:     # noqa: E722
         return False
@@ -180,9 +189,14 @@ class TransformerModel:
                     return nicv, nicp, invalid_molfile
             else:
                 is_bagit = search_bag_it_file(td)
+                is_lcms = search_lcms_file(td)
                 if is_bagit:
                     bagcv = BagItBaseConverter(td, self.params, self.file.name)
                     return bagcv, bagcv, False
+                elif is_lcms:
+                    lcms_cv = LCMSBaseConverter(td, self.params, self.file.name)
+                    lcms_np = LCMSComposer(lcms_cv)
+                    return lcms_cv, lcms_np, False
 
         return False, False, False
 
