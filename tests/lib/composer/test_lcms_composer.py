@@ -27,11 +27,3 @@ def test_init_lcms_composer_success(zip_file):
         
         assert lcms_composer is not None
         assert lcms_composer.core == lcms_converter
-
-# def test_ms_composer_original_metadata(jcamp_file):
-#     base_converter = JcampBaseConverter(jcamp_file)
-#     ms_converter = JcampMSConverter(base=base_converter)
-#     ms_composer = MSComposer(core=ms_converter)
-
-#     assert ms_composer is not None
-#     assert '$$ === CHEMSPECTRA ORIGINAL METADATA ===\n' in ms_composer.meta

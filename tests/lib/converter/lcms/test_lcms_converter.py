@@ -1,8 +1,8 @@
-from chem_spectra.lib.converter.lcms.base import LCMSBaseConverter as LCMSConveter
 import tempfile
 import zipfile
 import mimetypes
 import base64
+from chem_spectra.lib.converter.lcms.base import LCMSBaseConverter as LCMSConveter
 
 target_dir = './tests/fixtures/source/lcms/lcms.zip'
 
@@ -23,125 +23,31 @@ def test_lcms_converter_failed():
     converter = LCMSConveter(None)
     assert converter.data is None
 
-def test_bagit_convert_to_jcamp():
+def test_lcms_converter_success():
     with tempfile.TemporaryDirectory() as td:
         with zipfile.ZipFile(target_dir, 'r') as z:
             z.extractall(td)
 
         converter = LCMSConveter(td, fname='lcms')
         assert converter.data is not None
-        # assert len(converter.data) == 1
+        assert len(converter.data) == 3
 
-# def test_bagit_convert_to_jcamp_cv_layout():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(cv_layout_path, 'r') as z:
-#             z.extractall(td)
+def test_lcms_converter_tic_positive():
+    with tempfile.TemporaryDirectory() as td:
+        with zipfile.ZipFile(target_dir, 'r') as z:
+            z.extractall(td)
 
-#         converter = BagItConveter(td)
-#         jcamp = converter.data[0]
-#         assertJcampContent(jcamp, '##DATA TYPE=CYCLIC VOLTAMMETRY')
+        converter = LCMSConveter(td, fname='lcms')
+        tic_positive = converter.data[0]
+        assert len(tic_positive['time']) > 0
+        assert len(tic_positive['Intensity']) > 0
 
-# def test_bagit_convert_to_jcamp_aif_layout():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(aif_layout_path, 'r') as z:
-#             z.extractall(td)
+def test_lcms_converter_tic_negative():
+    with tempfile.TemporaryDirectory() as td:
+        with zipfile.ZipFile(target_dir, 'r') as z:
+            z.extractall(td)
 
-#         converter = BagItConveter(td)
-#         jcamp = converter.data[0]
-#         assertJcampContent(jcamp, '##DATA TYPE=SORPTION-DESORPTION MEASUREMENT')
-
-# def test_bagit_convert_to_jcamp_emissions_layout():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(emissions_layout_path, 'r') as z:
-#             z.extractall(td)
-
-#         converter = BagItConveter(td)
-#         jcamp = converter.data[0]
-#         assertJcampContent(jcamp, '##DATA TYPE=Emissions')
-
-# def test_bagit_convert_to_jcamp_dls_acf_layout():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(dls_acf_layout_path, 'r') as z:
-#             z.extractall(td)
-
-#         converter = BagItConveter(td)
-#         jcamp = converter.data[0]
-#         assertJcampContent(jcamp, '##DATA TYPE=DLS ACF')
-
-# def test_bagit_convert_to_jcamp_dls_intensity_layout():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(dls_intensity_layout_path, 'r') as z:
-#             z.extractall(td)
-
-#         converter = BagItConveter(td)
-#         jcamp = converter.data[0]
-#         assertJcampContent(jcamp, '##DATA TYPE=DLS intensity')
-
-# def test_bagit_convert_to_images():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(cv_layout_path, 'r') as z:
-#             z.extractall(td)
-
-#         converter = BagItConveter(td)
-#         assert converter.images is not None
-#         assert len(converter.images) == 3
-#         pngImage = converter.images[0]
-#         assertFileType(pngImage, 'image/png')
-        
-# def test_bagit_convert_to_csv():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(cv_layout_path, 'r') as z:
-#             z.extractall(td)
-
-#         converter = BagItConveter(td)
-#         assert converter.list_csv is not None
-#         assert len(converter.list_csv) == 3
-#         csvFile = converter.list_csv[0]
-#         assertFileType(csvFile, 'text/csv')
-
-# def test_get_base64_data_failed():
-#     converter = BagItConveter(None)
-#     data = converter.get_base64_data()
-#     assert data is None
-
-# def test_get_base64_data_succeed():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(cv_layout_path, 'r') as z:
-#             z.extractall(td)
-
-#         converter = BagItConveter(td)
-#         list_base64 = converter.get_base64_data()
-#         assert len(list_base64) == 3
-#         for base64Str in list_base64:
-#             isBase64(base64Str)
-
-# def test_get_combined_image_failed():
-#     converter = BagItConveter(None)
-#     combined_image = converter.combined_image
-#     assert combined_image is None
-
-# def test_get_combined_image():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(cv_layout_path, 'r') as z:
-#             z.extractall(td)
-
-#         converter = BagItConveter(td)
-#         combined_image = converter.combined_image
-#         assertFileType(combined_image, 'image/png')
-
-# def test_bagit_has_one_file_no_combined_image():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(dls_acf_layout_path, 'r') as z:
-#             z.extractall(td)
-
-#         converter = BagItConveter(td)
-#         assert converter.combined_image is None
-
-# def test_bagit_convert_to_jcamp_dsc_layout():
-#     with tempfile.TemporaryDirectory() as td:
-#         with zipfile.ZipFile(dsc_layout_path, 'r') as z:
-#             z.extractall(td)
-
-#         converter = BagItConveter(td)
-#         jcamp = converter.data[0]
-#         assertJcampContent(jcamp, '##DATA TYPE=DIFFERENTIAL SCANNING CALORIMETRY')
+        converter = LCMSConveter(td, fname='lcms')
+        tic_positive = converter.data[1]
+        assert len(tic_positive['time']) > 0
+        assert len(tic_positive['Intensity']) > 0
