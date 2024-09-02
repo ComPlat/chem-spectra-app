@@ -56,7 +56,8 @@ class LCMSComposer(BaseComposer):
     def __gen_ms_spectra(self):
         msspcs = []
         ms_tempfile = tempfile.TemporaryFile()
-        for time, value in self.core.data.items():
+        spectra_data = self.core.data[2] # the 1st and 2nd is tic positive and negative
+        for time, value in spectra_data.items():
             xs, ys = value['mz'], value['intensities']
             msspc = [
                 '##PAGE={}\n'.format(time),
