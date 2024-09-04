@@ -65,40 +65,12 @@ def zip_jcamp_n_img():
             rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit', 'invalid_molfile': invalid_molfile})
         elif isinstance(cmpsr, LCMSComposer):
             # check if composered model is hplc ms
-            # list_jcamps, list_images, list_csv, combined_image = cmpsr.data, cmpsr.images, cmpsr.list_csv, cmpsr.combined_image
-            # dst_list = []
-            # for idx in range(len(list_jcamps)):
-            #     tf_jcamp = list_jcamps[idx]
-            #     tf_img = list_images[idx]
-            #     tf_csv = list_csv[idx]
-            #     tf_arr = [tf_jcamp, tf_img, tf_csv]
-            #     dst_list.append(tf_arr)
-                
-            # if combined_image is not None:
-            #     dst_list.append(combined_image)
-
-            # memory = to_zip_bag_it_response(dst_list)
-            # rsp = make_response(
-            #     send_file(
-            #         memory,
-            #         download_name='spectrum.zip',
-            #         as_attachment=True
-            #     )
-            # )
-            # rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit', 'invalid_molfile': invalid_molfile})
             list_jcamps = cmpsr.data
-            dst_list = [[list_jcamps[0]], [list_jcamps[1]], [list_jcamps[2]]]
-            print(dst_list)
-            # dst_list = []
-            # for idx in range(len(list_jcamps)):
-            #     tf_jcamp = list_jcamps[idx]
-            #     tf_img = list_images[idx]
-            #     tf_csv = list_csv[idx]
-            #     tf_arr = [tf_jcamp, tf_img, tf_csv]
-            #     dst_list.append(tf_arr)
-                
-            # if combined_image is not None:
-            #     dst_list.append(combined_image)
+            dst_list = []
+            for idx in range(len(list_jcamps)):
+                tf_jcamp = list_jcamps[idx]
+                tf_arr = [tf_jcamp]
+                dst_list.append(tf_arr)
 
             memory = to_zip_bag_it_response(dst_list)
             rsp = make_response(
@@ -108,7 +80,7 @@ def zip_jcamp_n_img():
                     as_attachment=True
                 )
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit', 'invalid_molfile': False})
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'hplc', 'invalid_molfile': invalid_molfile})
         elif isinstance(cmpsr, collections.abc.Sequence):
             dst_list = []
             spc_type = ''

@@ -21,7 +21,13 @@ class LCMSComposer:
 
         uvvis = self.__gen_uvvis(data=uvvis_data)
         uvvis_jcamp = self.tf_jcamp(uvvis)
-        return [tic_positive_jcamp, tic_negative_jcamp, uvvis_jcamp, spectra_postive_data, spectra_negative_data]
+
+        mz_positive = self.__gen_mz_spectra(data=spectra_postive_data)
+        mz_positive_jcamp = self.tf_jcamp(mz_positive)
+
+        mz_negative = self.__gen_mz_spectra(data=spectra_negative_data, is_negative=True)
+        mz_negative_jcamp = self.tf_jcamp(mz_negative)
+        return [tic_positive_jcamp, tic_negative_jcamp, uvvis_jcamp, mz_positive_jcamp, mz_negative_jcamp]
 
     def __gen_tic(self, tic_data, is_negative = False):
         time, intensity = tic_data['time'], tic_data['Intensity']
@@ -61,7 +67,7 @@ class LCMSComposer:
 
         return content
 
-    def __gen_uvvis(self, data, is_negative = False):
+    def __gen_uvvis(self, data):
         content = [
             '\n',
             TEXT_SPECTRUM_ORIG,
@@ -73,7 +79,13 @@ class LCMSComposer:
             '##OWNER=\n',
             '##SPECTROMETER/DATA SYSTEM=\n',
             '##$CSCATEGORY=UVVIS SPECTRUM\n',
-            '##UNITS= M/Z, RELATIVE ABUNDANCE\n',
+            '##VAR_NAME= RETENTION TIME, DETECTOR SIGNAL, WAVELENGTH\n',
+            '##SYMBOL= X, Y, T\n',
+            '##VAR_TYPE= INDEPENDENT, DEPENDENT, INDEPENDENT\n',
+            '##VAR_FORM= AFFN, AFFN, AFFN\n',
+            '##VAR_DIM= , , 3\n',
+            '##UNITS= RETENTION TIME, DETECTOR SIGNAL, WAVELENGTH\n',
+            '##FIRST= , , 1\n',
         ]
         
         msspcs = []
@@ -83,7 +95,56 @@ class LCMSComposer:
             msspc = [
                 '##PAGE={}\n'.format(time),
                 '##NPOINTS={}\n'.format(len(xs)),
-                '##DATA TABLE= (XY..XY)\n',
+                '##DATA TABLE= (XY..XY), PEAKS\n',
+            ]
+            for idx, _ in enumerate(xs):
+                my_content = '{}, {};\n'.format(xs[idx], ys[idx])
+                msspc += my_content
+            file_content = ''.join(msspc)
+            ms_tempfile.write(file_content.encode('utf-8'))
+
+        ms_tempfile.seek(0)
+        lines = ms_tempfile.readlines()
+        decoded_lines = [line.decode('utf-8').strip() for line in lines]
+        msspcs = '\n'.join(decoded_lines)
+        ms_tempfile.close()
+        
+        content.extend(msspcs)
+        content.extend(self.__gen_ending())
+
+        return content
+
+    def __gen_mz_spectra(self, data, is_negative=False):
+        category = '##$CSCATEGORY=MZ NEGATIVE SPECTRUM\n' if is_negative else '##$CSCATEGORY=MZ POSITIVE SPECTRUM\n'
+        content = [
+            '\n',
+            TEXT_SPECTRUM_ORIG,
+            '##TITLE={}\n'.format(self.title),
+            '##JCAMP-DX=5.00\n',
+            '##DATA TYPE={}\n'.format('LC/MS'),
+            '##DATA CLASS= NTUPLES\n',
+            '##ORIGIN=\n',
+            '##OWNER=\n',
+            '##SPECTROMETER/DATA SYSTEM=\n',
+            '##$CSCATEGORY=UVVIS SPECTRUM\n',
+            '##VAR_NAME= RETENTION TIME, DETECTOR SIGNAL, WAVELENGTH\n',
+            '##SYMBOL= X, Y, T\n',
+            '##VAR_TYPE= INDEPENDENT, DEPENDENT, INDEPENDENT\n',
+            '##VAR_FORM= AFFN, AFFN, AFFN\n',
+            '##VAR_DIM= , , 3\n',
+            '##UNITS= RETENTION TIME, DETECTOR SIGNAL, WAVELENGTH\n',
+            '##FIRST= , , 1\n',
+            category,
+        ]
+        
+        msspcs = []
+        ms_tempfile = tempfile.TemporaryFile()
+        for time, value in data.items():
+            xs, ys = value['mz'], value['intensities']
+            msspc = [
+                '##PAGE={}\n'.format(time),
+                '##NPOINTS={}\n'.format(len(xs)),
+                '##DATA TABLE= (XY..XY), PEAKS\n',
             ]
             for idx, _ in enumerate(xs):
                 my_content = '{}, {};\n'.format(xs[idx], ys[idx])
@@ -151,14 +212,14 @@ class LCMSComposer:
 
 #     def __gen_config(self):
 #         return [
-#             '##VAR_NAME= MASS, INTENSITY, RETENTION TIME\n',
-#             '##SYMBOL= X, Y, T\n',
-#             '##VAR_TYPE= INDEPENDENT, DEPENDENT, INDEPENDENT\n',
-#             '##VAR_FORM= AFFN, AFFN, AFFN\n',
-#             '##VAR_DIM= , , 3\n',
-#             '##UNITS= M/Z, RELATIVE ABUNDANCE, SECONDS\n',
-#             '##FIRST= , , 1\n',
-#             # '##LAST= , , {}\n'.format(len(self.core.datatables)),
+            # '##VAR_NAME= MASS, INTENSITY, RETENTION TIME\n',
+            # '##SYMBOL= X, Y, T\n',
+            # '##VAR_TYPE= INDEPENDENT, DEPENDENT, INDEPENDENT\n',
+            # '##VAR_FORM= AFFN, AFFN, AFFN\n',
+            # '##VAR_DIM= , , 3\n',
+            # '##UNITS= M/Z, RELATIVE ABUNDANCE, SECONDS\n',
+            # '##FIRST= , , 1\n',
+            # # '##LAST= , , {}\n'.format(len(self.core.datatables)),
 #         ]
 
 #     def __gen_ms_spectra(self):
