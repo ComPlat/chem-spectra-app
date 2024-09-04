@@ -73,3 +73,33 @@ def test_lcms_composer_tic_uvvis(zip_file):
             file_content = file.read()
             assert file_content != ""
             assert '##$CSCATEGORY=UVVIS SPECTRUM' in file_content
+
+def test_lcms_composer_mz_spectra_positive(zip_file):
+    with tempfile.TemporaryDirectory() as td:
+        with zipfile.ZipFile(zip_file, 'r') as z:
+            z.extractall(td)
+          
+        lcms_converter = LCMSBaseConverter(td)
+        lcms_composer = LCMSComposer(core=lcms_converter)
+        
+        spectra_jcamp = lcms_composer.data[3]
+        assert spectra_jcamp is not None
+        with open(spectra_jcamp.name) as file:
+            file_content = file.read()
+            assert file_content != ""
+            assert '##$CSCATEGORY=MZ POSITIVE SPECTRUM' in file_content
+
+def test_lcms_composer_mz_spectra_positive(zip_file):
+    with tempfile.TemporaryDirectory() as td:
+        with zipfile.ZipFile(zip_file, 'r') as z:
+            z.extractall(td)
+          
+        lcms_converter = LCMSBaseConverter(td)
+        lcms_composer = LCMSComposer(core=lcms_converter)
+        
+        spectra_jcamp = lcms_composer.data[4]
+        assert spectra_jcamp is not None
+        with open(spectra_jcamp.name) as file:
+            file_content = file.read()
+            assert file_content != ""
+            assert '##$CSCATEGORY=MZ NEGATIVE SPECTRUM' in file_content
