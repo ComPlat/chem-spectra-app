@@ -165,7 +165,7 @@ class LCMSComposer:
         
     def __gen_ending(self):
         return [
-            '##END=\n',
+            '\n##END=\n',
             '\n'
         ]
     
