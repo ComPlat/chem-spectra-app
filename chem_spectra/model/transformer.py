@@ -67,7 +67,7 @@ def search_bag_it_file(td):
 
 def search_lcms_file(td):
     try:
-        target_dir = find_dir(td, 'MZ_Spectra.csv')
+        target_dir = find_dir(td, 'LCMS.csv')
         return target_dir
     except:     # noqa: E722
         return False
