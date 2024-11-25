@@ -45,3 +45,15 @@ def test_ms_jcamp_converter_composer():
     assert '##$CSSCANCOUNT=24' in lines
     assert '##$CSTHRESHOLD=0.155' in lines
     assert '51.012176513671875, 34359.0' in lines
+
+def test_jcamp_single_point_last_line():
+    params = {'mass': 230.079907196}
+
+    target = target_dir + source_dir + '/ms/MS_ESI.jdx'
+    jbcv = JcampBaseConverter(target, params)
+    mscv = JcampMSConverter(jbcv)
+    mscp = MSComposer(mscv)
+
+
+    lines = mscp.tf_jcamp().read()[:80000].decode('utf-8', errors='ignore').split('\n')
+    assert "2997.895988881645, 42.0" in lines
