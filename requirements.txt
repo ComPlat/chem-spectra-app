@@ -13,7 +13,7 @@ gunicorn==22.0.0
 idna==3.7
 importlib-metadata==3.6.0
 itsdangerous==2.0
-Jinja2==3.1.4
+Jinja2==3.1.6
 MarkupSafe==2.1.2
 matplotlib==3.7.3
 mccabe==0.6.1
