@@ -19,14 +19,15 @@ def test_ms_mzml_converter_composer():
         mscv = MSConverter(file, params)
         mscp = MSComposer(mscv)
 
-    lines = mscp.tf_jcamp().read()[:800] \
-                .decode('utf-8', errors='ignore').split('\n')
+    content = mscp.tf_jcamp().read().decode('utf-8', errors='ignore')
+    lines = content.split('\n')
 
     assert '##$CSSCANAUTOTARGET=24' in lines
     assert '##$CSSCANEDITTARGET=24' in lines
     assert '##$CSSCANCOUNT=24' in lines
     assert '##$CSTHRESHOLD=0.05' in lines
     assert '51.012176513671875, 34359.0' in lines
+    assert '##END NTUPLES=MASS SPECTRUM' in lines
 
 
 def test_ms_jcamp_converter_composer():
