@@ -74,7 +74,7 @@ class MSComposer(BaseComposer):
         ms_tempfile.seek(0)
         lines = ms_tempfile.readlines()
         decoded_lines = [line.decode('utf-8').strip() for line in lines]
-        msspcs = '\n'.join(decoded_lines) + "\n"
+        msspcs = '\n'.join(decoded_lines) + '\n'
         ms_tempfile.close()
         return msspcs
 
