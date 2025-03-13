@@ -44,7 +44,7 @@ class MSComposer(BaseComposer):
         return ['##NTUPLES={}\n'.format('MASS SPECTRUM')]
 
     def __gen_ntuples_end(self):
-        return ['##END NTUPLES={}\n'.format('MASS SPECTRUM')]
+        return ['\n##END NTUPLES={}\n'.format('MASS SPECTRUM')]
 
     def __gen_config(self):
         return [
