@@ -1,4 +1,4 @@
-name: python-v38
+name: chemSpec
 channels:
   - defaults
 dependencies:
@@ -89,4 +89,3 @@ dependencies:
       - wrapt==1.16.0
       - zipp==3.19.2
       - -e git+https://github.com/ComPlat/nmrglue.git@Refactor-parse_xy_xy-standardize-output-3D-arrays#egg=nmrglue
-prefix: /home/eln/anaconda3/envs/python-v38
