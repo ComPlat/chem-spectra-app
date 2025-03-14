@@ -78,5 +78,5 @@ WORKDIR "/app"
 ENTRYPOINT ["/tini", "--", "micromamba", "run", "-n", "chemSpec"]
 CMD ["gunicorn", "--timeout", "600", "-w", "4", "-b", "0.0.0.0:4000", "server:app"]
 
-HEALTHCHECK --interval=5s --timeout=3s --start-period=30s --retries=3 \
-    CMD curl --fail http://localhost:4000/ping || exit 1
+# HEALTHCHECK --interval=5s --timeout=3s --start-period=30s --retries=3 \
+#     CMD curl --fail http://localhost:4000/ping || exit 1
