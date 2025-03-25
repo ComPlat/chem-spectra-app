@@ -17,6 +17,14 @@ jobs:
         activate-environment: python-v38
         environment-file: environment.yml
         miniforge-version: latest
+    - name: Start msconvert Docker container
+      run: |
+        docker run --detach --name msconvert_docker \
+          --rm -it \
+          -e WINEDEBUG=-all \
+          -v ${{ github.workspace }}/chem_spectra/tmp:/data \
+          chambm/pwiz-skyline-i-agree-to-the-vendor-licenses bash
+
     - name: Test with pytest
       shell: bash -el {0}
       run: |
