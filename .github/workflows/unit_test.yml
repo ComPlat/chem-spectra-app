@@ -17,6 +17,10 @@ jobs:
         activate-environment: python-v38
         environment-file: environment.yml
         miniforge-version: latest
+    - name: Create tmp directory with permissions
+      run: |
+        mkdir -p chem_spectra/tmp
+        chmod -R 777 chem_spectra/tmp
     - name: Start msconvert Docker container
       run: |
         docker run --detach --name msconvert_docker \
