@@ -28,7 +28,7 @@ dependencies = [
   "werkzeug",
   "scipy",
   "pyopenms",
-  "nmrglue@git+https://github.com/ComPlat/nmrglue#egg=Refactor-parse_xy_xy-standardize-output-3D-arrays"
+  "nmrglue@git+https://github.com/ComPlat/nmrglue.git@4005640d1994a3773801eb3742ce534796d28c05"
 ]
 
 [project.urls]
