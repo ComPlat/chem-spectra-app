@@ -7,16 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.8
+    - name: Set up Python 3.12
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
-    - name: Install dependencies
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        activate-environment: python-v38
-        environment-file: environment.yml
-        miniforge-version: latest
+        python-version: 3.12
+        cache: 'pip'
     - name: Create tmp directory with permissions
       run: |
         mkdir -p chem_spectra/tmp
@@ -28,9 +23,7 @@ jobs:
           -e WINEDEBUG=-all \
           -v ${{ github.workspace }}/chem_spectra/tmp:/data \
           chambm/pwiz-skyline-i-agree-to-the-vendor-licenses bash
-
     - name: Test with pytest
       shell: bash -el {0}
       run: |
-        conda activate python-v38
         python -m pytest

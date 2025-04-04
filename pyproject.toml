@@ -34,3 +34,6 @@ dependencies = [
 [project.urls]
 homepage = "https://chemotion.net/docs/services/chemspectra"
 repository = "https://github.com/ComPlat/chem-spectra-app"
+
+[tool.setuptools]
+py-modules = []

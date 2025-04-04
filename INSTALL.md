@@ -138,7 +138,6 @@ gunicorn -w 4 -b 0.0.0.0:3007 server:app --daemon
 
 ## 3. Run test
 
-```
-$ coverage run -m pytest --disable-pytest-warnings
-$ coverage report
+```sh
+python -m pytest
 ```

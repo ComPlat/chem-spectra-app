@@ -5,7 +5,7 @@
   "forwardPorts": [
     3007 // Port for the web server
   ],
-  "updateContentCommand": "apt-get update && apt-get install -y python3-pip git && apt-get clean && python3 -m venv .venv && .venv/bin/pip install --upgrade pip",
+  "updateContentCommand": "apt-get update && apt-get install -y python3-pip git libxrender1 libglib2.0-0 && apt-get clean && python3 -m venv .venv && .venv/bin/pip install --upgrade pip",
   // Use 'postCreateCommand' to run commands after the container is created.
   "postCreateCommand": ".venv/bin/pip install .",
   // Configure tool-specific properties.
