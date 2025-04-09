@@ -29,6 +29,23 @@ def test_ms_mzml_converter_composer():
     assert '51.012176513671875, 34359.0' in lines
     assert '##END NTUPLES=MASS SPECTRUM' in lines
 
+def test_ms_raw_converter_composer():
+    params = {'mass': 230.079907196}
+
+    with open(target_dir + source_dir + '/ms/MS_ESI.RAW', 'rb') as f:
+        file = FileStorage(f)
+        file = FileContainer(file)
+        mscv = MSConverter(file, params)
+        mscp = MSComposer(mscv)
+
+    lines = mscp.tf_jcamp().read()[:800] \
+                .decode('utf-8', errors='ignore').split('\n')
+    print(lines)
+    assert '##$CSSCANAUTOTARGET=20' in lines
+    assert '##$CSSCANEDITTARGET=20' in lines
+    assert '##$CSSCANCOUNT=20' in lines
+    assert '##$CSTHRESHOLD=0.05' in lines
+    assert '229.99819946289062, 5886.234375' in lines
 
 def test_ms_jcamp_converter_composer():
     params = {'mass': 230.079907196}
