@@ -22,7 +22,8 @@ def chemspectra_file_convert():
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:
-        tf_jcamp, tf_img, _ = TraModel(file, molfile=molfile, params=params).convert2jcamp_img()
+        tf_jcamp, tf_img, _ = TraModel(
+            file, molfile=molfile, params=params).convert2jcamp_img()
         if not tf_jcamp:
             if isinstance(tf_img, BagItBaseConverter):
                 list_jcamps = tf_img.get_base64_data()
@@ -77,7 +78,8 @@ def chemspectra_file_save():
                     ]
                 dst_list.append(tf_arr)
 
-        transform_model = TraModel(None, params=params, multiple_files=list_file_items)
+        transform_model = TraModel(
+            None, params=params, multiple_files=list_file_items)
         tf_combined = transform_model.tf_combine()
         if tf_combined is not None:
             dst_list.append(tf_combined)
@@ -151,7 +153,8 @@ def chemspectra_file_refresh():
                     ]
                 dst_list.append(tf_arr)
 
-        transform_model = TraModel(None, params=params, multiple_files=list_file_items)
+        transform_model = TraModel(
+            None, params=params, multiple_files=list_file_items)
         tf_combined = transform_model.tf_combine()
         if tf_combined is not None:
             dst_list.append(tf_combined)

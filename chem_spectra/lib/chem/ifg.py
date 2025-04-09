@@ -72,7 +72,7 @@ def identify_functional_groups(mol):
                 atoms=Chem.MolFragmentToSmiles(mol, g, canonical=True),
                 type=Chem.MolFragmentToSmiles(
                     mol, g.union(uca), canonical=True
-                )))
+            )))
     return ifgs
 
 

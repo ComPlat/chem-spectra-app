@@ -1,21 +1,63 @@
 {
     "datatypes": {
-        "NMR": ["NMR SPECTRUM", "NMRSPECTRUM"],
-        "INFRARED": ["INFRARED SPECTRUM"],
-        "RAMAN": ["RAMAN SPECTRUM"],
-        "MS": ["MASS SPECTRUM"],
-        "HPLC UVVIS": ["HPLC UV/VIS SPECTRUM", "HPLC UV-VIS"],
-        "UVVIS": ["UV/VIS SPECTRUM", "UV-VIS", "ULTRAVIOLET SPECTRUM"],
-        "THERMOGRAVIMETRIC ANALYSIS": ["THERMOGRAVIMETRIC ANALYSIS"],
-        "X-RAY DIFFRACTION": ["X-RAY DIFFRACTION"],
-        "CYCLIC VOLTAMMETRY": ["CYCLIC VOLTAMMETRY"],
-        "SIZE EXCLUSION CHROMATOGRAPHY": ["SIZE EXCLUSION CHROMATOGRAPHY"],
-        "CIRCULAR DICHROISM SPECTROSCOPY": ["CIRCULAR DICHROISM SPECTROSCOPY"],
-        "SORPTION-DESORPTION MEASUREMENT": ["SORPTION-DESORPTION MEASUREMENT"],
-        "Emissions": ["Emissions", "EMISSIONS", "FLUORESCENCE SPECTRUM", "FL SPECTRUM"],
-        "DLS ACF": ["DLS ACF"],
-        "DLS intensity": ["DLS INTENSITY", "DLS intensity"],
-        "DIFFERENTIAL SCANNING CALORIMETRY": ["DIFFERENTIAL SCANNING CALORIMETRY"],
-        "GAS CHROMATOGRAPHY": ["GAS CHROMATOGRAPHY"]
+        "NMR": [
+            "NMR SPECTRUM",
+            "NMRSPECTRUM"
+        ],
+        "INFRARED": [
+            "INFRARED SPECTRUM"
+        ],
+        "RAMAN": [
+            "RAMAN SPECTRUM"
+        ],
+        "MS": [
+            "MASS SPECTRUM"
+        ],
+        "HPLC UVVIS": [
+            "HPLC UV/VIS SPECTRUM",
+            "HPLC UV-VIS"
+        ],
+        "UVVIS": [
+            "UV/VIS SPECTRUM",
+            "UV-VIS",
+            "ULTRAVIOLET SPECTRUM"
+        ],
+        "THERMOGRAVIMETRIC ANALYSIS": [
+            "THERMOGRAVIMETRIC ANALYSIS"
+        ],
+        "X-RAY DIFFRACTION": [
+            "X-RAY DIFFRACTION"
+        ],
+        "CYCLIC VOLTAMMETRY": [
+            "CYCLIC VOLTAMMETRY"
+        ],
+        "SIZE EXCLUSION CHROMATOGRAPHY": [
+            "SIZE EXCLUSION CHROMATOGRAPHY"
+        ],
+        "CIRCULAR DICHROISM SPECTROSCOPY": [
+            "CIRCULAR DICHROISM SPECTROSCOPY"
+        ],
+        "SORPTION-DESORPTION MEASUREMENT": [
+            "SORPTION-DESORPTION MEASUREMENT"
+        ],
+        "Emissions": [
+            "Emissions",
+            "EMISSIONS",
+            "FLUORESCENCE SPECTRUM",
+            "FL SPECTRUM"
+        ],
+        "DLS ACF": [
+            "DLS ACF"
+        ],
+        "DLS intensity": [
+            "DLS INTENSITY",
+            "DLS intensity"
+        ],
+        "DIFFERENTIAL SCANNING CALORIMETRY": [
+            "DIFFERENTIAL SCANNING CALORIMETRY"
+        ],
+        "GAS CHROMATOGRAPHY": [
+            "GAS CHROMATOGRAPHY"
+        ]
     }
 }

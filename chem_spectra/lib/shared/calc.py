@@ -67,6 +67,7 @@ def cal_slope(x1, y1, x2, y2):
         return 0
     return (y2-y1)/(x2-x1)
 
+
 def cal_xyIntegration(xs, ys):
     if len(xs) != len(ys):
         return 0
@@ -76,10 +77,11 @@ def cal_xyIntegration(xs, ys):
         integration += ((xs[i + 1] - ys[i]) * (xs[i + 1] + ys[i])) / 2
     return integration
 
+
 def cal_area_multiplicity(xL, xU, data_xs, data_ys):
     y_max, y_min = np.max(data_ys), np.min(data_ys)
     h = y_max - y_min
-    
+
     iL, iU = len(data_xs)-1, 0
     for (idx, point_x) in enumerate(data_xs):
         if (xL <= point_x and point_x <= xU):
@@ -95,30 +97,32 @@ def cal_area_multiplicity(xL, xU, data_xs, data_ys):
         if (cy > 0.0):
             k += cy
         ks.append(k)
-    
+
     upper_value = Decimal(str(ks[iU]))
     lower_value = Decimal(str(ks[iL]))
 
     return float(abs(upper_value - lower_value))
 
+
 def cal_cyclic_volta_shift_offset(cyclic_data):
     if cyclic_data is None:
         return []
-    if isinstance(cyclic_data, dict) ==  False:
+    if isinstance(cyclic_data, dict) == False:
         return []
     if 'spectraList' not in cyclic_data:
         return []
-    
+
     spectra_list = cyclic_data['spectraList']
-    if isinstance(spectra_list, list) ==  False:
+    if isinstance(spectra_list, list) == False:
         return []
-    
+
     list_offsets = []
-    
+
     for spectra in spectra_list:
         offset = 0.0
         analysed_data = spectra['list']
-        arr_has_ref_value = list(filter(lambda x: x['isRef'] == True,  analysed_data))
+        arr_has_ref_value = list(
+            filter(lambda x: x['isRef'] == True,  analysed_data))
         if len(arr_has_ref_value) > 0:
             shift = spectra['shift']
             val = shift['val']
@@ -126,28 +130,29 @@ def cal_cyclic_volta_shift_offset(cyclic_data):
             e12 = ref_value['e12']
             offset = e12 - val
         list_offsets.append(offset)
-    
+
     return list_offsets
+
 
 def cal_cyclic_volta_shift_prev_offset_at_index(cyclic_data, index=0):
     if cyclic_data is None:
         return 0.0
-    if isinstance(cyclic_data, dict) ==  False:
+    if isinstance(cyclic_data, dict) == False:
         return 0.0
     if 'spectraList' not in cyclic_data:
         return 0.0
 
     spectra_list = cyclic_data['spectraList']
-    if isinstance(spectra_list, list) ==  False:
+    if isinstance(spectra_list, list) == False:
         return 0.0
-    if len(spectra_list) <  index:
+    if len(spectra_list) < index:
         return 0.0
 
     offset = 0.0
-    
+
     if index == len(spectra_list):
-      return 0.0
-    
+        return 0.0
+
     spectra = spectra_list[index]
     hasRefPeak = spectra.get('hasRefPeak', False) == True
     shift = spectra['shift']

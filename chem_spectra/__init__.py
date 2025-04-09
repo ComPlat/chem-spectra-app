@@ -4,13 +4,14 @@ from flask import Flask
 
 import logging
 
+
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY='dev',
         IP_WHITE_LIST=''
     )
-    
+
     app.config.from_prefixed_env()
 
     if test_config is None:
@@ -22,8 +23,8 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-    
-    #create logging
+
+    # create logging
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
     log_file = app.config.get('LOGS_FILE')
@@ -31,7 +32,8 @@ def create_app(test_config=None):
         log_file = './instance/logging.log'
     ch = logging.FileHandler(log_file)
     ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 

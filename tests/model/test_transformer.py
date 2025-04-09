@@ -14,13 +14,16 @@ from chem_spectra.lib.composer.ni import NIComposer
 source_dir_1h_bruker = './tests/fixtures/source/bruker/1H.zip'
 source_dir_1h_jcamp = './tests/fixtures/source/1H.dx'
 filename_1h = '1H'
-params_1h_bruker = {'fname':'1H.zip', 'ext':'zip'}
-params_1h_jcamp = {'fname':'1H.dx', 'ext':'dx'}
-params_1h_bruker_check_nmr = {'fname':'1H.zip', 'ext':'zip', 'simulatenmr': True}
-params_1h_jcamp_check_nmr = {'fname':'1H.dx', 'ext':'dx', 'simulatenmr': True}
+params_1h_bruker = {'fname': '1H.zip', 'ext': 'zip'}
+params_1h_jcamp = {'fname': '1H.dx', 'ext': 'dx'}
+params_1h_bruker_check_nmr = {
+    'fname': '1H.zip', 'ext': 'zip', 'simulatenmr': True}
+params_1h_jcamp_check_nmr = {
+    'fname': '1H.dx', 'ext': 'dx', 'simulatenmr': True}
 
 source_dir_molfile = './tests/fixtures/source/molfile/svs813f1_B.mol'
 source_dir_invalid_molfile = './tests/fixtures/source/molfile/invalid_molfile.mol'
+
 
 def is_list_of_instance(list_data, cls):
     for item in list_data:
@@ -28,21 +31,26 @@ def is_list_of_instance(list_data, cls):
             return False
     return True
 
+
 def test_init_with_single_file():
     file = open(source_dir_1h_jcamp, "rb")
     molfile = open(source_dir_molfile, "r")
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp)
-    
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_jcamp)
+
     assert tranform_model != None
-    
+
+
 def test_init_with_multiple_files():
     file_1 = open(source_dir_1h_jcamp, "rb")
     file_2 = open(source_dir_1h_jcamp, "rb")
     molfile = open(source_dir_molfile, "r")
-    tranform_model = TransformerModel(None, molfile=molfile, params=params_1h_jcamp, multiple_files=[file_1, file_2])
-    
+    tranform_model = TransformerModel(
+        None, molfile=molfile, params=params_1h_jcamp, multiple_files=[file_1, file_2])
+
     assert tranform_model != None
-    
+
+
 def test_combine():
     with open(source_dir_1h_jcamp, 'rb') as f:
         file_1 = FileContainer(FileStorage(f))
@@ -51,10 +59,11 @@ def test_combine():
         file_2 = FileContainer(FileStorage(f))
 
     molfile = open(source_dir_molfile, "r")
-    tranform_model = TransformerModel(None, molfile=molfile, params=params_1h_jcamp, multiple_files=[file_1, file_2])
-    
+    tranform_model = TransformerModel(
+        None, molfile=molfile, params=params_1h_jcamp, multiple_files=[file_1, file_2])
+
     assert tranform_model is not None
-    
+
     tf = tranform_model.tf_combine()
     assert tf is not None
 
@@ -66,18 +75,21 @@ def test_zip2cv_with_processed_file():
     with open(source_dir_1h_bruker, 'rb') as f:
         file = FileContainer(FileStorage(f))
 
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_bruker)
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_bruker)
 
     with tempfile.TemporaryDirectory() as td:
         with zipfile.ZipFile(source_dir_1h_bruker, 'r') as z:
             z.extractall(td)
-        
+
         target_dir = os.path.join(td, '1')
 
-        list_converters, list_composers, invalid_molfile = tranform_model.zip2cv_with_processed_file(target_dir=target_dir, params=params_1h_bruker, file_name=filename_1h)
+        list_converters, list_composers, invalid_molfile = tranform_model.zip2cv_with_processed_file(
+            target_dir=target_dir, params=params_1h_bruker, file_name=filename_1h)
         assert len(list_converters) == 2
         assert len(list_composers) == 2
         assert invalid_molfile is False
+
 
 def test_zip_to_composer_invalid_molfile():
     with open(source_dir_invalid_molfile, 'rb') as f:
@@ -85,13 +97,15 @@ def test_zip_to_composer_invalid_molfile():
 
     with open(source_dir_1h_bruker, 'rb') as f:
         file = FileContainer(FileStorage(f))
-    
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_bruker_check_nmr)
+
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_bruker_check_nmr)
 
     list_converters, list_composers, invalid_molfile = tranform_model.zip2cvp()
     assert len(list_converters) == 2
     assert len(list_composers) == 2
     assert invalid_molfile is True
+
 
 def test_zip_to_composer_valid_molfile():
     with open(source_dir_molfile, 'rb') as f:
@@ -99,13 +113,15 @@ def test_zip_to_composer_valid_molfile():
 
     with open(source_dir_1h_bruker, 'rb') as f:
         file = FileContainer(FileStorage(f))
-    
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_bruker)
+
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_bruker)
 
     list_converters, list_composers, invalid_molfile = tranform_model.zip2cvp()
     assert len(list_converters) == 2
     assert len(list_composers) == 2
     assert invalid_molfile is False
+
 
 def test_jcamp_to_composer_invalid_molfile():
     with open(source_dir_invalid_molfile, 'rb') as f:
@@ -114,11 +130,13 @@ def test_jcamp_to_composer_invalid_molfile():
     with open(source_dir_1h_jcamp, 'rb') as f:
         file = FileContainer(FileStorage(f))
 
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp_check_nmr)
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_jcamp_check_nmr)
     converter, composer, invalid_molfile = tranform_model.jcamp2cvp()
     assert isinstance(converter, JcampNIConverter)
     assert isinstance(composer, NIComposer)
     assert invalid_molfile is True
+
 
 def test_jcamp_to_composer_valid_molfile():
     with open(source_dir_molfile, 'rb') as f:
@@ -127,11 +145,13 @@ def test_jcamp_to_composer_valid_molfile():
     with open(source_dir_1h_jcamp, 'rb') as f:
         file = FileContainer(FileStorage(f))
 
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp)
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_jcamp)
     converter, composer, invalid_molfile = tranform_model.jcamp2cvp()
     assert isinstance(converter, JcampNIConverter)
     assert isinstance(composer, NIComposer)
     assert invalid_molfile is False
+
 
 def test_to_composer_jcamp_invalid_molfile():
     with open(source_dir_invalid_molfile, 'rb') as f:
@@ -139,8 +159,9 @@ def test_to_composer_jcamp_invalid_molfile():
 
     with open(source_dir_1h_jcamp, 'rb') as f:
         file = FileContainer(FileStorage(f))
-    
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp_check_nmr)
+
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_jcamp_check_nmr)
 
     composer, invalid_molfile = tranform_model.to_composer()
     assert isinstance(composer, NIComposer)
@@ -153,12 +174,14 @@ def test_to_composer_zip_invalid_molfile():
 
     with open(source_dir_1h_bruker, 'rb') as f:
         file = FileContainer(FileStorage(f))
-    
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_bruker_check_nmr)
+
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_bruker_check_nmr)
 
     list_composers, invalid_molfile = tranform_model.to_composer()
     assert is_list_of_instance(list_composers, NIComposer)
     assert invalid_molfile is True
+
 
 def test_to_composer_jcamp_valid_molfile():
     with open(source_dir_molfile, 'rb') as f:
@@ -166,12 +189,14 @@ def test_to_composer_jcamp_valid_molfile():
 
     with open(source_dir_1h_jcamp, 'rb') as f:
         file = FileContainer(FileStorage(f))
-    
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp)
+
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_jcamp)
 
     composer, invalid_molfile = tranform_model.to_composer()
     assert isinstance(composer, NIComposer)
     assert invalid_molfile is False
+
 
 def test_to_composer_zip_valid_molfile():
     with open(source_dir_molfile, 'rb') as f:
@@ -179,20 +204,24 @@ def test_to_composer_zip_valid_molfile():
 
     with open(source_dir_1h_bruker, 'rb') as f:
         file = FileContainer(FileStorage(f))
-    
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_bruker)
+
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_bruker)
 
     list_composers, invalid_molfile = tranform_model.to_composer()
     assert is_list_of_instance(list_composers, NIComposer)
     assert invalid_molfile is False
 
+
 def test_to_composer_mass_spectrum():
     # TODO: implement later
     pass
 
+
 def test_to_composer_cdf():
     # TODO: implement later
     pass
+
 
 def test_convert2jcamp():
     with open(source_dir_molfile, 'rb') as f:
@@ -200,15 +229,18 @@ def test_convert2jcamp():
 
     with open(source_dir_1h_jcamp, 'rb') as f:
         file = FileContainer(FileStorage(f))
-    
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp)
+
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_jcamp)
 
     jcamp = tranform_model.convert2jcamp()
     assert jcamp is not None
 
+
 def test_convert2jcamp_bagit():
     # TODO: implement later
     pass
+
 
 def test_convert2img():
     with open(source_dir_molfile, 'rb') as f:
@@ -216,15 +248,18 @@ def test_convert2img():
 
     with open(source_dir_1h_jcamp, 'rb') as f:
         file = FileContainer(FileStorage(f))
-    
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp)
+
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_jcamp)
 
     image = tranform_model.convert2img()
     assert image is not None
 
+
 def test_convert2img_bagit():
     # TODO: implement later
     pass
+
 
 def test_convert2jcamp_img():
     with open(source_dir_molfile, 'rb') as f:
@@ -232,13 +267,15 @@ def test_convert2jcamp_img():
 
     with open(source_dir_1h_jcamp, 'rb') as f:
         file = FileContainer(FileStorage(f))
-    
-    tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp)
+
+    tranform_model = TransformerModel(
+        file, molfile=molfile, params=params_1h_jcamp)
 
     jcamp, image, csv = tranform_model.convert2jcamp_img()
     assert jcamp is not None
     assert image is not None
     assert csv is None
+
 
 def test_convert2jcamp_img_bagit():
     # TODO: implement later

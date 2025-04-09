@@ -31,6 +31,7 @@ def test_zip_jcamp_n_img(client):
     header_json = json.loads(response.headers['X-Extra-Info-JSON'])
     assert header_json['invalid_molfile'] is False
 
+
 def test_zip_jcamp_n_img_invalid_molfile(client):
     with open(target_dir + source_dir + file_jdx, 'rb') as f:
         file_content = f.read()
@@ -43,7 +44,7 @@ def test_zip_jcamp_n_img_invalid_molfile(client):
         molfile=(io.BytesIO(molfile), 'invalid_molfile.mol'),
         simulatenmr='true'
     )
-    
+
     response = client.post(
         '/zip_jcamp_n_img',
         content_type='multipart/form-data',
@@ -104,18 +105,20 @@ def test_zip_image(client):
 
     assert response.status_code == 200
     assert response.mimetype == 'application/zip'
-    
+
+
 def test_combine_images_no_file(client):
     response = client.post(
         '/combine_images',
         content_type='multipart/form-data',
         data=None
     )
-    
+
     assert response.status_code == 400
 
+
 def test_combine_images(client):
-    #TODO: implement later
+    # TODO: implement later
     pass
 
 

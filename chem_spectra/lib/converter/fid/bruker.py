@@ -5,6 +5,7 @@ import os
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
 
+
 def search_brucker_processed(td):
     try:
         pdata_dir = find_dir(td, 'pdata')
@@ -13,11 +14,13 @@ def search_brucker_processed(td):
     except:     # noqa: E722
         return False
 
+
 def find_dir(path, name):
     for root, dirs, _ in os.walk(path):
         if name in dirs:
             return os.path.join(root, name)
     return False
+
 
 def get_processed_data(path):
     processed_dirs = False
@@ -29,6 +32,7 @@ def get_processed_data(path):
                 processed_dirs.append(dir_path)
     return processed_dirs
 
+
 class FidHasBruckerProcessed:
     def __init__(self, target_dir, params=False, fname=''):
         self.params = parse_params(params)
@@ -36,27 +40,33 @@ class FidHasBruckerProcessed:
 
     def __read(self, target_dir, fname):
         processed_dirs = search_brucker_processed(target_dir)
-        data =[]
+        data = []
 
         unprocessed_dic, unprocessed_data = ng.bruker.read(target_dir)
-        unprocessed_dic = self.__process_dic(unprocessed_dic, unprocessed_data, fname)
-        unprocessed_data = self.__process_raw_data(unprocessed_dic, unprocessed_data)
+        unprocessed_dic = self.__process_dic(
+            unprocessed_dic, unprocessed_data, fname)
+        unprocessed_data = self.__process_raw_data(
+            unprocessed_dic, unprocessed_data)
 
-        unprocessed_fid_conv = FidBaseConverter(dic=unprocessed_dic, data=unprocessed_data, params=self.params, fname=fname)
+        unprocessed_fid_conv = FidBaseConverter(
+            dic=unprocessed_dic, data=unprocessed_data, params=self.params, fname=fname)
         data.append(unprocessed_fid_conv)
 
         for dir in processed_dirs:
             processed_dic, processed_data = ng.bruker.read_pdata(dir)
 
-            processed_dic = self.__process_dic(processed_dic, processed_data, fname)
-            
-            try:
-              processed_data = ng.process.proc_bl.baseline_corrector(processed_data, wd=20)  # baseline correction     # noqa: E501
-            except:
-              pass
-            processed_data = ng.proc_base.di(processed_data)                # discard the imaginaries
+            processed_dic = self.__process_dic(
+                processed_dic, processed_data, fname)
 
-            processed_fid_conv = FidBaseConverter(dic=processed_dic, data=processed_data, params=self.params, fname=fname)
+            try:
+                processed_data = ng.process.proc_bl.baseline_corrector(processed_data, wd=20)  # baseline correction     # noqa: E501
+            except:
+                pass
+            # discard the imaginaries
+            processed_data = ng.proc_base.di(processed_data)
+
+            processed_fid_conv = FidBaseConverter(
+                dic=processed_dic, data=processed_data, params=self.params, fname=fname)
             data.append(processed_fid_conv)
         return data
 
@@ -66,9 +76,12 @@ class FidHasBruckerProcessed:
         # process dic
         processed_dic['.OBSERVENUCLEUS'] = '^{}'.format(udic.get('label'))
         processed_dic['.OBSERVEFREQUENCY'] = [udic.get('obs')]
-        processed_dic['.SOLVENTNAME'] = processed_dic.get('acqus', {}).get('SOLVENT')
-        processed_dic['.SHIFTREFERENCE'] = processed_dic.get('acqus', {}).get('SOLVENT')
-        processed_dic['.PULSESEQUENCE'] = processed_dic.get('acqus', {}).get('PULPROG')
+        processed_dic['.SOLVENTNAME'] = processed_dic.get(
+            'acqus', {}).get('SOLVENT')
+        processed_dic['.SHIFTREFERENCE'] = processed_dic.get(
+            'acqus', {}).get('SOLVENT')
+        processed_dic['.PULSESEQUENCE'] = processed_dic.get(
+            'acqus', {}).get('PULPROG')
         offset = (float(processed_dic['acqus']['SW']) / 2) - (float(processed_dic['acqus']['O1']) / float(processed_dic['acqus']['BF1']))     # noqa: E501
         pt_head = float(processed_dic['acqus']['SW']) - offset
         pt_tail = -offset
@@ -77,7 +90,8 @@ class FidHasBruckerProcessed:
         processed_dic['LASTX'] = [pt_tail]
         processed_dic['XUNITS'] = ['PPM']
         processed_dic['YUNITS'] = ['ARBITRARY']
-        processed_dic['TITLE'] = ['FID {}'.format('.'.join(fname.split('.')[:-1]))]
+        processed_dic['TITLE'] = ['FID {}'.format(
+            '.'.join(fname.split('.')[:-1]))]
 
         return processed_dic
 
@@ -87,19 +101,22 @@ class FidHasBruckerProcessed:
         # process data (i.e. ys)
         processed_data = ng.bruker.remove_digital_filter(dic, processed_data)  # remove the digital filter   # noqa: E501
         processed_data = ng.proc_base.zf_size(processed_data, num_pts)    # zero fill to 32768 points   # noqa: E501
-        processed_data = ng.proc_base.fft(processed_data)               # Fourier transform
+        processed_data = ng.proc_base.fft(
+            processed_data)               # Fourier transform
         # p0, p1 = ng.process.proc_autophase.manual_ps(data)
         # data = ng.proc_base.ps(data, p0=-60, p1=200)
         if 'dept' not in dic['.PULSESEQUENCE']:
             data_am = ng.process.proc_autophase.autops(processed_data, 'acme')  # phase correction    # noqa: E501
             data_pm = ng.process.proc_autophase.autops(processed_data, 'peak_minima')  # phase correction     # noqa: E501
-            processed_data = data_am if (data_am.min() > data_pm.min()) else data_pm
+            processed_data = data_am if (
+                data_am.min() > data_pm.min()) else data_pm
         else:
             processed_data = ng.proc_base.ps(processed_data, p0=0, p1=210)
             data_pm = ng.process.proc_autophase.autops(processed_data, 'peak_minima')  # phase correction     # noqa: E501
             processed_data = data_pm
         processed_data = ng.process.proc_bl.baseline_corrector(processed_data, wd=20)  # baseline correction     # noqa: E501
-        processed_data = ng.proc_base.di(processed_data)                # discard the imaginaries
-        processed_data = ng.proc_base.rev(processed_data)               # reverse the data
+        # discard the imaginaries
+        processed_data = ng.proc_base.di(processed_data)
+        processed_data = ng.proc_base.rev(
+            processed_data)               # reverse the data
         return processed_data
-        
