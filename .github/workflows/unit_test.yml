@@ -14,9 +14,8 @@ jobs:
         cache: 'pip'
     - name: Install dependencies
       run: |
-        python3 -m venv .venv
-        .venv/bin/pip install --upgrade pip
-        .venv/bin/pip install .   
+        pip install --upgrade pip
+        pip install .   
     - name: Create tmp directory with permissions
       run: |
         mkdir -p chem_spectra/tmp
@@ -31,5 +30,4 @@ jobs:
     - name: Test with pytest
       shell: bash -el {0}
       run: |
-        source .venv/bin/activate
         python -m pytest
