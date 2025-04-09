@@ -85,17 +85,18 @@ class BaseComposer:
 
         detector = self.core.params.get('detector')
         jcamp_idx = self.core.params.get('jcamp_idx')
-        
+
         if detector:
             curves = detector['curves']
-            curve_to_update = next((curve for curve in curves if curve.get('curveIdx') == jcamp_idx), None)
+            curve_to_update = next(
+                (curve for curve in curves if curve.get('curveIdx') == jcamp_idx), None)
 
             if curve_to_update:
                 selected_detector = curve_to_update.get('selectedDetector', {})
-            
+
                 if isinstance(selected_detector, dict):
                     name = selected_detector.get('name')
-                    
+
                     if name:
                         spl_desc.append('##$DETECTOR={}\n'.format(name))
 
@@ -118,7 +119,8 @@ class BaseComposer:
 
     def generate_original_metadata(self):
         content = self.__header_original_metadata()
-        if self.core.dic is None: return content
+        if self.core.dic is None:
+            return content
 
         for key, value in self.core.dic.items():
             if is_metadata_to_be_ignored(key):
@@ -136,6 +138,7 @@ class BaseComposer:
             )
         content.append('\n\n')
         return content
+
     def gen_ending(self):
         return [
             '##END=\n',

@@ -10,13 +10,15 @@ from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.converter.share import parse_params
 import matplotlib.pyplot as plt  # noqa: E402
 
+
 class BagItBaseConverter:
     def __init__(self, target_dir, params=False, fname=''):
         self.params = parse_params(params)
         if target_dir is None:
             self.data, self.images, self.list_csv, self.combined_image = None, None, None, None
         else:
-            self.data, self.images, self.list_csv, self.combined_image = self.__read(target_dir, fname)
+            self.data, self.images, self.list_csv, self.combined_image = self.__read(
+                target_dir, fname)
 
     def __read(self, target_dir, fname):
         list_file_names = []
@@ -55,8 +57,7 @@ class BagItBaseConverter:
                 list_images.append(tf_img)
                 tf_csv = nicp.tf_csv()
                 list_csv.append(tf_csv)
-        
-            
+
         combined_image = self.__combine_images(list_composer)
 
         return list_files, list_images, list_csv, combined_image
@@ -70,7 +71,7 @@ class BagItBaseConverter:
             list_jcamps.append(jcamp)
         return list_jcamps
 
-    def __combine_images(self, list_composer, list_file_names = None):
+    def __combine_images(self, list_composer, list_file_names=None):
         if len(list_composer) <= 1:
             return None
         if isinstance(list_composer[0].core, JcampMSConverter):
@@ -78,12 +79,12 @@ class BagItBaseConverter:
 
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
-        
+
         for idx, composer in enumerate(list_composer):
             filename = str(idx)
             if (list_file_names is not None) and idx < len(list_file_names):
                 filename = list_file_names[idx]
-            
+
             xs, ys = composer.core.xs, composer.core.ys
             marker = ''
             if composer.core.is_aif:
@@ -104,13 +105,15 @@ class BagItBaseConverter:
             elif (composer.core.is_cyclic_volta):
                 plt.xlabel("{}".format(composer.core.label['x']), fontsize=18)
             else:
-                plt.xlabel("X ({})".format(composer.core.label['x']), fontsize=18)
+                plt.xlabel("X ({})".format(
+                    composer.core.label['x']), fontsize=18)
 
             if (composer.core.is_cyclic_volta):
                 plt.ylabel("{}".format(composer.core.label['y']), fontsize=18)
             else:
-                plt.ylabel("Y ({})".format(composer.core.label['y']), fontsize=18)
-        
+                plt.ylabel("Y ({})".format(
+                    composer.core.label['y']), fontsize=18)
+
         plt.legend()
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')

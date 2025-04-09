@@ -3,7 +3,8 @@ import zipfile
 from flask import current_app
 import logging
 
-DEFAULT_MAX_ZIP_SIZE = 100   #100MB
+DEFAULT_MAX_ZIP_SIZE = 100  # 100MB
+
 
 class FileContainer:
     def __init__(self, src=False):
@@ -23,7 +24,8 @@ class FileContainer:
                 if total_size_in_MB > max_zip_size:
                     logger = logging.getLogger(__name__)
                     logger.setLevel(logging.ERROR)
-                    logger.error(f'This is maybe a zip bombs because its size is {total_size_in_MB} MB but maximum size of zip file is {max_zip_size} MB')
+                    logger.error(
+                        f'This is maybe a zip bombs because its size is {total_size_in_MB} MB but maximum size of zip file is {max_zip_size} MB')
                     self.bcore = None
 
         self.core = self.bcore and self.bcore.decode('utf-8', errors='ignore')

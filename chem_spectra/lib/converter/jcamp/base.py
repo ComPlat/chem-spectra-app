@@ -6,6 +6,7 @@ import os
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
+
 class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = parse_params(params)
@@ -46,7 +47,7 @@ class JcampBaseConverter:
 
     def __read(self, path):
         return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
-    
+
     def __read_user_data_type_mapping(self):
         user_dt_mapping = self.params.get('user_data_type_mapping')
         if user_dt_mapping == '' or user_dt_mapping is None:
@@ -106,7 +107,7 @@ class JcampBaseConverter:
     def __set_dataformat(self):
         try:
             return self.dic[self.dataclass][0].split('\n')[0]
-        except: # noqa
+        except:  # noqa
             pass
         return '(X++(Y..Y))'
 
@@ -146,22 +147,22 @@ class JcampBaseConverter:
 
     def __is_sec(self):
         return self.typ in ['SIZE EXCLUSION CHROMATOGRAPHY']
-    
+
     def __is_cds(self):
         return self.typ in ['CIRCULAR DICHROISM SPECTROSCOPY']
 
     def __is_aif(self):
         return self.typ in ['SORPTION-DESORPTION MEASUREMENT']
-        
+
     def __is_emissions(self):
         return self.typ in ['Emissions']
-    
+
     def __is_dls_acf(self):
         return self.typ in ['DLS ACF']
 
     def __is_dls_intensity(self):
         return self.typ in ['DLS intensity']
-    
+
     def __is_dsc(self):
         return self.typ in ['DIFFERENTIAL SCANNING CALORIMETRY']
 
@@ -180,7 +181,7 @@ class JcampBaseConverter:
                 return '15N'
             elif '29Si' in ncls:
                 return '29Si'
-        except: # noqa
+        except:  # noqa
             pass
         return ''
 

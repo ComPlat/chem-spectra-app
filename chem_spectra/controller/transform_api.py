@@ -1,8 +1,5 @@
-from cmath import log
-from crypt import methods
 import json
 import collections.abc
-from multiprocessing.dummy import Array
 from flask import (
     Blueprint, request, send_file, make_response, abort
 )
@@ -49,7 +46,7 @@ def zip_jcamp_n_img():
                 tf_csv = list_csv[idx]
                 tf_arr = [tf_jcamp, tf_img, tf_csv]
                 dst_list.append(tf_arr)
-                
+
             if combined_image is not None:
                 dst_list.append(combined_image)
 
@@ -61,7 +58,8 @@ def zip_jcamp_n_img():
                     as_attachment=True
                 )
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit', 'invalid_molfile': invalid_molfile})
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps(
+                {'spc_type': 'bagit', 'invalid_molfile': invalid_molfile})
         elif isinstance(cmpsr, collections.abc.Sequence):
             dst_list = []
             spc_type = ''
@@ -70,7 +68,7 @@ def zip_jcamp_n_img():
                 tf_jcamp, tf_img = composer.tf_jcamp(), composer.tf_img()
                 tf_arr = [tf_jcamp, tf_img]
                 dst_list.extend(tf_arr)
-                
+
             memory = to_zip_response(dst_list)
             rsp = make_response(
                 send_file(
@@ -79,13 +77,16 @@ def zip_jcamp_n_img():
                     as_attachment=True
                 )
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps(
+                {'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
         else:
             tf_jcamp, tf_img, tf_csv = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
             tf_nmrium = None
             try:
-                molecule_model = MoleculeModel(molfile, cmpsr.core.ncl, decorate=False)
-                tf_nmrium = cmpsr.generate_nmrium(molfile_data=molecule_model.moltxt)
+                molecule_model = MoleculeModel(
+                    molfile, cmpsr.core.ncl, decorate=False)
+                tf_nmrium = cmpsr.generate_nmrium(
+                    molfile_data=molecule_model.moltxt)
             except Exception:
                 pass
 
@@ -103,7 +104,8 @@ def zip_jcamp_n_img():
                     as_attachment=True
                 )
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps(
+                {'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
 
         return rsp
 
@@ -114,7 +116,8 @@ def zip_jcamp():
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:  # and allowed_file(file):
-        tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
+        tf_jcamp = TraModel(file, molfile=molfile,
+                            params=params).convert2jcamp()
         if isinstance(tf_jcamp, BagItBaseConverter):
             # check if composered model is in BagIt format
             list_jcamps = tf_jcamp.data
@@ -164,7 +167,8 @@ def jcamp():
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
     if file:  # and allowed_file(file):
-        tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
+        tf_jcamp = TraModel(file, molfile=molfile,
+                            params=params).convert2jcamp()
         return send_file(
             tf_jcamp,
             download_name='spectrum.jdx',
@@ -186,6 +190,7 @@ def image():
             mimetype='image/png'
         )
 
+
 @trans_api.route('/nmrium', methods=['POST'])
 def nmrium():
     nmriumFile = FileContainer(request.files['file'])
@@ -200,25 +205,27 @@ def nmrium():
             as_attachment=True
         )
 
+
 @trans_api.route('/combine_images', methods=['POST'])
 def combine_images():
     request_files = request.files
     if (not request_files):
         abort(400)
-        
+
     list_files = []
     for file in request_files.getlist('files[]'):
         file_container = FileContainer(file)
         list_files.append(file_container)
-    
+
     params = extract_params(request)
     extras = request.form.get('extras', default=None)
 
     transform_model = TraModel(None, params=params, multiple_files=list_files)
-    tf_combine = transform_model.tf_combine(list_file_names=params['list_file_names'], extraParams=extras)
+    tf_combine = transform_model.tf_combine(
+        list_file_names=params['list_file_names'], extraParams=extras)
     if (not tf_combine):
         abort(400)
-    
+
     memory = to_zip_response([tf_combine])
     return send_file(
         memory,

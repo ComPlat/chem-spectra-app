@@ -1,7 +1,6 @@
 import json
 import zipfile
 import tempfile
-import glob     # noqa: F401
 import os
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
@@ -16,7 +15,6 @@ from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
-from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.path as mpath  # noqa: E402
@@ -42,6 +40,7 @@ def search_brucker_binary(td):
     except:     # noqa: E722
         return False, False
 
+
 def search_processed_file(td):
     try:
         pdata_dir = find_and_get_dir(td, 'pdata')
@@ -50,11 +49,13 @@ def search_processed_file(td):
     except:
         return False
 
+
 def find_and_get_dir(path, name):
     for root, dirs, _ in os.walk(path):
         if name in dirs:
             return os.path.join(root, name)
     return False
+
 
 def search_bag_it_file(td):
     try:
@@ -155,7 +156,8 @@ class TransformerModel:
                 if (has_processed_files):
                     return self.zip2cv_with_processed_file(target_dir, self.params, self.file.name)
                 else:
-                    fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
+                    fbcv = FidBaseConverter(
+                        target_dir, self.params, self.file.name)
                     if not fbcv:
                         return False, False, False
 
@@ -195,20 +197,18 @@ class TransformerModel:
         if params and 'simulatenmr' in params:
             isSimulateNMR = params['simulatenmr']
 
-            
         list_decorated_converters = []
         list_decorated_composers = []
 
         invalid_molfile = False
         for conv in fid_brucker.data:
             decorated_jbcv = decorate_sim_property(conv, self.molfile, isSimulateNMR)   # noqa: E501
-            
+
             if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                 invalid_molfile = True
                 final_decorated_jbcv = decorated_jbcv['origin_jbcv']
             else:
                 final_decorated_jbcv = decorated_jbcv
-            
 
         # invalid_molfile = False
         # for conv in fid_brucker.data:
@@ -240,7 +240,7 @@ class TransformerModel:
             if self.params and 'simulatenmr' in self.params:
                 isSimulateNMR = self.params['simulatenmr']
             decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNMR)   # noqa: E501
-            
+
             if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
                 invalid_molfile = True
                 final_decorated_jbcv = decorated_jbcv['origin_jbcv']
@@ -276,9 +276,11 @@ class TransformerModel:
         try:
             extras_dict = json.loads(extraParams) if extraParams else None
             cyclic_volta_str = extras_dict['cyclicvolta'] if extras_dict else None
-            cyclic_volta = json.loads(cyclic_volta_str) if cyclic_volta_str else None
+            cyclic_volta = json.loads(
+                cyclic_volta_str) if cyclic_volta_str else None
             spectra_list = cyclic_volta['spectraList'] if cyclic_volta else None
-            spectra_extra = spectra_list[curve_idx] if spectra_list and curve_idx < len(spectra_list) else None
+            spectra_extra = spectra_list[curve_idx] if spectra_list and curve_idx < len(
+                spectra_list) else None
             list_peaks = spectra_extra['list'] if spectra_extra else []
             x_peaks, y_peaks = [], []
             for peak in list_peaks:
@@ -305,7 +307,7 @@ class TransformerModel:
         cirle_verts = np.concatenate([circle.vertices, verts])
         cirle_codes = np.concatenate([circle.codes, codes])
         cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
-          
+
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
         plt.rcParams['legend.loc'] = 'upper left'
@@ -321,7 +323,7 @@ class TransformerModel:
                 self.multiple_files[idx] = file
 
         self.multiple_files.sort(key=lambda file: file.name)
-        
+
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
@@ -349,7 +351,8 @@ class TransformerModel:
                 core_label_x = nicp.core.label['x']
                 core_label_y = nicp.core.label['y']
                 if nicp.core.is_cyclic_volta:
-                    x_peaks, y_peaks = self.__get_cyclic_volta_ref_peaks(curve_idx, extraParams)
+                    x_peaks, y_peaks = self.__get_cyclic_volta_ref_peaks(
+                        curve_idx, extraParams)
 
                     plt.plot(
                         x_peaks,
@@ -374,7 +377,7 @@ class TransformerModel:
                     ylabel = "Y ({})".format(core_label_y)
 
             tf.close()
-        
+
         plt.xlabel(xlabel, fontsize=18)
         plt.ylabel(ylabel, fontsize=18)
         plt.legend()

@@ -85,7 +85,7 @@ class JcampMSConverter:  # nmr & IR
         if isinstance(data, np.ndarray) and data.ndim == 3 and data.shape[0] == 1:
             return data[0]
         return data
-    
+
     def __decode(self, runs):
         spectra = []
         best_ratio, best_idx, backup_ratio, backup_idx = 0, 0, 0, 0

@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.interpolate import interp1d
 
 
 def __num_pts(base, x_max, x_min):

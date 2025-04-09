@@ -86,9 +86,9 @@ class ArtistLib:
         drawer.FinishDrawing()
 
         svg = drawer.GetDrawingText().replace('svg:', '').replace(
-                svg_target + svg_size,
-                "{} {}".format(svg_target, svg_vb),
-            )
+            svg_target + svg_size,
+            "{} {}".format(svg_target, svg_vb),
+        )
         return [svg]
 
     @classmethod
@@ -136,7 +136,7 @@ class ArtistLib:
         drawer.FinishDrawing()
 
         svg = drawer.GetDrawingText().replace('svg:', '').replace(
-                svg_target + svg_size,
-                "{} {}".format(svg_target, svg_vb),
-            )
+            svg_target + svg_size,
+            "{} {}".format(svg_target, svg_vb),
+        )
         return [svg]

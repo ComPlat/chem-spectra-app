@@ -4,7 +4,8 @@ import json
 def parse_params(params):
     default_itg = {'stack': [], 'refArea': 1, 'refFactor': 1, 'shift': 0}
     default_mpy = {'stack': [], 'smExtext': False, 'shift': 0}
-    default_wavelength = {'name': 'CuKalpha', 'value': 0.15406, 'label': 'Cu K-alpha', 'unit': 'nm'}
+    default_wavelength = {'name': 'CuKalpha',
+                          'value': 0.15406, 'label': 'Cu K-alpha', 'unit': 'nm'}
     if not params:
         return {
             'select_x': None,
@@ -46,7 +47,8 @@ def parse_params(params):
     ext = params.get('ext', '')
     ext = ext if ext else ''
     fname = params.get('fname', '').split('.')
-    fname = fname[:-2] if (len(fname) > 2 and (fname[-2] in ['edit', 'peak'])) else fname[:-1]
+    fname = fname[:-2] if (len(fname) > 2 and (fname[-2]
+                           in ['edit', 'peak'])) else fname[:-1]
     fname = '.'.join(fname)
     waveLength = params.get('waveLength')
     waveLength = json.loads(waveLength) if waveLength else default_wavelength

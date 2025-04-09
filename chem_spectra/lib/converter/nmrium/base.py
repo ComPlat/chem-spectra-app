@@ -1,4 +1,3 @@
-import nmrglue as ng
 import json
 import numpy as np
 from chem_spectra.lib.converter.datatable import DatatableModel
@@ -6,16 +5,19 @@ from chem_spectra.lib.shared.calc import (  # noqa: E402
     calc_mpy_center, get_curve_endpoint, cal_area_multiplicity
 )
 
+
 def coupling_string(js):
     if len(js) == 0:
         return ''
     return ', ' + ' '.join([str(j) for j in js])
 
+
 class NMRiumDataConverter:
     def __init__(self, file=None):
         self.datatypes = ['NMR SPECTRUM']
         self.datatype = 'NMR SPECTRUM'
-        self.params = {'integration':{}, 'multiplicity':{}, 'ref_name':'', 'ref_value':'', 'select_x':0}
+        self.params = {'integration': {}, 'multiplicity': {},
+                       'ref_name': '', 'ref_value': '', 'select_x': 0}
         self.file = file
         self.fname = ''
         self.is_em_wave = False
@@ -32,18 +34,17 @@ class NMRiumDataConverter:
             self.__read_info(spectrum_data)
             if (self.is_2d == False):
                 self.data = self.__parsing_xy_values(spectrum_data)
-                
 
                 self.boundary = self.__find_boundary()
                 self.datatable = self.__set_datatable()
 
-                self.mpy_itg_table, self.mpy_pks_table = self.__read_multiplicity(spectrum_data)
+                self.mpy_itg_table, self.mpy_pks_table = self.__read_multiplicity(
+                    spectrum_data)
 
                 self.itg_table = self.__read_integration(spectrum_data)
 
                 self.edit_peaks = self.__read_peaks(spectrum_data)
-        
-        
+
         self.simu_peaks = []
         self.is_cyclic_volta = False
         self.is_sec = False
@@ -54,25 +55,23 @@ class NMRiumDataConverter:
     def __read_file(self):
         if (self.file is None):
             return None
-        
+
         try:
             rawData = json.loads(self.file.core)
         except ValueError as e:
             return None
-        
-        
+
         if 'data' in rawData.keys():
-          parsedData = self.__parsing_spectra(rawData['data'])
+            parsedData = self.__parsing_spectra(rawData['data'])
         else:
-          parsedData = self.__parsing_spectra(rawData)
+            parsedData = self.__parsing_spectra(rawData)
 
         return parsedData
-
 
     def __parsing_spectra(self, jsonData=None):
         if jsonData is None:
             return None
-          
+
         spectra = jsonData['spectra']
         displaying_spectra = self.__find_displaying_spectra(spectra)
         numberOfSpectrum = len(displaying_spectra)
@@ -80,11 +79,11 @@ class NMRiumDataConverter:
         if numberOfSpectrum <= 0:
             return None
 
-        
         displaying_spectrum_id = ''
         if 'correlations' in jsonData:
             correlations = jsonData['correlations']
-            displaying_spectrum_id = self.__find_displaying_spectrum_id(correlations)
+            displaying_spectrum_id = self.__find_displaying_spectrum_id(
+                correlations)
 
         displayingSpectrum = None
 
@@ -104,13 +103,13 @@ class NMRiumDataConverter:
 
         filtered_spectra = filter(self.__check_displaying_spectrum, spectra)
         filtered_spectra = list(filtered_spectra)
-        
+
         return filtered_spectra
 
     def __find_displaying_spectrum_id(self, correlations=None):
         if correlations is None:
             return ''
-        
+
         try:
             values = correlations['values']
             if len(values) > 0:
@@ -144,19 +143,18 @@ class NMRiumDataConverter:
         self.last_x = x_values[len(x_values)-1]
         self.data_format = '(XY..XY)'
 
-        return {"x":x_values, "y":y_values}
-
+        return {"x": x_values, "y": y_values}
 
     def __read_info(self, spectrumData):
         if spectrumData is None:
             return None
         self.fname = self.file.name
-        
+
         dic_info = spectrumData['info']
         self.datatype = dic_info['type']
         dimension = dic_info['dimension']
         self.is_2d = dimension == 2
-        
+
         self.label = {"x": "ppm", "y": "intensity"}
         self.factor = {"x": 1.0, "y": 1.0}
 
@@ -217,7 +215,7 @@ class NMRiumDataConverter:
                     area = rangeData['area']
                     max_area_value = max(max_area_value, area)
                     mpy_item = {
-                        'mpyType': signal['mpyType'], 
+                        'mpyType': signal['mpyType'],
                         'xExtent': rangeData['xExtent'],
                         'yExtent': rangeData['yExtent'],
                         'peaks': signal['peaks'],
@@ -230,7 +228,7 @@ class NMRiumDataConverter:
                 '({}, {}, {}, {}, {}, {}, {}, {}{})\n'.format(
                     idx + 1,
                     mpy['xExtent']['xL'],
-                    mpy['xExtent']['xU'] ,
+                    mpy['xExtent']['xU'],
                     calc_mpy_center(mpy['peaks'], 0, mpy['mpyType']),   # noqa: E501
                     float(mpy['area']/max_area_value) * 1.0,
                     idx + 1,
@@ -243,10 +241,10 @@ class NMRiumDataConverter:
             for p in mpy['peaks']:
                 mpy_pks_table.extend([
                     '({}, {}, {})\n'.format(
-                                idx+1,
-                                p['x'],
-                                p['y'],
-                            ),
+                        idx+1,
+                        p['x'],
+                        p['y'],
+                    ),
                 ])
         return mpy_itg_table, mpy_pks_table
 
@@ -270,13 +268,14 @@ class NMRiumDataConverter:
         iL, iU = get_curve_endpoint(self.xs, self.ys, xL, xU)
         cys = self.ys[iL:iU]
         yL, yU = cys[0], cys[len(cys)-1]
-        
+
         xExtent = {"xL": xL, "xU": xU}
         yExtent = {"yL": yL, "yU": yU}
-        area = cal_area_multiplicity(xL=xL, xU=xU, data_xs=np.flip(self.xs), data_ys=np.flip(self.ys))
+        area = cal_area_multiplicity(
+            xL=xL, xU=xU, data_xs=np.flip(self.xs), data_ys=np.flip(self.ys))
 
         return {"xExtent": xExtent, "yExtent": yExtent, 'area': area}
-    
+
     def __read_peaks(self, spectrumData):
         dic_ranges = spectrumData['peaks']
         arr_values = dic_ranges['values']
@@ -285,7 +284,7 @@ class NMRiumDataConverter:
         for peak_value in arr_values:
             peaks_x.append(peak_value['x'])
             peaks_y.append(peak_value['y'])
-        return { 'x': peaks_x, 'y': peaks_y }
+        return {'x': peaks_x, 'y': peaks_y}
 
     def __read_integration(self, spectrumData):
         integrals = spectrumData['integrals']
@@ -299,16 +298,15 @@ class NMRiumDataConverter:
             xL, xU = integral_data['xExtent']['xL'], integral_data['xExtent']['xU']
             area = integral_data['area']
             max_area_value = max(max_area_value, area)
-            itg_table_arr.append({'xL':xL, 'xU':xU, 'area':area})
+            itg_table_arr.append({'xL': xL, 'xU': xU, 'area': area})
 
         for itg_value in itg_table_arr:
             return_arr.extend([
                 '({}, {}, {})\n'.format(
                     itg_value['xL'],
-                    itg_value['xU'] ,
+                    itg_value['xU'],
                     float(itg_value['area']/max_area_value)
                 ),
             ])
 
         return return_arr
-        
