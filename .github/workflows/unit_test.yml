@@ -26,7 +26,7 @@ jobs:
           --rm -it \
           -e WINEDEBUG=-all \
           -v ${{ github.workspace }}/chem_spectra/tmp:/data \
-          chambm/pwiz-skyline-i-agree-to-the-vendor-licenses bash
+          proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses bash
     - name: Test with pytest
       shell: bash -el {0}
       run: |
