@@ -22,7 +22,7 @@
         "[python]": {
           "editor.defaultFormatter": "ms-python.autopep8",
           "terminal.activateEnvironment": true,
-          "python.defaultInterpreterPath": "/workspace/.venv/bin/python"
+          "python.defaultInterpreterPath": ".venv/bin/python"
         },
         "editor.formatOnSave": true
       }
