@@ -2,10 +2,7 @@ import tempfile
 import zipfile
 import os
 
-import pytest
 from werkzeug.datastructures import FileStorage
-from chem_spectra.lib.converter.fid.base import FidBaseConverter
-from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.model.transformer import TransformerModel
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter

@@ -3,7 +3,7 @@ import numpy as np  # noqa: F401
 import os
 
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
-from chem_spectra.lib.converter.share import parse_params, parse_solvent
+from chem_spectra.lib.converter.share import parse_params
 
 
 def search_brucker_processed(td):

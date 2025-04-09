@@ -1,4 +1,3 @@
-import json
 import pytest
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter

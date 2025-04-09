@@ -1,4 +1,3 @@
-import io
 from chem_spectra.model.transformer import TransformerModel as TraModel
 from chem_spectra.controller.helper.file_container import FileContainer
 from werkzeug.datastructures import FileStorage

@@ -1,4 +1,3 @@
-import json
 from unittest.mock import patch
 
 test_json_path = './tests/fixtures/test_data_types.json'

@@ -1,6 +1,5 @@
 import io
 import json
-import zipfile
 
 
 target_dir = './tests/fixtures/'

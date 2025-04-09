@@ -1,10 +1,4 @@
-from werkzeug.datastructures import FileStorage
-
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
-from chem_spectra.lib.converter.ms import MSConverter
-from chem_spectra.lib.composer.ms import MSComposer
-from chem_spectra.controller.helper.file_container import FileContainer
 
 target_dir = './tests/fixtures/'
 source_dir = 'source/'

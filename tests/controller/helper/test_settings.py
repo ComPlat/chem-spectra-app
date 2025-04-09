@@ -1,4 +1,3 @@
-from array import array
 import pytest
 from chem_spectra import create_app
 from chem_spectra.controller.helper.settings import get_ip_white_list

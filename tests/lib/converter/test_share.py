@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from chem_spectra.lib.converter.share import (
-    parse_params, parse_solvent, reduce_pts
+    parse_params, reduce_pts
 )
 
 

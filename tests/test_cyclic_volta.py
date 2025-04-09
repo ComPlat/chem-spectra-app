@@ -1,9 +1,6 @@
-from werkzeug.datastructures import FileStorage
-
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 from chem_spectra.lib.composer.ni import NIComposer
-from chem_spectra.controller.helper.file_container import FileContainer
 
 target_dir = './tests/fixtures/'
 source_dir = 'source/cyclicvoltammetry'
