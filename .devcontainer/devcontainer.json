@@ -1,13 +1,19 @@
 {
   "name": "ChemSpectraApp",
-  "image": "python:3.12-slim",
+  "build": {
+    "dockerfile": "Dockerfile.devcontainer",
+    "args": {
+      "USER_ID": "${localEnv:UID}",
+      "USER_NAME": "${localEnv:USER}"
+    }
+  },
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   "forwardPorts": [
     3007 // Port for the web server
   ],
-  "onCreateCommand": "apt-get update && apt-get install -y python3-pip git libxrender1 libglib2.0-0 && apt-get clean && rm -rf .venv",
-  "updateContentCommand": "python3 -m venv .venv && .venv/bin/pip install --upgrade pip",
-  "postCreateCommand": ".venv/bin/pip install .",
+  "onCreateCommand": "python -m venv ~/.venv && ~/.venv/bin/pip install --upgrade pip && ~/.venv/bin/pip install .",
+  // Ensure the environment
+  "postStartCommand": "~/.venv/bin/pip install --upgrade pip && ~/.venv/bin/pip install .",
   // Configure tool-specific properties.
   "customizations": {
     // Configure properties specific to VS Code.
@@ -22,12 +28,10 @@
         "[python]": {
           "editor.defaultFormatter": "ms-python.autopep8",
           "terminal.activateEnvironment": true,
-          "python.defaultInterpreterPath": ".venv/bin/python"
+          "python.pythonPath": "~/.venv/bin/python"
         },
         "editor.formatOnSave": true
       }
     }
-  },
-  // Set `remoteUser` to `root` to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-  "remoteUser": "root"
+  }
 }

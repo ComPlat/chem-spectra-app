@@ -1,0 +1,22 @@
+FROM python:3.12-slim AS base
+
+# inherit user information from the environment
+ARG USER_NAME=vscode # Name for the user if not picked during build process
+ARG USER_UID=1000 # User ID for the user if not picked during build process
+
+# Install any additional OS packages you want in addition to sudo, git and nano
+RUN apt-get update \
+    && apt-get install -y sudo git nano
+
+# Create the user
+RUN useradd --uid $USER_UID --shell /bin/bash --user-group --create-home $USER_NAME  \
+    # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
+    && echo $USER_NAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USER_NAME \
+    && chmod 0440 /etc/sudoers.d/$USER_NAME
+
+# Install optional OS packages and then clean up
+RUN apt-get install -y libxrender1 libglib2.0-0 # required
+RUN apt-get clean -y
+
+# Set the default user
+USER $USER_NAME
