@@ -6,7 +6,7 @@ ARG USER_UID=1000 # User ID for the user if not picked during build process
 
 # Install any additional OS packages you want in addition to sudo, git and nano
 RUN apt-get update \
-    && apt-get install -y sudo git nano
+    && apt-get install -y --no-install-recommends sudo git nano
 
 # Create the user
 RUN useradd --uid $USER_UID --shell /bin/bash --user-group --create-home $USER_NAME  \
@@ -15,7 +15,8 @@ RUN useradd --uid $USER_UID --shell /bin/bash --user-group --create-home $USER_N
     && chmod 0440 /etc/sudoers.d/$USER_NAME
 
 # Install optional OS packages and then clean up
-RUN apt-get install -y libxrender1 libglib2.0-0 # required
+RUN apt-get install -y --no-install-recommends \
+    gcc g++ libxrender1 libxext6 libglib2.0-0 # required
 RUN apt-get clean -y
 
 # Set the default user
