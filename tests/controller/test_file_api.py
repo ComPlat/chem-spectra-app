@@ -8,6 +8,7 @@ file_jdx = '13C-DEPT135.dx'
 bagit_file = 'bagit/cv/File053_BagIt.zip'
 cv_file_jdx = 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'
 
+
 def test_api_chemspectra_file_convert_without_file(client):
     data = {}
     response = client.post(
@@ -34,6 +35,7 @@ def test_api_chemspectra_file_convert(client):
     assert response.status_code == 200
     assert response.mimetype == 'application/json'
 
+
 def test_api_chemspectra_file_convert_bagit_format(client):
     with open(target_dir + source_dir + bagit_file, 'rb') as f:
         file_content = f.read()
@@ -51,7 +53,7 @@ def test_api_chemspectra_file_convert_bagit_format(client):
 
     response_data_as_dict = json.loads(response.data)
     assert len(response_data_as_dict["list_jcamps"]) == 3
-    
+
 
 def test_api_chemspectra_file_save_single_file(client):
     with open(target_dir + source_dir + file_jdx, 'rb') as f:
@@ -70,12 +72,15 @@ def test_api_chemspectra_file_save_single_file(client):
     assert response.status_code == 200
     assert response.mimetype == 'application/zip'
 
+
 def test_api_chemspectra_file_save_multiple_files(client):
     with open(target_dir + source_dir + cv_file_jdx, 'rb') as f:
         file_content = f.read()
     data = dict(
-        src=(io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'),
-        dst_list=[(io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'), (io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx')],
+        src=(io.BytesIO(file_content),
+             'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'),
+        dst_list=[(io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'),
+                  (io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx')],
         molfile=None
     )
     response = client.post(
@@ -86,6 +91,7 @@ def test_api_chemspectra_file_save_multiple_files(client):
 
     assert response.status_code == 200
     assert response.mimetype == 'application/zip'
+
 
 def test_api_chemspectra_file_refresh_single_file(client):
     with open(target_dir + source_dir + file_jdx, 'rb') as f:
@@ -103,11 +109,13 @@ def test_api_chemspectra_file_refresh_single_file(client):
     assert response.status_code == 200
     assert response.mimetype == 'application/json'
 
+
 def test_api_chemspectra_file_refresh_multiple_files(client):
     with open(target_dir + source_dir + cv_file_jdx, 'rb') as f:
         file_content = f.read()
     data = dict(
-        dst_list=[(io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'), (io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx')],
+        dst_list=[(io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'),
+                  (io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx')],
         molfile=None
     )
     response = client.post(
@@ -118,6 +126,7 @@ def test_api_chemspectra_file_refresh_multiple_files(client):
 
     assert response.status_code == 200
     assert response.mimetype == 'application/zip'
+
 
 def test_api_chemspectra_molfile_convert(client):
     with open(target_dir + source_dir + '/molfile/svs813f1_B.mol', 'rb') as f:

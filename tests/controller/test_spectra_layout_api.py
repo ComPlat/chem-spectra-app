@@ -1,8 +1,8 @@
-import json
 from unittest.mock import patch
 
 test_json_path = './tests/fixtures/test_data_types.json'
 orig_json_path = 'chem_spectra.controller.spectra_layout_api.data_type_json_path'
+
 
 def test_fetch_mapping_get_spectra_layouts(client):
 

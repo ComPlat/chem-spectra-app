@@ -2,7 +2,8 @@ import numpy as np
 from scipy import signal
 
 from chem_spectra.lib.converter.datatable import DatatableModel
-from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
+from chem_spectra.lib.shared.calc import (
+    to_float, cal_cyclic_volta_shift_prev_offset_at_index)
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
 import json
 import os
@@ -16,6 +17,7 @@ THRESHOLD_TGA = 1.05
 THRESHOLD_XRD = 1.00
 THRESHOLD_EMISSION = 0.5
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
+
 
 class JcampNIConverter:  # nmr & IR
     def __init__(self, base):
@@ -41,9 +43,12 @@ class JcampNIConverter:  # nmr & IR
         self.is_sec = base.is_sec if hasattr(base, 'is_sec') else False
         self.is_cds = base.is_cds if hasattr(base, 'is_cds') else False
         self.is_aif = base.is_aif if hasattr(base, 'is_aif') else False
-        self.is_emissions = base.is_emissions if hasattr(base, 'is_emissions') else False
-        self.is_dls_acf = base.is_dls_acf if hasattr(base, 'is_dls_acf') else False
-        self.is_dls_intensity = base.is_dls_intensity if hasattr(base, 'is_dls_intensity') else False
+        self.is_emissions = base.is_emissions if hasattr(
+            base, 'is_emissions') else False
+        self.is_dls_acf = base.is_dls_acf if hasattr(
+            base, 'is_dls_acf') else False
+        self.is_dls_intensity = base.is_dls_intensity if hasattr(
+            base, 'is_dls_intensity') else False
         self.is_dsc = base.is_dsc if hasattr(base, 'is_dsc') else False
         self.non_nmr = base.non_nmr
         self.ncl = base.ncl
@@ -113,17 +118,18 @@ class JcampNIConverter:  # nmr & IR
         key = next((k for k, v in data_type_mappings.items() if dt in v), None)
 
         return threshold_values.get(key, 0.5)
-    
 
     def __index_target(self):
         if self.params.get('user_data_type_mapping'):
             data_type_mappings = self.__read_user_data_type_mapping()
             target = data_type_mappings.values()
-            target_topics = [value.upper() for values in target for value in values]
+            target_topics = [value.upper()
+                             for values in target for value in values]
         else:
             with open(data_type_json, 'r') as mapping_file:
                 target = json.load(mapping_file).get("datatypes").values()
-                target_topics = [value.upper() for values in target for value in values]
+                target_topics = [value.upper()
+                                 for values in target for value in values]
 
         for tp in target_topics:
             if tp in self.datatypes:
@@ -188,7 +194,7 @@ class JcampNIConverter:  # nmr & IR
                 end_pt = to_float(self.dic['LASTX'][idx])
             except:  # noqa
                 pass
-            
+
         if beg_pt is None:
             try:
                 while len(self.dic['FIRSTX']) <= idx:
@@ -207,7 +213,7 @@ class JcampNIConverter:  # nmr & IR
             self.ys = self.ys[::-1]
 
         num_pt = self.ys.shape[0]
-        
+
         x = np.linspace(
             beg_pt + self.params['delta'],
             end_pt + self.params['delta'],
@@ -217,7 +223,7 @@ class JcampNIConverter:  # nmr & IR
 
         if self.x_unit == 'HZ':
             x = x / self.obs_freq
-        
+
         return x
 
     def __read_ys(self):
@@ -262,18 +268,18 @@ class JcampNIConverter:  # nmr & IR
         except:  # noqa
             pass
 
-        if 'absorb' in target['y'].lower() and not(self.is_uv_vis):  # IR ABS vs TRANS
+        if 'absorb' in target['y'].lower() and not (self.is_uv_vis):  # IR ABS vs TRANS
             target['y'] = 'TRANSMITTANCE'
         if (self.is_xrd):
             target['x'] = '2Theta'
-            
+
         if 'axesUnits' in self.params and self.params['axesUnits'] is not None:
-          axesUnits = self.params['axesUnits']
-          xUnit, yUnit = axesUnits['xUnit'], axesUnits['yUnit']
-          if xUnit != '':
-            target['x'] = xUnit
-          if yUnit != '':
-            target['y'] = yUnit
+            axesUnits = self.params['axesUnits']
+            xUnit, yUnit = axesUnits['xUnit'], axesUnits['yUnit']
+            if xUnit != '':
+                target['x'] = xUnit
+            if yUnit != '':
+                target['y'] = yUnit
 
         return target
 
@@ -283,9 +289,9 @@ class JcampNIConverter:  # nmr & IR
             obs_freq = float(self.dic['.OBSERVEFREQUENCY'][self.target_idx])
         except:  # noqa
             try:
-                 obs_freq = float(self.dic['.OBSERVEFREQUENCY'][0])
+                obs_freq = float(self.dic['.OBSERVEFREQUENCY'][0])
             except:  # noqa
-              pass
+                pass
         try:
             if obs_freq is None:
                 obs_freq = float(self.dic['$SFO1'][0])
@@ -318,7 +324,7 @@ class JcampNIConverter:  # nmr & IR
                 }
             except:
                 pass
-        
+
         if factor['y'] == 1.0 and not isinstance(self.base.data, dict):
             factor['y'] = self.data.max() / 1000000.0
 
@@ -326,18 +332,18 @@ class JcampNIConverter:  # nmr & IR
 
     def __set_x_unit(self):
         x_unit = None
-        
-        if 'axesUnits' in self.params and self.params['axesUnits'] is not None:
-          axesUnits = self.params['axesUnits']
-          xUnit = axesUnits['xUnit']
-          if xUnit != '':
-            return xUnit
 
-        try: # jcamp version 6
+        if 'axesUnits' in self.params and self.params['axesUnits'] is not None:
+            axesUnits = self.params['axesUnits']
+            xUnit = axesUnits['xUnit']
+            if xUnit != '':
+                return xUnit
+
+        try:  # jcamp version 6
             units = self.dic['UNITS']
             array_unit = units[0].split(',')
             x_unit = (array_unit[0].upper()).strip()
-        except: # noqa
+        except:  # noqa
             pass
 
         if (x_unit is None):
@@ -345,7 +351,7 @@ class JcampNIConverter:  # nmr & IR
                 x_unit = self.dic['XUNITS'][self.target_idx].upper()
             except:  # noqa
                 try:
-                     x_unit = self.dic['XUNITS'][0].upper()
+                    x_unit = self.dic['XUNITS'][0].upper()
                 except:
                     pass
 
@@ -361,7 +367,7 @@ class JcampNIConverter:  # nmr & IR
             pas = self.dic['PEAKASSIGNMENTS'][0].split('\n')[1:]
             for pa in pas:
                 info = pa.replace('(', '').replace(')', '') \
-                            .replace(' ', '').split(',')
+                    .replace(' ', '').split(',')
                 auto_x.append(float(info[0]))
                 auto_y.append(float(info[1]))
             if len(auto_x) == 0:
@@ -397,7 +403,7 @@ class JcampNIConverter:  # nmr & IR
             pas = self.dic['PEAKASSIGNMENTS'][1].split('\n')[1:]
             for pa in pas:
                 info = pa.replace('(', '').replace(')', '') \
-                            .replace(' ', '').split(',')
+                    .replace(' ', '').split(',')
                 edit_x.append(float(info[0]))
                 edit_y.append(float(info[1]))
             if len(edit_x) == 0:
@@ -448,13 +454,15 @@ class JcampNIConverter:  # nmr & IR
         if not (self.is_ir or self.is_cds) and (max_y * 0.4 < -min_y):
             dept_corr_data_ys = 1 - self.ys
             dept_corr_height = height
-            dept_peak_idxs = signal.find_peaks(dept_corr_data_ys, height=dept_corr_height)[0]
+            dept_peak_idxs = signal.find_peaks(
+                dept_corr_data_ys, height=dept_corr_height)[0]
             peak_idxs = np.unique(np.concatenate((peak_idxs, dept_peak_idxs)))
         return peak_idxs
 
     def __run_auto_pick_peak(self):
         peak_idxs = self.__exec_peak_picking_logic()
-        auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx]} for idx in peak_idxs]
+        auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx]}
+                      for idx in peak_idxs]
         auto_peaks.sort(key=lambda d: d['y'], reverse=True)
 
         if self.is_ir:
@@ -476,7 +484,8 @@ class JcampNIConverter:  # nmr & IR
             # bs, cs - 207.1 (207.0-207.2) + 30.9 (30.8 - 31.0)
             # ds, es, fs, gs - 60.4 (60.3 - 60.5) + 14.2 (14.1 - 14.3) + 21.1 (20.9 - 21.2) + 171.3 (171.2-171.4)
             # rm impurity peaks
-            imp_as, imp_bs, imp_cs, imp_ds, imp_es, imp_fs, imp_gs, edit_pure_peaks = [], [], [], [], [], [], [], []
+            imp_as, imp_bs, imp_cs, imp_ds, imp_es, imp_fs, imp_gs, edit_pure_peaks = [
+            ], [], [], [], [], [], [], []
             i, capacity, l = 0, simu_length + 10, len(edit_non_solv_peaks)
             while i < capacity and i < l:
                 target = edit_non_solv_peaks[i]
@@ -561,16 +570,19 @@ class JcampNIConverter:  # nmr & IR
             if (len(target) > 0):
                 for item in target:
                     splitted_item = item.replace('(', '').replace(')', '')
-                    splitted_item = [x.strip() for x in splitted_item.split(',')]
-                    splitted_item = [float(x) if x != '' else x for x in splitted_item]
+                    splitted_item = [x.strip()
+                                     for x in splitted_item.split(',')]
+                    splitted_item = [
+                        float(x) if x != '' else x for x in splitted_item]
                     max_peak = {'x': splitted_item[0], 'y': splitted_item[1]}
                     min_peak = {'x': splitted_item[2], 'y': splitted_item[3]}
                     pecker = {'x': splitted_item[6], 'y': splitted_item[7]}
                     if pecker['x'] != '':
-                        self.max_min_peaks_table.append({'max': max_peak, 'min': min_peak, 'pecker': pecker})
-                    else:   
-                        self.max_min_peaks_table.append({'max': max_peak, 'min': min_peak})
-
+                        self.max_min_peaks_table.append(
+                            {'max': max_peak, 'min': min_peak, 'pecker': pecker})
+                    else:
+                        self.max_min_peaks_table.append(
+                            {'max': max_peak, 'min': min_peak})
 
     def __read_integration_from_file(self):
         target = self.dic.get('$OBSERVEDINTEGRALS')
@@ -632,7 +644,8 @@ class JcampNIConverter:  # nmr & IR
             auto_peaks.sort(key=lambda d: d['y'], reverse=True)
             # is acetone
             left, right = auto_peaks[0], auto_peaks[1]
-            if left['x'] < right['x']: left, right = right, left    # noqa: E701
+            if left['x'] < right['x']:
+                left, right = right, left    # noqa: E701
             diff = abs(left['x'] - right['x'])
             if 175 < diff < 177:
                 self.dic['$CSSOLVENTNAME'] = ['Acetone-d6 (sep)']
@@ -668,8 +681,9 @@ class JcampNIConverter:  # nmr & IR
     def __check_cylic_volta_shifted_info(self):
         if self.is_cyclic_volta == False:
             return
-        
+
         cyclicvolta_data = self.params['cyclicvolta']
         current_jcamp_idx = self.params['jcamp_idx']
-        offset = cal_cyclic_volta_shift_prev_offset_at_index(cyclicvolta_data, current_jcamp_idx)
+        offset = cal_cyclic_volta_shift_prev_offset_at_index(
+            cyclicvolta_data, current_jcamp_idx)
         self.xs = np.array([x - offset for x in self.xs])

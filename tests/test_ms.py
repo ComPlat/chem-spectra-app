@@ -29,6 +29,7 @@ def test_ms_mzml_converter_composer():
     assert '51.012176513671875, 34359.0' in lines
     assert '##END NTUPLES=MASS SPECTRUM' in lines
 
+
 def test_ms_raw_converter_composer():
     params = {'mass': 230.079907196}
 
@@ -47,6 +48,7 @@ def test_ms_raw_converter_composer():
     assert '##$CSTHRESHOLD=0.05' in lines
     assert '229.99819946289062, 5886.234375' in lines
 
+
 def test_ms_jcamp_converter_composer():
     params = {'mass': 230.079907196}
 
@@ -64,6 +66,7 @@ def test_ms_jcamp_converter_composer():
     assert '##$CSTHRESHOLD=0.155' in lines
     assert '51.012176513671875, 34359.0' in lines
 
+
 def test_jcamp_single_point_last_line():
     params = {'mass': 230.079907196}
 
@@ -72,6 +75,6 @@ def test_jcamp_single_point_last_line():
     mscv = JcampMSConverter(jbcv)
     mscp = MSComposer(mscv)
 
-
-    lines = mscp.tf_jcamp().read()[:80000].decode('utf-8', errors='ignore').split('\n')
+    lines = mscp.tf_jcamp().read()[:80000].decode(
+        'utf-8', errors='ignore').split('\n')
     assert "2997.895988881645, 42.0" in lines

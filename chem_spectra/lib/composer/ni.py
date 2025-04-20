@@ -1,5 +1,6 @@
+import csv
+from matplotlib.patches import FancyArrowPatch
 import json
-from operator import truediv
 import uuid
 import matplotlib
 matplotlib.use('Agg')
@@ -10,11 +11,9 @@ import matplotlib.path as mpath  # noqa: E402
 import re  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib import ticker  # noqa: E402
-from matplotlib.patches import FancyArrowPatch
-import csv
 
 from chem_spectra.lib.composer.base import (  # noqa: E402, F401
-    extrac_dic, calc_npoints, BaseComposer
+    extrac_dic, BaseComposer
 )
 from chem_spectra.lib.shared.calc import (  # noqa: E402
     calc_mpy_center, calc_ks, get_curve_endpoint, cal_slope, cal_xyIntegration,
@@ -63,19 +62,24 @@ class NIComposer(BaseComposer):
         # Append each line only if the extracted value is not empty
         observe_frequency = extrac_dic(self.core, '.OBSERVEFREQUENCY')
         if observe_frequency:
-            header_lines.append('##.OBSERVE FREQUENCY={}\n'.format(observe_frequency))
+            header_lines.append(
+                '##.OBSERVE FREQUENCY={}\n'.format(observe_frequency))
 
         observe_nucleus = self.__get_nucleus()
         if observe_nucleus:
-            header_lines.append('##.OBSERVE NUCLEUS={}\n'.format(observe_nucleus))
+            header_lines.append(
+                '##.OBSERVE NUCLEUS={}\n'.format(observe_nucleus))
 
-        spectrometer_data_system = extrac_dic(self.core, 'SPECTROMETER/DATASYSTEM')
+        spectrometer_data_system = extrac_dic(
+            self.core, 'SPECTROMETER/DATASYSTEM')
         if spectrometer_data_system:
-            header_lines.append('##SPECTROMETER/DATA SYSTEM={}\n'.format(spectrometer_data_system))
+            header_lines.append(
+                '##SPECTROMETER/DATA SYSTEM={}\n'.format(spectrometer_data_system))
 
         shift_reference = extrac_dic(self.core, '.SHIFTREFERENCE')
         if shift_reference:
-            header_lines.append('##.SHIFT REFERENCE={}\n'.format(shift_reference))
+            header_lines.append(
+                '##.SHIFT REFERENCE={}\n'.format(shift_reference))
 
         solvent_name = extrac_dic(self.core, '.SOLVENTNAME')
         if solvent_name:
@@ -83,7 +87,8 @@ class NIComposer(BaseComposer):
 
         pulse_sequence = extrac_dic(self.core, '.PULSESEQUENCE')
         if pulse_sequence:
-            header_lines.append('##.PULSE SEQUENCE={}\n'.format(pulse_sequence))
+            header_lines.append(
+                '##.PULSE SEQUENCE={}\n'.format(pulse_sequence))
 
         return header_lines
 
@@ -145,7 +150,8 @@ class NIComposer(BaseComposer):
         result = []
         for key in sec_data_key:
             dic_value = core_dic.get(key, [])
-            key_str = f"##{key}={dic_value[0]}\n" if len(dic_value) > 0 else f'##{key}=\n'
+            key_str = f"##{key}={dic_value[0]}\n" if len(
+                dic_value) > 0 else f'##{key}=\n'
             result.append(key_str)
         return result
 
@@ -365,7 +371,8 @@ class NIComposer(BaseComposer):
                     x_peaks.extend([x_max_peak])
                     y_peaks.extend([y_max_peak])
                 else:
-                    is_ref = peak.get('isRef', False) if 'isRef' in peak else False
+                    is_ref = peak.get(
+                        'isRef', False) if 'isRef' in peak else False
                     if is_ref:
                         x_peaks_ref.extend([x_max_peak, x_min_peak])
                         y_peaks_ref.extend([y_max_peak, y_min_peak])
@@ -438,7 +445,6 @@ class NIComposer(BaseComposer):
                     xUStr = split_itg[1].strip()
                     areaStr = split_itg[2].strip()
                     self.all_itgs.append({'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)})    # noqa: E501
-        
 
         # ----- Calculate multiplicity -----
         if (len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
@@ -454,8 +460,9 @@ class NIComposer(BaseComposer):
                 yStr = split_peak[2].strip()
                 if idx_peakStr not in tmp_dic_mpy_peaks:
                     tmp_dic_mpy_peaks[idx_peakStr] = []
-                
-                tmp_dic_mpy_peaks[idx_peakStr].append({'x': float(xStr), 'y': float(yStr)})
+
+                tmp_dic_mpy_peaks[idx_peakStr].append(
+                    {'x': float(xStr), 'y': float(yStr)})
 
             core_mpy_itg_table = self.core.mpy_itg_table[0]
             mpy_itg_table = core_mpy_itg_table.split('\n')
@@ -463,7 +470,8 @@ class NIComposer(BaseComposer):
                 clear_mpy = mpy.replace('(', '')
                 clear_mpy = clear_mpy.replace(')', '')
                 split_mpy = clear_mpy.split(',')
-                mpy_item = { 'mpyType': '', 'xExtent': {'xL': 0.0, 'xU': 0.0}, 'yExtent': {'yL': 0.0, 'yU': 0.0}, 'peaks': [], 'area': 1.0 }
+                mpy_item = {'mpyType': '', 'xExtent': {'xL': 0.0, 'xU': 0.0}, 'yExtent': {
+                    'yL': 0.0, 'yU': 0.0}, 'peaks': [], 'area': 1.0}
                 if (len(split_mpy) > 7):
                     idxStr = split_mpy[0].strip()
                     xLStr = split_mpy[1].strip()
@@ -484,10 +492,11 @@ class NIComposer(BaseComposer):
         itg_h = itg_h + itg_h * 0.1
         itg_value_position_y = y_min - h * 0.25
         if (len(self.mpys) == 0):
-            itg_value_position_y =  y_min - h * 0.05
-        y_boundary_max = self.__draw_integrals(plt, refShift, refArea, y_max, h, itg_value_position_y, itg_h)
+            itg_value_position_y = y_min - h * 0.05
+        y_boundary_max = self.__draw_integrals(
+            plt, refShift, refArea, y_max, h, itg_value_position_y, itg_h)
         y_boundary_min = itg_value_position_y - h * 0.1
-        
+
         # ----- PLOT multiplicity -----
         mpy_h = y_min - h * 0.03
         for mpy in self.mpys:
@@ -508,14 +517,16 @@ class NIComposer(BaseComposer):
         elif (self.core.is_cyclic_volta):
             plt.xlabel("{}".format(self.core.label['x']), fontsize=18)
         elif (self.core.non_nmr == False):
-            plt.xlabel("Chemical shift ({})".format(self.core.label['x'].lower()), fontsize=18)
+            plt.xlabel("Chemical shift ({})".format(
+                self.core.label['x'].lower()), fontsize=18)
         else:
             plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
 
         if (self.core.is_cyclic_volta):
             plt.ylabel("{}".format(self.core.label['y']), fontsize=18)
         elif (self.core.non_nmr == False):
-            plt.ylabel("Intensity ({})".format(self.core.label['y'].lower()), fontsize=18)
+            plt.ylabel("Intensity ({})".format(
+                self.core.label['y'].lower()), fontsize=18)
         else:
             plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
         plt.locator_params(nbins=self.__plt_nbins())
@@ -523,8 +534,8 @@ class NIComposer(BaseComposer):
 
         self.__generate_info_box(plt)
 
-        y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max*1.5)
-
+        y_boundary_max = self.__draw_peaks(
+            plt, x_peaks, y_peaks, h, w, y_boundary_max*1.5)
 
         plt.ylim(
             y_boundary_min,
@@ -538,7 +549,6 @@ class NIComposer(BaseComposer):
         plt.clf()
         plt.cla()
         return tf_img
-    
 
     def __draw_integrals(self, plt, refShift, refArea, y_max, h, itg_value_position_y, itg_h):
         y_boundary_max = y_max
@@ -567,7 +577,8 @@ class NIComposer(BaseComposer):
                 plt.fill_between(cxs, y1=cys, y2=aucys, alpha=0.2, color='#FF0000')  # noqa: E501
             else:
                 # display integration
-                plt.plot([xL, xU], [itg_value_position_y, itg_value_position_y], color='#228B22')
+                plt.plot([xL, xU], [itg_value_position_y,
+                         itg_value_position_y], color='#228B22')
                 plt.plot([xL, xL], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
                 plt.plot([xU, xU], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
                 plt.text((xL + xU) / 2, itg_value_position_y - h * 0.01, '{:0.2f}'.format(area), color='#228B22', ha='right', rotation_mode='anchor', size=7, rotation=90.)   # noqa: E501
@@ -580,7 +591,6 @@ class NIComposer(BaseComposer):
                     pass
 
         return y_boundary_max
-        
 
     def __draw_peaks(self, plt, x_peaks, y_peaks, h, w, y_boundary_max):
         if self.core.non_nmr == True or len(x_peaks) == 0:
@@ -597,7 +607,7 @@ class NIComposer(BaseComposer):
         groups_y = []
         current_group_x = [x_peaks[0]]
         current_group_y = [y_peaks[0]]
-        
+
         for i in range(1, len(x_peaks)):
             if (x_peaks[i] - current_group_x[-1] < grouping_threshold):
                 current_group_x.append(x_peaks[i])
@@ -638,31 +648,35 @@ class NIComposer(BaseComposer):
                     elif j < middle_idx:
                         x_text = w * 0.01 * (j-middle_idx)
 
-                    ax.add_patch(FancyArrowPatch((x_pos, max_current_group), (x_pos, max_current_group  + h * 0.05), linewidth=0.1))
-                    ax.add_patch(FancyArrowPatch((x_pos, max_current_group  + h * 0.05), (gap_value + x_text, max_current_group  + h * 0.11), linewidth=0.1))
+                    ax.add_patch(FancyArrowPatch(
+                        (x_pos, max_current_group), (x_pos, max_current_group + h * 0.05), linewidth=0.1))
+                    ax.add_patch(FancyArrowPatch((x_pos, max_current_group + h * 0.05),
+                                 (gap_value + x_text, max_current_group + h * 0.11), linewidth=0.1))
 
                     x_boundary_min = min(gap_value + x_text, x_boundary_min)
                     x_boundary_max = max(gap_value + x_text, x_boundary_max)
 
                     ax.annotate(peak_label,
-                        xy=(gap_value + x_text, max_current_group  + h * 0.11), xycoords='data',
-                        xytext=(0, 12), textcoords='offset points',
-                        arrowprops=dict(arrowstyle="-", linewidth=0.2),
-                        rotation=90, size=6)
+                                xy=(gap_value + x_text, max_current_group + h * 0.11), xycoords='data',
+                                xytext=(0, 12), textcoords='offset points',
+                                arrowprops=dict(arrowstyle="-", linewidth=0.2),
+                                rotation=90, size=6)
 
-                    highest_peak_anotation = max(highest_peak_anotation, max_current_group  + h * 0.25)
+                    highest_peak_anotation = max(
+                        highest_peak_anotation, max_current_group + h * 0.25)
             else:
                 x_pos = mygroup_x[0]
                 y_pos = mygroup_y[0] + h * 0.18
                 x_float = '{:.2f}'.format(x_pos)
                 peak_label = '{x}'.format(x=x_float)
                 ax.annotate(peak_label,
-                    xy=(x_pos, y_pos), xycoords='data',
-                    xytext=(0, 20), textcoords='offset points',
-                    arrowprops=dict(arrowstyle="-", linewidth=0.2),
-                    rotation=90, size=6)
+                            xy=(x_pos, y_pos), xycoords='data',
+                            xytext=(0, 20), textcoords='offset points',
+                            arrowprops=dict(arrowstyle="-", linewidth=0.2),
+                            rotation=90, size=6)
 
-                highest_peak_anotation = max(highest_peak_anotation, y_pos + h * 0.15)
+                highest_peak_anotation = max(
+                    highest_peak_anotation, y_pos + h * 0.15)
 
         x_boundary_min = x_boundary_min - w * 0.01
         x_boundary_max = x_boundary_max + w * 0.02
@@ -677,9 +691,8 @@ class NIComposer(BaseComposer):
             x_boundary_min,
         )
         y_boundary_max = min(y_boundary_max, highest_peak_anotation)
-        
-        return y_boundary_max
 
+        return y_boundary_max
 
     def __generate_info_box(self, plotlib):
         if not (self.core.is_sec or self.core.is_dsc):
@@ -690,7 +703,8 @@ class NIComposer(BaseComposer):
             sec_data_key = ['MN', 'MW', 'MP', 'D']
             for key in sec_data_key:
                 dic_value = core_dic.get(key, [])
-                key_str = f"{key}={dic_value[0]}" if len(dic_value) > 0 else None
+                key_str = f"{key}={dic_value[0]}" if len(
+                    dic_value) > 0 else None
                 if key_str is not None:
                     result.append(key_str)
         else:
@@ -704,7 +718,7 @@ class NIComposer(BaseComposer):
                 tg_value_arr = self.core.dic.get('TG', [''])
                 melting_point = melting_point_arr[0]
                 tg_value = tg_value_arr[0]
-            
+
             melting_point_str = f"MELTING POINT={melting_point}"
             tg_str = f"TG={tg_value}"
             result.extend([melting_point_str, tg_str])
@@ -712,8 +726,8 @@ class NIComposer(BaseComposer):
         info_str = '\n'.join(result)
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax = plotlib.gca()
-        ax.text(0.05, 0.95, info_str, fontsize=14, verticalalignment='top', bbox=props, transform=ax.transAxes)
-
+        ax.text(0.05, 0.95, info_str, fontsize=14,
+                verticalalignment='top', bbox=props, transform=ax.transAxes)
 
     def __prepare_metadata_info_for_csv(self, csv_writer: csv.DictWriter):
         csv_writer.writerow({
@@ -753,7 +767,8 @@ class NIComposer(BaseComposer):
             listMaxMinPeaks = self.core.params['list_max_min_peaks']
 
         with open(tf_csv.name, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['Anodic E(V)', 'Anodic I(A)', 'Cathodic E(V)', 'Cathodic I(A)', 'I lambda0(A)', 'I ratio', 'E1/2(V)', 'Delta Ep(mV)']
+            fieldnames = ['Anodic E(V)', 'Anodic I(A)', 'Cathodic E(V)', 'Cathodic I(A)',
+                          'I lambda0(A)', 'I ratio', 'E1/2(V)', 'Delta Ep(mV)']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
             self.__prepare_metadata_info_for_csv(writer)
@@ -818,26 +833,28 @@ class NIComposer(BaseComposer):
         typ = self.core.typ
         if 'NMR' != typ:
             return None
-        
+
         if version == 3:
-            dic_data = self.__generate_nmrium_version_3(molfile_data=molfile_data)
+            dic_data = self.__generate_nmrium_version_3(
+                molfile_data=molfile_data)
         else:
-            dic_data = self.__generate_nmrium_data(version=version, molfile_data=molfile_data)
+            dic_data = self.__generate_nmrium_data(
+                version=version, molfile_data=molfile_data)
 
         json_data = json.dumps(dic_data)
-        
+
         tf_nmrium = tempfile.NamedTemporaryFile(suffix='.nmrium')
         tf_nmrium.write(bytes(json_data, 'UTF-8'))
         tf_nmrium.seek(0)
         return tf_nmrium
-      
+
     def __generate_nmrium_version_3(self, molfile_data=None):
         dic_data = {'actionType': 'INITIATE', 'version': 3}
         spectra = self.__generate_nmrim_spectra()
         dic_data['spectra'] = spectra
         dic_data['molecules'] = self.__generate_molecules(molfile_data)
         return dic_data
-      
+
     def __generate_nmrium_data(self, version, molfile_data=None):
         dic_data = {'version': version, 'data': {}, 'view': {}}
         spectra = self.__generate_nmrim_spectra()
@@ -851,21 +868,23 @@ class NIComposer(BaseComposer):
 
         dic_spectra_data = {'id': spectra_id, 'source': {'jcampURL': None}}
         display_attr = {
-            'name': spectra_id, 
-            'color':'#C10020', 
-            'isVisible':True, 
-            'isPeaksMarkersVisible':True, 
-            'isRealSpectrumVisible':True, 
-            'isVisibleInDomain':True}
+            'name': spectra_id,
+            'color': '#C10020',
+            'isVisible': True,
+            'isPeaksMarkersVisible': True,
+            'isRealSpectrumVisible': True,
+            'isVisibleInDomain': True}
         dic_spectra_data['display'] = display_attr
 
-        spectra_info = {'nucleus':self.core.ncl, 'isFid':False, 'dimension':1, 'isFt':True, 'type': 'NMR SPECTRUM'}
+        spectra_info = {'nucleus': self.core.ncl, 'isFid': False,
+                        'dimension': 1, 'isFt': True, 'type': 'NMR SPECTRUM'}
         dic_spectra_data['info'] = spectra_info
         dic_spectra_data['meta'] = self.core.dic
 
         x_values = np.flip(self.core.xs)
         y_values = np.flip(self.core.ys)
-        dic_data_points = {'x':x_values.tolist(), 're':y_values.tolist(), 'im':None}
+        dic_data_points = {'x': x_values.tolist(
+        ), 're': y_values.tolist(), 'im': None}
         dic_spectra_data['data'] = dic_data_points
 
         peaks = self.__generate_nmrim_peaks()
@@ -882,7 +901,7 @@ class NIComposer(BaseComposer):
         return spectra
 
     def __generate_nmrim_peaks(self):
-        dic_peaks = {'values':[], 'options':{}}
+        dic_peaks = {'values': [], 'options': {}}
 
         x_peaks = []
         y_peaks = []
@@ -892,7 +911,7 @@ class NIComposer(BaseComposer):
         elif self.core.auto_peaks:
             x_peaks = self.core.auto_peaks['x']
             y_peaks = self.core.auto_peaks['y']
-        
+
         if len(x_peaks) != len(y_peaks):
             return dic_peaks
 
@@ -900,14 +919,15 @@ class NIComposer(BaseComposer):
             x = x_peaks[idx]
             y = y_peaks[idx]
             peak_id = str(uuid.uuid4())
-            peak = {'id':peak_id, 'x':x, 'y':y, 'originalX': x}
+            peak = {'id': peak_id, 'x': x, 'y': y, 'originalX': x}
             dic_peaks['values'].append(peak)
 
         return dic_peaks
 
     def __generate_nmrim_integrals(self):
-        dic_integrals = {'values':[], 'options':{'isSumConstant':True, 'sumAuto':True, 'sum':100}}
-        
+        dic_integrals = {'values': [], 'options': {
+            'isSumConstant': True, 'sumAuto': True, 'sum': 100}}
+
         refShift, refArea = self.refShift, self.refArea
         if (len(self.all_itgs) == 0 and len(self.core.itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
             core_itg_table = self.core.itg_table[0]
@@ -926,21 +946,23 @@ class NIComposer(BaseComposer):
             iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
             cxs = self.core.xs[iL:iU]
             cys = self.core.ys[iL:iU]
-            
+
             re_cxs = np.flip(cxs)
             re_cys = np.flip(cys)
-            
+
             integral_id = str(uuid.uuid4())
-            
+
             absolute_value = cal_xyIntegration(xs=re_cxs, ys=re_cys)
 
-            integral = {'id':integral_id, 'originFrom':re_cxs[0], 'originTo':re_cxs[len(re_cxs)-1], 'from':re_cxs[0], 'to':re_cxs[len(re_cxs)-1], 'kind':'signal', 'absolute':absolute_value, 'integral':area*100}
+            integral = {'id': integral_id, 'originFrom': re_cxs[0], 'originTo': re_cxs[len(
+                re_cxs)-1], 'from': re_cxs[0], 'to': re_cxs[len(re_cxs)-1], 'kind': 'signal', 'absolute': absolute_value, 'integral': area*100}
 
             dic_integrals['values'].append(integral)
         return dic_integrals
 
     def __generate_nmrim_ranges(self):
-        dic_ranges = {'values':[], 'options':{'isSumConstant':True, 'sumAuto':False, 'sum':100}}
+        dic_ranges = {'values': [], 'options': {
+            'isSumConstant': True, 'sumAuto': False, 'sum': 100}}
 
         refShift, refArea = self.refShift, self.refArea
         if (len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
@@ -957,7 +979,8 @@ class NIComposer(BaseComposer):
                 if idx_peakStr not in tmp_dic_mpy_peaks:
                     tmp_dic_mpy_peaks[idx_peakStr] = []
 
-                tmp_dic_mpy_peaks[idx_peakStr].append({'x': float(xStr), 'y': float(yStr)})
+                tmp_dic_mpy_peaks[idx_peakStr].append(
+                    {'x': float(xStr), 'y': float(yStr)})
 
             core_mpy_itg_table = self.core.mpy_itg_table[0]
             mpy_itg_table = core_mpy_itg_table.split('\n')
@@ -965,7 +988,8 @@ class NIComposer(BaseComposer):
                 clear_mpy = mpy.replace('(', '')
                 clear_mpy = clear_mpy.replace(')', '')
                 split_mpy = clear_mpy.split(',')
-                mpy_item = { 'mpyType': '', 'xExtent': {'xL': 0.0, 'xU': 0.0}, 'yExtent': {'yL': 0.0, 'yU': 0.0}, 'peaks': [], 'area': 1.0 }
+                mpy_item = {'mpyType': '', 'xExtent': {'xL': 0.0, 'xU': 0.0}, 'yExtent': {
+                    'yL': 0.0, 'yU': 0.0}, 'peaks': [], 'area': 1.0}
                 if (len(split_mpy) > 7):
                     idxStr = split_mpy[0].strip()
                     xLStr = split_mpy[1].strip()
@@ -982,10 +1006,10 @@ class NIComposer(BaseComposer):
                     mpy_item['mpyType'] = typeStr
                     mpy_item['peaks'] = tmp_dic_mpy_peaks[idxStr]
                     self.mpys.append(mpy_item)
-        
+
         total_integration_absolute = 0.0
         multiplicity_to_be_processed = self.mpys
-        
+
         for mpy in multiplicity_to_be_processed:
             xL, xU, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['mpyType'], mpy['peaks']    # noqa: E501
             iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
@@ -1005,28 +1029,32 @@ class NIComposer(BaseComposer):
             orgin_x_from, orgin_x_to = re_cxs[0], re_cxs[len(re_cxs)-1]
             mpy['orgin_x_from'] = orgin_x_from
             mpy['orgin_x_to'] = orgin_x_to
-            
+
         for mpy in multiplicity_to_be_processed:
             typ, peaks = mpy['mpyType'], mpy['peaks']    # noqa: E501
             ranges_id, absolute_value = mpy['ranges_id'], mpy['absolute_value']
             orgin_x_from, orgin_x_to = mpy['orgin_x_from'], mpy['orgin_x_to']
 
             signal_id = str(uuid.uuid4())
-            signal_delta = calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType'])
+            signal_delta = calc_mpy_center(
+                mpy['peaks'], refShift, mpy['mpyType'])
 
-            integration_value = (absolute_value / total_integration_absolute)*100
+            integration_value = (
+                absolute_value / total_integration_absolute)*100
 
-            signal_item = {'id':signal_id,'originDelta':signal_delta, 'delta':signal_delta, 'kind':'signal', 'integration':integration_value, 'multiplicity':typ, 'peaks':peaks}
+            signal_item = {'id': signal_id, 'originDelta': signal_delta, 'delta': signal_delta,
+                           'kind': 'signal', 'integration': integration_value, 'multiplicity': typ, 'peaks': peaks}
 
-            rang_item = {'id':ranges_id, 'originFrom':orgin_x_from, 'originTo':orgin_x_to, 'from':orgin_x_from, 'to':orgin_x_to, 'kind':'signal', 'absolute':absolute_value, 'integration':integration_value, 'signals':[signal_item]}
+            rang_item = {'id': ranges_id, 'originFrom': orgin_x_from, 'originTo': orgin_x_to, 'from': orgin_x_from, 'to': orgin_x_to,
+                         'kind': 'signal', 'absolute': absolute_value, 'integration': integration_value, 'signals': [signal_item]}
             dic_ranges['values'].append(rang_item)
 
         return dic_ranges
-    
+
     def __generate_molecules(self, molfile_data):
         if molfile_data is None:
-          return []
-        
+            return []
+
         molecule_id = str(uuid.uuid4())
         return [
             {

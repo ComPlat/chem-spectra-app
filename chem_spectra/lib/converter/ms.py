@@ -150,7 +150,7 @@ class MSConverter:
         noise_ratio = 100 * max_oorg / max_base
 
         return ratio, noise_ratio, max_seed
-    
+
     def __get_best_ratio(self, old_ratio, new_ratio, noise_ratio, current_index, current_backup_idx, curr_backup_ratio, old_y, new_y):
         best_ratio, best_idx, backup_ratio, backup_idx = old_ratio, current_index, curr_backup_ratio, current_backup_idx
         best_y = old_y
@@ -166,9 +166,8 @@ class MSConverter:
         if (backup_ratio < new_ratio):
             backup_idx = current_index
             backup_ratio = new_ratio
-        
-        return best_ratio, best_idx, backup_ratio, backup_idx, best_y
 
+        return best_ratio, best_idx, backup_ratio, backup_idx, best_y
 
     def __decode(self, runs, decoded_count=1):
         spectra = []
@@ -182,7 +181,6 @@ class MSConverter:
         #     except:
         #         spectra.append(np.array([]))
         #         continue
-            
 
         #     ratio, noise_ratio, y = self.__get_ratio(spc)
         #     best_ratio, best_idx, backup_ratio, backup_idx, best_y = self.__get_best_ratio(
@@ -197,7 +195,6 @@ class MSConverter:
         #     )
         # print('this2')
 
-
         if decoded_count == 1:
             for idx, data in enumerate(runs):
                 try:
@@ -206,8 +203,6 @@ class MSConverter:
                 except:
                     spectra.append(np.array([]))
                     continue
-
-                
 
                 ratio, noise_ratio, y = self.__get_ratio(spc)
                 best_ratio, best_idx, backup_ratio, backup_idx, best_y = self.__get_best_ratio(
@@ -273,7 +268,8 @@ class MSConverter:
                 try:
                     elapsed += 0.2
                     time.sleep(0.2)
-                    runs = pymzml.run.Reader(mzml_file, build_index_from_scratch=True)
+                    runs = pymzml.run.Reader(
+                        mzml_file, build_index_from_scratch=True)
                     spectra, auto_scan = self.__decode(runs, decoded_count)
                     break
                 except:  # noqa
@@ -293,7 +289,8 @@ class MSConverter:
             # RESOLVE_VSMBNAN2 a valid spectrum must be np.array (N, 2)
             if not spc.shape[0] > 0:
                 spc = np.array([[1000.0, 0.0], [2000.0, 0.0]])  # placeholder
-                if self.auto_scan == (idx + 1) and (idx < len(self.spectra) - 1):  # move selected scan
+                # move selected scan
+                if self.auto_scan == (idx + 1) and (idx < len(self.spectra) - 1):
                     self.auto_scan += 1
             xs = spc[:, 0]
             ys = spc[:, 1]

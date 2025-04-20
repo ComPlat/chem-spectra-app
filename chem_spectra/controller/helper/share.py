@@ -1,5 +1,4 @@
 import io
-from typing import Sequence
 import zipfile
 import math
 import os.path as os_path
@@ -46,16 +45,17 @@ def to_zip_bag_it_response(src_tmp_arr, filename=False, src_idx=-1):
     with zipfile.ZipFile(memory, 'w') as zf:
         for idx_sub, sub_arr in enumerate(tmp_arr):
             if isinstance(sub_arr, collections.abc.Sequence):
-              folder_path = 'curve_' + str(idx_sub)
-              tmp_sub_arr = [el for el in sub_arr if el]
-              for idx, tmp in enumerate(tmp_sub_arr):
-                  abs_path = tmp.name
-                  is_src = idx == src_idx
-                  fname = get_fname(abs_path, filename, is_src).replace(' ', '_')
-                  fname = os_path.join(folder_path, fname)
-                  zf.write(abs_path, fname)
-              for tmp in tmp_sub_arr:
-                  tmp.close()
+                folder_path = 'curve_' + str(idx_sub)
+                tmp_sub_arr = [el for el in sub_arr if el]
+                for idx, tmp in enumerate(tmp_sub_arr):
+                    abs_path = tmp.name
+                    is_src = idx == src_idx
+                    fname = get_fname(abs_path, filename,
+                                      is_src).replace(' ', '_')
+                    fname = os_path.join(folder_path, fname)
+                    zf.write(abs_path, fname)
+                for tmp in tmp_sub_arr:
+                    tmp.close()
             else:
                 tmp = sub_arr
                 abs_path = tmp.name
@@ -72,6 +72,7 @@ def parse_float(val, default):
         return float(val)
     except:  # noqa
         return float(default)
+
 
 def parse_int(val, default):
     try:

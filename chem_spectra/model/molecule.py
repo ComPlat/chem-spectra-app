@@ -1,5 +1,5 @@
 from rdkit import Chem
-from rdkit.Chem import Descriptors, AllChem, Draw, rdDepictor   # noqa: F401
+from rdkit.Chem import Descriptors, AllChem, Draw   # noqa: F401
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp
 import chem_spectra.lib.chem.ifg as ifg

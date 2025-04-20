@@ -23,6 +23,7 @@ separator_e = '$$ === CHEMSPECTRA PEAK TABLE EDIT ==='
 separator_a = '$$ === CHEMSPECTRA PEAK TABLE AUTO ==='
 separator = '$$ === CHEMSPECTRA INTEGRALS AND MULTIPLETS ==='
 
+
 def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
         file = FileContainer(FileStorage(f))
@@ -121,6 +122,7 @@ def test_params_meta_IR_dx():
     ps_meta_content = __generated_peaks_meta(IR_dx, params_1)
     meta_target = __target_peaks_meta('ps/ps_' + meta_IR_dx)
     assert ps_meta_content == meta_target
+
 
 """
 def test_params_meta_1H():

@@ -118,6 +118,7 @@ def test_datatable_SVS_790A_13C_jdx():
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count, 1/10000)
 
+
 def test_datatable_JPK_948_jdx():
     nicv_ori, nicp_ori, jcamp_ori = __generated_jcamp_temp(
         __fixture_path(JPK_948_jdx)
@@ -130,11 +131,12 @@ def test_datatable_JPK_948_jdx():
     assert __is_match(nicv_ori.xs, nicv_nxt.xs, ref, total_count)
     assert __is_match(nicv_ori.ys, nicv_nxt.ys, ref, total_count)
 
+
 def test_datatable_ms():
     mscv_ori, mscp_ori, jcamp_ori = __generated_jcamp_temp(
         __fixture_path(MS_dx)
     )
     mscv_nxt, mscp_nxt, jcamp_nxt = __generated_jcamp_temp(jcamp_ori.name)
-    
+
     assert mscv_ori.datatables == mscv_nxt.datatables
     assert mscp_ori.core.datatables == mscp_nxt.core.datatables
