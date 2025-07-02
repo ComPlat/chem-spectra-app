@@ -78,7 +78,9 @@ class FidHasBruckerProcessed:
         processed_dic['XUNITS'] = ['PPM']
         processed_dic['YUNITS'] = ['ARBITRARY']
         processed_dic['TITLE'] = ['FID {}'.format('.'.join(fname.split('.')[:-1]))]
-
+        processed_dic['$CSSOLVENTX']     = [f'{offset:.6f}']
+        processed_dic['$CSSOLVENTVALUE'] = ['0.000000']
+        processed_dic['$CSSOLVENTNAME']  = ['AUTO-OFFSET']
         return processed_dic
 
     def __process_raw_data(self, dic, data):

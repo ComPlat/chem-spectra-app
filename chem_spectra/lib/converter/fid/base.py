@@ -35,7 +35,9 @@ class FidBaseConverter:
         dic['XUNITS'] = ['PPM']
         dic['YUNITS'] = ['ARBITRARY']
         dic['TITLE'] = ['FID {}'.format('.'.join(fname.split('.')[:-1]))]
-
+        dic['$CSSOLVENTX']     = [f'{offset:.6f}']
+        dic['$CSSOLVENTVALUE'] = ['0.000000']
+        dic['$CSSOLVENTNAME']  = ['AUTO-OFFSET']
         # process data (i.e. ys)
         data = ng.bruker.remove_digital_filter(dic, data)  # remove the digital filter   # noqa: E501
         data = ng.proc_base.zf_size(data, num_pts)    # zero fill to 32768 points   # noqa: E501
