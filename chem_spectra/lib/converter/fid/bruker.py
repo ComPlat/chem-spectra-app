@@ -4,6 +4,8 @@ import os
 
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
+import logging
+logger = logging.getLogger(__name__)
 
 def search_brucker_processed(td):
     try:
@@ -35,29 +37,33 @@ class FidHasBruckerProcessed:
         self.data = self.__read(target_dir, fname)
 
     def __read(self, target_dir, fname):
-        processed_dirs = search_brucker_processed(target_dir)
-        data =[]
+        un_dic, un_data = ng.bruker.read(target_dir)
+        un_dic  = self.__process_dic(un_dic,  un_data, fname)
+        un_data = self.__process_raw_data(un_dic, un_data)
+        data = [FidBaseConverter(dic=un_dic, data=un_data,
+                                params=self.params, fname=fname)]
 
-        unprocessed_dic, unprocessed_data = ng.bruker.read(target_dir)
-        unprocessed_dic = self.__process_dic(unprocessed_dic, unprocessed_data, fname)
-        unprocessed_data = self.__process_raw_data(unprocessed_dic, unprocessed_data)
-
-        unprocessed_fid_conv = FidBaseConverter(dic=unprocessed_dic, data=unprocessed_data, params=self.params, fname=fname)
-        data.append(unprocessed_fid_conv)
+        processed_dirs = search_brucker_processed(target_dir) or []
 
         for dir in processed_dirs:
-            processed_dic, processed_data = ng.bruker.read_pdata(dir)
-
-            processed_dic = self.__process_dic(processed_dic, processed_data, fname)
-            
             try:
-              processed_data = ng.process.proc_bl.baseline_corrector(processed_data, wd=20)  # baseline correction     # noqa: E501
-            except:
-              pass
-            processed_data = ng.proc_base.di(processed_data)                # discard the imaginaries
+                proc_dic, proc_data = ng.bruker.read_pdata(dir)
+            except (OSError, FileNotFoundError) as e:
+                logger.warning("Skipping %s (no 1r/2rr) – %s", dir, e)
+                continue
 
-            processed_fid_conv = FidBaseConverter(dic=processed_dic, data=processed_data, params=self.params, fname=fname)
-            data.append(processed_fid_conv)
+            proc_dic  = self.__process_dic(proc_dic, proc_data, fname)
+            try:
+                proc_data = ng.process.proc_bl.baseline_corrector(proc_data, wd=20)
+            except Exception:
+                pass
+            proc_data = ng.proc_base.di(proc_data)
+
+            data.append(
+                FidBaseConverter(dic=proc_dic, data=proc_data,
+                                params=self.params, fname=fname)
+            )
+
         return data
 
     def __process_dic(self, dic, data, fname):
