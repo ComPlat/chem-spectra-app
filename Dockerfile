@@ -31,7 +31,7 @@ FROM base AS spectra
 RUN apt-get install -y --no-install-recommends --autoremove --fix-missing git ca-certificates git curl bzip2 \
     gcc g++ libxrender1 libxext-dev pkg-config libfreetype6-dev libgtk2.0-dev
 
-RUN git clone --single-branch --branch dev-deploy-1 --depth=1 https://github.com/ComPlat/chem-spectra-app /app && \
+RUN git clone --single-branch --branch f-pbf-deploy --depth=1 https://github.com/ComPlat/chem-spectra-app /app && \
     rm -rf /app/.git
 
 ADD https://raw.githubusercontent.com/ptrxyz/chemotion/e6af03a3fa25c2a830d2e98fd08552b624a77e30/spectra/additives/spectra_config.py /app/instance/config.py
