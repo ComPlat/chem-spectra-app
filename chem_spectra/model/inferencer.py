@@ -36,7 +36,7 @@ class InferencerModel:
             shift={'ref': {'label': False, 'name': '- - -', 'value': 0}, 'peak': False, 'enable': False}    # noqa: E501
         )
         try:
-            rsp = instance.__predict_nmr(timeout=20)
+            rsp = instance.__predict_nmr(timeout=120)
             output = rsp.json()
             logger = logging.getLogger(__name__)
             logger.setLevel(logging.INFO)
@@ -116,6 +116,7 @@ class InferencerModel:
                 headers=hdr_nsdb,
                 json=data,
                 timeout=timeout,
+                verify=False
             )
             return rsp
         elif self.layout == '13C':
@@ -126,6 +127,7 @@ class InferencerModel:
                 headers=hdr_nsdb,
                 json=data,
                 timeout=timeout,
+                verify=False
             )
             return rsp
         elif self.layout == '19F':
@@ -136,6 +138,7 @@ class InferencerModel:
                 headers=hdr_nsdb,
                 json=data,
                 timeout=timeout,
+                verify=False
             )
             return rsp
         return False
