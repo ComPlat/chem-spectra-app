@@ -11,9 +11,9 @@
   "forwardPorts": [
     3007 // Port for the web server
   ],
-  "onCreateCommand": "python -m venv ~/.venv && ~/.venv/bin/pip install --upgrade pip && ~/.venv/bin/pip install .",
+  "onCreateCommand": "python -m venv ~/.venv",
   // Ensure the environment
-  "postStartCommand": "~/.venv/bin/pip install --upgrade pip && ~/.venv/bin/pip install .",
+  "postStartCommand": "~/.venv/bin/pip install --upgrade pip && ~/.venv/bin/pip install . && ~/.venv/bin/pip freeze > dependencies.txt",
   // Configure tool-specific properties.
   "customizations": {
     // Configure properties specific to VS Code.
