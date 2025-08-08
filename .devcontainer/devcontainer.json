@@ -2,18 +2,15 @@
   "name": "ChemSpectraApp",
   "build": {
     "dockerfile": "Dockerfile.devcontainer",
-    "args": {
-      "USER_ID": "${localEnv:UID}",
-      "USER_NAME": "${localEnv:USER}"
-    }
+    "context": ".."
   },
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   "forwardPorts": [
     3007 // Port for the web server
   ],
-  "onCreateCommand": "python -m venv ~/.venv",
+  "onCreateCommand": "pip install --upgrade pip && pip install . && pip freeze > requirements.txt",
   // Ensure the environment
-  "postStartCommand": "~/.venv/bin/pip install --upgrade pip && ~/.venv/bin/pip install . && ~/.venv/bin/pip freeze > dependencies.txt",
+  "postStartCommand": "pip install --upgrade . && pip freeze > requirements.txt",
   // Configure tool-specific properties.
   "customizations": {
     // Configure properties specific to VS Code.
@@ -26,9 +23,8 @@
       ],
       "settings": {
         "[python]": {
-          "editor.defaultFormatter": "ms-python.autopep8",
-          "terminal.activateEnvironment": true,
-          "python.pythonPath": "~/.venv/bin/python"
+          "python.pythonPath": "/usr/local/bin/python",
+          "python.formatting.provider": "autopep8"
         },
         "editor.formatOnSave": true
       }
