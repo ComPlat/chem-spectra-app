@@ -13,6 +13,7 @@ RUN mkdir -p /var/cache/pip
 ENV PIP_CACHE_DIR=/var/cache/pip \
     PIP_ROOT_USER_ACTION=ignore
 
-COPY pyproject.toml . # to be replaced later by ADD git#branch if needed
+# to be replaced later by ADD git#branch if needed
+COPY pyproject.toml .
 RUN pip install --upgrade pip && pip install --no-cache-dir .
 RUN rm pyproject.toml
