@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chem-spectra-app"
+version = "1.2.6"
+requires-python = ">= 3.12"
+description = "A backend service to process files obtained from chemical spectroscopy."
+license = "AGPL-3.0-only"
+readme = "README.md"
+keywords = ["chemistry", "spectra", "analysis"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux"
+]
+dependencies = [
+  "flask",
+  "gunicorn",
+  "matplotlib",
+  "netCDF4",
+  "numpy",
+  "pymzml",
+  "pytest",
+  "requests",
+  "rdkit",
+  "setuptools",
+  "werkzeug",
+  "scipy",
+  "pyopenms",
+  "nmrglue@git+https://github.com/ComPlat/nmrglue.git@4005640d1994a3773801eb3742ce534796d28c05"
+]
+
+[project.urls]
+homepage = "https://chemotion.net/docs/services/chemspectra"
+repository = "https://github.com/ComPlat/chem-spectra-app"
+
+[tool.setuptools]
+py-modules = []
