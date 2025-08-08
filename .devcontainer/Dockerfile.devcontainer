@@ -1,0 +1,19 @@
+FROM python:3.12-slim AS base
+
+# Install any additional OS packages you want in addition to sudo, git and nano
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    sudo git nano \
+    gcc g++ libxrender1 libxext6 libglib2.0-0 # required
+
+RUN apt-get clean -y
+
+RUN mkdir -p /var/cache/pip
+
+ENV PIP_CACHE_DIR=/var/cache/pip \
+    PIP_ROOT_USER_ACTION=ignore
+
+# to be replaced later by ADD git#branch if needed
+COPY pyproject.toml .
+RUN pip install --upgrade pip && pip install --no-cache-dir .
+RUN rm pyproject.toml
