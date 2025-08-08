@@ -1,0 +1,33 @@
+{
+  "name": "ChemSpectraApp",
+  "build": {
+    "dockerfile": "Dockerfile.devcontainer",
+    "context": ".."
+  },
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  "forwardPorts": [
+    3007 // Port for the web server
+  ],
+  "onCreateCommand": "pip install --upgrade pip && pip install . && pip freeze > requirements.txt",
+  // Ensure the environment
+  "postStartCommand": "pip install --upgrade . && pip freeze > requirements.txt",
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.autopep8",
+        "ms-python.vscode-pylance",
+        "github.vscode-github-actions"
+      ],
+      "settings": {
+        "[python]": {
+          "python.pythonPath": "/usr/local/bin/python",
+          "python.formatting.provider": "autopep8"
+        },
+        "editor.formatOnSave": true
+      }
+    }
+  }
+}
