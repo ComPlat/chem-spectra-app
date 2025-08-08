@@ -23,7 +23,7 @@
       ],
       "settings": {
         "[python]": {
-          "python.pythonPath": "/usr/local/bin/python",
+          "python.defaultInterpreterPath": "/usr/local/bin/python",
           "python.formatting.provider": "autopep8"
         },
         "editor.formatOnSave": true
