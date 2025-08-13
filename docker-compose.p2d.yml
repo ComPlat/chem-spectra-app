@@ -1,0 +1,30 @@
+services:
+  msconvert:
+    image: ptrxyz/chemotion:msconvert-2.0.1
+    restart: unless-stopped
+    hostname: msconvert
+    volumes:
+      - spectra:/shared:rw
+    networks:
+      - spectra-internal
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.p2d
+    restart: unless-stopped
+    volumes:
+      - spectra:/shared:rw
+    depends_on:
+      msconvert:
+        condition: service_healthy
+    networks:
+      - spectra-internal
+    ports:
+      - 4000
+
+networks:
+  spectra-internal:
+
+volumes:
+  spectra:

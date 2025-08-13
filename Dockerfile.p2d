@@ -1,0 +1,47 @@
+FROM python:3.12-slim AS base
+
+# Install any additional OS packages you want in addition to sudo, git and nano
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=apt-cache \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked,id=apt-lib \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+    sudo git nano \
+    gcc g++ libxrender1 libxext6 libglib2.0-0 # required \
+    && apt-get clean -y
+
+ADD --chmod=755  https://payload.chemserv.scc.kit.edu/fake-docker.py /bin/docker
+ADD --chmod=755 https://payload.chemserv.scc.kit.edu/spectra_config.py /app/instance/config.py
+
+WORKDIR /app
+
+RUN mkdir -p /var/cache/pip
+
+ENV PIP_CACHE_DIR=/var/cache/pip \
+    PIP_ROOT_USER_ACTION=ignore
+
+COPY pyproject.toml .
+
+RUN --mount=type=cache,target=/var/cache/pip,sharing=locked,id=pip-cache \
+    pip install --upgrade pip && pip install .
+
+COPY ./chem_spectra /app/chem_spectra
+COPY ./server.py /app/server.py
+
+# Finalize app setup
+RUN mkdir -p /shared /app/instance && \
+    ln -s /shared /app/chem_spectra/tmp
+
+ENV FLASK_ENV=production \
+    FLASK_DEBUG=0 \
+    MSC_HOST=msconvert \
+    MSC_PORT=4000 \
+    MSC_VALIDATE=true \
+    SPECTRA_PORT=4000
+
+EXPOSE 4000
+
+CMD ["gunicorn", "--timeout", "600", "-w", "4", "-b", "0.0.0.0:4000", "server:app"]
+# i.e the command: gunicorn --timeout 600 -w 4 -b 0.0.0.0:4000 server:app
+
+HEALTHCHECK --interval=5s --timeout=3s --start-period=30s --retries=3 \
+    CMD curl --fail http://localhost:4000/ping || exit 1
