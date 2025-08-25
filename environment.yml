@@ -89,4 +89,5 @@ dependencies:
       - wrapt==1.16.0
       - zipp==3.19.2
       - -e git+https://github.com/ComPlat/nmrglue.git@e6e8a63b1848ae0525f07de0a6ec0cfdb900ba60#egg=nmrglue
+      - -e git+https://github.com/ComPlat/BinaryParser.git@main#egg=BinaryParser
 prefix: /home/eln/anaconda3/envs/python-v38

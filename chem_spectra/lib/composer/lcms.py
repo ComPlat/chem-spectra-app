@@ -1,164 +1,217 @@
 import tempfile  # noqa: E402
 
 from chem_spectra.lib.composer.base import BaseComposer  # noqa: E402
+import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.path as mpath  # noqa: E402
 import numpy as np  # noqa: E402
 
 
 TEXT_SPECTRUM_ORIG = '$$ === CHEMSPECTRA SPECTRUM ORIG ===\n'
-TEXT_MS_DATA_TABLE = '##DATA TABLE= (XY..XY), PEAKS\n'  # '##XYDATA= (X++(Y..Y))\n'  # noqa
+TEXT_HEADER_INTEGRATION = '$$ === CHEMSPECTRA INTEGRALS ===\n'
+TEXT_PEAK_TABLE_EDIT = '$$ === CHEMSPECTRA PEAK TABLE EDIT ===\n'
 
-class LCMSComposer:
-    def __init__(self, core):
-        self.core = core
+class LCMSComposer(BaseComposer):
+    def __init__(self, core, lcms_peaks=None, lcms_integrals=None):
+        super().__init__(core)
         self.title = core.fname
-        self.data = self.__compose()
+        if lcms_peaks:
+            self.core.edit_peaks = lcms_peaks
+        if lcms_integrals:
+            self.core.edit_integrals = lcms_integrals
+        self.files = self.__compose()
+        self.data = self.files
 
     def __compose(self):
-        tic_postive_data, tic_negative_data, uvvis_data, spectra_postive_data, spectra_negative_data = self.core.data
-        tic_postive = self.__gen_tic(tic_data=tic_postive_data)
+        tic_positive_data, tic_negative_data, uvvis_data, spectra_positive_data, spectra_negative_data = self.core.data
+        tic_positive = self.__gen_tic(tic_data=tic_positive_data)
         tic_negative = self.__gen_tic(tic_data=tic_negative_data, is_negative=True)
-        tic_positive_jcamp, tic_negative_jcamp = self.tf_jcamp(tic_postive), self.tf_jcamp(tic_negative)
+        tic_positive_jcamp, tic_negative_jcamp = self.tf_jcamp(tic_positive), self.tf_jcamp(tic_negative)
 
-        uvvis = self.__gen_uvvis(data=uvvis_data)
-        uvvis_jcamp = self.tf_jcamp(uvvis)
+        uvvis_basic = self.__gen_uvvis(data=uvvis_data, include_edits=False)
+        uvvis_enriched = self.__gen_uvvis(data=uvvis_data, include_edits=True)
+        uvvis_jcamp = self.tf_jcamp(uvvis_basic)
+        uvvis_jcamp_enriched = self.tf_jcamp(uvvis_enriched)
 
-        mz_positive = self.__gen_mz_spectra(data=spectra_postive_data)
+        mz_positive = self.__gen_mz_spectra(data=spectra_positive_data)
         mz_positive_jcamp = self.tf_jcamp(mz_positive)
 
         mz_negative = self.__gen_mz_spectra(data=spectra_negative_data, is_negative=True)
         mz_negative_jcamp = self.tf_jcamp(mz_negative)
-        return [tic_positive_jcamp, tic_negative_jcamp, uvvis_jcamp, mz_positive_jcamp, mz_negative_jcamp]
+        return [uvvis_jcamp_enriched, uvvis_jcamp, tic_positive_jcamp, tic_negative_jcamp, mz_positive_jcamp, mz_negative_jcamp]
 
-    def __gen_tic(self, tic_data, is_negative = False):
-        time, intensity = tic_data['time'], tic_data['Intensity']
-        max_time, min_time = np.max(time), np.min(time)
-        max_intensity, min_intensity = np.max(intensity), np.min(intensity)
+    def __gen_tic(self, tic_data, is_negative=False):
+        time  = tic_data.get('time', [])
+        inten = tic_data.get('Intensity', [])
+
+        if not time:
+            category = ('##$CSCATEGORY=TIC NEGATIVE SPECTRUM\n'
+                        if is_negative else
+                        '##$CSCATEGORY=TIC POSITIVE SPECTRUM\n')
+            return [
+                '\n', TEXT_SPECTRUM_ORIG,
+                f'##TITLE={self.title}\n',
+                '##JCAMP-DX=5.00\n',
+                '##DATA TYPE=LC/MS\n',
+                '##DATA CLASS=XYDATA\n',
+                '##ORIGIN=\n', '##OWNER=\n', '##SPECTROMETER/DATA SYSTEM=\n',
+                category,
+                '##XUNITS=time\n', '##YUNITS=Intensity\n',
+                '##XFACTOR=1\n',  '##YFACTOR=1\n',
+                '##NPOINTS=0\n',
+                '##XYDATA= (XY..XY)\n',
+                *self.__gen_ending()
+            ]
+        max_t, min_t = max(time), min(time)
+        max_i, min_i = max(inten), min(inten)
+        category = ('##$CSCATEGORY=TIC NEGATIVE SPECTRUM\n'
+                    if is_negative else
+                    '##$CSCATEGORY=TIC POSITIVE SPECTRUM\n')
         content = [
-            '\n',
-            TEXT_SPECTRUM_ORIG,
-            '##TITLE={}\n'.format(self.title),
+            '\n', TEXT_SPECTRUM_ORIG,
+            f'##TITLE={self.title}\n',
             '##JCAMP-DX=5.00\n',
-            '##DATA TYPE={}\n'.format('LC/MS'),
-            '##DATA CLASS= XYDATA\n',
-            '##ORIGIN=\n',
-            '##OWNER=\n',
+            '##DATA TYPE=LC/MS\n',
+            '##DATA CLASS=XYDATA\n',
+            '##ORIGIN=\n', '##OWNER=\n',
             '##SPECTROMETER/DATA SYSTEM=\n',
-            '##$CSCATEGORY=TIC SPECTRUM\n',
-            '##XUNITS=time\n',
-            '##YUNITS=Intensity\n',
-            '##XFACTOR=1\n',
-            '##YFACTOR=1\n',
-            '##FIRSTX={}\n'.format(time[0]),
-            '##LASTX={}\n'.format(time[len(time)-1]),
-            '##MAXX={}\n'.format(max_time),
-            '##MAXY={}\n'.format(max_intensity),
-            '##MINX={}\n'.format(min_time),
-            '##MINY={}\n'.format(min_intensity),
-            '##NPOINTS={}\n'.format(len(time)),
+            category,
+            '##XUNITS=time\n', '##YUNITS=Intensity\n',
+            '##XFACTOR=1\n',  '##YFACTOR=1\n',
+            f'##FIRSTX={time[0]}\n',   f'##LASTX={time[-1]}\n',
+            f'##MAXX={max_t}\n',       f'##MAXY={max_i}\n',
+            f'##MINX={min_t}\n',       f'##MINY={min_i}\n',
+            f'##NPOINTS={len(time)}\n',
             '##XYDATA= (XY..XY)\n',
         ]
-        
-        for i, _ in enumerate(time):
-            content.append(
-                '{}, {}\n'.format(time[i], intensity[i])
-            )
-        
+        for t, i in zip(time, inten):
+            content.append(f'{t}, {i}\n')
         content.extend(self.__gen_ending())
-
         return content
 
-    def __gen_uvvis(self, data):
-        content = [
-            '\n',
-            TEXT_SPECTRUM_ORIG,
-            '##TITLE={}\n'.format(self.title),
-            '##JCAMP-DX=5.00\n',
-            '##DATA TYPE={}\n'.format('LC/MS'),
-            '##DATA CLASS= NTUPLES\n',
-            '##ORIGIN=\n',
-            '##OWNER=\n',
-            '##SPECTROMETER/DATA SYSTEM=\n',
-            '##$CSCATEGORY=UVVIS SPECTRUM\n',
-            '##VAR_NAME= RETENTION TIME, DETECTOR SIGNAL, WAVELENGTH\n',
-            '##SYMBOL= X, Y, T\n',
-            '##VAR_TYPE= INDEPENDENT, DEPENDENT, INDEPENDENT\n',
-            '##VAR_FORM= AFFN, AFFN, AFFN\n',
-            '##VAR_DIM= , , 3\n',
-            '##UNITS= RETENTION TIME, DETECTOR SIGNAL, WAVELENGTH\n',
-            '##FIRST= , , 1\n',
-        ]
-        
-        msspcs = []
-        ms_tempfile = tempfile.TemporaryFile()
-        for time, value in data.items():
-            xs, ys = value['RetentionTime'], value['DetectorSignal']
-            msspc = [
-                '##PAGE={}\n'.format(time),
-                '##NPOINTS={}\n'.format(len(xs)),
-                '##DATA TABLE= (XY..XY), PEAKS\n',
+    def __gen_uvvis(self, data, include_edits=False):
+        def _norm_wl(wl):
+            try:
+                return str(int(round(float(wl))))
+            except Exception:
+                return str(wl).strip()
+
+        if include_edits:
+            raw_user_peaks = getattr(self.core, "edit_peaks", {}) or {}
+            user_peaks_by_wl = {_norm_wl(k): v for k, v in raw_user_peaks.items()}
+
+            raw_user_integrals = getattr(self.core, "edit_integrals", {}) or {}
+            user_integrals_by_wl = {_norm_wl(k): v for k, v in raw_user_integrals.items()}
+        else:
+            user_peaks_by_wl = {}
+            user_integrals_by_wl = {}
+
+        final_content = []
+
+        for wl_key, value in data.items():
+            wl_norm = _norm_wl(wl_key)
+            xs, ys = value["RetentionTime"], value["DetectorSignal"]
+            
+            peaks_to_insert = user_peaks_by_wl.get(wl_norm, []) if include_edits else []
+            integrals_to_insert = user_integrals_by_wl.get(wl_norm, []) if include_edits else []
+
+            page_block = [
+                '\n',
+                TEXT_SPECTRUM_ORIG,
+                f"##TITLE={self.title}\n",
+                "##JCAMP-DX=5.00\n",
+                "##DATA TYPE=LC/MS\n",
+                "##DATA CLASS= NTUPLES\n",
+                "##ORIGIN=\n",
+                "##OWNER=\n",
+                "##SPECTROMETER/DATA SYSTEM=\n",
+                "##$CSCATEGORY=UVVIS SPECTRUM\n",
+                "##VAR_NAME= RETENTION TIME, DETECTOR SIGNAL, WAVELENGTH\n",
+                "##SYMBOL= X, Y, T\n",
+                "##VAR_TYPE= INDEPENDENT, DEPENDENT, INDEPENDENT\n",
+                "##VAR_FORM= AFFN, AFFN, AFFN\n",
+                "##VAR_DIM= , , 3\n",
+                "##UNITS= RETENTION TIME, DETECTOR SIGNAL, WAVELENGTH\n",
+                "##FIRST= , , 1\n",
+                f"##PAGE={wl_key}\n",
+                f"##NPOINTS={len(xs)}\n",
+                "##DATA TABLE= (XY..XY), PEAKS\n",
             ]
-            for idx, _ in enumerate(xs):
-                my_content = '{}, {};\n'.format(xs[idx], ys[idx])
-                msspc += my_content
-            file_content = ''.join(msspc)
-            ms_tempfile.write(file_content.encode('utf-8'))
+            for x, y in zip(xs, ys):
+                page_block.append(f"{x}, {y};\n")
+            final_content.extend(page_block)
 
-        ms_tempfile.seek(0)
-        lines = ms_tempfile.readlines()
-        decoded_lines = [line.decode('utf-8').strip() for line in lines]
-        msspcs = '\n'.join(decoded_lines)
-        ms_tempfile.close()
-        
-        content.extend(msspcs)
-        content.extend(self.__gen_ending())
+            if include_edits:
+                max_x, min_x = (max(xs), min(xs)) if xs else (0, 0)
+                max_y, min_y = (max(ys), min(ys)) if ys else (0, 0)
+                peak_tbl = [
+                    TEXT_PEAK_TABLE_EDIT,
+                    f"##TITLE={self.title}\n",
+                    "##JCAMP-DX=5.00\n",
+                    "##DATA TYPE=UVVISPEAKTABLE\n",
+                    "##DATA CLASS=PEAKTABLE\n",
+                    "##$CSCATEGORY=EDIT_PEAK\n",
+                    "##$CSTHRESHOLD=0.05\n",
+                    f"##MAXX={max_x}\n",
+                    f"##MAXY={max_y}\n",
+                    f"##MINX={min_x}\n",
+                    f"##MINY={min_y}\n",
+                    "##$CSSOLVENTNAME=\n",
+                    "##$CSSOLVENTVALUE=0\n",
+                    "##$CSSOLVENTX=0\n",
+                    f"##NPOINTS={len(peaks_to_insert)}\n",
+                    "##PEAKTABLE= (XY..XY)\n",
+                ]
+                for p in peaks_to_insert:
+                    peak_tbl.append(f"{p['x']}, {p['y']};\n")
+                if integrals_to_insert:
+                    integrals_str = ' '.join(
+                        [f'({",".join(map(str, i))})' for i in integrals_to_insert]
+                    )
+                    peak_tbl.append(TEXT_HEADER_INTEGRATION)
+                    peak_tbl.append(f"##$OBSERVEDINTEGRALS= {integrals_str}\n")
 
-        return content
+                final_content.extend(peak_tbl)
+            
+            final_content.append("##END=\n")
+
+        return final_content
 
     def __gen_mz_spectra(self, data, is_negative=False):
         category = '##$CSCATEGORY=MZ NEGATIVE SPECTRUM\n' if is_negative else '##$CSCATEGORY=MZ POSITIVE SPECTRUM\n'
         content = [
             '\n',
             TEXT_SPECTRUM_ORIG,
-            '##TITLE={}\n'.format(self.title),
+            f'##TITLE={self.title}\n',
             '##JCAMP-DX=5.00\n',
-            '##DATA TYPE={}\n'.format('LC/MS'),
+            '##DATA TYPE=LC/MS\n',
             '##DATA CLASS= NTUPLES\n',
             '##ORIGIN=\n',
             '##OWNER=\n',
             '##SPECTROMETER/DATA SYSTEM=\n',
-            '##$CSCATEGORY=UVVIS SPECTRUM\n',
-            '##VAR_NAME= RETENTION TIME, DETECTOR SIGNAL, WAVELENGTH\n',
+            category,
+            '##VAR_NAME= M/Z, INTENSITY, RETENTION TIME\n',
             '##SYMBOL= X, Y, T\n',
             '##VAR_TYPE= INDEPENDENT, DEPENDENT, INDEPENDENT\n',
             '##VAR_FORM= AFFN, AFFN, AFFN\n',
             '##VAR_DIM= , , 3\n',
-            '##UNITS= RETENTION TIME, DETECTOR SIGNAL, WAVELENGTH\n',
+            '##UNITS= M/Z, INTENSITY, RETENTION TIME\n',
             '##FIRST= , , 1\n',
-            category,
         ]
         
-        msspcs = []
-        ms_tempfile = tempfile.TemporaryFile()
+        msspcs_blocks = []
         for time, value in data.items():
             xs, ys = value['mz'], value['intensities']
             msspc = [
-                '##PAGE={}\n'.format(time),
-                '##NPOINTS={}\n'.format(len(xs)),
+                f'##PAGE={time}\n',
+                f'##NPOINTS={len(xs)}\n',
                 '##DATA TABLE= (XY..XY), PEAKS\n',
             ]
-            for idx, _ in enumerate(xs):
-                my_content = '{}, {};\n'.format(xs[idx], ys[idx])
-                msspc += my_content
-            file_content = ''.join(msspc)
-            ms_tempfile.write(file_content.encode('utf-8'))
+            for x, y in zip(xs, ys):
+                msspc.append(f'{x}, {y};\n')
+            msspcs_blocks.append(''.join(msspc))
 
-        ms_tempfile.seek(0)
-        lines = ms_tempfile.readlines()
-        decoded_lines = [line.decode('utf-8').strip() for line in lines]
-        msspcs = '\n'.join(decoded_lines)
-        ms_tempfile.close()
-        
-        content.extend(msspcs)
+        msspcs = '\n'.join(msspcs_blocks)
+        content.append(msspcs)
         content.extend(self.__gen_ending())
 
         return content
@@ -175,136 +228,145 @@ class LCMSComposer:
         tf.write(bytes(meta, 'UTF-8'))
         tf.seek(0)
         return tf
-# class LCMSComposer(BaseComposer):
-#     def __init__(self, core):
-#         super().__init__(core)
-#         self.title = core.fname
-#         self.meta = self.__compose()
 
-    # def __gen_headers_spectrum_orig(self):
-    #     return [
-    #         '\n',
-    #         TEXT_SPECTRUM_ORIG,
-    #         '##TITLE={}\n'.format(self.title),
-    #         '##JCAMP-DX=5.00\n',
-    #         '##DATA TYPE={}\n'.format('LC/MS'),
-    #         '##DATA CLASS= NTUPLES\n',
-    #         '##ORIGIN=\n',
-    #         '##OWNER=\n',
-    #         '##SPECTROMETER/DATA SYSTEM=\n',
-    #         # '##.SPECTROMETER TYPE={}\n'.format(self.core.dic.get('SPECTROMETER TYPE', '')),  # TRAP     # noqa: E501
-    #         # '##.INLET={}\n'.format(self.core.dic.get('INLET', '')),  # GC
-    #         # '##.IONIZATION MODE={}\n'.format(self.core.dic.get('IONIZATION MODE', '')),  # EI+  # noqa: E501
-    #         '##$CSCATEGORY=SPECTRUM\n',
-    #         # '##$CSSCANAUTOTARGET={}\n'.format(self.core.auto_scan),
-    #         # '##$CSSCANEDITTARGET={}\n'.format(
-    #         #     self.core.edit_scan or self.core.auto_scan
-    #         # ),
-    #         # '##$CSSCANCOUNT={}\n'.format(len(self.core.datatables)),
-    #         # '##$CSTHRESHOLD={}\n'.format(self.core.thres / 100),
-    #     ]
+    def tf_img(self):
+        plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['figure.dpi'] = 200
+        plt.rcParams['font.size'] = 14
 
-#     def __gen_ntuples_begin(self):
-#         return ['##NTUPLES={}\n'.format('MASS SPECTRUM')]
+        try:
+            _, _, uvvis_data, _, _ = self.core.data
+        except Exception:
+            uvvis_data = {}
 
-#     def __gen_ntuples_end(self):
-#         return ['##END NTUPLES={}\n'.format('MASS SPECTRUM')]
+        if uvvis_data:
+            keys = list(uvvis_data.keys())
 
-#     def __gen_config(self):
-#         return [
-            # '##VAR_NAME= MASS, INTENSITY, RETENTION TIME\n',
-            # '##SYMBOL= X, Y, T\n',
-            # '##VAR_TYPE= INDEPENDENT, DEPENDENT, INDEPENDENT\n',
-            # '##VAR_FORM= AFFN, AFFN, AFFN\n',
-            # '##VAR_DIM= , , 3\n',
-            # '##UNITS= M/Z, RELATIVE ABUNDANCE, SECONDS\n',
-            # '##FIRST= , , 1\n',
-            # # '##LAST= , , {}\n'.format(len(self.core.datatables)),
-#         ]
+            def _to_float_or_none(k):
+                try:
+                    return float(k)
+                except Exception:
+                    return None
 
-#     def __gen_ms_spectra(self):
-        # msspcs = []
-        # ms_tempfile = tempfile.TemporaryFile()
-        # spectra_data = self.core.data[3] # the 1st and 2nd is tic positive and negative, the 3rd is uvvis
-        # for time, value in spectra_data.items():
-        #     xs, ys = value['mz'], value['intensities']
-        #     msspc = [
-        #         '##PAGE={}\n'.format(time),
-        #         '##NPOINTS={}\n'.format(len(value['mz'])),
-        #         '##DATA TABLE= (XY..XY), PEAKS\n',
-        #     ]
-        #     for idx in range(len(xs)):
-        #         my_content = '{}, {};\n'.format(xs[idx], ys[idx])
-        #         msspc += my_content
-        #     file_content = ''.join(msspc)
-        #     ms_tempfile.write(file_content.encode('utf-8'))
+            numeric_pairs = [(k, _to_float_or_none(k)) for k in keys]
+            numeric_only = [p for p in numeric_pairs if p[1] is not None]
+            wl_key = min(numeric_only, key=lambda p: p[1])[0] if numeric_only else keys[0]
 
-        # ms_tempfile.seek(0)
-        # lines = ms_tempfile.readlines()
-        # decoded_lines = [line.decode('utf-8').strip() for line in lines]
-        # msspcs = '\n'.join(decoded_lines)
-        # ms_tempfile.close()
-#         return msspcs
+            wl_entry = uvvis_data.get(wl_key, {"RetentionTime": [], "DetectorSignal": []})
+            xs = wl_entry.get('RetentionTime') or []
+            ys = wl_entry.get('DetectorSignal') or []
 
-#     def __compose(self):
-#         meta = []
-#         meta.extend(self.__gen_headers_spectrum_orig())
+            xs = np.asarray(xs, float) if len(xs) else np.asarray([])
+            ys = np.asarray(ys, float) if len(ys) else np.asarray([])
 
-#         meta.extend(self.__gen_ntuples_begin())
-#         meta.extend(self.__gen_config())
-#         meta.extend(self.__gen_ms_spectra())
-#         meta.extend(self.__gen_ntuples_end())
+            plt.plot(xs, ys)
+            plt.xlabel('X (Retention Time)', fontsize=18)
+            plt.ylabel('Y (Detector Signal)', fontsize=18)
+            plt.grid(False)
 
-#         # meta.extend(self.generate_original_metadata())
+            if xs.size:
+                x_min, x_max = float(np.min(xs)), float(np.max(xs))
+            else:
+                x_min, x_max = 0.0, 1.0
+            if ys.size:
+                y_min, y_max = float(np.min(ys)), float(np.max(ys))
+            else:
+                y_min, y_max = 0.0, 1.0
 
-#         meta.extend(self.gen_ending())
-#         return meta
+            h = max(y_max - y_min, 1.0)
+            plt.xlim(x_min, x_max)
+            y_boundary_min = y_min - h * 0.05
+            y_boundary_max = y_max + h * 0.15
 
-#     # def __prism(self, spc):
-#     #     blues_x, blues_y, greys_x, greys_y = [], [], [], []
-#     #     thres = 0
-#     #     if spc.shape[0] > 0:  # RESOLVE_VSMBNAN2
-#     #         thres = spc[:, 1].max() * (self.core.thres / 100)
+            def _norm_wl(wl):
+                try:
+                    return str(int(round(float(wl))))
+                except Exception:
+                    return str(wl).strip()
 
-#     #     for pt in spc:
-#     #         x, y = pt[0], pt[1]
-#     #         if y >= thres:
-#     #             blues_x.append(x)
-#     #             blues_y.append(y)
-#     #         else:
-#     #             greys_x.append(x)
-#     #             greys_y.append(y)
-#     #     return blues_x, blues_y, greys_x, greys_y
+            raw_user_peaks = getattr(self.core, "edit_peaks", {}) or {}
+            user_peaks_by_wl = {_norm_wl(k): v for k, v in raw_user_peaks.items()}
+            wl_norm = _norm_wl(wl_key)
+            peaks_to_plot = user_peaks_by_wl.get(wl_norm) or user_peaks_by_wl.get('default') or []
 
-#     # def prism_peaks(self):
-#     #     idx = (self.core.edit_scan or self.core.auto_scan) - 1
-#     #     spc = self.core.spectra[idx]
-#     #     return self.__prism(spc) + tuple([idx+1])
+            def _detect_time_scale(peaks_list, series_x):
+                try:
+                    xs_max = float(np.max(series_x)) if series_x.size else 0.0
+                    px_vals = [float(p.get('x')) for p in peaks_list if p and p.get('x') is not None]
+                    px_max = max(px_vals) if px_vals else 0.0
+                    if xs_max > 300 and 0 < px_max <= 60:
+                        return 60.0
+                except Exception:
+                    pass
+                return 1.0
 
-#     def tf_img(self):
-#         # plt.rcParams['figure.figsize'] = [16, 9]
-#         # plt.rcParams['font.size'] = 14
-#         # # PLOT data
-#         # blues_x, blues_y, greys_x, greys_y, _ = self.prism_peaks()
-#         # plt.bar(greys_x, greys_y, width=0, edgecolor='#dddddd')
-#         # plt.bar(blues_x, blues_y, width=0, edgecolor='#1f77b4')
+            scale_factor = _detect_time_scale(peaks_to_plot, xs)
 
-#         # # PLOT label
-#         # plt.xlabel('X (m/z)', fontsize=18)
-#         # plt.ylabel('Y (Relative Abundance)', fontsize=18)
-#         # plt.grid(False)
+            path_data = [(mpath.Path.MOVETO, (0, 0)), (mpath.Path.LINETO, (0, 1))]
+            codes, verts = zip(*path_data)
+            marker = mpath.Path(verts, codes)
 
-#         # # Save
-#         # tf = tempfile.NamedTemporaryFile(suffix='.png')
-#         # plt.savefig(tf, format='png')
-#         # tf.seek(0)
-#         # plt.clf()
-#         # plt.cla()
-#         # return tf
-#         return None
-    
-#     def tf_csv(self):
-#         return None
+            x_peaks, y_peaks = [], []
+            if isinstance(peaks_to_plot, list) and peaks_to_plot and xs.size and ys.size:
+                def _nearest_y(x_target: float) -> float:
+                    idx = int(np.argmin(np.abs(xs - x_target)))
+                    return float(ys[idx])
 
-#     def generate_nmrium(self):
-#         return None
+                for p in peaks_to_plot:
+                    try:
+                        x_val = float(p.get('x')) * scale_factor
+                        y_at_x = _nearest_y(x_val)
+                        x_peaks.append(x_val)
+                        y_peaks.append(y_at_x)
+                    except Exception:
+                        continue
+
+            if x_peaks:
+                y_offset = 0.02 * h
+                y_peaks_plot = [y + y_offset for y in y_peaks]
+                plt.plot(x_peaks, y_peaks_plot, 'r', ls='', marker=marker, markersize=50, zorder=3)
+                y_boundary_max = max(y_boundary_max, max(y_peaks_plot) + 0.05 * h)
+
+            raw_user_integrals = getattr(self.core, "edit_integrals", {}) or {}
+            user_integrals_by_wl = {_norm_wl(k): v for k, v in raw_user_integrals.items()}
+            integrals_to_plot = user_integrals_by_wl.get(wl_norm) or []
+
+            if isinstance(integrals_to_plot, list) and integrals_to_plot and xs.size and ys.size:
+                def _find_idx(x_target: float) -> int:
+                    return int(np.argmin(np.abs(xs - x_target)))
+
+                for itg in integrals_to_plot:
+                    if not (isinstance(itg, (list, tuple)) and len(itg) >= 2):
+                        continue
+                    try:
+                        xL = float(itg[0]) * scale_factor
+                        xU = float(itg[1]) * scale_factor
+                    except Exception:
+                        continue
+
+                    iL, iU = _find_idx(xL), _find_idx(xU)
+                    if iL == iU:
+                        continue
+                    if iL > iU:
+                        iL, iU = iU, iL
+
+                    cxs = xs[iL:iU + 1]
+                    cys = ys[iL:iU + 1]
+                    if cxs.size < 2:
+                        continue
+
+                    yL, yU = float(cys[0]), float(cys[-1])
+                    slope = (yU - yL) / (float(cxs[-1]) - float(cxs[0]) + 1e-12)
+                    baseline = slope * (cxs - cxs[0]) + yL
+
+                    plt.fill_between(cxs, y1=cys, y2=baseline, alpha=0.20, color='#FF0000', zorder=1)
+
+            plt.ylim(y_boundary_min, y_boundary_max)
+
+        tf_img = tempfile.NamedTemporaryFile(suffix='.png')
+        plt.savefig(tf_img, format='png')
+        tf_img.seek(0)
+        plt.clf()
+        plt.cla()
+        plt.close()
+        return tf_img
