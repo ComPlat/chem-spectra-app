@@ -66,10 +66,14 @@ def zip_jcamp_n_img():
             # check if composered model is hplc ms
             list_jcamps = cmpsr.data
             dst_list = []
+            tf_img = cmpsr.tf_img()
+
             for idx in range(len(list_jcamps)):
                 tf_jcamp = list_jcamps[idx]
-                tf_arr = [tf_jcamp]
-                dst_list.append(tf_arr)
+                if idx == 0 and tf_img is not None:
+                    dst_list.append([tf_jcamp, tf_img])
+                else:
+                    dst_list.append([tf_jcamp])
 
             memory = to_zip_bag_it_response(dst_list)
             rsp = make_response(

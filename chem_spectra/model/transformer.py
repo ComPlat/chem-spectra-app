@@ -3,6 +3,7 @@ import zipfile
 import tempfile
 import glob     # noqa: F401
 import os
+from pathlib import Path
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
@@ -13,7 +14,7 @@ from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
-from chem_spectra.lib.converter.lcms.base import LCMSBaseConverter
+from chem_spectra.lib.converter.lcms.lcms import LCMSConverter
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
@@ -23,8 +24,10 @@ from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.path as mpath  # noqa: E402
 import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
+from chem_spectra.lib.external.binaryparser import get_openlab_readers
 
 
 def find_dir(path, name):
@@ -72,6 +75,20 @@ def search_lcms_file(td):
     except:     # noqa: E722
         return False
 
+def _find_dir_with_cdf(root: str):
+    for dirpath, _, filenames in os.walk(root):
+        for fn in filenames:
+            if fn.lower().endswith('.cdf'):
+                return dirpath
+    return None
+
+def compute_tic(ms_df: pd.DataFrame) -> pd.DataFrame:
+    return (
+        ms_df.groupby('time', as_index=False)['intensities'].sum()
+        .sort_values('time')
+        .reset_index(drop=True)
+        .rename(columns={'intensities': 'Intensity'})
+    )
 
 class TransformerModel:
     def __init__(self, file, molfile=None, params=False, multiple_files=False):
@@ -153,7 +170,6 @@ class TransformerModel:
         return mscv, mscp
 
     def zip2cvp(self):
-        fbcv = False
         with tempfile.TemporaryDirectory() as td:
             tz = store_byte_in_tmp(self.file.bcore, suffix='.zip')
             with zipfile.ZipFile(tz.name, 'r') as z:
@@ -163,40 +179,88 @@ class TransformerModel:
                 # NMR data
                 if (has_processed_files):
                     return self.zip2cv_with_processed_file(target_dir, self.params, self.file.name)
+                fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
+                if not fbcv:
+                    return False, False, False
+
+                isSimulateNMR = False
+                if self.params and 'simulatenmr' in self.params:
+                    isSimulateNMR = self.params['simulatenmr']
+                decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNMR)   # noqa: E501
+                invalid_molfile = False
+                if self.molfile is None:
+                    invalid_molfile = True
+                if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
+                    invalid_molfile = True
+                    final_decorated_jbcv = decorated_jbcv['origin_jbcv']
                 else:
-                    fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
-                    if not fbcv:
-                        return False, False, False
+                    final_decorated_jbcv = decorated_jbcv
+                nicv = JcampNIConverter(final_decorated_jbcv)
+                nicp = NIComposer(nicv)
+                return nicv, nicp, invalid_molfile
 
-                    isSimulateNMR = False
-                    if self.params and 'simulatenmr' in self.params:
-                        isSimulateNMR = self.params['simulatenmr']
-                    decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNMR)   # noqa: E501
+            openlab_dir = _find_dir_with_cdf(td)
+            if openlab_dir:
+                read_lc, read_ms = get_openlab_readers()
+                if read_lc is not None and read_ms is not None:
+                    normalized_dir = os.path.join(td, 'normalized')
+                    os.makedirs(normalized_dir, exist_ok=True)
 
-                    # if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
-                    #     # return if molfile is invalid
-                    #     return None, decorated_jbcv
-                    invalid_molfile = False
-                    if self.molfile is None:
-                        invalid_molfile = True
-                    if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
-                        invalid_molfile = True
-                        final_decorated_jbcv = decorated_jbcv['origin_jbcv']
-                    else:
-                        final_decorated_jbcv = decorated_jbcv
-                    nicv = JcampNIConverter(final_decorated_jbcv)
-                    nicp = NIComposer(nicv)
-                    return nicv, nicp, invalid_molfile
-            else:
-                is_bagit = search_bag_it_file(td)
-                is_lcms = search_lcms_file(td)
-                if is_bagit:
-                    bagcv = BagItBaseConverter(td, self.params, self.file.name)
-                    return bagcv, bagcv, False
-                elif is_lcms:
-                    lcms_cv = LCMSBaseConverter(td, self.params, self.file.name)
-                    lcms_np = LCMSComposer(lcms_cv)
+                    lc_df = read_lc(openlab_dir)
+                    required_lc_cols = ['RetentionTime', 'DetectorSignal', 'wavelength']
+                    for col in required_lc_cols:
+                        if col not in lc_df.columns:
+                            raise RuntimeError(f'LC output missing required column {col}')
+                    lc_df = lc_df[required_lc_cols]
+
+                    minus_df, plus_df = read_ms(openlab_dir)
+                    for label, df in {'MINUS': minus_df, 'PLUS': plus_df}.items():
+                        for col in ('mz', 'intensities', 'time'):
+                            if col not in df.columns:
+                                raise RuntimeError(f'MS {label} missing column {col}')
+
+                    tic_minus = compute_tic(minus_df)
+                    tic_plus = compute_tic(plus_df)
+
+                    lc_df.to_csv(os.path.join(normalized_dir, 'LCMS.csv'), index=False)
+                    tic_minus.to_csv(os.path.join(normalized_dir, 'TIC_MINUS.csv'), index=False)
+                    tic_plus.to_csv(os.path.join(normalized_dir, 'TIC_PLUS.csv'), index=False)
+                    minus_df[['time', 'mz', 'intensities']].to_csv(
+                        os.path.join(normalized_dir, 'MZ_MINUS_Spectra.csv'), index=False
+                    )
+                    plus_df[['time', 'mz', 'intensities']].to_csv(
+                        os.path.join(normalized_dir, 'MZ_PLUS_Spectra.csv'), index=False
+                    )
+
+                    lcms_cv = LCMSConverter(normalized_dir, self.params, os.path.basename(self.file.name))
+                    lcms_peaks = None
+                    if self.params and 'lcms_peaks' in self.params:
+                        try:
+                            lcms_peaks = json.loads(self.params['lcms_peaks'])
+                        except (json.JSONDecodeError, TypeError):
+                            lcms_peaks = None
+                    lcms_np = LCMSComposer(lcms_cv, lcms_peaks)
                     return lcms_cv, lcms_np, False
+
+            is_bagit = search_bag_it_file(td)
+            if is_bagit:
+                bagcv = BagItBaseConverter(td, self.params, self.file.name)
+                return bagcv, bagcv, False
+
+            is_lcms = search_lcms_file(td)
+            if is_lcms:
+                lcms_path = is_lcms
+                lcms_cv = LCMSConverter(lcms_path, self.params, os.path.basename(lcms_path))
+
+                lcms_peaks = None
+                if self.params and 'lcms_peaks' in self.params:
+                    try:
+                        lcms_peaks = json.loads(self.params['lcms_peaks'])
+                    except (json.JSONDecodeError, TypeError):
+                        lcms_peaks = None
+
+                lcms_np = LCMSComposer(lcms_cv, lcms_peaks)
+                return lcms_cv, lcms_np, False
 
         return False, False, False
 
@@ -249,6 +313,10 @@ class TransformerModel:
             mscv = JcampMSConverter(jbcv)
             mscp = MSComposer(mscv)
             return mscv, mscp, invalid_molfile
+        elif jbcv.typ == 'LC/MS':
+            lcmscv = LCMSConverter(jbcv, params=jbcv.params, fname=(jbcv.fname or 'chromatogram.jdx'))
+            lcmscp = LCMSComposer(lcmscv)
+            return lcmscv, lcmscp, invalid_molfile
         else:
             isSimulateNMR = False
             if self.params and 'simulatenmr' in self.params:
