@@ -3,7 +3,7 @@ import zipfile
 from flask import current_app
 import logging
 
-DEFAULT_MAX_ZIP_SIZE = 100   #100MB
+DEFAULT_MAX_ZIP_SIZE = 200   #100MB
 
 class FileContainer:
     def __init__(self, src=False):

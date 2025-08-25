@@ -9,6 +9,7 @@ data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = parse_params(params)
+        self.__read_raw_content(path)
         self.dic, self.data = self.__read(path)
         self.datatypes = self.dic['DATATYPE']
         self.datatypes = [datatype.upper() for datatype in self.datatypes]
@@ -44,6 +45,13 @@ class JcampBaseConverter:
         self.__read_solvent()
         self.__read_user_data_type_mapping()
 
+    def __read_raw_content(self, path):
+        try:
+            with open(path, 'r', encoding='utf-8', errors='ignore') as fh:
+                self.raw_content = fh.read()
+        except Exception:
+            self.raw_content = None
+
     def __read(self, path):
         return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
     
@@ -63,6 +71,7 @@ class JcampBaseConverter:
             'MS': 'MASS SPECTRUM',
             'HPLC UVVIS': 'HPLC UV/VIS SPECTRUM',
             'UVVIS': 'UV/VIS SPECTRUM',
+            'LC/MS': 'LC/MS',
         }
 
         if self.params.get('user_data_type_mapping'):
