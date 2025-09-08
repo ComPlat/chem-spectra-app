@@ -108,4 +108,3 @@ class FidHasBruckerProcessed:
         processed_data = ng.proc_base.di(processed_data)                # discard the imaginaries
         processed_data = ng.proc_base.rev(processed_data)               # reverse the data
         return processed_data
-    
