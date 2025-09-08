@@ -36,7 +36,7 @@ class FidHasBruckerProcessed:
 
     def __read(self, target_dir, fname):
         processed_dirs = search_brucker_processed(target_dir)
-        data = []
+        data =[]
 
         unprocessed_dic, unprocessed_data = ng.bruker.read(target_dir)
         unprocessed_dic = self.__process_dic(unprocessed_dic, unprocessed_data, fname)
@@ -53,12 +53,12 @@ class FidHasBruckerProcessed:
                 continue
 
             processed_dic = self.__process_dic(processed_dic, processed_data, fname)
-
+            
             try:
-                processed_data = ng.process.proc_bl.baseline_corrector(processed_data, wd=20)
-            except Exception:
-                pass
-            processed_data = ng.proc_base.di(processed_data)
+              processed_data = ng.process.proc_bl.baseline_corrector(processed_data, wd=20)  # baseline correction     # noqa: E501
+            except:
+              pass
+            processed_data = ng.proc_base.di(processed_data)                # discard the imaginaries
 
             processed_fid_conv = FidBaseConverter(dic=processed_dic, data=processed_data, params=self.params, fname=fname)
             data.append(processed_fid_conv)
