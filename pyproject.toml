@@ -28,7 +28,7 @@ dependencies = [
   "werkzeug==3.*",
   "scipy==1.*",
   "pyopenms==3.*",
-  "nmrglue@git+https://github.com/ComPlat/nmrglue.git@93f92c27c7c49dbff386963b154f8d433b2df610"
+  "nmrglue@git+https://github.com/ComPlat/nmrglue.git@9ea74d12a91fb4e022d699c98e2392dddc9ff815"
 ]
 
 [project.urls]
