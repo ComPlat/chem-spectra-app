@@ -175,15 +175,36 @@ class NIComposer(BaseComposer):
         return x, y
 
     def __gen_cyclic_voltammetry_medadata(self):
+        meta = []
         scan_rate = self.core.dic.get('SCANRATE', [0.1])[0]
         x_values = self.core.xs
         spectrum_direction = ''
         if len(x_values) > 2:
             spectrum_direction = 'NEGATIVE' if x_values[0] > x_values[1] else 'POSITIVE'
-        return [
-            f"##$CSSCANRATE={scan_rate}\n",
-            f"##$CSSPECTRUMDIRECTION={spectrum_direction}\n"
-        ]
+
+        cv_params = {}
+        if hasattr(self.core, 'params'):
+            cv_params = self.core.params.get('cyclicvolta', {}) or {}
+            if isinstance(cv_params, str):
+                cv_params = json.loads(cv_params)
+
+        area_value = cv_params.get('areaValue', '')
+        area_unit = cv_params.get('areaUnit', '')
+        use_current_density = cv_params.get('useCurrentDensity', False)
+
+        axis_length_unit = ''
+        if isinstance(area_unit, str):
+            if 'cm' in area_unit:
+                axis_length_unit = 'cm'
+            elif 'mm' in area_unit:
+                axis_length_unit = 'mm'
+        
+        meta.append(f"##$CSSCANRATE={scan_rate}\n")
+        meta.append(f"##$CSSPECTRUMDIRECTION={spectrum_direction}\n")
+        meta.append(f"##$CSWEAREAVALUE={area_value}\n")
+        meta.append(f"##$CSWEAREAUNIT={area_unit}\n")
+        meta.append(f"##$CSCURRENTMODE={'DENSITY' if use_current_density else 'CURRENT'}\n")
+        return meta
 
     def __gen_cyclic_voltammetry_data_peaks(self):
         content = ['##$CSCYCLICVOLTAMMETRYDATA=\n']
