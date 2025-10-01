@@ -115,6 +115,7 @@ class MSComposer(BaseComposer):
 
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
         # PLOT data
         blues_x, blues_y, greys_x, greys_y, _ = self.prism_peaks()
