@@ -30,7 +30,30 @@ class NIComposer(BaseComposer):
     def __init__(self, core):
         super().__init__(core)
         self.title = core.fname
+        self.__override_cv_density_label()
         self.meta = self.__compose()
+
+    def __override_cv_density_label(self):
+        try:
+            if not getattr(self.core, 'is_cyclic_volta', False):
+                return
+            cv_params = self.core.params.get('cyclicvolta', {}) if hasattr(self.core, 'params') else {}
+            if isinstance(cv_params, str):
+                cv_params = json.loads(cv_params)
+            use_density = bool(cv_params.get('useCurrentDensity', False))
+            if not use_density:
+                return
+
+            area_unit = cv_params.get('areaUnit') or 'cm²'
+            axes_units = self.core.params.get('axesUnits') if hasattr(self.core, 'params') else None
+            base_unit = 'A'
+            if isinstance(axes_units, dict):
+                selected_y = str(axes_units.get('yUnit') or '')
+                base_unit = 'mA' if ('mA' in selected_y or 'mA' in selected_y) else 'A'
+
+            self.core.label['y'] = f"Current density in {base_unit}/{area_unit}"
+        except Exception:
+            pass
 
     def __header_base(self):
         return [
