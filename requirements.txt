@@ -17,7 +17,7 @@ kiwisolver==1.4.9
 MarkupSafe==3.0.2
 matplotlib==3.10.5
 netCDF4==1.7.2
-nmrglue @ git+https://github.com/ComPlat/nmrglue.git@4005640d1994a3773801eb3742ce534796d28c05
+nmrglue @ git+https://github.com/ComPlat/nmrglue.git@9ea74d12a91fb4e022d699c98e2392dddc9ff815
 numpy==2.3.2
 packaging==25.0
 pandas==2.3.1
