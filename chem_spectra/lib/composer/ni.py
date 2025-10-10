@@ -380,11 +380,6 @@ class NIComposer(BaseComposer):
         if self.core.is_cyclic_volta:
             x_peaks = []
             y_peaks = []
-            formatter = ticker.ScalarFormatter(useMathText=True)
-            formatter.set_scientific(True)
-            formatter.set_powerlimits((-1, 1))
-            plt.gca().yaxis.set_major_formatter(formatter)
-
             listMaxMinPeaks = []
             if self.core.params['list_max_min_peaks'] is not None:
                 listMaxMinPeaks = self.core.params['list_max_min_peaks']
@@ -575,6 +570,52 @@ class NIComposer(BaseComposer):
             y_boundary_max,
         )
 
+        ax = plt.gca()
+        if self.core.is_cyclic_volta:
+            cv = (self.core.params.get('cyclicvolta') or {})
+            if isinstance(cv, str):
+                cv = json.loads(cv)
+            if cv.get('useCurrentDensity', False):
+                unit = str(cv.get('areaUnit') or 'cm²').lower()
+                u2cm2 = {'mm²': 0.01, 'mm2': 0.01, 'cm²': 1.0, 'cm2': 1.0, 'm²': 10000.0, 'm2': 10000.0}
+                try:
+                    area_val = float(cv.get('areaValue', 1.0))
+                except Exception:
+                    area_val = 1.0
+                divisor = max(area_val * u2cm2.get(unit, 1.0), 1e-30)
+
+                y0, y1 = ax.get_ylim()
+                ymax_disp = max(abs(y0), abs(y1)) / divisor
+                exp = int(np.floor(np.log10(ymax_disp))) if ymax_disp > 0 else 0
+                base = (10.0 ** exp) if exp != 0 else 1.0
+
+                from matplotlib.ticker import FuncFormatter
+                ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _:
+                    f"{(y/divisor)/base:.3g}"
+                ))
+
+                ax.yaxis.get_offset_text().set_visible(False)
+
+                if exp != 0:
+                    ax.text(
+                        0.0, 1,              
+                        r"$\times 10^{%d}$" % exp,
+                        transform=ax.transAxes,
+                        ha='left', va='bottom',
+                        fontsize=14,
+                        clip_on=False
+                    )
+            else:
+                fmt = ticker.ScalarFormatter(useMathText=True)
+                fmt.set_scientific(True)
+                fmt.set_powerlimits((-1, 1))
+                ax.yaxis.set_major_formatter(fmt)
+        else:
+            fmt = ticker.ScalarFormatter(useMathText=True)
+            fmt.set_scientific(True)
+            fmt.set_powerlimits((-1, 1))
+            ax.yaxis.set_major_formatter(fmt)
+                    
         # Save
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')
