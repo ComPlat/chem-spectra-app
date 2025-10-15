@@ -8,9 +8,11 @@
   "forwardPorts": [
     3007 // Port for the web server
   ],
-  "onCreateCommand": "pip install --upgrade pip && pip install . && pip freeze > requirements.txt",
   // Ensure the environment
-  "postStartCommand": "pip install --upgrade . && pip freeze > requirements.txt",
+  "postStartCommand": "pip install --upgrade pip && pip install --upgrade .[dev] && pip freeze > requirements.txt",
+  "remoteUser": "debian",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/debian/chem_spectra,type=bind",
+  "workspaceFolder": "/home/debian/chem_spectra",
   // Configure tool-specific properties.
   "customizations": {
     // Configure properties specific to VS Code.
