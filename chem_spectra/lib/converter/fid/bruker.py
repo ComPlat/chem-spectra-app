@@ -46,7 +46,11 @@ class FidHasBruckerProcessed:
         data.append(unprocessed_fid_conv)
 
         for dir in processed_dirs:
-            processed_dic, processed_data = ng.bruker.read_pdata(dir)
+            try:
+                processed_dic, processed_data = ng.bruker.read_pdata(dir)
+            except (OSError, FileNotFoundError):
+                # skip silently if no binaries like 1r/1i
+                continue
 
             processed_dic = self.__process_dic(processed_dic, processed_data, fname)
             
@@ -78,7 +82,9 @@ class FidHasBruckerProcessed:
         processed_dic['XUNITS'] = ['PPM']
         processed_dic['YUNITS'] = ['ARBITRARY']
         processed_dic['TITLE'] = ['FID {}'.format('.'.join(fname.split('.')[:-1]))]
-
+        processed_dic['$CSSOLVENTX']     = [f'{offset:.6f}']
+        processed_dic['$CSSOLVENTVALUE'] = ['0.000000']
+        processed_dic['$CSSOLVENTNAME']  = ['AUTO-OFFSET']
         return processed_dic
 
     def __process_raw_data(self, dic, data):
@@ -102,4 +108,4 @@ class FidHasBruckerProcessed:
         processed_data = ng.proc_base.di(processed_data)                # discard the imaginaries
         processed_data = ng.proc_base.rev(processed_data)               # reverse the data
         return processed_data
-        
+

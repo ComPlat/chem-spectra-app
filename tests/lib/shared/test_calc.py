@@ -10,7 +10,7 @@ def test_calc_ks():
     y_max = 3.0
     h = 3.0
     ks = calc_ks(ys, y_max, h)
-    assert np.alltrue(ks == [0.01, 0.03, 0.06, 0.1])
+    assert np.all(ks == [0.01, 0.03, 0.06, 0.1])
 
 def test_centerX_no_values():
     ps = []

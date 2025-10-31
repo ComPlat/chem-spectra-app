@@ -10,6 +10,7 @@ from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter as BagItConveter
 
 source_nmr = './tests/fixtures/source/1H.dx'
+source_nmr_empty_headers = './tests/fixtures/source/1H_empty_headers.dx'
 source_nmr_edit = './tests/fixtures/source/1H.edit.jdx'
 source_ir = './tests/fixtures/source/IR.dx'
 source_dir_molfile = './tests/fixtures/source/molfile/c60h57fn4.mol'
@@ -26,6 +27,10 @@ def data_schema():
 @pytest.fixture
 def jcamp_file_1h():
     return source_nmr
+
+@pytest.fixture
+def jcamp_file_nmr_empty_headers():
+    return source_nmr_empty_headers
 
 @pytest.fixture
 def jcamp_file_1h_edit():
@@ -274,3 +279,19 @@ def test_ni_composer_generate_jcamp(bagit_file_sec):
                 ['##MN=1.287E+3\n', '##MW=1.465E+3\n', '##MP=1.345E+3\n', '##D=1.139E+0\n'],
                 ['##MN=\n', '##MW=\n', '##MP=\n', '##D=\n']
             ]
+
+def test_ni_composer_no_empty_headers(jcamp_file_nmr_empty_headers):
+    # Initialize NIComposer with test data
+    base_converter = JcampBaseConverter(jcamp_file_nmr_empty_headers)
+    ni_converter = JcampNIConverter(base=base_converter)
+    ni_composer = NIComposer(core=ni_converter)
+    headers = ni_composer._NIComposer__header_nmr()
+
+    # Check for empty headers
+    empty_headers = [
+        header for header in headers
+        if "=" in header and header.split("=", 1)[1].strip() == ""
+    ]
+    
+    # Assert no empty headers
+    assert len(empty_headers) == 0, f"Empty headers detected: {empty_headers}"

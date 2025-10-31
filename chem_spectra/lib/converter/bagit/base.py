@@ -46,7 +46,11 @@ class BagItBaseConverter:
                 tf_csv = mscp.tf_csv()
                 list_csv.append(tf_csv)
             else:
-                nicv = JcampNIConverter(base_cv)
+                try:
+                    nicv = JcampNIConverter(base_cv)
+                except KeyError as err:
+                    print(f"Skip empty JCAMP {file_name}: {err}")
+                    continue
                 nicp = NIComposer(nicv)
                 list_composer.append(nicp)
                 tf_jcamp = nicp.tf_jcamp()

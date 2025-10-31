@@ -41,10 +41,10 @@ def search_brucker_binary(td):
     try:
         has_processed_files = search_processed_file(td)
         target_dir = find_dir(td, 'fid')
-        if not target_dir:
-            target_dir = find_dir(td, 'ser')
-        return target_dir, has_processed_files
-    except:     # noqa: E722
+        if target_dir:
+            return target_dir, has_processed_files
+        return False, has_processed_files
+    except Exception:  # noqa: E722
         return False, False
 
 def search_processed_file(td):
