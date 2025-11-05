@@ -28,7 +28,8 @@ dependencies = [
   "werkzeug==3.*",
   "scipy==1.*",
   "pyopenms==3.*",
-  "nmrglue@git+https://github.com/ComPlat/nmrglue.git@2e3893edff4892f5bc1645b3f0a7150cf9526109"
+  "nmrglue@git+https://github.com/ComPlat/nmrglue.git@2e3893edff4892f5bc1645b3f0a7150cf9526109",
+  "BinaryParser@git+https://github.com/ComPlat/BinaryParser.git@v1.2.0"
 ]
 
 [project.urls]
