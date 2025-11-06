@@ -134,26 +134,43 @@ class LCMSComposer(BaseComposer):
                 "##FIRST= , , 1\n",
                 f"##PAGE={wl_key}\n",
                 f"##NPOINTS={len(xs)}\n",
+                "##DATA TABLE= (XY..XY), PEAKS\n",
             ]
-
-            if include_edits:
-                integrals_to_insert = user_integrals_by_wl.get(wl_norm, [])
-                if integrals_to_insert:
-                    tuples = []
-                    for itg in integrals_to_insert:
-                        xL = itg[0]; xU = itg[1]
-                        area = itg[2] if len(itg) > 2 else 0
-                        abs_area = itg[3] if len(itg) > 3 else abs(area)
-                        tuples.append(f"({xL},{xU},{area},{abs_area})")
-                    integrals_str = " ".join(tuples)
-                    page_block.append(TEXT_HEADER_INTEGRATION)
-                    page_block.append(f"##$OBSERVEDINTEGRALS= {integrals_str}\n")
-
-            page_block.append("##DATA TABLE= (XY..XY), PEAKS\n")
             for x, y in zip(xs, ys):
                 page_block.append(f"{x}, {y};\n")
             final_content.extend(page_block)
 
+            if include_edits:
+                max_x, min_x = (max(xs), min(xs)) if xs else (0, 0)
+                max_y, min_y = (max(ys), min(ys)) if ys else (0, 0)
+                peak_tbl = [
+                    TEXT_PEAK_TABLE_EDIT,
+                    f"##TITLE={self.title}\n",
+                    "##JCAMP-DX=5.00\n",
+                    "##DATA TYPE=UVVISPEAKTABLE\n",
+                    "##DATA CLASS=PEAKTABLE\n",
+                    "##$CSCATEGORY=EDIT_PEAK\n",
+                    "##$CSTHRESHOLD=0.05\n",
+                    f"##MAXX={max_x}\n",
+                    f"##MAXY={max_y}\n",
+                    f"##MINX={min_x}\n",
+                    f"##MINY={min_y}\n",
+                    "##$CSSOLVENTNAME=\n",
+                    "##$CSSOLVENTVALUE=0\n",
+                    "##$CSSOLVENTX=0\n",
+                    f"##NPOINTS={len(peaks_to_insert)}\n",
+                    "##PEAKTABLE= (XY..XY)\n",
+                ]
+                for p in peaks_to_insert:
+                    peak_tbl.append(f"{p['x']}, {p['y']};\n")
+                if integrals_to_insert:
+                    integrals_str = ' '.join(
+                        [f'({",".join(map(str, i))})' for i in integrals_to_insert]
+                    )
+                    peak_tbl.append(TEXT_HEADER_INTEGRATION)
+                    peak_tbl.append(f"##$OBSERVEDINTEGRALS= {integrals_str}\n")
+
+                final_content.extend(peak_tbl)
             
             final_content.append("##END=\n")
 
