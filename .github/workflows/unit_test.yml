@@ -15,7 +15,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install .   
+        pip install .[dev]   
     - name: Create tmp directory with permissions
       run: |
         mkdir -p chem_spectra/tmp
