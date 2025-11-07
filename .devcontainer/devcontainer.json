@@ -9,7 +9,7 @@
     3007 // Port for the web server
   ],
   // Ensure the environment
-  "postStartCommand": "pip install --upgrade pip && pip install --upgrade .[dev] && pip freeze > requirements.txt",
+  "postStartCommand": "pip install --upgrade pip && pip install --upgrade .[dev] && pip freeze > dependencies.list",
   "remoteUser": "debian",
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/debian/chem_spectra,type=bind",
   "workspaceFolder": "/home/debian/chem_spectra",

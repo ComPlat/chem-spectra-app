@@ -1,22 +1,23 @@
 blinker==1.9.0
-certifi==2025.8.3
-cftime==1.6.4.post1
-charset-normalizer==3.4.3
-chem-spectra-app @ file:///workspaces/chem-spectra-app
+certifi==2025.10.5
+cftime==1.6.5
+charset-normalizer==3.4.4
+chem-spectra-app @ file:///home/debian/chem_spectra
 click==8.3.0
 contourpy==1.3.3
+coverage==7.10.7
 cycler==0.12.1
 Flask==3.1.2
 fonttools==4.60.1
 gunicorn==23.0.0
-idna==3.10
+idna==3.11
 iniconfig==2.1.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
 kiwisolver==1.4.9
 MarkupSafe==3.0.3
-matplotlib==3.10.6
-netCDF4==1.7.2
+matplotlib==3.10.7
+netCDF4==1.7.3
 nmrglue @ git+https://github.com/ComPlat/nmrglue.git@2e3893edff4892f5bc1645b3f0a7150cf9526109
 numpy==2.3.3
 packaging==25.0
@@ -30,7 +31,7 @@ pyparsing==3.2.5
 pytest==8.4.2
 python-dateutil==2.9.0.post0
 pytz==2025.2
-rdkit==2025.3.6
+rdkit==2025.9.1
 regex==2025.9.18
 requests==2.32.5
 scipy==1.16.2
