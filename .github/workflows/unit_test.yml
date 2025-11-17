@@ -6,8 +6,8 @@ jobs:
   run-unit-tests:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
       with:
         check-latest: true
         cache: "pip"
@@ -15,7 +15,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install .   
+        pip install .[dev]   
     - name: Create tmp directory with permissions
       run: |
         mkdir -p chem_spectra/tmp

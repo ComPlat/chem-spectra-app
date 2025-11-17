@@ -6,11 +6,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=apt-cache \
     apt-get update \
     && apt-get install -y --no-install-recommends \
     sudo git nano curl \
-    gcc g++ libxrender1 libxext6 libglib2.0-0 # required \
-    && apt-get clean -y
+    gcc g++ libxrender1 libxext6 libglib2.0-0 # required
 
-ADD --chmod=755  https://payload.chemserv.scc.kit.edu/fake-docker.py /bin/docker
-ADD --chmod=755 https://payload.chemserv.scc.kit.edu/spectra_config.py /app/instance/config.py
+ADD --chmod=755 https://payload.chemserv.scc.kit.edu/fake-docker.py /bin/docker
+ADD https://payload.chemserv.scc.kit.edu/spectra_config.py /app/instance/config.py
 
 WORKDIR /app
 

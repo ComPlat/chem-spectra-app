@@ -21,14 +21,20 @@ dependencies = [
   "netCDF4==1.*",
   "numpy==2.*",
   "pymzml==2.*",
-  "pytest==8.*",
   "requests==2.*",
-  "rdkit==2025.3.*",
+  "rdkit==2025.*",
   "setuptools==80.*",
   "werkzeug==3.*",
   "scipy==1.*",
   "pyopenms==3.*",
   "nmrglue@git+https://github.com/ComPlat/nmrglue.git@2e3893edff4892f5bc1645b3f0a7150cf9526109"
+]
+
+[project.optional-dependencies]
+# prod is the production installation till https://github.com/pypa/pip/issues/11440 gets solved
+dev = [
+    "coverage",
+    "pytest"
 ]
 
 [project.urls]
