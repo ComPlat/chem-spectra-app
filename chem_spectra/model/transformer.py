@@ -308,6 +308,7 @@ class TransformerModel:
         cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
           
         plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
         plt.rcParams['legend.loc'] = 'upper left'
         curve_idx = self.params.get('jcamp_idx', 0)
@@ -315,6 +316,9 @@ class TransformerModel:
         xlabel, ylabel = '', ''
         xlabel_set, ylabel_set = [], []
         dic_x_label, dic_y_label = {}, {}
+        marker = mpath.Path(verts, codes)
+        global_x_min, global_x_max = None, None
+        any_forward_orientation = False
 
         cv_mode = False
         cv_abs_max = 0.0
@@ -400,6 +404,39 @@ class TransformerModel:
                         marker = 'v'
                 plt.plot(xs, y_values, label=filename, marker=marker)
 
+                try:
+                    x_max = np.max(xs)
+                    x_min = np.min(xs)
+                    global_x_min = x_min if global_x_min is None else min(global_x_min, x_min)
+                    global_x_max = x_max if global_x_max is None else max(global_x_max, x_max)
+                except Exception:
+                    pass
+                if (nicp.core.is_tga or nicp.core.is_gc or nicp.core.is_uv_vis or nicp.core.is_hplc_uv_vis
+                    or nicp.core.is_xrd or nicp.core.is_cyclic_volta or nicp.core.is_sec
+                    or nicp.core.is_cds or nicp.core.is_aif or nicp.core.is_emissions
+                    or nicp.core.is_dls_acf or nicp.core.is_dls_intensity):
+                    any_forward_orientation = True
+
+                try:
+                    x_peaks, y_peaks = [], []
+                    if nicp.core.edit_peaks:
+                        x_peaks = nicp.core.edit_peaks['x']
+                        y_peaks = nicp.core.edit_peaks['y']
+                    elif nicp.core.auto_peaks:
+                        x_peaks = nicp.core.auto_peaks['x']
+                        y_peaks = nicp.core.auto_peaks['y']
+                    if (not nicp.core.is_cyclic_volta) and len(x_peaks) > 0 and len(x_peaks) == len(y_peaks):
+                        plt.plot(
+                            x_peaks,
+                            y_peaks,
+                            'r',
+                            ls='',
+                            marker=marker if marker != '' else mpath.Path(verts, codes),
+                            markersize=50,
+                        )
+                except Exception:
+                    pass
+
                 # PLOT label
                 core_label_x = nicp.core.label['x']
                 core_label_y = nicp.core.label['y']
@@ -432,13 +469,22 @@ class TransformerModel:
 
             tf.close()
         
+        try:
+            if global_x_min is not None and global_x_max is not None:
+                if any_forward_orientation:
+                    plt.xlim(global_x_min, global_x_max)
+                else:
+                    plt.xlim(global_x_max, global_x_min)
+        except Exception:
+            pass
+
         plt.xlabel(xlabel, fontsize=18)
         plt.ylabel(ylabel, fontsize=18)
         ax = plt.gca()
         if cv_mode:
             ymin, ymax = ax.get_ylim()
             cv_abs_max = max(abs(ymin), abs(ymax))
-            
+
         if cv_mode and cv_abs_max > 0:
             exp = int(np.floor(np.log10(cv_abs_max))) if cv_abs_max > 0 else 0
             print(f"[tf_combine] cv_abs_max={cv_abs_max}, exp={exp}")
@@ -456,6 +502,7 @@ class TransformerModel:
                     fontsize=14,
                     clip_on=False
                 )
+        plt.grid(False)
         plt.legend()
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')
