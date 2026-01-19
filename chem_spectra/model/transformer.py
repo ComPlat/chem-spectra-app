@@ -28,6 +28,7 @@ import pandas as pd  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
 from chem_spectra.lib.external.binaryparser import get_openlab_readers
+from chem_spectra.lib.external.chemotion_converter_lcms import lcms_frames_from_converter_app
 
 
 def find_dir(path, name):
@@ -149,7 +150,7 @@ class TransformerModel:
             cv, _ = self.cdf2cvp()
             return cv
         if is_zip or is_zip_by_params:
-            cv, _ = self.zip2cvp()
+            cv, _, _ = self.zip2cvp()
             return cv
         else:
             cv, _ = self.jcamp2cvp()
@@ -201,46 +202,52 @@ class TransformerModel:
 
             openlab_dir = _find_dir_with_cdf(td)
             if openlab_dir:
-                read_lc, read_ms = get_openlab_readers()
-                if read_lc is not None and read_ms is not None:
-                    normalized_dir = os.path.join(td, 'normalized')
-                    os.makedirs(normalized_dir, exist_ok=True)
+                normalized_dir = os.path.join(td, 'normalized')
+                os.makedirs(normalized_dir, exist_ok=True)
 
+                converter_frames = lcms_frames_from_converter_app(openlab_dir)
+                if converter_frames is not None:
+                    lc_df, minus_df, plus_df = converter_frames
+                else:
+                    read_lc, read_ms = get_openlab_readers()
+                    if read_lc is None or read_ms is None:
+                        raise RuntimeError('OpenLab readers are not available')
                     lc_df = read_lc(openlab_dir)
-                    required_lc_cols = ['RetentionTime', 'DetectorSignal', 'wavelength']
-                    for col in required_lc_cols:
-                        if col not in lc_df.columns:
-                            raise RuntimeError(f'LC output missing required column {col}')
-                    lc_df = lc_df[required_lc_cols]
-
                     minus_df, plus_df = read_ms(openlab_dir)
-                    for label, df in {'MINUS': minus_df, 'PLUS': plus_df}.items():
-                        for col in ('mz', 'intensities', 'time'):
-                            if col not in df.columns:
-                                raise RuntimeError(f'MS {label} missing column {col}')
 
-                    tic_minus = compute_tic(minus_df)
-                    tic_plus = compute_tic(plus_df)
+                required_lc_cols = ['RetentionTime', 'DetectorSignal', 'wavelength']
+                for col in required_lc_cols:
+                    if col not in lc_df.columns:
+                        raise RuntimeError(f'LC output missing required column {col}')
+                lc_df = lc_df[required_lc_cols]
 
-                    lc_df.to_csv(os.path.join(normalized_dir, 'LCMS.csv'), index=False)
-                    tic_minus.to_csv(os.path.join(normalized_dir, 'TIC_MINUS.csv'), index=False)
-                    tic_plus.to_csv(os.path.join(normalized_dir, 'TIC_PLUS.csv'), index=False)
-                    minus_df[['time', 'mz', 'intensities']].to_csv(
-                        os.path.join(normalized_dir, 'MZ_MINUS_Spectra.csv'), index=False
-                    )
-                    plus_df[['time', 'mz', 'intensities']].to_csv(
-                        os.path.join(normalized_dir, 'MZ_PLUS_Spectra.csv'), index=False
-                    )
+                for label, df in {'MINUS': minus_df, 'PLUS': plus_df}.items():
+                    for col in ('mz', 'intensities', 'time'):
+                        if col not in df.columns:
+                            raise RuntimeError(f'MS {label} missing column {col}')
 
-                    lcms_cv = LCMSConverter(normalized_dir, self.params, os.path.basename(self.file.name))
-                    lcms_peaks = None
-                    if self.params and 'lcms_peaks' in self.params:
-                        try:
-                            lcms_peaks = json.loads(self.params['lcms_peaks'])
-                        except (json.JSONDecodeError, TypeError):
-                            lcms_peaks = None
-                    lcms_np = LCMSComposer(lcms_cv, lcms_peaks)
-                    return lcms_cv, lcms_np, False
+                tic_minus = compute_tic(minus_df)
+                tic_plus = compute_tic(plus_df)
+
+                lc_df.to_csv(os.path.join(normalized_dir, 'LCMS.csv'), index=False)
+                tic_minus.to_csv(os.path.join(normalized_dir, 'TIC_MINUS.csv'), index=False)
+                tic_plus.to_csv(os.path.join(normalized_dir, 'TIC_PLUS.csv'), index=False)
+                minus_df[['time', 'mz', 'intensities']].to_csv(
+                    os.path.join(normalized_dir, 'MZ_MINUS_Spectra.csv'), index=False
+                )
+                plus_df[['time', 'mz', 'intensities']].to_csv(
+                    os.path.join(normalized_dir, 'MZ_PLUS_Spectra.csv'), index=False
+                )
+
+                lcms_cv = LCMSConverter(normalized_dir, self.params, os.path.basename(self.file.name))
+                lcms_peaks = None
+                if self.params and 'lcms_peaks' in self.params:
+                    try:
+                        lcms_peaks = json.loads(self.params['lcms_peaks'])
+                    except (json.JSONDecodeError, TypeError):
+                        lcms_peaks = None
+                lcms_np = LCMSComposer(lcms_cv, lcms_peaks)
+                return lcms_cv, lcms_np, False
 
             is_bagit = search_bag_it_file(td)
             if is_bagit:
