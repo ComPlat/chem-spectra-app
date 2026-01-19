@@ -1,5 +1,7 @@
 import json
+import io
 import zipfile
+import tarfile
 import tempfile
 import glob     # noqa: F401
 import os
@@ -98,6 +100,29 @@ class TransformerModel:
         self.params = params
         self.multiple_files = multiple_files
 
+    @staticmethod
+    def _is_tarball(name: str) -> bool:
+        lname = (name or "").lower()
+        return lname.endswith(".tar.gz") or lname.endswith(".tgz") or lname.endswith(".tar") or lname.endswith(".tar.xz")
+
+    def _detect_archive_type(self) -> str | None:
+        if not getattr(self.file, "bcore", None):
+            return None
+        try:
+            if zipfile.is_zipfile(io.BytesIO(self.file.bcore)):
+                return "zip"
+        except Exception:
+            pass
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".tar") as tf:
+                tf.write(self.file.bcore)
+                tf.flush()
+                if tarfile.is_tarfile(tf.name):
+                    return "tar"
+        except Exception:
+            pass
+        return None
+
     def convert2jcamp(self):
         cmpsr, _ = self.to_composer()
         if isinstance(cmpsr, BagItBaseConverter):
@@ -119,17 +144,23 @@ class TransformerModel:
         return cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
 
     def to_composer(self):
+        archive_type = self._detect_archive_type()
         is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml', 'mzxml']     # noqa: E501
         is_cdf = self.file.name.split('.')[-1].lower() in ['cdf']
-        is_zip = self.file.name.split('.')[-1].lower() in ['zip']
+        is_zip = self.file.name.split('.')[-1].lower() in ['zip'] or archive_type == "zip"
+        is_tar = self._is_tarball(self.file.name) or archive_type == "tar"
         is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml', 'mzxml']
         is_cdf_by_params = self.params['ext'] in ['cdf']
         is_zip_by_params = self.params['ext'] in ['zip']
+        is_tar_by_params = self.params['ext'] in ['tar', 'tar.gz', 'tgz', 'tar.xz']
         if is_raw_mzml or is_raw_mzml_by_params:
             return self.ms2composer(), False
         if is_cdf or is_cdf_by_params:
             _, cp = self.cdf2cvp()
             return cp, False
+        if is_tar or is_tar_by_params:
+            _, cp, invalid_molfile = self.tar2cvp()
+            return cp, invalid_molfile
         if is_zip or is_zip_by_params:
             _, cp, invalid_molfile = self.zip2cvp()
             return cp, invalid_molfile
@@ -138,16 +169,22 @@ class TransformerModel:
             return cp, invalid_molfile
 
     def to_converter(self):
+        archive_type = self._detect_archive_type()
         is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml', 'mzxml']     # noqa: E501
         is_cdf = self.file.name.split('.')[-1].lower() in ['cdf']
-        is_zip = self.file.name.split('.')[-1].lower() in ['zip']
+        is_zip = self.file.name.split('.')[-1].lower() in ['zip'] or archive_type == "zip"
+        is_tar = self._is_tarball(self.file.name) or archive_type == "tar"
         is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml', 'mzxml']
         is_cdf_by_params = self.params['ext'] in ['cdf']
         is_zip_by_params = self.params['ext'] in ['zip']
+        is_tar_by_params = self.params['ext'] in ['tar', 'tar.gz', 'tgz', 'tar.xz']
         if is_raw_mzml or is_raw_mzml_by_params:
             return self.ms2composer()
         if is_cdf or is_cdf_by_params:
             cv, _ = self.cdf2cvp()
+            return cv
+        if is_tar or is_tar_by_params:
+            cv, _, _ = self.tar2cvp()
             return cv
         if is_zip or is_zip_by_params:
             cv, _, _ = self.zip2cvp()
@@ -266,6 +303,64 @@ class TransformerModel:
                     except (json.JSONDecodeError, TypeError):
                         lcms_peaks = None
 
+                lcms_np = LCMSComposer(lcms_cv, lcms_peaks)
+                return lcms_cv, lcms_np, False
+
+        return False, False, False
+
+    def tar2cvp(self):
+        with tempfile.TemporaryDirectory() as td:
+            suffix = '.tar.gz' if self._is_tarball(self.file.name) else '.tar'
+            tt = store_byte_in_tmp(self.file.bcore, suffix=suffix)
+            with tarfile.open(tt.name, 'r:*') as t:
+                t.extractall(td)
+
+            openlab_dir = _find_dir_with_cdf(td)
+            if openlab_dir:
+                normalized_dir = os.path.join(td, 'normalized')
+                os.makedirs(normalized_dir, exist_ok=True)
+
+                converter_frames = lcms_frames_from_converter_app(openlab_dir)
+                if converter_frames is not None:
+                    lc_df, minus_df, plus_df = converter_frames
+                else:
+                    read_lc, read_ms = get_openlab_readers()
+                    if read_lc is None or read_ms is None:
+                        return False, False, False
+                    lc_df = read_lc(openlab_dir)
+                    minus_df, plus_df = read_ms(openlab_dir)
+
+                required_lc_cols = ['RetentionTime', 'DetectorSignal', 'wavelength']
+                for col in required_lc_cols:
+                    if col not in lc_df.columns:
+                        raise RuntimeError(f'LC output missing required column {col}')
+                lc_df = lc_df[required_lc_cols]
+
+                for label, df in {'MINUS': minus_df, 'PLUS': plus_df}.items():
+                    for col in ('mz', 'intensities', 'time'):
+                        if col not in df.columns:
+                            raise RuntimeError(f'MS {label} missing column {col}')
+
+                tic_minus = compute_tic(minus_df)
+                tic_plus = compute_tic(plus_df)
+
+                lc_df.to_csv(os.path.join(normalized_dir, 'LCMS.csv'), index=False)
+                tic_minus.to_csv(os.path.join(normalized_dir, 'TIC_MINUS.csv'), index=False)
+                tic_plus.to_csv(os.path.join(normalized_dir, 'TIC_PLUS.csv'), index=False)
+                minus_df[['time', 'mz', 'intensities']].to_csv(
+                    os.path.join(normalized_dir, 'MZ_MINUS_Spectra.csv'), index=False
+                )
+                plus_df[['time', 'mz', 'intensities']].to_csv(
+                    os.path.join(normalized_dir, 'MZ_PLUS_Spectra.csv'), index=False
+                )
+
+                lcms_cv = LCMSConverter(normalized_dir, self.params, os.path.basename(self.file.name))
+                lcms_peaks = None
+                if self.params and 'lcms_peaks' in self.params:
+                    try:
+                        lcms_peaks = json.loads(self.params['lcms_peaks'])
+                    except (json.JSONDecodeError, TypeError):
+                        lcms_peaks = None
                 lcms_np = LCMSComposer(lcms_cv, lcms_peaks)
                 return lcms_cv, lcms_np, False
 
