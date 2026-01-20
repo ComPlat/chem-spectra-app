@@ -83,10 +83,10 @@ def zip_jcamp_n_img():
         else:
             tf_jcamp, tf_img, tf_csv = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
             tf_nmrium = None
-            try:
+            if False:
                 molecule_model = MoleculeModel(molfile, cmpsr.core.ncl, decorate=False)
                 tf_nmrium = cmpsr.generate_nmrium(molfile_data=molecule_model.moltxt)
-            except Exception:
+            else:
                 pass
 
             spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
