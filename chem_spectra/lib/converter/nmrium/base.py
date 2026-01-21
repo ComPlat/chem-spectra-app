@@ -171,9 +171,16 @@ class NMRiumDataConverter:
         if spectrum is None:
             return None, None
 
-        data = spectrum['data']
-        x_values = data['x']
-        y_values = data['re']
+        try:
+            data = spectrum.get('data')
+            if not data:
+                return None, None
+            x_values = data.get('x')
+            y_values = data.get('re')
+            if x_values is None or y_values is None:
+                return None, None
+        except Exception:
+            return None, None
 
         return x_values, y_values
 
