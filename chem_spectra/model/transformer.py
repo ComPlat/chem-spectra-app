@@ -265,7 +265,7 @@ class TransformerModel:
 
     def tf_nmrium(self):
         converter = NMRiumDataConverter(self.file)
-        if converter.is_2d == True:
+        if converter.is_2d == True or converter.data is None:
             return None
         nicp = NIComposer(converter)
         tf_jcamp = nicp.tf_jcamp()
