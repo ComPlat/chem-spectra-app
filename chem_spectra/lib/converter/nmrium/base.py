@@ -32,6 +32,8 @@ class NMRiumDataConverter:
             self.__read_info(spectrum_data)
             if (self.is_2d == False):
                 self.data = self.__parsing_xy_values(spectrum_data)
+                if self.data is None:
+                    return
                 
 
                 self.boundary = self.__find_boundary()
@@ -134,6 +136,8 @@ class NMRiumDataConverter:
         if spectrumData is None:
             return None
         x_values, y_values = self.__read_xy_values(spectrumData)
+        if x_values is None or y_values is None or len(x_values) == 0:
+            return None
 
         self.xs = np.array(x_values)
         self.xs = np.flip(self.xs)
@@ -167,9 +171,16 @@ class NMRiumDataConverter:
         if spectrum is None:
             return None, None
 
-        data = spectrum['data']
-        x_values = data['x']
-        y_values = data['re']
+        try:
+            data = spectrum.get('data')
+            if not data:
+                return None, None
+            x_values = data.get('x')
+            y_values = data.get('re')
+            if x_values is None or y_values is None:
+                return None, None
+        except Exception:
+            return None, None
 
         return x_values, y_values
 
