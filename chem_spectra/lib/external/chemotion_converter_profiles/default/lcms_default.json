@@ -1,0 +1,156 @@
+{
+  "id": "lcms_default",
+  "converter_version": "1.5.0",
+  "last_migration": "20260113143334",
+  "description": "Default LCMS profile for LcmsReader",
+  "title": "LCMS Default",
+  "isDisabled": false,
+  "ontology": "",
+  "devices": [],
+  "software": [],
+  "data": {
+    "metadata": {},
+    "tables": []
+  },
+  "identifiers": [
+    {
+      "id": "lcms_reader",
+      "key": "reader",
+      "match": "regex",
+      "optional": false,
+      "type": "fileMetadata",
+      "value": "(LcmsReader|HplcReader)"
+    },
+    {
+      "id": "lcms_ext",
+      "key": "extension",
+      "match": "regex",
+      "optional": false,
+      "type": "fileMetadata",
+      "value": "\\.(gz|xz|tar)$"
+    },
+    {
+      "id": "tic_mode_category",
+      "key": "mode",
+      "match": "any",
+      "optional": true,
+      "type": "tableMetadata",
+      "value": "",
+      "outputKey": "$CSCATEGORY",
+      "outputTableIndex": 0,
+      "tableIndex": 0
+    },
+    {
+      "id": "mz_mode_category",
+      "key": "mode",
+      "match": "any",
+      "optional": true,
+      "type": "tableMetadata",
+      "value": "",
+      "outputKey": "$CSCATEGORY",
+      "outputTableIndex": 1,
+      "tableIndex": 0
+    },
+    {
+      "id": "mz_mode_id",
+      "key": "mode",
+      "match": "any",
+      "optional": true,
+      "type": "tableMetadata",
+      "value": "",
+      "outputKey": "NTUPLES_ID",
+      "outputTableIndex": 1,
+      "tableIndex": 0
+    }
+  ],
+  "tables": [
+    {
+      "header": {
+        "DATA TYPE": "MASS TIC",
+        "DATA CLASS": "XYPOINTS",
+        "XUNITS": "MINUTES",
+        "YUNITS": "Intensity"
+      },
+      "loopType": "theader",
+      "table": {
+        "xColumn": {
+          "columnIndex": 0,
+          "tableIndex": 0
+        },
+        "yColumn": {
+          "columnIndex": 1,
+          "tableIndex": 0
+        },
+        "loop_theader": [
+          {
+            "ignore_missing_values": false,
+            "line": "1",
+            "operator": "&",
+            "regex": "ms chromatogramm",
+            "type": "header_value"
+          }
+        ]
+      }
+    },
+    {
+      "header": {
+        "DATA TYPE": "MASS SPECTRUM",
+        "DATA CLASS": "NTUPLES",
+        "NTUPLES_ID": "LCMS_MZ",
+        "NTUPLES_PAGE_HEADER": "T",
+        "XUNITS": "m/z",
+        "YUNITS": "Intensity"
+      },
+      "loopType": "theader",
+      "table": {
+        "xColumn": {
+          "columnIndex": 0,
+          "tableIndex": 0
+        },
+        "yColumn": {
+          "columnIndex": 1,
+          "tableIndex": 0
+        },
+        "loop_theader": [
+          {
+            "ignore_missing_values": false,
+            "line": "1",
+            "operator": "&",
+            "regex": "ms spectrum",
+            "type": "header_value"
+          }
+        ]
+      }
+    },
+    {
+      "header": {
+        "DATA TYPE": "HPLC UV-VIS",
+        "DATA CLASS": "NTUPLES",
+        "NTUPLES_ID": "LCMS_UVVIS",
+        "NTUPLES_PAGE_HEADER": "Wavelength",
+        "XUNITS": "MINUTES",
+        "YUNITS": "ARBITRARY UNITS"
+      },
+      "loopType": "theader",
+      "table": {
+        "xColumn": {
+          "columnIndex": 0,
+          "tableIndex": 0
+        },
+        "yColumn": {
+          "columnIndex": 1,
+          "tableIndex": 0
+        },
+        "loop_theader": [
+          {
+            "ignore_missing_values": false,
+            "line": "1",
+            "operator": "&",
+            "regex": "lc - uv/vis",
+            "type": "header_value"
+          }
+        ]
+      }
+    }
+  ]
+}
