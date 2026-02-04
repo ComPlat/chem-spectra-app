@@ -13,7 +13,7 @@ from chem_spectra.controller.helper.share import (
 )
 
 from chem_spectra.model.transformer import TransformerModel as TraModel
-from chem_spectra.lib.composer.lcms import LCMSComposer
+from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 
 
@@ -62,7 +62,7 @@ def zip_jcamp_n_img():
                 )
             )
             rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit', 'invalid_molfile': invalid_molfile})
-        elif isinstance(cmpsr, LCMSComposer):
+        elif isinstance(cmpsr, LCMSConverterAppComposer):
             # check if composered model is hplc ms
             list_jcamps = cmpsr.data
             dst_list = []

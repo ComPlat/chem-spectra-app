@@ -15,8 +15,8 @@ classifiers = [
     "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "flask==3.*",
-  "gunicorn==23.*",
+  "flask==2.*",
+  "gunicorn==22.*",
   "matplotlib==3.*",
   "netCDF4==1.*",
   "numpy==2.*",
@@ -28,7 +28,7 @@ dependencies = [
   "scipy==1.*",
   "pyopenms==3.*",
   "nmrglue@git+https://github.com/ComPlat/nmrglue.git@2e3893edff4892f5bc1645b3f0a7150cf9526109",
-  "BinaryParser@git+https://github.com/ComPlat/BinaryParser.git@v1.2.0"
+  "chemotion-converter-app@git+https://github.com/ComPlat/chemotion-converter-app.git@196-ms-reader-for-binaryparser",
 ]
 
 [project.optional-dependencies]

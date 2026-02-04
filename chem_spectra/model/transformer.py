@@ -16,21 +16,22 @@ from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
-from chem_spectra.lib.converter.lcms.lcms import LCMSConverter
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
-from chem_spectra.lib.composer.lcms import LCMSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.path as mpath  # noqa: E402
 import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
-from chem_spectra.lib.external.binaryparser import get_openlab_readers
-from chem_spectra.lib.external.chemotion_converter_lcms import lcms_frames_from_converter_app
+from chem_spectra.lib.external.chemotion_converter_lcms import (
+    lcms_frames_from_converter_app,
+    lcms_jcamp_files_from_converter_app,
+    lcms_uvvis_image_from_df,
+)
+from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 
 
 def find_dir(path, name):
@@ -71,13 +72,6 @@ def search_bag_it_file(td):
     except:     # noqa: E722
         return False
 
-def search_lcms_file(td):
-    try:
-        target_dir = find_dir(td, 'LCMS.csv')
-        return target_dir
-    except:     # noqa: E722
-        return False
-
 def _find_dir_with_cdf(root: str):
     for dirpath, _, filenames in os.walk(root):
         for fn in filenames:
@@ -85,13 +79,34 @@ def _find_dir_with_cdf(root: str):
                 return dirpath
     return None
 
-def compute_tic(ms_df: pd.DataFrame) -> pd.DataFrame:
-    return (
-        ms_df.groupby('time', as_index=False)['intensities'].sum()
-        .sort_values('time')
-        .reset_index(drop=True)
-        .rename(columns={'intensities': 'Intensity'})
-    )
+
+def _collect_lcms_jdx_assets(root_dir: str):
+    jdx_paths = []
+    png_paths = []
+    for dirpath, _, filenames in os.walk(root_dir):
+        for name in filenames:
+            lower = name.lower()
+            full_path = os.path.join(dirpath, name)
+            if lower.endswith(('.jdx', '.dx', '.jcamp')):
+                jdx_paths.append(full_path)
+            elif lower.endswith('.png'):
+                png_paths.append(full_path)
+
+    jdx_paths.sort()
+    png_paths.sort()
+
+    def _copy_to_tmp(path: str) -> tempfile.NamedTemporaryFile:
+        name = Path(path).name
+        suffix = f"_{name}" if name else (Path(path).suffix or '')
+        tf = tempfile.NamedTemporaryFile(suffix=suffix)
+        with open(path, 'rb') as src:
+            tf.write(src.read())
+        tf.seek(0)
+        return tf
+
+    jdx_files = [_copy_to_tmp(p) for p in jdx_paths]
+    img_file = _copy_to_tmp(png_paths[0]) if png_paths else None
+    return jdx_files, img_file
 
 class TransformerModel:
     def __init__(self, file, molfile=None, params=False, multiple_files=False):
@@ -108,6 +123,9 @@ class TransformerModel:
     def _detect_archive_type(self) -> str | None:
         if not getattr(self.file, "bcore", None):
             return None
+        raw = self.file.bcore or b""
+        if raw.startswith((b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")):
+            return "zip"
         try:
             if zipfile.is_zipfile(io.BytesIO(self.file.bcore)):
                 return "zip"
@@ -123,14 +141,33 @@ class TransformerModel:
             pass
         return None
 
+    def _tar_suffix(self) -> str:
+        raw = getattr(self.file, "bcore", None) or b""
+        if raw.startswith(b"\x1f\x8b"):
+            return ".tar.gz"
+        if raw.startswith(b"\xfd7zXZ\x00"):
+            return ".tar.xz"
+        ext = ""
+        if isinstance(self.params, dict):
+            ext = str(self.params.get("ext", "")).lower()
+        if ext in {"gz", "tgz", "tar.gz"}:
+            return ".tar.gz"
+        if ext in {"xz", "tar.xz"}:
+            return ".tar.xz"
+        return ".tar"
+
     def convert2jcamp(self):
         cmpsr, _ = self.to_composer()
+        if not cmpsr:
+            return False
         if isinstance(cmpsr, BagItBaseConverter):
             return cmpsr
         return cmpsr.tf_jcamp()
 
     def convert2img(self):
         cmpsr, _ = self.to_composer()
+        if not cmpsr:
+            return False
         if isinstance(cmpsr, BagItBaseConverter):
             return cmpsr
         return cmpsr.tf_img()
@@ -243,14 +280,11 @@ class TransformerModel:
                 os.makedirs(normalized_dir, exist_ok=True)
 
                 converter_frames = lcms_frames_from_converter_app(openlab_dir)
+                polarity_hint = None
                 if converter_frames is not None:
-                    lc_df, minus_df, plus_df = converter_frames
+                    lc_df, minus_df, plus_df, polarity_hint = converter_frames
                 else:
-                    read_lc, read_ms = get_openlab_readers()
-                    if read_lc is None or read_ms is None:
-                        raise RuntimeError('OpenLab readers are not available')
-                    lc_df = read_lc(openlab_dir)
-                    minus_df, plus_df = read_ms(openlab_dir)
+                    return False, False, False
 
                 required_lc_cols = ['RetentionTime', 'DetectorSignal', 'wavelength']
                 for col in required_lc_cols:
@@ -263,106 +297,73 @@ class TransformerModel:
                         if col not in df.columns:
                             raise RuntimeError(f'MS {label} missing column {col}')
 
-                tic_minus = compute_tic(minus_df)
-                tic_plus = compute_tic(plus_df)
-
-                lc_df.to_csv(os.path.join(normalized_dir, 'LCMS.csv'), index=False)
-                tic_minus.to_csv(os.path.join(normalized_dir, 'TIC_MINUS.csv'), index=False)
-                tic_plus.to_csv(os.path.join(normalized_dir, 'TIC_PLUS.csv'), index=False)
-                minus_df[['time', 'mz', 'intensities']].to_csv(
-                    os.path.join(normalized_dir, 'MZ_MINUS_Spectra.csv'), index=False
+                jcamp_files = lcms_jcamp_files_from_converter_app(
+                    openlab_dir,
+                    os.path.basename(self.file.name),
+                    lc_df=lc_df,
+                    params=self.params,
                 )
-                plus_df[['time', 'mz', 'intensities']].to_csv(
-                    os.path.join(normalized_dir, 'MZ_PLUS_Spectra.csv'), index=False
-                )
-
-                lcms_cv = LCMSConverter(normalized_dir, self.params, os.path.basename(self.file.name))
-                lcms_peaks = None
-                if self.params and 'lcms_peaks' in self.params:
-                    try:
-                        lcms_peaks = json.loads(self.params['lcms_peaks'])
-                    except (json.JSONDecodeError, TypeError):
-                        lcms_peaks = None
-                lcms_np = LCMSComposer(lcms_cv, lcms_peaks)
-                return lcms_cv, lcms_np, False
+                if jcamp_files:
+                    tf_img = lcms_uvvis_image_from_df(lc_df)
+                    lcms_cp = LCMSConverterAppComposer(jcamp_files, tf_img)
+                    return None, lcms_cp, False
+                return False, False, False
 
             is_bagit = search_bag_it_file(td)
             if is_bagit:
                 bagcv = BagItBaseConverter(td, self.params, self.file.name)
                 return bagcv, bagcv, False
 
-            is_lcms = search_lcms_file(td)
-            if is_lcms:
-                lcms_path = is_lcms
-                lcms_cv = LCMSConverter(lcms_path, self.params, os.path.basename(lcms_path))
-
-                lcms_peaks = None
-                if self.params and 'lcms_peaks' in self.params:
-                    try:
-                        lcms_peaks = json.loads(self.params['lcms_peaks'])
-                    except (json.JSONDecodeError, TypeError):
-                        lcms_peaks = None
-
-                lcms_np = LCMSComposer(lcms_cv, lcms_peaks)
-                return lcms_cv, lcms_np, False
+            jdx_files, img_file = _collect_lcms_jdx_assets(td)
+            if jdx_files:
+                lcms_cp = LCMSConverterAppComposer(jdx_files, img_file)
+                return None, lcms_cp, False
 
         return False, False, False
 
     def tar2cvp(self):
         with tempfile.TemporaryDirectory() as td:
-            suffix = '.tar.gz' if self._is_tarball(self.file.name) else '.tar'
+            suffix = self._tar_suffix()
             tt = store_byte_in_tmp(self.file.bcore, suffix=suffix)
-            with tarfile.open(tt.name, 'r:*') as t:
-                t.extractall(td)
+            normalized_dir = os.path.join(td, 'normalized')
+            os.makedirs(normalized_dir, exist_ok=True)
 
-            openlab_dir = _find_dir_with_cdf(td)
-            if openlab_dir:
-                normalized_dir = os.path.join(td, 'normalized')
-                os.makedirs(normalized_dir, exist_ok=True)
+            converter_frames = lcms_frames_from_converter_app(tt.name)
+            if converter_frames is None:
+                with tarfile.open(tt.name, 'r:*') as t:
+                    t.extractall(td)
+                openlab_dir = _find_dir_with_cdf(td)
+                if openlab_dir:
+                    converter_frames = lcms_frames_from_converter_app(openlab_dir)
 
-                converter_frames = lcms_frames_from_converter_app(openlab_dir)
-                if converter_frames is not None:
-                    lc_df, minus_df, plus_df = converter_frames
-                else:
-                    read_lc, read_ms = get_openlab_readers()
-                    if read_lc is None or read_ms is None:
-                        return False, False, False
-                    lc_df = read_lc(openlab_dir)
-                    minus_df, plus_df = read_ms(openlab_dir)
+            polarity_hint = None
+            if converter_frames is None:
+                return False, False, False
 
-                required_lc_cols = ['RetentionTime', 'DetectorSignal', 'wavelength']
-                for col in required_lc_cols:
-                    if col not in lc_df.columns:
-                        raise RuntimeError(f'LC output missing required column {col}')
-                lc_df = lc_df[required_lc_cols]
+            lc_df, minus_df, plus_df, polarity_hint = converter_frames
 
-                for label, df in {'MINUS': minus_df, 'PLUS': plus_df}.items():
-                    for col in ('mz', 'intensities', 'time'):
-                        if col not in df.columns:
-                            raise RuntimeError(f'MS {label} missing column {col}')
+            required_lc_cols = ['RetentionTime', 'DetectorSignal', 'wavelength']
+            for col in required_lc_cols:
+                if col not in lc_df.columns:
+                    raise RuntimeError(f'LC output missing required column {col}')
+            lc_df = lc_df[required_lc_cols]
 
-                tic_minus = compute_tic(minus_df)
-                tic_plus = compute_tic(plus_df)
+            for label, df in {'MINUS': minus_df, 'PLUS': plus_df}.items():
+                for col in ('mz', 'intensities', 'time'):
+                    if col not in df.columns:
+                        raise RuntimeError(f'MS {label} missing column {col}')
 
-                lc_df.to_csv(os.path.join(normalized_dir, 'LCMS.csv'), index=False)
-                tic_minus.to_csv(os.path.join(normalized_dir, 'TIC_MINUS.csv'), index=False)
-                tic_plus.to_csv(os.path.join(normalized_dir, 'TIC_PLUS.csv'), index=False)
-                minus_df[['time', 'mz', 'intensities']].to_csv(
-                    os.path.join(normalized_dir, 'MZ_MINUS_Spectra.csv'), index=False
-                )
-                plus_df[['time', 'mz', 'intensities']].to_csv(
-                    os.path.join(normalized_dir, 'MZ_PLUS_Spectra.csv'), index=False
-                )
-
-                lcms_cv = LCMSConverter(normalized_dir, self.params, os.path.basename(self.file.name))
-                lcms_peaks = None
-                if self.params and 'lcms_peaks' in self.params:
-                    try:
-                        lcms_peaks = json.loads(self.params['lcms_peaks'])
-                    except (json.JSONDecodeError, TypeError):
-                        lcms_peaks = None
-                lcms_np = LCMSComposer(lcms_cv, lcms_peaks)
-                return lcms_cv, lcms_np, False
+            jcamp_files = lcms_jcamp_files_from_converter_app(
+                tt.name,
+                os.path.basename(self.file.name),
+                lc_df=lc_df,
+                params=self.params,
+            )
+            if jcamp_files:
+                tf_img = lcms_uvvis_image_from_df(lc_df)
+                lcms_cp = LCMSConverterAppComposer(jcamp_files, tf_img)
+                return None, lcms_cp, False
+            return False, False, False
 
         return False, False, False
 
@@ -416,9 +417,7 @@ class TransformerModel:
             mscp = MSComposer(mscv)
             return mscv, mscp, invalid_molfile
         elif jbcv.typ == 'LC/MS':
-            lcmscv = LCMSConverter(jbcv, params=jbcv.params, fname=(jbcv.fname or 'chromatogram.jdx'))
-            lcmscp = LCMSComposer(lcmscv)
-            return lcmscv, lcmscp, invalid_molfile
+            return False, False, invalid_molfile
         else:
             isSimulateNMR = False
             if self.params and 'simulatenmr' in self.params:
