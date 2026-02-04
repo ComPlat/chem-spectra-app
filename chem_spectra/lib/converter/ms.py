@@ -90,6 +90,7 @@ class MSConverter:
             '/data/{}/{}'.format(self.hash_str, self.tf.name.split('/')[-1]),
             '-o',
             '/data/{}'.format(self.hash_str),
+            '--simAsSpectra',
             '--32',
             '--zlib',
             '--filter',

@@ -74,7 +74,7 @@ class MSComposer(BaseComposer):
         ms_tempfile.seek(0)
         lines = ms_tempfile.readlines()
         decoded_lines = [line.decode('utf-8').strip() for line in lines]
-        msspcs = '\n'.join(decoded_lines)
+        msspcs = '\n'.join(decoded_lines) + '\n'
         ms_tempfile.close()
         return msspcs
 
@@ -115,6 +115,7 @@ class MSComposer(BaseComposer):
 
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
         # PLOT data
         blues_x, blues_y, greys_x, greys_y, _ = self.prism_peaks()

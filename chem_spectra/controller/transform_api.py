@@ -13,6 +13,7 @@ from chem_spectra.controller.helper.share import (
 )
 
 from chem_spectra.model.transformer import TransformerModel as TraModel
+from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 from chem_spectra.model.molecule import MoleculeModel
 
@@ -62,6 +63,28 @@ def zip_jcamp_n_img():
                 )
             )
             rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit', 'invalid_molfile': invalid_molfile})
+        elif isinstance(cmpsr, LCMSConverterAppComposer):
+            # check if composered model is hplc ms
+            list_jcamps = cmpsr.data
+            dst_list = []
+            tf_img = cmpsr.tf_img()
+
+            for idx in range(len(list_jcamps)):
+                tf_jcamp = list_jcamps[idx]
+                if idx == 0 and tf_img is not None:
+                    dst_list.append([tf_jcamp, tf_img])
+                else:
+                    dst_list.append([tf_jcamp])
+
+            memory = to_zip_bag_it_response(dst_list)
+            rsp = make_response(
+                send_file(
+                    memory,
+                    download_name='spectrum.zip',
+                    as_attachment=True
+                )
+            )
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'hplc', 'invalid_molfile': invalid_molfile})
         elif isinstance(cmpsr, collections.abc.Sequence):
             dst_list = []
             spc_type = ''

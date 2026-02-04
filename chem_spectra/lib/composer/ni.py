@@ -58,26 +58,34 @@ class NIComposer(BaseComposer):
         return nucleus
 
     def __header_nmr(self):
-        return [
-            '##.OBSERVE FREQUENCY={}\n'.format(
-                extrac_dic(self.core, '.OBSERVEFREQUENCY')
-            ),
-            '##.OBSERVE NUCLEUS={}\n'.format(
-                self.__get_nucleus()
-            ),
-            '##SPECTROMETER/DATA SYSTEM={}\n'.format(
-                extrac_dic(self.core, 'SPECTROMETER/DATASYSTEM')
-            ),
-            '##.SHIFT REFERENCE={}\n'.format(
-                extrac_dic(self.core, '.SHIFTREFERENCE')
-            ),
-            '##.SOLVENT NAME={}\n'.format(
-                extrac_dic(self.core, '.SOLVENTNAME')
-            ),
-            '##.PULSE SEQUENCE={}\n'.format(
-                extrac_dic(self.core, '.PULSESEQUENCE')
-            ),
-        ]
+        header_lines = []
+
+        # Append each line only if the extracted value is not empty
+        observe_frequency = extrac_dic(self.core, '.OBSERVEFREQUENCY')
+        if observe_frequency:
+            header_lines.append('##.OBSERVE FREQUENCY={}\n'.format(observe_frequency))
+
+        observe_nucleus = self.__get_nucleus()
+        if observe_nucleus:
+            header_lines.append('##.OBSERVE NUCLEUS={}\n'.format(observe_nucleus))
+
+        spectrometer_data_system = extrac_dic(self.core, 'SPECTROMETER/DATASYSTEM')
+        if spectrometer_data_system:
+            header_lines.append('##SPECTROMETER/DATA SYSTEM={}\n'.format(spectrometer_data_system))
+
+        shift_reference = extrac_dic(self.core, '.SHIFTREFERENCE')
+        if shift_reference:
+            header_lines.append('##.SHIFT REFERENCE={}\n'.format(shift_reference))
+
+        solvent_name = extrac_dic(self.core, '.SOLVENTNAME')
+        if solvent_name:
+            header_lines.append('##.SOLVENT NAME={}\n'.format(solvent_name))
+
+        pulse_sequence = extrac_dic(self.core, '.PULSESEQUENCE')
+        if pulse_sequence:
+            header_lines.append('##.PULSE SEQUENCE={}\n'.format(pulse_sequence))
+
+        return header_lines
 
     def __header_params(self):
         return [
@@ -515,7 +523,7 @@ class NIComposer(BaseComposer):
 
         self.__generate_info_box(plt)
 
-        y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max*1.5)
+        y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max * (1.1 if self.core.is_ir else 1.5))
 
 
         plt.ylim(

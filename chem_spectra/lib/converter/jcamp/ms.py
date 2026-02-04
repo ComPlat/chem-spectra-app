@@ -1,5 +1,6 @@
 from chem_spectra.lib.converter.jcamp.data_parse import make_ms_data_xsys
 from chem_spectra.lib.converter.share import reduce_pts
+import numpy as np
 
 MARGIN = 1
 THRESHOLD_MS = 0.05
@@ -78,12 +79,19 @@ class JcampMSConverter:  # nmr & IR
 
         return ratio, noise_ratio
 
+    # Guarantees that the data passed to `reduce_pts` and subsequent operations
+    # conforms to the expected structure.
+    def __normalize_data(self, data):
+        if isinstance(data, np.ndarray) and data.ndim == 3 and data.shape[0] == 1:
+            return data[0]
+        return data
+    
     def __decode(self, runs):
         spectra = []
         best_ratio, best_idx, backup_ratio, backup_idx = 0, 0, 0, 0
         for idx, data in enumerate(runs):
+            data = self.__normalize_data(data)
             spectra.append(reduce_pts(data))
-
             ratio, noise_ratio = self.__get_ratio(data)
             if (best_ratio < ratio) and (noise_ratio <= 50.0):
                 best_idx = idx

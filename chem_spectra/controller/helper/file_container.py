@@ -3,7 +3,7 @@ import zipfile
 from flask import current_app
 import logging
 
-DEFAULT_MAX_ZIP_SIZE = 100   #100MB
+DEFAULT_MAX_ZIP_SIZE = 200   #100MB
 
 class FileContainer:
     def __init__(self, src=False):
@@ -14,9 +14,7 @@ class FileContainer:
             with zipfile.ZipFile(src) as z:
                 total_file_size = sum(e.file_size for e in z.infolist())
                 try:
-                    max_zip_size = current_app.config.get('MAX_ZIP_SIZE')
-                    if max_zip_size is None:
-                        max_zip_size = DEFAULT_MAX_ZIP_SIZE
+                    max_zip_size = DEFAULT_MAX_ZIP_SIZE
                 except Exception as exception:
                     max_zip_size = DEFAULT_MAX_ZIP_SIZE
                 total_size_in_MB = total_file_size/(1024*1024)
