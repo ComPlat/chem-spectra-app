@@ -723,27 +723,6 @@ def lcms_uvvis_peak_jcamp_from_df(
             lines.append(f"({x_left}, {x_right}, {area}, {absolute_area})\n")
         return lines
 
-    def _auto_peaks(xs, ys, threshold=0.05, limit=100):
-        try:
-            import numpy as np  # type: ignore
-            from scipy import signal  # type: ignore
-        except Exception:
-            return []
-        if not xs or not ys:
-            return []
-        arr_x = np.asarray(xs, float)
-        arr_y = np.asarray(ys, float)
-        if arr_x.size == 0 or arr_y.size == 0:
-            return []
-        max_y = float(np.max(arr_y))
-        if max_y <= 0:
-            return []
-        height = threshold * max_y
-        peak_idxs = signal.find_peaks(arr_y, height=height)[0]
-        peaks = [{"x": float(arr_x[idx]), "y": float(arr_y[idx])} for idx in peak_idxs]
-        peaks.sort(key=lambda d: d["y"], reverse=True)
-        return peaks[:limit]
-
     wavelength_values = lc_df["wavelength"].dropna().unique().tolist()
     numeric_pairs = [(w, _to_float_or_none(w)) for w in wavelength_values]
     numeric_only = [p for p in numeric_pairs if p[1] is not None]
@@ -767,7 +746,6 @@ def lcms_uvvis_peak_jcamp_from_df(
             y_min, y_max = 0.0, 0.0
 
         edit_peaks = _peaks_for_page(peaks_input, page_idx, wl)
-        auto_peaks = _auto_peaks(xs, ys)
         integration_meta, integration_stack = _integration_for_page(integration_input, page_idx, wl)
         integration_lines = _integration_lines(integration_meta or integration_input, integration_stack)
 
