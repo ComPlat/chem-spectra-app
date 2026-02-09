@@ -64,16 +64,17 @@ def zip_jcamp_n_img():
             rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit', 'invalid_molfile': invalid_molfile})
         elif isinstance(cmpsr, LCMSConverterAppComposer):
             # check if composered model is hplc ms
+            tf_jcamp = cmpsr.tf_jcamp()
+            
+            tf_img = cmpsr.tf_img()
             list_jcamps = cmpsr.data
             dst_list = []
-            tf_img = cmpsr.tf_img()
-
             for idx in range(len(list_jcamps)):
-                tf_jcamp = list_jcamps[idx]
+                tf_jcamp_file = list_jcamps[idx]
                 if idx == 0 and tf_img is not None:
-                    dst_list.append([tf_jcamp, tf_img])
+                    dst_list.append([tf_jcamp_file, tf_img])
                 else:
-                    dst_list.append([tf_jcamp])
+                    dst_list.append([tf_jcamp_file])
 
             memory = to_zip_bag_it_response(dst_list)
             rsp = make_response(

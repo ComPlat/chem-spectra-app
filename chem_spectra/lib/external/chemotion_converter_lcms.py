@@ -498,62 +498,323 @@ def lcms_jcamp_files_from_converter_app(
                 pass
 
 
-def lcms_uvvis_image_from_df(lc_df: pd.DataFrame) -> Optional[tempfile.NamedTemporaryFile]:
-    if lc_df is None or lc_df.empty:
+def lcms_df_from_peak_jdx(jdx_path: str) -> Optional[pd.DataFrame]:
+    import pandas as pd
+    
+    if not jdx_path or not os.path.exists(jdx_path):
         return None
+    
     try:
-        import matplotlib.pyplot as plt  # type: ignore
-        import numpy as np  # type: ignore
-    except Exception:
+        with open(jdx_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+        
+        if 'CHEMSPECTRA UVVIS PEAK TABLE' not in content:
+            return None
+        
+        rows = []
+        sections = content.split('$$ === CHEMSPECTRA UVVIS PEAK TABLE ===')
+        for section in sections[1:]:
+            wavelength = None
+            for line in section.split('\n'):
+                if line.startswith('##PAGE='):
+                    try:
+                        wavelength = float(line.replace('##PAGE=', '').strip())
+                    except (ValueError, AttributeError):
+                        wavelength = line.replace('##PAGE=', '').strip()
+                    break
+            
+            if wavelength is None:
+                continue
+            
+            xs = []
+            ys = []
+            in_data_section = False
+            for line in section.split('\n'):
+                if '##DATA TABLE=' in line.upper():
+                    in_data_section = True
+                    continue
+                if '##END=' in line or '$$' in line:
+                    break
+                if in_data_section and line.strip() and not line.strip().startswith('##'):
+                    cleaned = line.replace(';', '').strip()
+                    if not cleaned:
+                        continue
+                    parts = cleaned.split(',')
+                    if len(parts) >= 2:
+                        try:
+                            x = _as_float(parts[0].strip())
+                            y = _as_float(parts[1].strip())
+                            if x is not None and y is not None:
+                                xs.append(x)
+                                ys.append(y)
+                        except (ValueError, IndexError):
+                            continue
+            
+            for x, y in zip(xs, ys):
+                rows.append({
+                    'RetentionTime': x,
+                    'DetectorSignal': y,
+                    'wavelength': wavelength,
+                })
+        
+        if rows:
+            df = pd.DataFrame(rows, columns=['RetentionTime', 'DetectorSignal', 'wavelength'])
+            return df
+        return None
+    except Exception as e:
         return None
 
-    wl_key = None
-    if "wavelength" in lc_df.columns and not lc_df["wavelength"].isna().all():
+
+def lcms_uvvis_image_from_peak_jdx(peak_jdx_path: str) -> Optional[tempfile.NamedTemporaryFile]:
+    """Generate LCMS UVVIS image directly from uvvis.peak.jdx file with peaks and integrations."""
+    if not peak_jdx_path or not os.path.exists(peak_jdx_path):
+        return None
+    
+    try:
+        import matplotlib.pyplot as plt  # type: ignore
+        import matplotlib.path as mpath  # type: ignore
+        import numpy as np  # type: ignore
+        from chem_spectra.lib.shared.calc import calc_ks, get_curve_endpoint, cal_slope
+    except Exception as e:
+        return None
+    
+    try:
+        with open(peak_jdx_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+        
+        # Check if it's a uvvis peak file
+        if 'CHEMSPECTRA UVVIS PEAK TABLE' not in content:
+            return None
+        
+        # Collect data by wavelength
+        data_by_wavelength = {}
+        peaks_by_wavelength = {}
+        integrations_by_wavelength = {}
+        
+        # Split by PAGE blocks in UVVIS PEAK TABLE sections
+        sections = content.split('$$ === CHEMSPECTRA UVVIS PEAK TABLE ===')
+        for section in sections[1:]:  # Skip first part before first section
+            # Extract PAGE value (wavelength)
+            wavelength = None
+            for line in section.split('\n'):
+                if line.startswith('##PAGE='):
+                    try:
+                        wavelength = float(line.replace('##PAGE=', '').strip())
+                    except (ValueError, AttributeError):
+                        wavelength = line.replace('##PAGE=', '').strip()
+                    break
+            
+            if wavelength is None:
+                continue
+            
+            # Extract DATA TABLE section
+            xs = []
+            ys = []
+            in_data_section = False
+            for line in section.split('\n'):
+                if '##DATA TABLE=' in line.upper():
+                    in_data_section = True
+                    continue
+                if '##END=' in line or '$$' in line:
+                    break
+                if in_data_section and line.strip() and not line.strip().startswith('##'):
+                    # Parse XY data: "x, y;" or "x, y"
+                    cleaned = line.replace(';', '').strip()
+                    if not cleaned:
+                        continue
+                    parts = cleaned.split(',')
+                    if len(parts) >= 2:
+                        try:
+                            x = _as_float(parts[0].strip())
+                            y = _as_float(parts[1].strip())
+                            if x is not None and y is not None:
+                                xs.append(x)
+                                ys.append(y)
+                        except (ValueError, IndexError):
+                            continue
+            
+            if xs and ys:
+                data_by_wavelength[wavelength] = (xs, ys)
+        
+        # Extract peaks from EDIT_PEAK sections
+        edit_sections = content.split('$$ === CHEMSPECTRA PEAK TABLE EDIT ===')
+        for section in edit_sections[1:]:
+            wavelength = None
+            for line in section.split('\n'):
+                if line.startswith('##PAGE='):
+                    try:
+                        wavelength = float(line.replace('##PAGE=', '').strip())
+                    except (ValueError, AttributeError):
+                        wavelength = line.replace('##PAGE=', '').strip()
+                    break
+            
+            if wavelength is None:
+                continue
+            
+            peaks = []
+            in_peak_section = False
+            for line in section.split('\n'):
+                if '##PEAKTABLE=' in line.upper():
+                    in_peak_section = True
+                    continue
+                if '##END=' in line or '$$' in line:
+                    break
+                if in_peak_section and line.strip() and not line.strip().startswith('##'):
+                    parts = line.strip().split(',')
+                    if len(parts) >= 2:
+                        try:
+                            x = _as_float(parts[0].strip())
+                            y = _as_float(parts[1].strip())
+                            if x is not None and y is not None:
+                                peaks.append({'x': x, 'y': y})
+                        except (ValueError, IndexError):
+                            continue
+            
+            if peaks:
+                peaks_by_wavelength[wavelength] = peaks
+        
+        # Extract integrations from INTEGRALS sections
+        intg_sections = content.split('$$ === CHEMSPECTRA INTEGRALS AND MULTIPLETS ===')
+        for section in intg_sections[1:]:
+            wavelength = None
+            for line in section.split('\n'):
+                if line.startswith('##PAGE='):
+                    try:
+                        wavelength = float(line.replace('##PAGE=', '').strip())
+                    except (ValueError, AttributeError):
+                        wavelength = line.replace('##PAGE=', '').strip()
+                    break
+            
+            if wavelength is None:
+                continue
+            
+            integrations = []
+            in_intg_section = False
+            for line in section.split('\n'):
+                if '##$OBSERVEDINTEGRALS=' in line.upper():
+                    in_intg_section = True
+                    continue
+                if '##END=' in line or '$$' in line:
+                    break
+                if in_intg_section and line.strip() and not line.strip().startswith('##'):
+                    # Parse integration: "(xL, xU, area, absoluteArea)"
+                    cleaned = line.strip().replace('(', '').replace(')', '')
+                    parts = cleaned.split(',')
+                    if len(parts) >= 3:
+                        try:
+                            xL = _as_float(parts[0].strip())
+                            xU = _as_float(parts[1].strip())
+                            area = _as_float(parts[2].strip())
+                            if xL is not None and xU is not None and area is not None:
+                                integrations.append({'xL': xL, 'xU': xU, 'area': area})
+                        except (ValueError, IndexError):
+                            continue
+            
+            if integrations:
+                integrations_by_wavelength[wavelength] = integrations
+        
+        if not data_by_wavelength:
+            return None
+        
+        # Select wavelength with minimum value for image
         def _to_float_or_none(k):
             try:
                 return float(k)
             except Exception:
                 return None
-        numeric_pairs = [(k, _to_float_or_none(k)) for k in lc_df["wavelength"].unique().tolist()]
+        
+        numeric_pairs = [(wl, _to_float_or_none(wl)) for wl in data_by_wavelength.keys()]
         numeric_only = [p for p in numeric_pairs if p[1] is not None]
-        wl_key = min(numeric_only, key=lambda p: p[1])[0] if numeric_only else lc_df["wavelength"].iloc[0]
+        wl_key = min(numeric_only, key=lambda p: p[1])[0] if numeric_only else list(data_by_wavelength.keys())[0]
+        
+        xs, ys = data_by_wavelength[wl_key]
+        xs = np.asarray(xs, float)
+        ys = np.asarray(ys, float)
+        
+        # Get peaks and integrations for selected wavelength
+        edit_peaks = peaks_by_wavelength.get(wl_key, [])
+        integrations = integrations_by_wavelength.get(wl_key, [])
 
-    if wl_key is not None:
-        data = lc_df[lc_df["wavelength"] == wl_key]
-    else:
-        data = lc_df
+        plt.rcParams["figure.figsize"] = [16, 9]
+        plt.rcParams["figure.dpi"] = 200
+        plt.rcParams["font.size"] = 14
 
-    xs = np.asarray(data.get("RetentionTime", []), float)
-    ys = np.asarray(data.get("DetectorSignal", []), float)
+        # Plot main curve
+        plt.plot(xs, ys)
+        
+        # Plot red peaks
+        if edit_peaks:
+            path_data = [
+                (mpath.Path.MOVETO, (0, 5)),
+                (mpath.Path.LINETO, (0, 20)),
+            ]
+            codes, verts = zip(*path_data)
+            marker = mpath.Path(verts, codes)
+            
+            x_peaks = [p['x'] for p in edit_peaks]
+            y_peaks = [p['y'] for p in edit_peaks]
+            
+            plt.plot(
+                x_peaks,
+                y_peaks,
+                'r',
+                ls='',
+                marker=marker,
+                markersize=50,
+            )
+        
+        # Plot integrations (fill area under curve like HPLC UVVIS)
+        if integrations:
+            y_max = float(np.max(ys))
+            y_min = float(np.min(ys))
+            h = max(y_max - y_min, 1.0)
+            
+            for idx, itg in enumerate(integrations):
+                xL, xU = itg['xL'], itg['xU']
+                # Find curve endpoints
+                iL, iU = get_curve_endpoint(xs, ys, xL, xU)
+                cxs = xs[iL:iU]
+                cys = ys[iL:iU]
+                
+                if len(cxs) > 0 and len(cys) > 0:
+                    # Fill area under curve like HPLC UVVIS
+                    slope = cal_slope(cxs[0], cys[0], cxs[len(cxs)-1], cys[len(cys)-1])
+                    last_y = cys[0]
+                    last_x = cxs[0]
+                    aucys = [last_y]
+                    for i in range(1, len(cys)):
+                        curr_x = cxs[i]
+                        curr_y = slope*(curr_x-last_x) + last_y
+                        aucys.append(curr_y)
+                        last_x = curr_x
+                        last_y = curr_y
+                    plt.fill_between(cxs, y1=cys, y2=aucys, alpha=0.2, color='#FF0000')
+        
+        plt.xlabel("X (Retention Time)", fontsize=18)
+        plt.ylabel("Y (Detector Signal)", fontsize=18)
+        plt.grid(False)
 
-    plt.rcParams["figure.figsize"] = [16, 9]
-    plt.rcParams["figure.dpi"] = 200
-    plt.rcParams["font.size"] = 14
+        if xs.size:
+            x_min, x_max = float(np.min(xs)), float(np.max(xs))
+        else:
+            x_min, x_max = 0.0, 1.0
+        if ys.size:
+            y_min, y_max = float(np.min(ys)), float(np.max(ys))
+        else:
+            y_min, y_max = 0.0, 1.0
+        h = max(y_max - y_min, 1.0)
+        plt.xlim(x_min, x_max)
+        plt.ylim(y_min - h * 0.05, y_max + h * 0.15)
 
-    plt.plot(xs, ys)
-    plt.xlabel("X (Retention Time)", fontsize=18)
-    plt.ylabel("Y (Detector Signal)", fontsize=18)
-    plt.grid(False)
-
-    if xs.size:
-        x_min, x_max = float(np.min(xs)), float(np.max(xs))
-    else:
-        x_min, x_max = 0.0, 1.0
-    if ys.size:
-        y_min, y_max = float(np.min(ys)), float(np.max(ys))
-    else:
-        y_min, y_max = 0.0, 1.0
-    h = max(y_max - y_min, 1.0)
-    plt.xlim(x_min, x_max)
-    plt.ylim(y_min - h * 0.05, y_max + h * 0.15)
-
-    tf_img = tempfile.NamedTemporaryFile(suffix="_lcms_uvvis.peak.png")
-    plt.savefig(tf_img, format="png")
-    tf_img.seek(0)
-    plt.clf()
-    plt.cla()
-    plt.close()
-    return tf_img
+        tf_img = tempfile.NamedTemporaryFile(suffix="_lcms_uvvis.peak.png")
+        plt.savefig(tf_img, format="png")
+        tf_img.seek(0)
+        plt.clf()
+        plt.cla()
+        plt.close()
+        return tf_img
+    except Exception as e:  # noqa: E722
+        return None
 
 
 def lcms_uvvis_peak_jcamp_from_df(
@@ -674,6 +935,25 @@ def lcms_uvvis_peak_jcamp_from_df(
                     return item, item.get("stack", []) or []
             return None, []
         if isinstance(integration_data, dict):
+            # Check if it's a dict with wavelength keys like {"230":[[xL, xU, area, absoluteArea]]}
+            for key, value in integration_data.items():
+                if _key_matches_page(key, page_idx, wavelength_value):
+                    # Convert list format [[xL, xU, area, absoluteArea]] to dict format
+                    stack = []
+                    if isinstance(value, list):
+                        for item in value:
+                            if isinstance(item, (list, tuple)) and len(item) >= 3:
+                                itg_dict = {
+                                    'xL': item[0],
+                                    'xU': item[1],
+                                    'area': item[2],
+                                    'absoluteArea': item[3] if len(item) >= 4 else 0
+                                }
+                                stack.append(itg_dict)
+                            elif isinstance(item, dict):
+                                stack.append(item)
+                    return integration_data, stack
+            
             curves = integration_data.get("curves") or integration_data.get("byCurve") or integration_data.get("by_curve")
             if isinstance(curves, list):
                 for curve in curves:
@@ -714,8 +994,9 @@ def lcms_uvvis_peak_jcamp_from_df(
             if x_left is None or x_right is None or area is None:
                 continue
             try:
-                x_left = float(x_left) - float(ref_shift)
-                x_right = float(x_right) - float(ref_shift)
+                # Convert from minutes to seconds
+                x_left = float(x_left) * 60.0 - float(ref_shift)
+                x_right = float(x_right) * 60.0 - float(ref_shift)
                 area = float(area) * ref_area
                 absolute_area = float(absolute_area)
             except Exception:
@@ -746,6 +1027,11 @@ def lcms_uvvis_peak_jcamp_from_df(
             y_min, y_max = 0.0, 0.0
 
         edit_peaks = _peaks_for_page(peaks_input, page_idx, wl)
+        # Convert peak x values from minutes to seconds
+        for peak in edit_peaks:
+            if 'x' in peak:
+                peak['x'] = peak['x'] * 60.0
+        
         integration_meta, integration_stack = _integration_for_page(integration_input, page_idx, wl)
         integration_lines = _integration_lines(integration_meta or integration_input, integration_stack)
 
@@ -756,6 +1042,7 @@ def lcms_uvvis_peak_jcamp_from_df(
             "##JCAMP-DX=5.00\n",
             "##DATA TYPE=LC/MS\n",
             "##DATA CLASS=PEAK TABLE\n",
+            "##SYMBOL=X, Y\n",
             "##ORIGIN=\n",
             "##OWNER=\n",
             "##XUNITS=RETENTION TIME\n",
@@ -801,27 +1088,6 @@ def lcms_uvvis_peak_jcamp_from_df(
             "##PEAKTABLE= (XY..XY)\n",
         ])
         for peak in edit_peaks:
-            content.append(f"{peak['x']}, {peak['y']}\n")
-        content.extend(["##END=\n"])
-
-        content.extend([
-            "\n",
-            "$$ === CHEMSPECTRA PEAK TABLE AUTO ===\n",
-            f"##TITLE={title}\n",
-            "##JCAMP-DX=5.00\n",
-            "##DATA TYPE=LC/MSPEAKTABLE\n",
-            "##DATA CLASS=PEAKTABLE\n",
-            "##$CSCATEGORY=AUTO_PEAK\n",
-            "##$CSTHRESHOLD=0.05\n",
-            f"##MAXX={x_max}\n",
-            f"##MAXY={y_max}\n",
-            f"##MINX={x_min}\n",
-            f"##MINY={y_min}\n",
-            f"##PAGE={wl}\n",
-            f"##NPOINTS={len(auto_peaks)}\n",
-            "##PEAKTABLE= (XY..XY)\n",
-        ])
-        for peak in auto_peaks:
             content.append(f"{peak['x']}, {peak['y']}\n")
         content.extend(["##END=\n"])
 
