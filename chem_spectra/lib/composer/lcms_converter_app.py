@@ -20,14 +20,9 @@ class LCMSConverterAppComposer:
         self.params = params
 
     def tf_img(self):
-        
         peak_file = self._find_peak_or_edit_file()
         if peak_file:
             self._image = lcms_uvvis_image_from_peak_jdx(peak_file.name)
-        else:
-            file_names = [f.name for f in self.data]
-            if self._image:
-        
         return self._image
 
     def _find_peak_or_edit_file(self) -> Optional[tempfile.NamedTemporaryFile]:
