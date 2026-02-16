@@ -6,7 +6,7 @@ from flask import (
 # from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.share import (
-    to_zip_response, extract_params, to_zip_bag_it_response
+    to_zip_response, extract_params, to_zip_bag_it_response, normalize_lcms_filename
 )
 from chem_spectra.model.transformer import TransformerModel as TraModel
 from chem_spectra.model.molecule import MoleculeModel
@@ -47,6 +47,7 @@ def chemspectra_file_save():
     request_files = request.files
     molfile = FileContainer(request.files.get('molfile'))
     filename = request.form.get('filename', default=None)
+    filename = normalize_lcms_filename(filename, src.filename if src else None)
     params = extract_params(request)
     if 'dst_list' in request_files:
         request_dst = request_files.getlist('dst_list')

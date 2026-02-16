@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import tarfile
@@ -27,6 +28,48 @@ def _strip_archive_suffix(name: str) -> str:
         if lower.endswith(suffix):
             return name[: -len(suffix)]
     return Path(name).stem
+
+
+def _strip_lcms_tmp_prefix(name: str) -> str:
+    if not name:
+        return name
+    lowered = name.lower()
+    if lowered.startswith("tmp") and "_" in name:
+        candidate = name.split("_", 1)[1]
+        cand_lower = candidate.lower()
+        if any(token in cand_lower for token in ("uvvis", "tic", "mz", "lcms", "chemstation")):
+            return candidate
+    return name
+
+
+def _normalize_lcms_preview_base(name: str) -> Optional[str]:
+    if not name:
+        return None
+    raw = os.path.basename(str(name))
+    raw = _strip_lcms_tmp_prefix(raw)
+    base = _strip_archive_suffix(raw)
+    base = base.rstrip("_-")
+    return base or None
+
+
+def _lcms_preview_basename(paths: List[str], params: Optional[Dict]) -> Optional[str]:
+    candidates: List[str] = []
+    if isinstance(params, dict):
+        for key in ("fname", "filename", "name"):
+            value = params.get(key)
+            if value:
+                candidates.append(str(value))
+    for entry in paths:
+        candidates.append(entry)
+    if candidates:
+        normalized = [b for b in (_normalize_lcms_preview_base(c) for c in candidates) if b]
+        if normalized:
+            if len(normalized) > 1:
+                prefix = os.path.commonprefix(normalized)
+                if prefix:
+                    return prefix.rstrip("_-")
+            return normalized[0]
+    return None
 
 
 _CONVERTER_APP = None
@@ -964,9 +1007,13 @@ def lcms_preview_image_from_jdx_files(
         ms_ax.set_axis_off()
 
     fig.tight_layout()
-    tf_img = tempfile.NamedTemporaryFile(suffix="_lcms_preview.png")
-    plt.savefig(tf_img, format="png")
-    tf_img.seek(0)
+    preview_base = _lcms_preview_basename(paths, params)
+    preview_name = f"{preview_base}.png" if preview_base else "lcms_preview.png"
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    tf_img = _write_named_file(buffer.read(), preview_name)
+    buffer.close()
     plt.clf()
     plt.cla()
     plt.close(fig)

@@ -87,6 +87,42 @@ def parse_fname(request):
     return def_name or fil_name or src_name or ''
 
 
+def normalize_lcms_filename(filename, src_filename=None):
+    if not filename and not src_filename:
+        return filename
+
+    def _strip_archive_suffix_simple(name):
+        lower = name.lower()
+        for suffix in (".tar.gz", ".tgz", ".tar.xz", ".tar", ".zip"):
+            if lower.endswith(suffix):
+                return name[: -len(suffix)]
+        return os_path.splitext(name)[0]
+
+    def _basename_no_ext(value):
+        if not value:
+            return None
+        base = os_path.basename(str(value))
+        return _strip_archive_suffix_simple(base)
+
+    def _strip_edit_suffix(value):
+        if not value:
+            return value
+        return value[:-5] if value.lower().endswith(".edit") else value
+
+    base = _basename_no_ext(filename)
+    src_base = _basename_no_ext(src_filename)
+
+    if src_base:
+        if not base:
+            return src_base
+        src_core = _strip_edit_suffix(src_base)
+        base_core = _strip_edit_suffix(base)
+        if base_core.lower().startswith(src_core.lower()):
+            return src_base
+
+    return base or filename
+
+
 def extract_params(request):
     scan = parse_float(request.form.get('scan', default=0), 0)
     scan = 0 if math.isnan(scan) else int(scan)
