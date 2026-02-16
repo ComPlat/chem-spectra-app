@@ -30,6 +30,48 @@ def filter_remote_ip():
 
 @trans_api.route('/zip_jcamp_n_img', methods=['POST'])
 def zip_jcamp_n_img():
+    request_files = request.files
+    list_files = request_files.getlist('files[]')
+    if not list_files:
+        list_files = request_files.getlist('files')
+    if list_files:
+        params = extract_params(request)
+        print("ELN zip_jcamp_n_img params:", params)
+        file_containers = [FileContainer(item) for item in list_files]
+        temp_files = []
+        try:
+            for container in file_containers:
+                if container and container.bcore:
+                    temp_files.append(container.temp_file())
+            lcms_composer = LCMSConverterAppComposer(temp_files, None, params)
+            updated_jcamp = lcms_composer.tf_jcamp()
+            if updated_jcamp and updated_jcamp not in temp_files:
+                temp_files.append(updated_jcamp)
+            tf_img = lcms_composer.tf_img()
+            list_jcamps = lcms_composer.data or temp_files
+            dst_list = []
+            for idx, tf_jcamp_file in enumerate(list_jcamps):
+                if idx == 0 and tf_img is not None:
+                    dst_list.append([tf_jcamp_file, tf_img])
+                else:
+                    dst_list.append([tf_jcamp_file])
+            memory = to_zip_bag_it_response(dst_list)
+            rsp = make_response(
+                send_file(
+                    memory,
+                    download_name='spectrum.zip',
+                    as_attachment=True
+                )
+            )
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'hplc', 'invalid_molfile': False})
+            return rsp
+        finally:
+            for temp_file in temp_files:
+                try:
+                    temp_file.close()
+                except Exception:
+                    pass
+
     file = FileContainer(request.files['file'])
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)

@@ -2,7 +2,7 @@ import tempfile
 from typing import List, Optional, Dict
 
 from chem_spectra.lib.external.chemotion_converter_lcms import (
-    lcms_uvvis_image_from_peak_jdx,
+    lcms_preview_image_from_jdx_files,
     lcms_df_from_peak_jdx,
     lcms_uvvis_peak_jcamp_from_df,
 )
@@ -18,11 +18,15 @@ class LCMSConverterAppComposer:
         self.data = jcamp_files
         self._image = image
         self.params = params
+        self._peaks_applied = False
 
     def tf_img(self):
-        peak_file = self._find_peak_or_edit_file()
-        if peak_file:
-            self._image = lcms_uvvis_image_from_peak_jdx(peak_file.name)
+        if self.params and self.params.get('peaks_str') and not self._peaks_applied:
+            self.tf_jcamp()
+        if self.data:
+            preview = lcms_preview_image_from_jdx_files(self.data, self.params)
+            if preview:
+                self._image = preview
         return self._image
 
     def _find_peak_or_edit_file(self) -> Optional[tempfile.NamedTemporaryFile]:
@@ -35,7 +39,7 @@ class LCMSConverterAppComposer:
         if not self.data:
             return None
         
-        if self.params and self.params.get('peaks_str'):
+        if self.params and self.params.get('peaks_str') and not self._peaks_applied:
             jdx_file = self._find_peak_or_edit_file()
             if not jdx_file and self.data:
                 jdx_file = self.data[0]
@@ -50,8 +54,19 @@ class LCMSConverterAppComposer:
                         title = 'lc_ms_spectrum'
                     new_file = lcms_uvvis_peak_jcamp_from_df(lc_df, title, self.params)
                     if new_file:
-                        self.data = [new_file]
-                        self._image = lcms_uvvis_image_from_peak_jdx(new_file.name)
+                        replaced = False
+                        for idx, existing in enumerate(self.data):
+                            if existing is jdx_file:
+                                self.data[idx] = new_file
+                                replaced = True
+                                break
+                        if not replaced:
+                            self.data.insert(0, new_file)
+                        preview = lcms_preview_image_from_jdx_files(self.data, self.params)
+                        if preview:
+                            self._image = preview
+                        self._peaks_applied = True
                         return new_file
+            self._peaks_applied = True
         
         return self.data[0] if self.data else None

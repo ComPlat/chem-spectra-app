@@ -29,7 +29,7 @@ from chem_spectra.model.concern.property import decorate_sim_property
 from chem_spectra.lib.external.chemotion_converter_lcms import (
     lcms_frames_from_converter_app,
     lcms_jcamp_files_from_converter_app,
-    lcms_uvvis_image_from_peak_jdx,
+    lcms_preview_image_from_jdx_files,
 )
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 
@@ -108,17 +108,12 @@ def _collect_lcms_jdx_assets(root_dir: str):
     img_file = _copy_to_tmp(png_paths[0]) if png_paths else None
     
     if jdx_files:
-        peak_file = None
-        for jdx_file in jdx_files:
-            if jdx_file.name.lower().endswith('peak.jdx'):
-                peak_file = jdx_file
-                break
-        
-        if peak_file:
-            try:
-                img_file = lcms_uvvis_image_from_peak_jdx(peak_file.name)
-            except Exception as e:  # noqa: E722
-                pass
+        try:
+            preview = lcms_preview_image_from_jdx_files(jdx_files)
+            if preview:
+                img_file = preview
+        except Exception:  # noqa: E722
+            pass
 
     return jdx_files, img_file
 
@@ -318,12 +313,7 @@ class TransformerModel:
                     params=self.params,
                 )
                 if jcamp_files:
-                    # Generate image from uvvis.peak.jdx file
-                    tf_img = None
-                    for jdx_file in jcamp_files:
-                        if 'uvvis.peak' in jdx_file.name.lower() or 'uvvis_peak' in jdx_file.name.lower():
-                            tf_img = lcms_uvvis_image_from_peak_jdx(jdx_file.name)
-                            break
+                    tf_img = lcms_preview_image_from_jdx_files(jcamp_files, self.params)
                     lcms_cp = LCMSConverterAppComposer(jcamp_files, tf_img, self.params)
                     return None, lcms_cp, False
                 return False, False, False
@@ -335,17 +325,6 @@ class TransformerModel:
 
             jdx_files, img_file = _collect_lcms_jdx_assets(td)
             if jdx_files:
-                peak_file = None
-                for jdx_file in jdx_files:
-                    if jdx_file.name.lower().endswith('peak.jdx'):
-                        peak_file = jdx_file
-                        break
-                
-                if peak_file:
-                    tf_img = lcms_uvvis_image_from_peak_jdx(peak_file.name)
-                    if tf_img:
-                        img_file = tf_img
-
                 lcms_cp = LCMSConverterAppComposer(jdx_files, img_file, self.params)
                 return None, lcms_cp, False
 
@@ -390,14 +369,9 @@ class TransformerModel:
                 params=self.params,
             )
             if jcamp_files:
-                # Generate image from uvvis.peak.jdx file
-                tf_img = None
-                for jdx_file in jcamp_files:
-                    if 'uvvis.peak' in jdx_file.name.lower() or 'uvvis_peak' in jdx_file.name.lower():
-                        tf_img = lcms_uvvis_image_from_peak_jdx(jdx_file.name)
-                        break
-                    lcms_cp = LCMSConverterAppComposer(jcamp_files, tf_img, self.params)
-                    return None, lcms_cp, False
+                tf_img = lcms_preview_image_from_jdx_files(jcamp_files, self.params)
+                lcms_cp = LCMSConverterAppComposer(jcamp_files, tf_img, self.params)
+                return None, lcms_cp, False
             return False, False, False
 
         return False, False, False
@@ -468,15 +442,7 @@ class TransformerModel:
             if is_lcms_file:
                 jdx_file = store_str_in_tmp(self.file.core, suffix='.jdx')
                 jdx_files = [jdx_file]
-                is_peak = (
-                    self.file.name.lower().endswith('peak.jdx') or
-                    (fname and fname.lower().endswith('peak.jdx'))
-                )
-                
-                if is_peak:
-                    tf_img = lcms_uvvis_image_from_peak_jdx(jdx_file.name)
-                else:
-                    tf_img = lcms_uvvis_image_from_peak_jdx(jdx_file.name)
+                tf_img = lcms_preview_image_from_jdx_files(jdx_files, self.params)
                 lcms_cp = LCMSConverterAppComposer(jdx_files, tf_img, self.params)
                 return None, lcms_cp, invalid_molfile
             else:
