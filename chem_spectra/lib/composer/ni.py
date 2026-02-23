@@ -30,28 +30,70 @@ class NIComposer(BaseComposer):
     def __init__(self, core):
         super().__init__(core)
         self.title = core.fname
+        self._cv_density_scale = 1.0
+        self._cv_axis_base = 1.0
+        self._cv_axis_exp = 0
         self.__override_cv_density_label()
         self.meta = self.__compose()
 
+    def __cv_display_info(self):
+        if not getattr(self.core, 'is_cyclic_volta', False):
+            return None
+
+        params = self.core.params if hasattr(self.core, 'params') else {}
+
+        cv_state = (
+            params.get('cyclicvoltaSt')
+            or params.get('cyclicvolta')
+            or params.get('cyclic_volta')
+        )
+        cv_state = cv_state or {}
+        if isinstance(cv_state, str):
+            try:
+                cv_state = json.loads(cv_state)
+            except Exception:
+                cv_state = {}
+
+        axis_display = cv_state.get('axisDisplay') or {}
+        cv_display = cv_state.get('cvDisplay', None)
+        if isinstance(cv_display, str):
+            try:
+                cv_display = json.loads(cv_display)
+            except Exception:
+                cv_display = None
+
+        return {
+            'axis_display': axis_display,
+            'cv_display': cv_display,
+            'area_unit': cv_state.get('areaUnit'),
+            'use_current_density': cv_state.get('useCurrentDensity'),
+        }
+
     def __override_cv_density_label(self):
         try:
-            if not getattr(self.core, 'is_cyclic_volta', False):
+            info = self.__cv_display_info()
+            if not info:
                 return
-            cv_params = self.core.params.get('cyclicvolta', {}) if hasattr(self.core, 'params') else {}
-            if isinstance(cv_params, str):
-                cv_params = json.loads(cv_params)
-            use_density = bool(cv_params.get('useCurrentDensity', False))
-            if not use_density:
-                return
+            axis_display = info.get('axis_display') or {}
+            cv_display = info.get('cv_display') or {}
 
-            area_unit = cv_params.get('areaUnit') or 'cm²'
-            axes_units = self.core.params.get('axesUnits') if hasattr(self.core, 'params') else None
-            base_unit = 'A'
-            if isinstance(axes_units, dict):
-                selected_y = str(axes_units.get('yUnit') or '')
-                base_unit = 'mA' if ('mA' in selected_y or 'mA' in selected_y) else 'A'
+            x_label = axis_display.get('xLabel')
+            if x_label:
+                self.core.label['x'] = x_label
 
-            self.core.label['y'] = f"Current density in {base_unit}/{area_unit}"
+            y_label = axis_display.get('yLabel')
+            if y_label:
+                mode = str(cv_display.get('mode') or '').lower()
+                use_density = bool(info.get('use_current_density')) or mode == 'density'
+                if use_density:
+                    lowered = str(y_label).lower()
+                    if 'density' in lowered or '/' in lowered:
+                        self.core.label['y'] = y_label
+                    else:
+                        area_unit = info.get('area_unit') or 'cm²'
+                        self.core.label['y'] = f"Current density ({y_label}/{area_unit})"
+                else:
+                    self.core.label['y'] = y_label
         except Exception:
             pass
 
@@ -339,17 +381,38 @@ class NIComposer(BaseComposer):
         plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
 
+        cv_info = self.__cv_display_info() if self.core.is_cyclic_volta else None
+        self._cv_density_scale = 1.0
+        if cv_info:
+            cv_display = cv_info.get('cv_display') or {}
+            scale_val = cv_display.get('yScaleFactor', 1.0) if isinstance(cv_display, dict) else 1.0
+            try:
+                self._cv_density_scale = float(scale_val)
+            except Exception:
+                self._cv_density_scale = 1.0
+
         # PLOT data
-        plt.plot(self.core.xs, self.core.ys)
+        y_values = self.core.ys
+        if self.core.is_cyclic_volta and self._cv_density_scale != 1.0:
+            y_values = self.core.ys * self._cv_density_scale
+        plt.plot(self.core.xs, y_values)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
 
         xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_gc or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd or self.core.is_cyclic_volta or self.core.is_sec or self.core.is_cds or self.core.is_aif or self.core.is_emissions or self.core.is_dls_acf or self.core.is_dls_intensity) else [x_max, x_min]    # noqa: E501
         plt.xlim(xlim_left, xlim_right)
-        y_max, y_min = np.max(self.core.ys), np.min(self.core.ys)
+        y_max, y_min = np.max(y_values), np.min(y_values)
         h = y_max - y_min
         w = x_max - x_min
         y_boundary_min = y_min - h * 0.2
         y_boundary_max = y_max + h * 0.5
+
+        if self.core.is_cyclic_volta:
+            ymax_abs = max(abs(y_min), abs(y_max))
+            if ymax_abs > 0:
+                self._cv_axis_exp = int(np.floor(np.log10(ymax_abs)))
+            else:
+                self._cv_axis_exp = 0
+            self._cv_axis_base = (10.0 ** self._cv_axis_exp) if self._cv_axis_exp != 0 else 1.0
 
         # PLOT peaks
         faktor = self.__fakto()
@@ -378,6 +441,7 @@ class NIComposer(BaseComposer):
         y_peckers = []
         x_peaks_ref, y_peaks_ref = [], []
         if self.core.is_cyclic_volta:
+            display_scale = getattr(self, '_cv_density_scale', 1.0)
             x_peaks = []
             y_peaks = []
             listMaxMinPeaks = []
@@ -419,6 +483,11 @@ class NIComposer(BaseComposer):
                     y_peckers.append(y_pecker)
 
             # display x value of peak for cyclic voltammetry
+            if display_scale != 1.0:
+                y_peaks = [y * display_scale for y in y_peaks]
+                y_peckers = [y * display_scale for y in y_peckers]
+                y_peaks_ref = [y * display_scale for y in y_peaks_ref]
+
             for i in range(len(x_peaks)):
                 x_pos = x_peaks[i]
                 y_pos = y_peaks[i] + h * 0.1
@@ -572,44 +641,27 @@ class NIComposer(BaseComposer):
 
         ax = plt.gca()
         if self.core.is_cyclic_volta:
-            cv = (self.core.params.get('cyclicvolta') or {})
-            if isinstance(cv, str):
-                cv = json.loads(cv)
-            if cv.get('useCurrentDensity', False):
-                unit = str(cv.get('areaUnit') or 'cm²').lower()
-                u2cm2 = {'mm²': 0.01, 'mm2': 0.01, 'cm²': 1.0, 'cm2': 1.0, 'm²': 10000.0, 'm2': 10000.0}
-                try:
-                    area_val = float(cv.get('areaValue', 1.0))
-                except Exception:
-                    area_val = 1.0
-                divisor = max(area_val * u2cm2.get(unit, 1.0), 1e-30)
-
-                y0, y1 = ax.get_ylim()
-                ymax_disp = max(abs(y0), abs(y1)) / divisor
-                exp = int(np.floor(np.log10(ymax_disp))) if ymax_disp > 0 else 0
-                base = (10.0 ** exp) if exp != 0 else 1.0
-
-                from matplotlib.ticker import FuncFormatter
-                ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _:
-                    f"{(y/divisor)/base:.3g}"
-                ))
-
-                ax.yaxis.get_offset_text().set_visible(False)
-
-                if exp != 0:
-                    ax.text(
-                        0.0, 1,              
-                        r"$\times 10^{%d}$" % exp,
-                        transform=ax.transAxes,
-                        ha='left', va='bottom',
-                        fontsize=14,
-                        clip_on=False
-                    )
+            ymax_abs = max(abs(y_boundary_min), abs(y_boundary_max))
+            if ymax_abs > 0:
+                self._cv_axis_exp = int(np.floor(np.log10(ymax_abs)))
             else:
-                fmt = ticker.ScalarFormatter(useMathText=True)
-                fmt.set_scientific(True)
-                fmt.set_powerlimits((-1, 1))
-                ax.yaxis.set_major_formatter(fmt)
+                self._cv_axis_exp = 0
+            print(f"[tf_img] ymax_abs={ymax_abs}, exp={self._cv_axis_exp}")
+            self._cv_axis_base = (10.0 ** self._cv_axis_exp) if self._cv_axis_exp != 0 else 1.0
+
+            ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _:
+                f"{(y / self._cv_axis_base):.3g}"
+            ))
+            ax.yaxis.get_offset_text().set_visible(False)
+            if self._cv_axis_exp != 0:
+                ax.text(
+                    0.0, 1,
+                    r"$\times 10^{%d}$" % self._cv_axis_exp,
+                    transform=ax.transAxes,
+                    ha='left', va='bottom',
+                    fontsize=14,
+                    clip_on=False
+                )
         else:
             fmt = ticker.ScalarFormatter(useMathText=True)
             fmt.set_scientific(True)
