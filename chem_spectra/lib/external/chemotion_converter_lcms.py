@@ -787,7 +787,10 @@ def lcms_preview_image_from_jdx_files(
             if ms_data:
                 ms_threshold = ms_data[2]
                 ms_page_label = _format_ms_page_label(ms_data[3]) or _format_ms_page_label(mz_page)
-                ms_rt = _float_from_label(mz_page)
+                rt_source = mz_page
+                if rt_source is None or str(rt_source).strip() == "":
+                    rt_source = ms_data[3]
+                ms_rt = _float_from_label(rt_source)
                 ms_rt_label = _format_rt_label(ms_rt)
         except Exception:
             ms_data = None
