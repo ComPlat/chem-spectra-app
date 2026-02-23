@@ -193,34 +193,11 @@ def _format_ms_page_label(value) -> Optional[str]:
     return text if text else None
 
 
-def _normalize_tic_label(value) -> Optional[str]:
-    if value is None:
+def _format_rt_label(value) -> Optional[str]:
+    numeric = _float_from_label(value)
+    if numeric is None:
         return None
-    text = str(value).strip().lower()
-    if not text:
-        return None
-    if text in ("plus", "pos", "positive", "+"):
-        return "positive"
-    if text in ("minus", "neg", "negative", "-"):
-        return "negative"
-    if text in ("neutral", "neut", "none"):
-        return "neutral"
-    return None
-
-
-def _tic_label_from_path(path: Optional[str], tic_hint=None) -> str:
-    label = _normalize_tic_label(tic_hint)
-    if label:
-        return label
-    if path:
-        name = os.path.basename(path).lower()
-        if any(token in name for token in ("plus", "pos", "positive", "positiv")):
-            return "positive"
-        if any(token in name for token in ("minus", "neg", "negative", "negativ", "minus")):
-            return "negative"
-        if "neutral" in name or "neut" in name:
-            return "neutral"
-    return "neutral"
+    return f"{_format_number(numeric)} min"
 
 
 def _extract_xy_from_lines(lines: List[str], start_idx: int) -> Tuple[List[float], List[float]]:
@@ -259,7 +236,10 @@ def _extract_xy_from_jdx_content(content: str) -> Tuple[List[float], List[float]
     return _extract_xy_from_lines(lines, data_start)
 
 
-def _extract_ms_page(content: str, target_page=None) -> Tuple[List[float], List[float], Optional[float], Optional[str]]:
+def _extract_ms_page(
+    content: str,
+    target_page=None,
+) -> Tuple[List[float], List[float], Optional[float], Optional[str]]:
     lines = content.splitlines()
     threshold = None
     for line in lines:
@@ -753,33 +733,10 @@ def lcms_preview_image_from_jdx_files(
 
     normalized_params = _normalize_params(params)
     uvvis_wavelength = normalized_params.get("lcms_uvvis_wavelength")
-    tic_hint = normalized_params.get("lcms_tic")
     mz_page = normalized_params.get("lcms_mz_page")
 
     peak_path = _pick_jdx_path(paths, "uvvis.peak", "peak.jdx")
-    tic_path = _pick_jdx_path(paths, "_tic", "tic")
     mz_path = _pick_jdx_path(paths, "_mz", "mz")
-
-    if tic_hint:
-        hint = str(tic_hint).lower()
-        for path in paths:
-            name = os.path.basename(path).lower()
-            if hint in name:
-                tic_path = path
-                break
-        if tic_path is None:
-            if hint in ("plus", "pos", "positive", "+"):
-                for path in paths:
-                    name = os.path.basename(path).lower()
-                    if "tic" in name and ("plus" in name or "pos" in name):
-                        tic_path = path
-                        break
-            elif hint in ("minus", "neg", "negative", "-"):
-                for path in paths:
-                    name = os.path.basename(path).lower()
-                    if "tic" in name and ("minus" in name or "neg" in name):
-                        tic_path = path
-                        break
 
     if not peak_path:
         for path in paths:
@@ -792,7 +749,7 @@ def lcms_preview_image_from_jdx_files(
             except Exception:
                 continue
 
-    if not tic_path or not mz_path:
+    if not mz_path:
         for path in paths:
             if path == peak_path:
                 continue
@@ -800,25 +757,8 @@ def lcms_preview_image_from_jdx_files(
                 with open(path, "r", encoding="utf-8", errors="ignore") as handle:
                     content = handle.read()
                 kind = _classify_lcms_content(content)
-                if kind == "tic" and not tic_path:
-                    tic_path = path
-                elif kind == "mz" and not mz_path:
+                if kind == "mz" and not mz_path:
                     mz_path = path
-            except Exception:
-                continue
-    if not tic_path:
-        for path in paths:
-            if path == peak_path or path == mz_path:
-                continue
-            try:
-                with open(path, "r", encoding="utf-8", errors="ignore") as handle:
-                    content = handle.read()
-                if "CHEMSPECTRA UVVIS PEAK TABLE" in content:
-                    continue
-                xs, ys = _extract_xy_from_jdx_content(content)
-                if xs and ys:
-                    tic_path = path
-                    break
             except Exception:
                 continue
 
@@ -834,18 +774,11 @@ def lcms_preview_image_from_jdx_files(
         except Exception:
             uvvis_data = None
 
-    tic_data = None
-    if tic_path:
-        try:
-            with open(tic_path, "r", encoding="utf-8", errors="ignore") as handle:
-                tic_content = handle.read()
-            tic_data = _extract_xy_from_jdx_content(tic_content)
-        except Exception:
-            tic_data = None
-
     ms_data = None
     ms_threshold = None
     ms_page_label = None
+    ms_rt = None
+    ms_rt_label = None
     if mz_path:
         try:
             with open(mz_path, "r", encoding="utf-8", errors="ignore") as handle:
@@ -854,33 +787,36 @@ def lcms_preview_image_from_jdx_files(
             if ms_data:
                 ms_threshold = ms_data[2]
                 ms_page_label = _format_ms_page_label(ms_data[3]) or _format_ms_page_label(mz_page)
+                ms_rt = _float_from_label(mz_page)
+                ms_rt_label = _format_rt_label(ms_rt)
         except Exception:
             ms_data = None
 
     has_uvvis = uvvis_data is not None
-    has_tic = tic_data is not None and tic_data[0]
     has_ms = ms_data is not None and ms_data[0]
-    if not (has_uvvis or has_tic or has_ms):
+    if not (has_uvvis or has_ms):
         return None
 
     try:
         import matplotlib.pyplot as plt  # type: ignore
         import matplotlib.path as mpath  # type: ignore
+        from matplotlib.ticker import MultipleLocator  # type: ignore
         import numpy as np  # type: ignore
         from chem_spectra.lib.shared.calc import get_curve_endpoint, cal_slope
     except Exception:
         return None
 
-    plt.rcParams["figure.figsize"] = [16, 12]
+    plt.rcParams["figure.figsize"] = [16, 9]
     plt.rcParams["figure.dpi"] = 200
     plt.rcParams["font.size"] = 14
 
-    fig, axes = plt.subplots(3, 1)
-    uvvis_ax, tic_ax, ms_ax = axes
+    fig, axes = plt.subplots(2, 1)
+    uvvis_ax, ms_ax = axes
 
     if has_uvvis:
         xs, ys, edit_peaks, integrations, _wl = uvvis_data
-        uvvis_ax.plot(xs, ys)
+        xs_min = xs / 60.0
+        uvvis_ax.plot(xs_min, ys)
 
         if edit_peaks:
             path_data = [
@@ -889,7 +825,7 @@ def lcms_preview_image_from_jdx_files(
             ]
             codes, verts = zip(*path_data)
             marker = mpath.Path(verts, codes)
-            x_peaks = [p["x"] for p in edit_peaks]
+            x_peaks = [p["x"] / 60.0 for p in edit_peaks]
             y_peaks = [p["y"] for p in edit_peaks]
             uvvis_ax.plot(
                 x_peaks,
@@ -905,9 +841,10 @@ def lcms_preview_image_from_jdx_files(
             y_min = float(np.min(ys))
             h = max(y_max - y_min, 1.0)
             for itg in integrations:
-                x_left, x_right = itg["xL"], itg["xU"]
-                i_left, i_right = get_curve_endpoint(xs, ys, x_left, x_right)
-                cxs = xs[i_left:i_right]
+                x_left = itg["xL"] / 60.0
+                x_right = itg["xU"] / 60.0
+                i_left, i_right = get_curve_endpoint(xs_min, ys, x_left, x_right)
+                cxs = xs_min[i_left:i_right]
                 cys = ys[i_left:i_right]
                 if len(cxs) > 0 and len(cys) > 0:
                     slope = cal_slope(cxs[0], cys[0], cxs[len(cxs) - 1], cys[len(cys) - 1])
@@ -922,11 +859,11 @@ def lcms_preview_image_from_jdx_files(
                         last_y = curr_y
                     uvvis_ax.fill_between(cxs, y1=cys, y2=aucys, alpha=0.2, color="#FF0000")
 
-        uvvis_ax.set_xlabel("X (Retention Time)", fontsize=18)
+        uvvis_ax.set_xlabel("X (Retention Time, min)", fontsize=18)
         uvvis_ax.set_ylabel("Y (Detector Signal)", fontsize=18)
         uvvis_ax.grid(False)
-        if xs.size:
-            x_min, x_max = float(np.min(xs)), float(np.max(xs))
+        if xs_min.size:
+            x_min, x_max = float(np.min(xs_min)), float(np.max(xs_min))
         else:
             x_min, x_max = 0.0, 1.0
         if ys.size:
@@ -935,6 +872,7 @@ def lcms_preview_image_from_jdx_files(
             y_min, y_max = 0.0, 1.0
         h = max(y_max - y_min, 1.0)
         uvvis_ax.set_xlim(x_min, x_max)
+        uvvis_ax.xaxis.set_major_locator(MultipleLocator(1.0))
         uvvis_ax.set_ylim(y_min - h * 0.05, y_max + h * 0.15)
         if uvvis_label:
             uvvis_ax.text(
@@ -945,35 +883,22 @@ def lcms_preview_image_from_jdx_files(
                 va="top",
                 transform=uvvis_ax.transAxes,
             )
+        if ms_rt is not None:
+            uvvis_ax.axvline(ms_rt, color="#777777", linestyle="--", linewidth=1, alpha=0.7)
+            if ms_rt_label:
+                uvvis_ax.text(
+                    0.02,
+                    0.98,
+                    f"MS RT {ms_rt_label}",
+                    ha="left",
+                    va="top",
+                    transform=uvvis_ax.transAxes,
+                    fontsize=12,
+                    color="#555555",
+                )
     else:
         uvvis_ax.text(0.5, 0.5, "UVVIS unavailable", ha="center", va="center", transform=uvvis_ax.transAxes)
         uvvis_ax.set_axis_off()
-
-    if has_tic:
-        tic_xs, tic_ys = tic_data
-        tic_ax.plot(tic_xs, tic_ys)
-        tic_ax.set_xlabel("X (Retention Time)", fontsize=18)
-        tic_ax.set_ylabel("Y (TIC)", fontsize=18)
-        tic_ax.grid(False)
-        if tic_xs and tic_ys:
-            x_min, x_max = min(tic_xs), max(tic_xs)
-            y_min, y_max = min(tic_ys), max(tic_ys)
-            h = max(y_max - y_min, 1.0)
-            tic_ax.set_xlim(x_min, x_max)
-            tic_ax.set_ylim(y_min - h * 0.05, y_max + h * 0.15)
-        tic_label = _tic_label_from_path(tic_path, tic_hint)
-        if tic_label:
-            tic_ax.text(
-                0.98,
-                0.98,
-                tic_label,
-                ha="right",
-                va="top",
-                transform=tic_ax.transAxes,
-            )
-    else:
-        tic_ax.text(0.5, 0.5, "TIC unavailable", ha="center", va="center", transform=tic_ax.transAxes)
-        tic_ax.set_axis_off()
 
     if has_ms:
         ms_xs, ms_ys, ms_threshold, _page = ms_data
@@ -993,7 +918,16 @@ def lcms_preview_image_from_jdx_files(
         ms_ax.set_xlabel("X (m/z)", fontsize=18)
         ms_ax.set_ylabel("Y (Relative Abundance)", fontsize=18)
         ms_ax.grid(False)
-        if ms_page_label:
+        if ms_rt_label:
+            ms_ax.text(
+                0.98,
+                0.98,
+                f"RT {ms_rt_label}",
+                ha="right",
+                va="top",
+                transform=ms_ax.transAxes,
+            )
+        elif ms_page_label:
             ms_ax.text(
                 0.98,
                 0.98,

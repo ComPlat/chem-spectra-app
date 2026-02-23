@@ -145,7 +145,6 @@ def extract_params(request):
     detector = request.form.get('detector', default=None)
     dsc_meta_data = request.form.get('dsc_meta_data', default=None)
     lcms_uvvis_wavelength = request.form.get('lcms_uvvis_wavelength', default=None)
-    lcms_tic = request.form.get('lcms_tic', default=None)
     lcms_mz_page = request.form.get('lcms_mz_page', default=None)
 
     params = {
@@ -173,7 +172,6 @@ def extract_params(request):
         'detector': detector,
         'dsc_meta_data': dsc_meta_data,
         'lcms_uvvis_wavelength': lcms_uvvis_wavelength,
-        'lcms_tic': lcms_tic,
         'lcms_mz_page': lcms_mz_page,
     }
     has_params = (
@@ -193,7 +191,6 @@ def extract_params(request):
         params.get('fname') or
         params.get('simulatenmr') or
         params.get('lcms_uvvis_wavelength') or
-        params.get('lcms_tic') or
         params.get('lcms_mz_page')
     )
     if not has_params:
