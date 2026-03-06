@@ -101,6 +101,11 @@ class JcampBaseConverter:
             return 'XYPOINTS'
         elif 'XYDATA' in data_class:
             return 'XYDATA_OLD'
+        # Fallback: some valid JCAMP-DX files omit DATACLASS
+        if 'XYPOINTS' in self.dic and self.dic['XYPOINTS']:
+            return 'XYPOINTS'
+        if 'XYDATA' in self.dic and self.dic['XYDATA']:
+            return 'XYDATA_OLD'
         return ''
 
     def __set_dataformat(self):
