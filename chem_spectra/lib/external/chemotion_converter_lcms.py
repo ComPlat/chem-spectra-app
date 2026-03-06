@@ -200,6 +200,35 @@ def _format_rt_label(value) -> Optional[str]:
     return f"{_format_number(numeric)} min"
 
 
+def _extract_ms_peaks_from_param(value) -> List[Tuple[float, float]]:
+    if not value:
+        return []
+
+    data = value
+    if isinstance(data, str):
+        raw = data.strip()
+        if not raw:
+            return []
+        try:
+            data = json.loads(raw)
+        except Exception:
+            return []
+
+    if not isinstance(data, list):
+        return []
+
+    peaks: List[Tuple[float, float]] = []
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        mz = _as_float(item.get("x"))
+        intensity = _as_float(item.get("y"))
+        if mz is None or intensity is None:
+            continue
+        peaks.append((mz, intensity))
+    return peaks
+
+
 def _extract_xy_from_lines(lines: List[str], start_idx: int) -> Tuple[List[float], List[float]]:
     xs: List[float] = []
     ys: List[float] = []
@@ -734,6 +763,8 @@ def lcms_preview_image_from_jdx_files(
     normalized_params = _normalize_params(params)
     uvvis_wavelength = normalized_params.get("lcms_uvvis_wavelength")
     mz_page = normalized_params.get("lcms_mz_page")
+    mz_page_data = normalized_params.get("lcms_mz_page_data")
+    ms_threshold_from_param = _as_float(normalized_params.get("thres"))
 
     peak_path = _pick_jdx_path(paths, "uvvis.peak", "peak.jdx")
     mz_path = _pick_jdx_path(paths, "_mz", "mz")
@@ -776,9 +807,9 @@ def lcms_preview_image_from_jdx_files(
 
     ms_data = None
     ms_threshold = None
-    ms_page_label = None
-    ms_rt = None
-    ms_rt_label = None
+    ms_page_label = _format_ms_page_label(mz_page)
+    ms_rt = _float_from_label(mz_page)
+    ms_rt_label = _format_rt_label(ms_rt)
     if mz_path:
         try:
             with open(mz_path, "r", encoding="utf-8", errors="ignore") as handle:
@@ -787,16 +818,22 @@ def lcms_preview_image_from_jdx_files(
             if ms_data:
                 ms_threshold = ms_data[2]
                 ms_page_label = _format_ms_page_label(ms_data[3]) or _format_ms_page_label(mz_page)
-                rt_source = mz_page
-                if rt_source is None or str(rt_source).strip() == "":
-                    rt_source = ms_data[3]
-                ms_rt = _float_from_label(rt_source)
-                ms_rt_label = _format_rt_label(ms_rt)
+                if ms_rt is None:
+                    ms_rt = _float_from_label(ms_data[3])
+                    ms_rt_label = _format_rt_label(ms_rt)
         except Exception:
             ms_data = None
 
+    selected_ms_peaks = _extract_ms_peaks_from_param(mz_page_data)
+    active_ms_threshold = ms_threshold_from_param
+    if active_ms_threshold is None:
+        active_ms_threshold = ms_threshold
+    if active_ms_threshold is not None and active_ms_threshold > 1.0:
+        active_ms_threshold = active_ms_threshold / 100.0
+    if active_ms_threshold is not None:
+        active_ms_threshold = max(0.0, min(1.0, active_ms_threshold))
     has_uvvis = uvvis_data is not None
-    has_ms = ms_data is not None and ms_data[0]
+    has_ms = (ms_data is not None and ms_data[0]) or bool(selected_ms_peaks)
     if not (has_uvvis or has_ms):
         return None
 
@@ -904,23 +941,41 @@ def lcms_preview_image_from_jdx_files(
         uvvis_ax.set_axis_off()
 
     if has_ms:
-        ms_xs, ms_ys, ms_threshold, _page = ms_data
-        threshold = ms_threshold if ms_threshold is not None else 0.05
-        max_y = max(ms_ys) if ms_ys else 0.0
-        cut = max_y * threshold
-        blues_x, blues_y, greys_x, greys_y = [], [], [], []
-        for x_val, y_val in zip(ms_xs, ms_ys):
-            if y_val >= cut:
-                blues_x.append(x_val)
-                blues_y.append(y_val)
+        ms_panel_xs: List[float] = []
+        if ms_data is not None and ms_data[0]:
+            ms_xs, ms_ys, _ms_threshold, _page = ms_data
+            ms_ax.bar(ms_xs, ms_ys, width=0, edgecolor="#dddddd")
+            ms_panel_xs.extend(ms_xs)
+
+        if selected_ms_peaks:
+            peak_xs = [mz for mz, _ in selected_ms_peaks]
+            peak_ys = [intensity for _, intensity in selected_ms_peaks]
+            if active_ms_threshold is not None and peak_ys:
+                cut = max(peak_ys) * active_ms_threshold
+                peak_xs_blue = []
+                peak_ys_blue = []
+                peak_xs_grey = []
+                peak_ys_grey = []
+                for peak_x, peak_y in zip(peak_xs, peak_ys):
+                    if peak_y >= cut:
+                        peak_xs_blue.append(peak_x)
+                        peak_ys_blue.append(peak_y)
+                    else:
+                        peak_xs_grey.append(peak_x)
+                        peak_ys_grey.append(peak_y)
+                if peak_xs_grey:
+                    ms_ax.bar(peak_xs_grey, peak_ys_grey, width=0, edgecolor="#dddddd")
+                if peak_xs_blue:
+                    ms_ax.bar(peak_xs_blue, peak_ys_blue, width=0, edgecolor="#1f77b4")
             else:
-                greys_x.append(x_val)
-                greys_y.append(y_val)
-        ms_ax.bar(greys_x, greys_y, width=0, edgecolor="#dddddd")
-        ms_ax.bar(blues_x, blues_y, width=0, edgecolor="#1f77b4")
+                ms_ax.bar(peak_xs, peak_ys, width=0, edgecolor="#1f77b4")
+            ms_panel_xs.extend(peak_xs)
         ms_ax.set_xlabel("X (m/z)", fontsize=18)
         ms_ax.set_ylabel("Y (Relative Abundance)", fontsize=18)
         ms_ax.grid(False)
+        if ms_panel_xs:
+            ms_ax.set_xlim(min(ms_panel_xs), max(ms_panel_xs))
+            ms_ax.margins(x=0)
         if ms_rt_label:
             ms_ax.text(
                 0.98,

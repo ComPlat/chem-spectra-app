@@ -36,7 +36,6 @@ def zip_jcamp_n_img():
         list_files = request_files.getlist('files')
     if list_files:
         params = extract_params(request)
-        print("ELN zip_jcamp_n_img params:", params)
         file_containers = [FileContainer(item) for item in list_files]
         temp_files = []
         try:

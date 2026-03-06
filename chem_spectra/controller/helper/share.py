@@ -87,6 +87,41 @@ def parse_fname(request):
     return def_name or fil_name or src_name or ''
 
 
+def _param_to_text(value):
+    if value is None:
+        return None
+
+    if hasattr(value, 'read'):
+        try:
+            content = value.read()
+        except Exception:
+            return None
+        try:
+            value.seek(0)
+        except Exception:
+            pass
+        if isinstance(content, bytes):
+            return content.decode('utf-8', errors='ignore')
+        return str(content)
+
+    if isinstance(value, dict):
+        tmp_file = value.get('tempfile') or value.get(':tempfile')
+        if hasattr(tmp_file, 'read'):
+            try:
+                content = tmp_file.read()
+            except Exception:
+                return None
+            try:
+                tmp_file.seek(0)
+            except Exception:
+                pass
+            if isinstance(content, bytes):
+                return content.decode('utf-8', errors='ignore')
+            return str(content)
+
+    return value if isinstance(value, str) else str(value)
+
+
 def normalize_lcms_filename(filename, src_filename=None):
     if not filename and not src_filename:
         return filename
@@ -146,6 +181,11 @@ def extract_params(request):
     dsc_meta_data = request.form.get('dsc_meta_data', default=None)
     lcms_uvvis_wavelength = request.form.get('lcms_uvvis_wavelength', default=None)
     lcms_mz_page = request.form.get('lcms_mz_page', default=None)
+    lcms_mz_page_data = request.form.get('lcms_mz_page_data', default=None)
+    if request.files.get('lcms_mz_page_data'):
+        lcms_mz_page_data = _param_to_text(request.files.get('lcms_mz_page_data'))
+    else:
+        lcms_mz_page_data = _param_to_text(lcms_mz_page_data)
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -173,6 +213,7 @@ def extract_params(request):
         'dsc_meta_data': dsc_meta_data,
         'lcms_uvvis_wavelength': lcms_uvvis_wavelength,
         'lcms_mz_page': lcms_mz_page,
+        'lcms_mz_page_data': lcms_mz_page_data,
     }
     has_params = (
         params.get('peaks_str') or
@@ -191,7 +232,8 @@ def extract_params(request):
         params.get('fname') or
         params.get('simulatenmr') or
         params.get('lcms_uvvis_wavelength') or
-        params.get('lcms_mz_page')
+        params.get('lcms_mz_page') or
+        params.get('lcms_mz_page_data')
     )
     if not has_params:
         params = False

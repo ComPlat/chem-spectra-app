@@ -28,6 +28,7 @@ def parse_params(params):
             'dsc_meta_data': None,
             'lcms_uvvis_wavelength': None,
             'lcms_mz_page': None,
+            'lcms_mz_page_data': None,
         }
 
     select_x = params.get('select_x', None)
@@ -75,6 +76,7 @@ def parse_params(params):
     dsc_meta_data = json.loads(dsc_meta_data) if dsc_meta_data else None
     lcms_uvvis_wavelength = params.get('lcms_uvvis_wavelength')
     lcms_mz_page = params.get('lcms_mz_page')
+    lcms_mz_page_data = params.get('lcms_mz_page_data')
     if (cyclicvolta is not None):
         spectraList = cyclicvolta['spectraList']
         if (len(spectraList) > 0):
@@ -111,6 +113,7 @@ def parse_params(params):
         'dsc_meta_data': dsc_meta_data,
         'lcms_uvvis_wavelength': lcms_uvvis_wavelength,
         'lcms_mz_page': lcms_mz_page,
+        'lcms_mz_page_data': lcms_mz_page_data,
     }
 
 
