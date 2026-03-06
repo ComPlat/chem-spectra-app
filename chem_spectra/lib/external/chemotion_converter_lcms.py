@@ -826,12 +826,14 @@ def lcms_preview_image_from_jdx_files(
 
     selected_ms_peaks = _extract_ms_peaks_from_param(mz_page_data)
     active_ms_threshold = ms_threshold_from_param
-    if active_ms_threshold is None:
+    if active_ms_threshold is None or active_ms_threshold <= 0.0:
         active_ms_threshold = ms_threshold
     if active_ms_threshold is not None and active_ms_threshold > 1.0:
         active_ms_threshold = active_ms_threshold / 100.0
-    if active_ms_threshold is not None:
-        active_ms_threshold = max(0.0, min(1.0, active_ms_threshold))
+    if active_ms_threshold is None or active_ms_threshold <= 0.0:
+        # Default to 5% when threshold is missing/uninitialized.
+        active_ms_threshold = 0.05
+    active_ms_threshold = max(0.0, min(1.0, active_ms_threshold))
     has_uvvis = uvvis_data is not None
     has_ms = (ms_data is not None and ms_data[0]) or bool(selected_ms_peaks)
     if not (has_uvvis or has_ms):
@@ -944,7 +946,25 @@ def lcms_preview_image_from_jdx_files(
         ms_panel_xs: List[float] = []
         if ms_data is not None and ms_data[0]:
             ms_xs, ms_ys, _ms_threshold, _page = ms_data
-            ms_ax.bar(ms_xs, ms_ys, width=0, edgecolor="#dddddd")
+            if active_ms_threshold is not None and ms_ys:
+                cut = max(ms_ys) * active_ms_threshold
+                ms_xs_blue = []
+                ms_ys_blue = []
+                ms_xs_grey = []
+                ms_ys_grey = []
+                for ms_x, ms_y in zip(ms_xs, ms_ys):
+                    if ms_y >= cut:
+                        ms_xs_blue.append(ms_x)
+                        ms_ys_blue.append(ms_y)
+                    else:
+                        ms_xs_grey.append(ms_x)
+                        ms_ys_grey.append(ms_y)
+                if ms_xs_grey:
+                    ms_ax.bar(ms_xs_grey, ms_ys_grey, width=0, edgecolor="#dddddd")
+                if ms_xs_blue:
+                    ms_ax.bar(ms_xs_blue, ms_ys_blue, width=0, edgecolor="#1f77b4")
+            else:
+                ms_ax.bar(ms_xs, ms_ys, width=0, edgecolor="#dddddd")
             ms_panel_xs.extend(ms_xs)
 
         if selected_ms_peaks:
