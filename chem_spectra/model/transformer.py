@@ -27,7 +27,6 @@ import numpy as np  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
 from chem_spectra.lib.external.chemotion_converter_lcms import (
-    lcms_frames_from_converter_app,
     lcms_jcamp_files_from_converter_app,
     lcms_preview_image_from_jdx_files,
 )
@@ -285,31 +284,9 @@ class TransformerModel:
 
             openlab_dir = _find_dir_with_cdf(td)
             if openlab_dir:
-                normalized_dir = os.path.join(td, 'normalized')
-                os.makedirs(normalized_dir, exist_ok=True)
-
-                converter_frames = lcms_frames_from_converter_app(openlab_dir)
-                polarity_hint = None
-                if converter_frames is not None:
-                    lc_df, minus_df, plus_df, polarity_hint = converter_frames
-                else:
-                    return False, False, False
-
-                required_lc_cols = ['RetentionTime', 'DetectorSignal', 'wavelength']
-                for col in required_lc_cols:
-                    if col not in lc_df.columns:
-                        raise RuntimeError(f'LC output missing required column {col}')
-                lc_df = lc_df[required_lc_cols]
-
-                for label, df in {'MINUS': minus_df, 'PLUS': plus_df}.items():
-                    for col in ('mz', 'intensities', 'time'):
-                        if col not in df.columns:
-                            raise RuntimeError(f'MS {label} missing column {col}')
-
                 jcamp_files = lcms_jcamp_files_from_converter_app(
                     openlab_dir,
                     os.path.basename(self.file.name),
-                    lc_df=lc_df,
                     params=self.params,
                 )
                 if jcamp_files:
@@ -331,41 +308,12 @@ class TransformerModel:
         return False, False, False
 
     def tar2cvp(self):
-        with tempfile.TemporaryDirectory() as td:
-            suffix = self._tar_suffix()
-            tt = store_byte_in_tmp(self.file.bcore, suffix=suffix)
-            normalized_dir = os.path.join(td, 'normalized')
-            os.makedirs(normalized_dir, exist_ok=True)
-
-            converter_frames = lcms_frames_from_converter_app(tt.name)
-            if converter_frames is None:
-                with tarfile.open(tt.name, 'r:*') as t:
-                    t.extractall(td)
-                openlab_dir = _find_dir_with_cdf(td)
-                if openlab_dir:
-                    converter_frames = lcms_frames_from_converter_app(openlab_dir)
-
-            polarity_hint = None
-            if converter_frames is None:
-                return False, False, False
-
-            lc_df, minus_df, plus_df, polarity_hint = converter_frames
-
-            required_lc_cols = ['RetentionTime', 'DetectorSignal', 'wavelength']
-            for col in required_lc_cols:
-                if col not in lc_df.columns:
-                    raise RuntimeError(f'LC output missing required column {col}')
-            lc_df = lc_df[required_lc_cols]
-
-            for label, df in {'MINUS': minus_df, 'PLUS': plus_df}.items():
-                for col in ('mz', 'intensities', 'time'):
-                    if col not in df.columns:
-                        raise RuntimeError(f'MS {label} missing column {col}')
-
+        suffix = self._tar_suffix()
+        tt = store_byte_in_tmp(self.file.bcore, suffix=suffix)
+        try:
             jcamp_files = lcms_jcamp_files_from_converter_app(
                 tt.name,
                 os.path.basename(self.file.name),
-                lc_df=lc_df,
                 params=self.params,
             )
             if jcamp_files:
@@ -373,8 +321,11 @@ class TransformerModel:
                 lcms_cp = LCMSConverterAppComposer(jcamp_files, tf_img, self.params)
                 return None, lcms_cp, False
             return False, False, False
-
-        return False, False, False
+        finally:
+            try:
+                tt.close()
+            except Exception:
+                pass
 
     def zip2cv_with_processed_file(self, target_dir, params, file_name):
         fid_brucker = FidHasBruckerProcessed(target_dir, params, file_name)

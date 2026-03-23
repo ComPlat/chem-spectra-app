@@ -3,23 +3,16 @@ import json
 import os
 import tarfile
 import tempfile
+import zipfile
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-
-def _find_first_cdf(root_dir: str) -> Optional[str]:
-    for dirpath, _, filenames in os.walk(root_dir):
-        for fn in filenames:
-            if fn.lower().endswith(".cdf"):
-                return os.path.join(dirpath, fn)
-    return None
-
-
-def _is_tar_path(path: str) -> bool:
-    lower = path.lower()
-    return lower.endswith(".tar") or lower.endswith(".tar.gz") or lower.endswith(".tgz") or lower.endswith(".tar.xz")
+from chem_spectra.lib.external.lcms_remote_converter import (
+    RemoteConverterError,
+    convert_file_to_jcampzip,
+)
 
 
 def _strip_archive_suffix(name: str) -> str:
@@ -72,24 +65,6 @@ def _lcms_preview_basename(paths: List[str], params: Optional[Dict]) -> Optional
     return None
 
 
-_CONVERTER_APP = None
-
-
-def _get_converter_app():
-    global _CONVERTER_APP
-    if _CONVERTER_APP is None:
-        try:
-            from flask import Flask
-        except Exception:
-            return None
-        app = Flask("chemotion_converter_app")
-        profiles_dir = os.path.join(os.path.dirname(__file__), "chemotion_converter_profiles")
-        os.makedirs(os.path.join(profiles_dir, "default"), exist_ok=True)
-        app.config["PROFILES_DIR"] = profiles_dir
-        _CONVERTER_APP = app
-    return _CONVERTER_APP
-
-
 def _tar_dir_to_temp(path: str) -> Optional[tempfile.NamedTemporaryFile]:
     if not os.path.isdir(path):
         return None
@@ -126,19 +101,6 @@ def _write_named_file(content: bytes, filename: str) -> _NamedFile:
     fp.write(content)
     fp.seek(0)
     return _NamedFile(fp, tmp_dir)
-
-
-def _normalize_name(value: str) -> str:
-    return str(value).strip().lower()
-
-
-def _column_index(columns: List[Dict], candidates: List[str]) -> Optional[int]:
-    wanted = {_normalize_name(c) for c in candidates}
-    for idx, col in enumerate(columns):
-        name = _normalize_name(col.get("name", ""))
-        if name in wanted:
-            return idx
-    return None
 
 
 def _as_float(value) -> Optional[float]:
@@ -509,195 +471,47 @@ def _normalize_params(params: Optional[Dict]) -> Dict:
         return params if isinstance(params, dict) else {}
 
 
-def _extract_xy(table: Dict, x_candidates: List[str], y_candidates: List[str]) -> Tuple[List[float], List[float]]:
-    columns = table.get("columns", [])
-    rows = table.get("rows", [])
-    x_idx = _column_index(columns, x_candidates)
-    y_idx = _column_index(columns, y_candidates)
-    if x_idx is None or y_idx is None:
-        return [], []
-
-    xs: List[float] = []
-    ys: List[float] = []
-    for row in rows:
-        if x_idx >= len(row) or y_idx >= len(row):
+def _extract_uvvis_pages(content: str) -> List[Tuple[Optional[float], List[float], List[float]]]:
+    lines = content.splitlines()
+    pages: List[Tuple[Optional[float], List[float], List[float]]] = []
+    current_page: Optional[float] = None
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        upper = stripped.upper()
+        if upper.startswith("##PAGE="):
+            current_page = _float_from_label(stripped.split("=", 1)[1].strip())
             continue
-        x_val = _as_float(row[x_idx])
-        y_val = _as_float(row[y_idx])
-        if x_val is None or y_val is None:
-            continue
-        xs.append(x_val)
-        ys.append(y_val)
-    return xs, ys
+        if "##DATA TABLE" in upper or "##PEAK TABLE" in upper or "##XYDATA" in upper:
+            xs, ys = _extract_xy_from_lines(lines, idx + 1)
+            if xs and ys:
+                pages.append((current_page, xs, ys))
+    if pages:
+        return pages
+
+    xs, ys = _extract_xy_from_jdx_content(content)
+    if not xs or not ys:
+        return []
+    return [(None, xs, ys)]
 
 
-def _table_metadata(table: Dict) -> Dict[str, str]:
-    metadata = table.get("metadata", {}) or {}
-    return {str(k).lower(): str(v) for k, v in metadata.items()}
-
-
-def _resolve_mode(meta: Dict[str, str]) -> Optional[str]:
-    mode = meta.get("mode", "").lower()
-    if "positiv" in mode:
-        return "pos"
-    if "negativ" in mode:
-        return "neg"
-    return None
-
-
-def _build_ms_rows(table: Dict) -> Tuple[List[Tuple[float, float, float]], Optional[str]]:
-    meta = _table_metadata(table)
-    mode = _resolve_mode(meta)
-    rt_val = meta.get("t") or meta.get("rt") or meta.get("retention_time")
-    rt = _as_float(rt_val)
-    if rt is None:
-        return [], mode
-
-    columns = table.get("columns", [])
-    rows = table.get("rows", [])
-    mz_idx = _column_index(columns, ["mz", "m/z"])
-    int_idx = _column_index(columns, ["intensities", "intensity"])
-    if mz_idx is None or int_idx is None:
-        return [], mode
-
-    out: List[Tuple[float, float, float]] = []
-    for row in rows:
-        if mz_idx >= len(row) or int_idx >= len(row):
-            continue
-        mz = _as_float(row[mz_idx])
-        inten = _as_float(row[int_idx])
-        if mz is None or inten is None:
-            continue
-        out.append((rt, mz, inten))
-    return out, mode
-
-
-def lcms_frames_from_converter_app(
-    source_path: str,
-) -> Optional[Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Optional[str]]]:
-    try:
-        from converter_app.readers.lcms_reader import LcmsReader  # type: ignore
-        from converter_app.readers.helper.reader import Readers  # type: ignore
-        from converter_app.models import File as ConverterFile  # type: ignore
-    except Exception:
+def _lc_df_from_uvvis_content(content: str) -> Optional[pd.DataFrame]:
+    pages = _extract_uvvis_pages(content)
+    if not pages:
         return None
-
-    if not source_path or not os.path.exists(source_path):
-        return None
-
-    class _FakeUpload:
-        def __init__(self, path: str):
-            self.filename = path
-            self.content_type = "application/octet-stream"
-            self._fp = open(path, "rb")
-
-        def read(self, *args, **kwargs):
-            return self._fp.read(*args, **kwargs)
-
-        def seek(self, *args, **kwargs):
-            return self._fp.seek(*args, **kwargs)
-
-        def save(self, dst):
-            with open(dst, "wb") as out:
-                self._fp.seek(0)
-                out.write(self._fp.read())
-
-        def close(self):
-            try:
-                self._fp.close()
-            except Exception:
-                pass
-
-    tables = None
-    if os.path.isdir(source_path):
-        cdf_path = _find_first_cdf(source_path)
-        if not cdf_path:
-            return None
-        file_main = _FakeUpload(cdf_path)
-        file_aux = _FakeUpload(cdf_path)
-        try:
-            main = ConverterFile(file_main)
-            aux = ConverterFile(file_aux)
-            reader = LcmsReader(main, aux)
-            tables = reader.get_tables()
-        finally:
-            file_main.close()
-            file_aux.close()
-    elif _is_tar_path(source_path):
-        file_main = _FakeUpload(source_path)
-        try:
-            main = ConverterFile(file_main)
-            reader = Readers.instance().match_reader(main)
-            if reader is None:
-                return None
-            tables = reader.get_tables()
-        finally:
-            file_main.close()
-    else:
-        return None
-
-    if not tables:
-        return None
-
-    uv_rows: List[Dict[str, float]] = []
-    ms_neg_rows: List[Tuple[float, float, float]] = []
-    ms_pos_rows: List[Tuple[float, float, float]] = []
-    ms_generic_rows: List[Tuple[float, float, float]] = []
-    has_explicit_mode = False
-    has_unknown_mode = False
-
-    for table in tables:
-        meta = _table_metadata(table)
-        reader_type = meta.get("internal_reader_type", "").lower()
-
-        if reader_type == "lc - uv/vis" or ("wave" in meta or "allwaves" in meta):
-            wavelength = meta.get("wavelength") or meta.get("wave") or meta.get("wl")
-            if wavelength is None:
-                continue
-            xs, ys = _extract_xy(
-                table,
-                ["retentiontime", "retention_time", "time"],
-                ["detectorsignal", "detector_signal", "signal", "wavelength"],
+    rows = []
+    for wavelength, xs, ys in pages:
+        page_wavelength = wavelength if wavelength is not None else 0.0
+        for x_val, y_val in zip(xs, ys):
+            rows.append(
+                {
+                    "RetentionTime": x_val,
+                    "DetectorSignal": y_val,
+                    "wavelength": page_wavelength,
+                }
             )
-            for x, y in zip(xs, ys):
-                uv_rows.append(
-                    {
-                        "RetentionTime": x,
-                        "DetectorSignal": y,
-                        "wavelength": wavelength,
-                    }
-                )
-            continue
-
-        if "ms spectrum" in reader_type or "mass spectrum" in reader_type:
-            rows, mode = _build_ms_rows(table)
-            if not rows:
-                continue
-            if mode == "neg":
-                ms_neg_rows.extend(rows)
-                has_explicit_mode = True
-            elif mode == "pos":
-                ms_pos_rows.extend(rows)
-                has_explicit_mode = True
-            else:
-                ms_generic_rows.extend(rows)
-                has_unknown_mode = True
-            continue
-
-    if not uv_rows and not ms_neg_rows and not ms_pos_rows and not ms_generic_rows:
+    if not rows:
         return None
-
-    polarity_hint: Optional[str] = None
-    if has_unknown_mode and not has_explicit_mode:
-        polarity_hint = "generic"
-
-    if ms_generic_rows:
-        ms_pos_rows.extend(ms_generic_rows)
-    lc_df = pd.DataFrame(uv_rows, columns=["RetentionTime", "DetectorSignal", "wavelength"])
-    ms_neg_df = pd.DataFrame(ms_neg_rows, columns=["time", "mz", "intensities"])
-    ms_pos_df = pd.DataFrame(ms_pos_rows, columns=["time", "mz", "intensities"])
-
-    return lc_df, ms_neg_df, ms_pos_df, polarity_hint
+    return pd.DataFrame(rows, columns=["RetentionTime", "DetectorSignal", "wavelength"])
 
 
 def _header_value(header: Dict, key: str) -> Optional[str]:
@@ -714,6 +528,10 @@ def _classify_lcms_header(header: Dict) -> Tuple[Optional[str], Optional[str]]:
     data_class = _header_value(header, "DATA CLASS")
     x_units = _header_value(header, "XUNITS")
     y_units = _header_value(header, "YUNITS")
+    scan_mode = _header_value(header, "SCAN_MODE") or _header_value(header, "$SCAN_MODE")
+    ion_mode = _header_value(header, "ION_MODE") or _header_value(header, "$ION_MODE")
+    mode = _header_value(header, "MODE") or _header_value(header, "$MODE")
+    polarity_header = _header_value(header, "POLARITY") or _header_value(header, "$POLARITY")
     combined = " ".join([v for v in [category, ntuples_id, data_type] if v])
     combined_upper = combined.upper()
 
@@ -735,10 +553,13 @@ def _classify_lcms_header(header: Dict) -> Tuple[Optional[str], Optional[str]]:
     if not kind:
         return None, None
 
+    polarity_combined_upper = " ".join(
+        [v for v in [combined, scan_mode, ion_mode, mode, polarity_header] if v]
+    ).upper()
     polarity: Optional[str] = None
-    if "NEG" in combined_upper or "MINUS" in combined_upper:
+    if "NEG" in polarity_combined_upper or "MINUS" in polarity_combined_upper:
         polarity = "minus"
-    elif "POS" in combined_upper or "PLUS" in combined_upper:
+    elif "POS" in polarity_combined_upper or "PLUS" in polarity_combined_upper:
         polarity = "plus"
     return kind, polarity
 
@@ -1032,100 +853,66 @@ def lcms_preview_image_from_jdx_files(
     return tf_img
 
 
-def lcms_jcamp_files_from_converter_app(
-    source_path: str,
+def _extract_lcms_jdx_files_from_zip_bytes(
+    zip_bytes: bytes,
     title: str,
-    lc_df: Optional[pd.DataFrame] = None,
-    params: Optional[Dict] = None,
+    lc_df: Optional[pd.DataFrame],
+    params: Optional[Dict],
 ) -> Optional[List[tempfile.NamedTemporaryFile]]:
-    try:
-        from werkzeug.datastructures import FileStorage
-        from converter_app.converters import Converter  # type: ignore
-        from converter_app.models import File as ConverterFile  # type: ignore
-        from converter_app.readers import READERS  # type: ignore
-        from converter_app.writers.jcamp import JcampWriter  # type: ignore
-    except Exception:
-        return None
+    base = _strip_archive_suffix(title)
+    with tempfile.TemporaryDirectory(prefix="chemotion_lcms_remote_") as td:
+        zip_path = os.path.join(td, "converted.zip")
+        with open(zip_path, "wb") as handle:
+            handle.write(zip_bytes)
 
-    if not source_path or not os.path.exists(source_path):
-        return None
+        try:
+            with zipfile.ZipFile(zip_path, "r") as archive:
+                archive.extractall(td)
+        except zipfile.BadZipFile as exc:
+            raise RemoteConverterError(
+                "Remote converter returned an invalid ZIP archive.",
+                status_code=502,
+            ) from exc
 
-    app = _get_converter_app()
-    if app is None:
-        return None
-
-    tar_temp = None
-    src_path = source_path
-    if os.path.isdir(source_path):
-        tar_temp = _tar_dir_to_temp(source_path)
-        if tar_temp is None:
+        jdx_paths: List[str] = []
+        for dirpath, _, filenames in os.walk(td):
+            for filename in filenames:
+                lower = filename.lower()
+                if lower.endswith((".jdx", ".dx", ".jcamp")):
+                    jdx_paths.append(os.path.join(dirpath, filename))
+        if not jdx_paths:
             return None
-        src_path = tar_temp.name
-
-    file_handle = None
-    try:
-        file_handle = open(src_path, "rb")
-        fs = FileStorage(
-            stream=file_handle,
-            filename=src_path,
-            content_type="application/octet-stream",
-        )
-        converter_file = ConverterFile(fs)
-
-        with app.app_context():
-            reader = READERS.match_reader(converter_file)
-            if not reader:
-                return None
-            reader.process()
-            for table in reader.tables or []:
-                header = table.get("header") or []
-                if not header:
-                    metadata = table.get("metadata", {}) or {}
-                    reader_type = metadata.get("internal_reader_type")
-                    if reader_type:
-                        table["header"] = [str(reader_type)]
-                        continue
-                    meta_keys = {str(k).lower() for k in metadata.keys()}
-                    if {"wave", "wavelength", "allwaves"} & meta_keys:
-                        table["header"] = ["lc - uv/vis"]
-
-            converter = Converter.match_profile("default", reader.as_dict)
-            if not converter:
-                converter = None
-            elif converter:
-                converter.process()
-
-        jdx_entries: List[Tuple[Dict, bytes]] = []
-
-        if converter is not None:
-            jc = JcampWriter(converter)
-            for tables in jc.process_ntuples_tables():
-                header = tables[0].get("header", {})
-                content = jc.write()
-                if isinstance(content, str):
-                    content = content.encode("utf-8")
-                jdx_entries.append((header, content))
-
-            for table in [t for t in converter.tables if t.get("header", {}).get("DATA CLASS") != "NTUPLES"]:
-                jc = JcampWriter(converter)
-                jc.process_table(table)
-                content = jc.write()
-                if isinstance(content, str):
-                    content = content.encode("utf-8")
-                jdx_entries.append((table.get("header", {}), content))
-
-        base = _strip_archive_suffix(title)
 
         grouped = {"uvvis": [], "tic": [], "mz": []}
-        for header, content in jdx_entries:
-            kind, polarity = _classify_lcms_header(header)
-            if not kind:
+        peak_source_content: Optional[bytes] = None
+        fallback_uvvis_content: Optional[str] = None
+
+        for path in sorted(jdx_paths):
+            try:
+                with open(path, "rb") as handle:
+                    raw_content = handle.read()
+                content = raw_content.decode("utf-8", errors="ignore")
+            except Exception:
                 continue
-            grouped[kind].append({"polarity": polarity, "content": content})
+
+            lowered_name = os.path.basename(path).lower()
+            if "uvvis.peak" in lowered_name or "peak.jdx" in lowered_name or "CHEMSPECTRA UVVIS PEAK TABLE" in content:
+                peak_source_content = raw_content
+                if fallback_uvvis_content is None:
+                    fallback_uvvis_content = content
+
+            kind = _classify_lcms_content(content)
+            header = _header_from_content(content)
+            _, polarity = _classify_lcms_header(header)
+
+            if kind in grouped:
+                grouped[kind].append({"polarity": polarity, "content": raw_content})
+                if kind == "uvvis" and fallback_uvvis_content is None:
+                    fallback_uvvis_content = content
 
         output_files: List[tempfile.NamedTemporaryFile] = []
-
         has_primary = False
+
         if grouped["uvvis"]:
             output_files.append(_write_named_file(grouped["uvvis"][0]["content"], f"{base}_uvvis.jdx"))
             has_primary = True
@@ -1158,27 +945,51 @@ def lcms_jcamp_files_from_converter_app(
                 output_files.append(_write_named_file(entry["content"], f"{base}{suffix}"))
                 has_primary = True
 
-        if lc_df is None:
-            frames = lcms_frames_from_converter_app(source_path)
-            lc_df = frames[0] if frames else None
-
-        if lc_df is not None and not lc_df.empty:
-            normalized_params = _normalize_params(params)
-            uvvis_peak_file = lcms_uvvis_peak_jcamp_from_df(lc_df, title, normalized_params)
-            if uvvis_peak_file is not None:
-                uvvis_peak_file.seek(0)
-                peak_content = uvvis_peak_file.read()
-                output_files.append(_write_named_file(peak_content, f"{base}_uvvis.peak.jdx"))
+        if peak_source_content:
+            output_files.append(_write_named_file(peak_source_content, f"{base}_uvvis.peak.jdx"))
+        else:
+            derived_df = lc_df
+            if (derived_df is None or derived_df.empty) and fallback_uvvis_content:
+                derived_df = _lc_df_from_uvvis_content(fallback_uvvis_content)
+            if derived_df is not None and not derived_df.empty:
+                normalized_params = _normalize_params(params)
+                uvvis_peak_file = lcms_uvvis_peak_jcamp_from_df(derived_df, title, normalized_params)
+                if uvvis_peak_file is not None:
+                    uvvis_peak_file.seek(0)
+                    output_files.append(
+                        _write_named_file(uvvis_peak_file.read(), f"{base}_uvvis.peak.jdx")
+                    )
 
         if output_files and has_primary:
             return output_files
         return None
+
+
+def lcms_jcamp_files_from_converter_app(
+    source_path: str,
+    title: str,
+    lc_df: Optional[pd.DataFrame] = None,
+    params: Optional[Dict] = None,
+) -> Optional[List[tempfile.NamedTemporaryFile]]:
+    if not source_path or not os.path.exists(source_path):
+        return None
+
+    tar_temp = None
+    src_path = source_path
+    if os.path.isdir(source_path):
+        tar_temp = _tar_dir_to_temp(source_path)
+        if tar_temp is None:
+            return None
+        src_path = tar_temp.name
+
+    try:
+        normalized_params = _normalize_params(params)
+        converter_url = None
+        if isinstance(normalized_params, dict):
+            converter_url = normalized_params.get("converter_url")
+        converted_zip = convert_file_to_jcampzip(src_path, converter_url=converter_url)
+        return _extract_lcms_jdx_files_from_zip_bytes(converted_zip, title, lc_df, params)
     finally:
-        if file_handle is not None:
-            try:
-                file_handle.close()
-            except Exception:
-                pass
         if tar_temp is not None:
             try:
                 tar_temp.close()
@@ -1250,6 +1061,17 @@ def lcms_df_from_peak_jdx(jdx_path: str) -> Optional[pd.DataFrame]:
             return df
         return None
     except Exception as e:
+        return None
+
+
+def lcms_df_from_uvvis_jdx(jdx_path: str) -> Optional[pd.DataFrame]:
+    if not jdx_path or not os.path.exists(jdx_path):
+        return None
+    try:
+        with open(jdx_path, "r", encoding="utf-8", errors="ignore") as handle:
+            content = handle.read()
+        return _lc_df_from_uvvis_content(content)
+    except Exception:
         return None
 
 def lcms_uvvis_peak_jcamp_from_df(

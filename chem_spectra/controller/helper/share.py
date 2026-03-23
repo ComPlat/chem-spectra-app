@@ -182,6 +182,7 @@ def extract_params(request):
     lcms_uvvis_wavelength = request.form.get('lcms_uvvis_wavelength', default=None)
     lcms_mz_page = request.form.get('lcms_mz_page', default=None)
     lcms_mz_page_data = request.form.get('lcms_mz_page_data', default=None)
+    converter_url = request.form.get('converter_url', default=None)
     if request.files.get('lcms_mz_page_data'):
         lcms_mz_page_data = _param_to_text(request.files.get('lcms_mz_page_data'))
     else:
@@ -214,6 +215,7 @@ def extract_params(request):
         'lcms_uvvis_wavelength': lcms_uvvis_wavelength,
         'lcms_mz_page': lcms_mz_page,
         'lcms_mz_page_data': lcms_mz_page_data,
+        'converter_url': converter_url,
     }
     has_params = (
         params.get('peaks_str') or
@@ -233,7 +235,8 @@ def extract_params(request):
         params.get('simulatenmr') or
         params.get('lcms_uvvis_wavelength') or
         params.get('lcms_mz_page') or
-        params.get('lcms_mz_page_data')
+        params.get('lcms_mz_page_data') or
+        params.get('converter_url')
     )
     if not has_params:
         params = False

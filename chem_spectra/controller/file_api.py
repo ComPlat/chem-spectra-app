@@ -47,7 +47,7 @@ def chemspectra_file_save():
     request_files = request.files
     molfile = FileContainer(request.files.get('molfile'))
     filename = request.form.get('filename', default=None)
-    filename = normalize_lcms_filename(filename, src.filename if src else None)
+    filename = normalize_lcms_filename(filename, src.name if src else None)
     params = extract_params(request)
     if 'dst_list' in request_files:
         request_dst = request_files.getlist('dst_list')

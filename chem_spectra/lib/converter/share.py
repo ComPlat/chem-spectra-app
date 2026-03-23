@@ -29,6 +29,7 @@ def parse_params(params):
             'lcms_uvvis_wavelength': None,
             'lcms_mz_page': None,
             'lcms_mz_page_data': None,
+            'converter_url': None,
         }
 
     select_x = params.get('select_x', None)
@@ -77,6 +78,7 @@ def parse_params(params):
     lcms_uvvis_wavelength = params.get('lcms_uvvis_wavelength')
     lcms_mz_page = params.get('lcms_mz_page')
     lcms_mz_page_data = params.get('lcms_mz_page_data')
+    converter_url = params.get('converter_url')
     if (cyclicvolta is not None):
         spectraList = cyclicvolta['spectraList']
         if (len(spectraList) > 0):
@@ -114,6 +116,7 @@ def parse_params(params):
         'lcms_uvvis_wavelength': lcms_uvvis_wavelength,
         'lcms_mz_page': lcms_mz_page,
         'lcms_mz_page_data': lcms_mz_page_data,
+        'converter_url': converter_url,
     }
 
 
