@@ -53,18 +53,15 @@ def _to_float(raw: str, default: float) -> float:
 
 
 def _converter_url(base_url_override: Optional[str] = None) -> str:
-    base_url = (
-        base_url_override
-        or _setting("CONVERTER_BASE_URL", default="http://193.196.38.137:4000")
-    ).strip()
-    parsed = urlparse(base_url)
-    # Local converter often exposes /conversions directly; remote deployments usually expose /api/v1/conversions.
-    if parsed.hostname in {"127.0.0.1", "localhost"}:
-        default_path = "/conversions"
-    else:
-        default_path = "/api/v1/conversions"
+    configured = _setting("CONVERTER_BASE_URL", default="http://193.196.39.140:4000").strip()
+    raw = (base_url_override or "").strip() or configured
+    parsed = urlparse(raw)
+    if parsed.hostname == "host.docker.internal":
+        raw = configured
+        parsed = urlparse(raw)
+    default_path = "/conversions"
     path = _setting("CONVERTER_PATH", default=default_path).strip() or default_path
-    return urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
+    return urljoin(raw.rstrip("/") + "/", path.lstrip("/"))
 
 
 def _multipart_content_type(source_path: str) -> str:
@@ -85,14 +82,12 @@ def convert_file_to_jcampzip(
     if not source_path or not os.path.exists(source_path) or os.path.isdir(source_path):
         raise RemoteConverterError("Invalid source file for remote conversion.", status_code=400)
 
-    token = _setting("CONVERTER_TOKEN", default="").strip()
-    if not token:
-        raise RemoteConverterError("Missing CONVERTER_TOKEN.", status_code=500)
-
-    username = _setting("CONVERTER_USER", default="converter").strip() or "converter"
-    timeout_raw = _setting("CONVERTER_TIMEOUT_SEC", default="")
-    timeout_sec = _to_float(timeout_raw, 60.0) if timeout_raw else 60.0
+    username = _setting("CONVERTER_USER", default="chemotion").strip() or "chemotion"
+    token = _setting("CONVERTER_TOKEN", default="chemotion").strip()
+    timeout_raw = _setting("CONVERTER_TIMEOUT_SEC", default="180")
+    timeout_sec = _to_float(timeout_raw, 180.0)
     endpoint = _converter_url(converter_url)
+    auth = HTTPBasicAuth(username, token) if token else None
 
     try:
         with open(source_path, "rb") as handle:
@@ -104,7 +99,7 @@ def convert_file_to_jcampzip(
                 endpoint,
                 files=files,
                 data=data,
-                auth=HTTPBasicAuth(username, token),
+                auth=auth,
                 timeout=timeout_sec,
             )
     except requests.Timeout as exc:
@@ -119,13 +114,20 @@ def convert_file_to_jcampzip(
         ) from exc
 
     if response.status_code != 200:
+        detail = ""
+        try:
+            body = (response.text or "").strip()
+            if body:
+                detail = f" Body: {body[:800]}"
+        except Exception:
+            pass
         if 400 <= response.status_code < 500:
             raise RemoteConverterError(
-                f"Converter returned a client error ({response.status_code}).",
+                f"Converter returned a client error ({response.status_code}).{detail}",
                 status_code=422,
             )
         raise RemoteConverterError(
-            f"Converter returned a server error ({response.status_code}).",
+            f"Converter returned a server error ({response.status_code}).{detail}",
             status_code=502,
         )
 

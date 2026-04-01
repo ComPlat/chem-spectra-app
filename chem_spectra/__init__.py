@@ -9,7 +9,11 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY='dev',
         IP_WHITE_LIST='',
-        CONVERTER_BASE_URL='http://127.0.0.1:5000',
+        CONVERTER_BASE_URL='http://193.196.39.140:4000',
+        CONVERTER_PATH='/conversions',
+        CONVERTER_USER='chemotion',
+        CONVERTER_TOKEN='chemotion',
+        CONVERTER_TIMEOUT_SEC='180',
     )
     
     app.config.from_prefixed_env()
