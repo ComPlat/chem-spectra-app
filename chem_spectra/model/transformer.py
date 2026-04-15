@@ -286,7 +286,7 @@ class TransformerModel:
             if openlab_dir:
                 jcamp_files = lcms_jcamp_files_from_converter_app(
                     openlab_dir,
-                    os.path.basename(self.file.name),
+                    os.path.basename(getattr(self.file, "name", "") or openlab_dir),
                     params=self.params,
                 )
                 if jcamp_files:
@@ -313,7 +313,7 @@ class TransformerModel:
         try:
             jcamp_files = lcms_jcamp_files_from_converter_app(
                 tt.name,
-                os.path.basename(self.file.name),
+                os.path.basename(getattr(self.file, "name", "") or tt.name),
                 params=self.params,
             )
             if jcamp_files:

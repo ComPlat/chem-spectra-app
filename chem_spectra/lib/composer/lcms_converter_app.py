@@ -52,8 +52,47 @@ class LCMSConverterAppComposer:
             return False
         return bool(integration)
 
+    @staticmethod
+    def _requested_lcms_mz_page(params: Optional[Dict]) -> str:
+        if not params:
+            return ""
+        raw_value = params.get("lcms_mz_page")
+        if raw_value is None:
+            return ""
+        return " ".join(str(raw_value).splitlines()).strip()
+
+    @staticmethod
+    def _read_lcms_mz_page_from_file(jdx_file: Optional[tempfile.NamedTemporaryFile]) -> str:
+        if not jdx_file:
+            return ""
+        try:
+            with open(jdx_file.name, "r", encoding="utf-8", errors="ignore") as handle:
+                for line in handle:
+                    if line.startswith("##$CSLCMSMZPAGE="):
+                        return line.split("=", 1)[1].strip()
+        except Exception:
+            return ""
+        return ""
+
+    def _should_refresh_jcamp(self) -> bool:
+        if self._has_lcms_edits(self.params):
+            return True
+
+        requested_mz_page = self._requested_lcms_mz_page(self.params)
+        if not requested_mz_page:
+            return False
+
+        jdx_file = self._find_peak_or_edit_file()
+        if not jdx_file and self.data:
+            jdx_file = self.data[0]
+
+        current_mz_page = self._read_lcms_mz_page_from_file(jdx_file)
+        if current_mz_page != requested_mz_page:
+            return True
+        return False
+
     def tf_img(self):
-        if self._has_lcms_edits(self.params) and not self._peaks_applied:
+        if self._should_refresh_jcamp() and not self._peaks_applied:
             self.tf_jcamp()
         if self.data:
             preview = lcms_preview_image_from_jdx_files(self.data, self.params)
@@ -71,7 +110,7 @@ class LCMSConverterAppComposer:
         if not self.data:
             return None
         
-        if self._has_lcms_edits(self.params) and not self._peaks_applied:
+        if self._should_refresh_jcamp() and not self._peaks_applied:
             jdx_file = self._find_peak_or_edit_file()
             if not jdx_file and self.data:
                 jdx_file = self.data[0]
