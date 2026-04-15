@@ -1086,6 +1086,11 @@ def lcms_uvvis_peak_jcamp_from_df(
     peaks_input = normalized_params.get("peaks_str") if normalized_params else None
     integration_input = normalized_params.get("integration") if normalized_params else None
     selected_page_idx = normalized_params.get("jcamp_idx", 0) if normalized_params else 0
+    lcms_mz_page_hdr = ""
+    if normalized_params:
+        _raw_mz_page = normalized_params.get("lcms_mz_page")
+        if _raw_mz_page is not None:
+            lcms_mz_page_hdr = " ".join(str(_raw_mz_page).splitlines()).strip()
 
     def _to_float_or_none(val):
         try:
@@ -1305,10 +1310,14 @@ def lcms_uvvis_peak_jcamp_from_df(
             "##XUNITS=RETENTION TIME\n",
             "##YUNITS=DETECTOR SIGNAL\n",
             "##$CSCATEGORY=UVVIS PEAK TABLE\n",
+        ]
+        if page_idx == 0 and lcms_mz_page_hdr:
+            page_block.append(f"##$CSLCMSMZPAGE={lcms_mz_page_hdr}\n")
+        page_block.extend([
             f"##PAGE={wl}\n",
             f"##NPOINTS={len(xs)}\n",
             "##DATA TABLE= (XY..XY), PEAKS\n",
-        ]
+        ])
         for x, y in zip(xs, ys):
             page_block.append(f"{x}, {y};\n")
         page_block.append("##END=\n")
