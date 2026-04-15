@@ -452,6 +452,40 @@ class JcampNIConverter:  # nmr & IR
             peak_idxs = np.unique(np.concatenate((peak_idxs, dept_peak_idxs)))
         return peak_idxs
 
+    def __filter_solvent_peaks(self, peaks):
+        if not self.solv_peaks:
+            return peaks
+
+        assigned_peak_indices = set()
+        kept_solvent_peaks = []
+
+        for lower_bound, upper_bound in self.solv_peaks:
+            peaks_in_range = [
+                (idx, peak) for idx, peak in enumerate(peaks)
+                if lower_bound < peak['x'] < upper_bound
+            ]
+            if not peaks_in_range:
+                continue
+
+            range_center = (lower_bound + upper_bound) / 2
+            keep_idx, keep_peak = min(
+                peaks_in_range,
+                key=lambda item: (
+                    -abs(item[1]['y']),
+                    abs(item[1]['x'] - range_center),
+                ),
+            )
+            assigned_peak_indices.update(idx for idx, _ in peaks_in_range)
+            kept_solvent_peaks.append((keep_idx, keep_peak))
+
+        filtered_peaks = [
+            peak for idx, peak in enumerate(peaks)
+            if idx not in assigned_peak_indices
+        ]
+        filtered_peaks.extend(peak for _, peak in kept_solvent_peaks)
+        filtered_peaks.sort(key=lambda d: d['y'], reverse=True)
+        return filtered_peaks
+
     def __run_auto_pick_peak(self):
         peak_idxs = self.__exec_peak_picking_logic()
         auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx]} for idx in peak_idxs]
@@ -463,23 +497,15 @@ class JcampNIConverter:  # nmr & IR
             simu_length = len(self.simu_peaks)
             simu_length = simu_length if simu_length > 1 else 50
             auto_peaks = auto_peaks[:200]
-            # rm solvent peaks
-            edit_non_solv_peaks = []
-            for peak in auto_peaks:
-                not_solvent = True
-                for u, v in self.solv_peaks:
-                    if u < peak['x'] < v:
-                        not_solvent = False
-                if not_solvent:
-                    edit_non_solv_peaks.append(peak)
+            auto_peaks = self.__filter_solvent_peaks(auto_peaks)
             # as - 26.90 (range: 26.80 - 26.95)
             # bs, cs - 207.1 (207.0-207.2) + 30.9 (30.8 - 31.0)
             # ds, es, fs, gs - 60.4 (60.3 - 60.5) + 14.2 (14.1 - 14.3) + 21.1 (20.9 - 21.2) + 171.3 (171.2-171.4)
             # rm impurity peaks
             imp_as, imp_bs, imp_cs, imp_ds, imp_es, imp_fs, imp_gs, edit_pure_peaks = [], [], [], [], [], [], [], []
-            i, capacity, l = 0, simu_length + 10, len(edit_non_solv_peaks)
+            i, capacity, l = 0, simu_length + 10, len(auto_peaks)
             while i < capacity and i < l:
-                target = edit_non_solv_peaks[i]
+                target = auto_peaks[i]
                 if 26.80 <= target['x'] <= 27.0:
                     imp_as.append(target)
                 elif 207.0 <= target['x'] <= 207.2:
@@ -513,16 +539,9 @@ class JcampNIConverter:  # nmr & IR
             auto_peaks = auto_peaks[:100]
         elif self.ncl == '1H':
             auto_peaks = auto_peaks[:100]
-            edit_non_solv_peaks = []
-            for peak in auto_peaks:
-                not_solvent = True
-                for u, v in self.solv_peaks:
-                    if u < peak['x'] < v:
-                        not_solvent = False
-                if not_solvent:
-                    edit_non_solv_peaks.append(peak)
-            edit_x = [peak['x'] for peak in edit_non_solv_peaks]
-            edit_y = [peak['y'] for peak in edit_non_solv_peaks]
+            auto_peaks = self.__filter_solvent_peaks(auto_peaks)
+            edit_x = [peak['x'] for peak in auto_peaks]
+            edit_y = [peak['y'] for peak in auto_peaks]
             self.edit_peaks = {'x': edit_x, 'y': edit_y}
         else:
             auto_peaks = auto_peaks[:100]
