@@ -1,18 +1,12 @@
 import io
 import json
 import os
-import tarfile
 import tempfile
-import zipfile
 import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-from chem_spectra.lib.external.lcms_remote_converter import (
-    RemoteConverterError,
-    convert_file_to_jcampzip,
-)
 
 
 def _strip_archive_suffix(name: str) -> str:
@@ -63,16 +57,6 @@ def _lcms_preview_basename(paths: List[str], params: Optional[Dict]) -> Optional
                     return prefix.rstrip("_-")
             return normalized[0]
     return None
-
-
-def _tar_dir_to_temp(path: str) -> Optional[tempfile.NamedTemporaryFile]:
-    if not os.path.isdir(path):
-        return None
-    tf = tempfile.NamedTemporaryFile(suffix=".tar.gz")
-    with tarfile.open(tf.name, "w:gz") as tar:
-        tar.add(path, arcname=os.path.basename(path))
-    tf.seek(0)
-    return tf
 
 
 class _NamedFile:
@@ -851,150 +835,6 @@ def lcms_preview_image_from_jdx_files(
     plt.cla()
     plt.close(fig)
     return tf_img
-
-
-def _extract_lcms_jdx_files_from_zip_bytes(
-    zip_bytes: bytes,
-    title: str,
-    lc_df: Optional[pd.DataFrame],
-    params: Optional[Dict],
-) -> Optional[List[tempfile.NamedTemporaryFile]]:
-    base = _strip_archive_suffix(title)
-    with tempfile.TemporaryDirectory(prefix="chemotion_lcms_remote_") as td:
-        zip_path = os.path.join(td, "converted.zip")
-        with open(zip_path, "wb") as handle:
-            handle.write(zip_bytes)
-
-        try:
-            with zipfile.ZipFile(zip_path, "r") as archive:
-                archive.extractall(td)
-        except zipfile.BadZipFile as exc:
-            raise RemoteConverterError(
-                "Remote converter returned an invalid ZIP archive.",
-                status_code=502,
-            ) from exc
-
-        jdx_paths: List[str] = []
-        for dirpath, _, filenames in os.walk(td):
-            for filename in filenames:
-                lower = filename.lower()
-                if lower.endswith((".jdx", ".dx", ".jcamp")):
-                    jdx_paths.append(os.path.join(dirpath, filename))
-        if not jdx_paths:
-            return None
-
-        grouped = {"uvvis": [], "tic": [], "mz": []}
-        peak_source_content: Optional[bytes] = None
-        fallback_uvvis_content: Optional[str] = None
-
-        for path in sorted(jdx_paths):
-            try:
-                with open(path, "rb") as handle:
-                    raw_content = handle.read()
-                content = raw_content.decode("utf-8", errors="ignore")
-            except Exception:
-                continue
-
-            lowered_name = os.path.basename(path).lower()
-            if "uvvis.peak" in lowered_name or "peak.jdx" in lowered_name or "CHEMSPECTRA UVVIS PEAK TABLE" in content:
-                peak_source_content = raw_content
-                if fallback_uvvis_content is None:
-                    fallback_uvvis_content = content
-
-            kind = _classify_lcms_content(content)
-            header = _header_from_content(content)
-            _, polarity = _classify_lcms_header(header)
-
-            if kind in grouped:
-                grouped[kind].append({"polarity": polarity, "content": raw_content})
-                if kind == "uvvis" and fallback_uvvis_content is None:
-                    fallback_uvvis_content = content
-
-        output_files: List[tempfile.NamedTemporaryFile] = []
-        has_primary = False
-
-        if grouped["uvvis"]:
-            output_files.append(_write_named_file(grouped["uvvis"][0]["content"], f"{base}_uvvis.jdx"))
-            has_primary = True
-
-        tic_entries = grouped["tic"]
-        if len(tic_entries) == 1:
-            output_files.append(_write_named_file(tic_entries[0]["content"], f"{base}_tic.jdx"))
-            has_primary = True
-        elif len(tic_entries) > 1:
-            for entry in tic_entries:
-                suffix = "_tic.jdx"
-                if entry["polarity"] == "plus":
-                    suffix = "_tic_plus.jdx"
-                elif entry["polarity"] == "minus":
-                    suffix = "_tic_minus.jdx"
-                output_files.append(_write_named_file(entry["content"], f"{base}{suffix}"))
-                has_primary = True
-
-        mz_entries = grouped["mz"]
-        if len(mz_entries) == 1:
-            output_files.append(_write_named_file(mz_entries[0]["content"], f"{base}_mz.jdx"))
-            has_primary = True
-        elif len(mz_entries) > 1:
-            for entry in mz_entries:
-                suffix = "_mz.jdx"
-                if entry["polarity"] == "plus":
-                    suffix = "_mz_plus.jdx"
-                elif entry["polarity"] == "minus":
-                    suffix = "_mz_minus.jdx"
-                output_files.append(_write_named_file(entry["content"], f"{base}{suffix}"))
-                has_primary = True
-
-        if peak_source_content:
-            output_files.append(_write_named_file(peak_source_content, f"{base}_uvvis.peak.jdx"))
-        else:
-            derived_df = lc_df
-            if (derived_df is None or derived_df.empty) and fallback_uvvis_content:
-                derived_df = _lc_df_from_uvvis_content(fallback_uvvis_content)
-            if derived_df is not None and not derived_df.empty:
-                normalized_params = _normalize_params(params)
-                uvvis_peak_file = lcms_uvvis_peak_jcamp_from_df(derived_df, title, normalized_params)
-                if uvvis_peak_file is not None:
-                    uvvis_peak_file.seek(0)
-                    output_files.append(
-                        _write_named_file(uvvis_peak_file.read(), f"{base}_uvvis.peak.jdx")
-                    )
-
-        if output_files and has_primary:
-            return output_files
-        return None
-
-
-def lcms_jcamp_files_from_converter_app(
-    source_path: str,
-    title: str,
-    lc_df: Optional[pd.DataFrame] = None,
-    params: Optional[Dict] = None,
-) -> Optional[List[tempfile.NamedTemporaryFile]]:
-    if not source_path or not os.path.exists(source_path):
-        return None
-
-    tar_temp = None
-    src_path = source_path
-    if os.path.isdir(source_path):
-        tar_temp = _tar_dir_to_temp(source_path)
-        if tar_temp is None:
-            return None
-        src_path = tar_temp.name
-
-    try:
-        normalized_params = _normalize_params(params)
-        converter_url = None
-        if isinstance(normalized_params, dict):
-            converter_url = normalized_params.get("converter_url")
-        converted_zip = convert_file_to_jcampzip(src_path, converter_url=converter_url)
-        return _extract_lcms_jdx_files_from_zip_bytes(converted_zip, title, lc_df, params)
-    finally:
-        if tar_temp is not None:
-            try:
-                tar_temp.close()
-            except Exception:
-                pass
 
 
 def lcms_df_from_peak_jdx(jdx_path: str) -> Optional[pd.DataFrame]:

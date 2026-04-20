@@ -1,11 +1,8 @@
 import json
-import io
 import zipfile
-import tarfile
 import tempfile
 import glob     # noqa: F401
 import os
-from pathlib import Path
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
@@ -26,11 +23,6 @@ import matplotlib.path as mpath  # noqa: E402
 import numpy as np  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
-from chem_spectra.lib.external.chemotion_converter_lcms import (
-    lcms_jcamp_files_from_converter_app,
-    lcms_preview_image_from_jdx_files,
-)
-from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 
 
 def find_dir(path, name):
@@ -71,50 +63,29 @@ def search_bag_it_file(td):
     except:     # noqa: E722
         return False
 
-def _find_dir_with_cdf(root: str):
-    for dirpath, _, filenames in os.walk(root):
-        for fn in filenames:
-            if fn.lower().endswith('.cdf'):
-                return dirpath
-    return None
 
+def search_jdx_dir(td):
+    try:
+        def _has_jdx(path):
+            try:
+                return any(
+                    name.lower().endswith('.jdx')
+                    for name in os.listdir(path)
+                    if os.path.isfile(os.path.join(path, name))
+                )
+            except OSError:
+                return False
 
-def _collect_lcms_jdx_assets(root_dir: str):
-    jdx_paths = []
-    png_paths = []
-    for dirpath, _, filenames in os.walk(root_dir):
-        for name in filenames:
-            lower = name.lower()
-            full_path = os.path.join(dirpath, name)
-            if lower.endswith(('.jdx', '.dx', '.jcamp')):
-                jdx_paths.append(full_path)
-            elif lower.endswith('.png'):
-                png_paths.append(full_path)
+        if _has_jdx(td):
+            return td
+        for entry in os.listdir(td):
+            sub = os.path.join(td, entry)
+            if os.path.isdir(sub) and _has_jdx(sub):
+                return sub
+    except OSError:
+        return False
+    return False
 
-    jdx_paths.sort()
-    png_paths.sort()
-
-    def _copy_to_tmp(path: str) -> tempfile.NamedTemporaryFile:
-        name = Path(path).name
-        suffix = f"_{name}" if name else (Path(path).suffix or '')
-        tf = tempfile.NamedTemporaryFile(suffix=suffix)
-        with open(path, 'rb') as src:
-            tf.write(src.read())
-        tf.seek(0)
-        return tf
-
-    jdx_files = [_copy_to_tmp(p) for p in jdx_paths]
-    img_file = _copy_to_tmp(png_paths[0]) if png_paths else None
-    
-    if jdx_files:
-        try:
-            preview = lcms_preview_image_from_jdx_files(jdx_files)
-            if preview:
-                img_file = preview
-        except Exception:  # noqa: E722
-            pass
-
-    return jdx_files, img_file
 
 class TransformerModel:
     def __init__(self, file, molfile=None, params=False, multiple_files=False):
@@ -122,47 +93,6 @@ class TransformerModel:
         self.molfile = molfile
         self.params = params
         self.multiple_files = multiple_files
-
-    @staticmethod
-    def _is_tarball(name: str) -> bool:
-        lname = (name or "").lower()
-        return lname.endswith(".tar.gz") or lname.endswith(".tgz") or lname.endswith(".tar") or lname.endswith(".tar.xz")
-
-    def _detect_archive_type(self) -> str | None:
-        if not getattr(self.file, "bcore", None):
-            return None
-        raw = self.file.bcore or b""
-        if raw.startswith((b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")):
-            return "zip"
-        try:
-            if zipfile.is_zipfile(io.BytesIO(self.file.bcore)):
-                return "zip"
-        except Exception:
-            pass
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".tar") as tf:
-                tf.write(self.file.bcore)
-                tf.flush()
-                if tarfile.is_tarfile(tf.name):
-                    return "tar"
-        except Exception:
-            pass
-        return None
-
-    def _tar_suffix(self) -> str:
-        raw = getattr(self.file, "bcore", None) or b""
-        if raw.startswith(b"\x1f\x8b"):
-            return ".tar.gz"
-        if raw.startswith(b"\xfd7zXZ\x00"):
-            return ".tar.xz"
-        ext = ""
-        if isinstance(self.params, dict):
-            ext = str(self.params.get("ext", "")).lower()
-        if ext in {"gz", "tgz", "tar.gz"}:
-            return ".tar.gz"
-        if ext in {"xz", "tar.xz"}:
-            return ".tar.xz"
-        return ".tar"
 
     def convert2jcamp(self):
         cmpsr, _ = self.to_composer()
@@ -189,23 +119,17 @@ class TransformerModel:
         return cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
 
     def to_composer(self):
-        archive_type = self._detect_archive_type()
         is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml', 'mzxml']     # noqa: E501
         is_cdf = self.file.name.split('.')[-1].lower() in ['cdf']
-        is_zip = self.file.name.split('.')[-1].lower() in ['zip'] or archive_type == "zip"
-        is_tar = self._is_tarball(self.file.name) or archive_type == "tar"
+        is_zip = self.file.name.split('.')[-1].lower() in ['zip']
         is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml', 'mzxml']
         is_cdf_by_params = self.params['ext'] in ['cdf']
         is_zip_by_params = self.params['ext'] in ['zip']
-        is_tar_by_params = self.params['ext'] in ['tar', 'tar.gz', 'tgz', 'tar.xz']
         if is_raw_mzml or is_raw_mzml_by_params:
             return self.ms2composer(), False
         if is_cdf or is_cdf_by_params:
             _, cp = self.cdf2cvp()
             return cp, False
-        if is_tar or is_tar_by_params:
-            _, cp, invalid_molfile = self.tar2cvp()
-            return cp, invalid_molfile
         if is_zip or is_zip_by_params:
             _, cp, invalid_molfile = self.zip2cvp()
             return cp, invalid_molfile
@@ -214,22 +138,16 @@ class TransformerModel:
             return cp, invalid_molfile
 
     def to_converter(self):
-        archive_type = self._detect_archive_type()
         is_raw_mzml = self.file.name.split('.')[-1].lower() in ['raw', 'mzml', 'mzxml']     # noqa: E501
         is_cdf = self.file.name.split('.')[-1].lower() in ['cdf']
-        is_zip = self.file.name.split('.')[-1].lower() in ['zip'] or archive_type == "zip"
-        is_tar = self._is_tarball(self.file.name) or archive_type == "tar"
+        is_zip = self.file.name.split('.')[-1].lower() in ['zip']
         is_raw_mzml_by_params = self.params['ext'] in ['raw', 'mzml', 'mzxml']
         is_cdf_by_params = self.params['ext'] in ['cdf']
         is_zip_by_params = self.params['ext'] in ['zip']
-        is_tar_by_params = self.params['ext'] in ['tar', 'tar.gz', 'tgz', 'tar.xz']
         if is_raw_mzml or is_raw_mzml_by_params:
             return self.ms2composer()
         if is_cdf or is_cdf_by_params:
             cv, _ = self.cdf2cvp()
-            return cv
-        if is_tar or is_tar_by_params:
-            cv, _, _ = self.tar2cvp()
             return cv
         if is_zip or is_zip_by_params:
             cv, _, _ = self.zip2cvp()
@@ -282,50 +200,17 @@ class TransformerModel:
                 nicp = NIComposer(nicv)
                 return nicv, nicp, invalid_molfile
 
-            openlab_dir = _find_dir_with_cdf(td)
-            if openlab_dir:
-                jcamp_files = lcms_jcamp_files_from_converter_app(
-                    openlab_dir,
-                    os.path.basename(getattr(self.file, "name", "") or openlab_dir),
-                    params=self.params,
-                )
-                if jcamp_files:
-                    tf_img = lcms_preview_image_from_jdx_files(jcamp_files, self.params)
-                    lcms_cp = LCMSConverterAppComposer(jcamp_files, tf_img, self.params)
-                    return None, lcms_cp, False
-                return False, False, False
-
             is_bagit = search_bag_it_file(td)
             if is_bagit:
                 bagcv = BagItBaseConverter(td, self.params, self.file.name)
                 return bagcv, bagcv, False
 
-            jdx_files, img_file = _collect_lcms_jdx_assets(td)
-            if jdx_files:
-                lcms_cp = LCMSConverterAppComposer(jdx_files, img_file, self.params)
-                return None, lcms_cp, False
+            jdx_dir = search_jdx_dir(td)
+            if jdx_dir:
+                bagcv = BagItBaseConverter(jdx_dir, self.params, self.file.name)
+                return bagcv, bagcv, False
 
         return False, False, False
-
-    def tar2cvp(self):
-        suffix = self._tar_suffix()
-        tt = store_byte_in_tmp(self.file.bcore, suffix=suffix)
-        try:
-            jcamp_files = lcms_jcamp_files_from_converter_app(
-                tt.name,
-                os.path.basename(getattr(self.file, "name", "") or tt.name),
-                params=self.params,
-            )
-            if jcamp_files:
-                tf_img = lcms_preview_image_from_jdx_files(jcamp_files, self.params)
-                lcms_cp = LCMSConverterAppComposer(jcamp_files, tf_img, self.params)
-                return None, lcms_cp, False
-            return False, False, False
-        finally:
-            try:
-                tt.close()
-            except Exception:
-                pass
 
     def zip2cv_with_processed_file(self, target_dir, params, file_name):
         fid_brucker = FidHasBruckerProcessed(target_dir, params, file_name)
@@ -376,28 +261,6 @@ class TransformerModel:
             mscv = JcampMSConverter(jbcv)
             mscp = MSComposer(mscv)
             return mscv, mscp, invalid_molfile
-        elif jbcv.typ == 'LC/MS':
-            fname = self.params.get('fname', '') if self.params else ''
-            is_lcms_file = (
-                self.file.name.lower().endswith('peak.jdx') or 
-                self.file.name.lower().endswith('edit.jdx') or
-                'peak' in self.file.name.lower() or
-                'edit' in self.file.name.lower() or
-                (fname and (
-                    'peak' in fname.lower() or 
-                    'edit' in fname.lower() or
-                    fname.lower().endswith('peak.jdx') or
-                    fname.lower().endswith('edit.jdx')
-                ))
-            )
-            if is_lcms_file:
-                jdx_file = store_str_in_tmp(self.file.core, suffix='.jdx')
-                jdx_files = [jdx_file]
-                tf_img = lcms_preview_image_from_jdx_files(jdx_files, self.params)
-                lcms_cp = LCMSConverterAppComposer(jdx_files, tf_img, self.params)
-                return None, lcms_cp, invalid_molfile
-            else:
-                return False, False, invalid_molfile
         else:
             isSimulateNMR = False
             if self.params and 'simulatenmr' in self.params:

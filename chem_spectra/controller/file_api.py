@@ -6,8 +6,9 @@ from flask import (
 # from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.share import (
-    to_zip_response, extract_params, to_zip_bag_it_response, normalize_lcms_filename
+    to_zip_response, extract_params, to_zip_bag_it_response
 )
+from chem_spectra.controller.helper.lcms import normalize_lcms_filename
 from chem_spectra.model.transformer import TransformerModel as TraModel
 from chem_spectra.model.molecule import MoleculeModel
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter

@@ -1,10 +1,11 @@
 import io
-from typing import Sequence
 import zipfile
 import math
 import os.path as os_path
 from os.path import basename
 import collections.abc
+
+from chem_spectra.controller.helper.lcms import extract_lcms_params, LCMS_PARAM_KEYS
 
 
 ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw', 'mzml', 'mzxml', 'jcamp'])
@@ -87,77 +88,6 @@ def parse_fname(request):
     return def_name or fil_name or src_name or ''
 
 
-def _param_to_text(value):
-    if value is None:
-        return None
-
-    if hasattr(value, 'read'):
-        try:
-            content = value.read()
-        except Exception:
-            return None
-        try:
-            value.seek(0)
-        except Exception:
-            pass
-        if isinstance(content, bytes):
-            return content.decode('utf-8', errors='ignore')
-        return str(content)
-
-    if isinstance(value, dict):
-        tmp_file = value.get('tempfile') or value.get(':tempfile')
-        if hasattr(tmp_file, 'read'):
-            try:
-                content = tmp_file.read()
-            except Exception:
-                return None
-            try:
-                tmp_file.seek(0)
-            except Exception:
-                pass
-            if isinstance(content, bytes):
-                return content.decode('utf-8', errors='ignore')
-            return str(content)
-
-    return value if isinstance(value, str) else str(value)
-
-
-def normalize_lcms_filename(filename, src_filename=None):
-    if not filename and not src_filename:
-        return filename
-
-    def _strip_archive_suffix_simple(name):
-        lower = name.lower()
-        for suffix in (".tar.gz", ".tgz", ".tar.xz", ".tar", ".zip"):
-            if lower.endswith(suffix):
-                return name[: -len(suffix)]
-        return os_path.splitext(name)[0]
-
-    def _basename_no_ext(value):
-        if not value:
-            return None
-        base = os_path.basename(str(value))
-        return _strip_archive_suffix_simple(base)
-
-    def _strip_edit_suffix(value):
-        if not value:
-            return value
-        return value[:-5] if value.lower().endswith(".edit") else value
-
-    base = _basename_no_ext(filename)
-    src_base = _basename_no_ext(src_filename)
-
-    if src_base:
-        if not base:
-            return src_base
-        src_core = _strip_edit_suffix(src_base)
-        base_core = _strip_edit_suffix(base)
-        if base_core.lower().startswith(src_core.lower()):
-            return src_base
-
-    return base or filename
-
-
 def extract_params(request):
     scan = parse_float(request.form.get('scan', default=0), 0)
     scan = 0 if math.isnan(scan) else int(scan)
@@ -179,14 +109,7 @@ def extract_params(request):
     data_type_mapping = request.form.get('data_type_mapping', default='')
     detector = request.form.get('detector', default=None)
     dsc_meta_data = request.form.get('dsc_meta_data', default=None)
-    lcms_uvvis_wavelength = request.form.get('lcms_uvvis_wavelength', default=None)
-    lcms_mz_page = request.form.get('lcms_mz_page', default=None)
-    lcms_mz_page_data = request.form.get('lcms_mz_page_data', default=None)
-    converter_url = request.form.get('converter_url', default=None)
-    if request.files.get('lcms_mz_page_data'):
-        lcms_mz_page_data = _param_to_text(request.files.get('lcms_mz_page_data'))
-    else:
-        lcms_mz_page_data = _param_to_text(lcms_mz_page_data)
+    lcms_params = extract_lcms_params(request)
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -212,10 +135,7 @@ def extract_params(request):
         'data_type_mapping': data_type_mapping,
         'detector': detector,
         'dsc_meta_data': dsc_meta_data,
-        'lcms_uvvis_wavelength': lcms_uvvis_wavelength,
-        'lcms_mz_page': lcms_mz_page,
-        'lcms_mz_page_data': lcms_mz_page_data,
-        'converter_url': converter_url,
+        **lcms_params,
     }
     has_params = (
         params.get('peaks_str') or
@@ -233,10 +153,7 @@ def extract_params(request):
         params.get('multiplicity') or
         params.get('fname') or
         params.get('simulatenmr') or
-        params.get('lcms_uvvis_wavelength') or
-        params.get('lcms_mz_page') or
-        params.get('lcms_mz_page_data') or
-        params.get('converter_url')
+        any(params.get(key) for key in LCMS_PARAM_KEYS)
     )
     if not has_params:
         params = False

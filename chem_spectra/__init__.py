@@ -8,12 +8,7 @@ def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY='dev',
-        IP_WHITE_LIST='',
-        CONVERTER_BASE_URL='http://193.196.39.140:4000',
-        CONVERTER_PATH='/conversions',
-        CONVERTER_USER='chemotion',
-        CONVERTER_TOKEN='chemotion',
-        CONVERTER_TIMEOUT_SEC='180',
+        IP_WHITE_LIST=''
     )
     
     app.config.from_prefixed_env()

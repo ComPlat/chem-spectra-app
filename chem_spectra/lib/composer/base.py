@@ -136,7 +136,6 @@ class BaseComposer:
             )
         content.append('\n\n')
         return content
-
     def gen_ending(self):
         return [
             '##END=\n',
