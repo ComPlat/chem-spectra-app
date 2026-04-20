@@ -9,7 +9,7 @@ from flask import (
 # from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.share import (
-    to_zip_response, extract_params, to_zip_bag_it_response
+    to_zip_response, extract_params, to_zip_flat_bagit_response,
 )
 from chem_spectra.controller.helper.lcms_response import (
     build_lcms_zip_response_from_uploads,
@@ -51,7 +51,7 @@ def zip_jcamp_n_img():
             abort(403)
 
         if isinstance(cmpsr, BagItBaseConverter):
-            # check if composered model is in BagIt format
+            # Flat zip at root (no curve_N/ folders) so ELN keeps one attachment group.
             list_jcamps, list_images, list_csv, combined_image = cmpsr.data, cmpsr.images, cmpsr.list_csv, cmpsr.combined_image
             dst_list = []
             for idx in range(len(list_jcamps)):
@@ -60,11 +60,16 @@ def zip_jcamp_n_img():
                 tf_csv = list_csv[idx]
                 tf_arr = [tf_jcamp, tf_img, tf_csv]
                 dst_list.append(tf_arr)
-                
+
             if combined_image is not None:
                 dst_list.append(combined_image)
 
-            memory = to_zip_bag_it_response(dst_list)
+            archive_fname = getattr(file, 'name', None) or (
+                (params.get('fname') if isinstance(params, dict) else None) or 'spectrum'
+            )
+            memory = to_zip_flat_bagit_response(
+                dst_list, archive_fname, cmpsr.archive_entry_stems,
+            )
             rsp = make_response(
                 send_file(
                     memory,
@@ -72,7 +77,7 @@ def zip_jcamp_n_img():
                     as_attachment=True
                 )
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit', 'invalid_molfile': invalid_molfile})
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'lcms', 'invalid_molfile': invalid_molfile})
         elif isinstance(cmpsr, collections.abc.Sequence):
             dst_list = []
             spc_type = ''
@@ -119,14 +124,16 @@ def zip_jcamp():
     if file:  # and allowed_file(file):
         tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
         if isinstance(tf_jcamp, BagItBaseConverter):
-            # check if composered model is in BagIt format
             list_jcamps = tf_jcamp.data
             dst_list = []
             for jcamp in list_jcamps:
                 tf_arr = [jcamp]
                 dst_list.append(tf_arr)
 
-            memory = to_zip_bag_it_response(dst_list)
+            archive_fname = getattr(file, 'name', None) or 'spectrum'
+            memory = to_zip_flat_bagit_response(
+                dst_list, archive_fname, tf_jcamp.archive_entry_stems,
+            )
         else:
             memory = to_zip_response([tf_jcamp])
         return send_file(
@@ -144,14 +151,16 @@ def zip_image():
     if file:  # and allowed_file(file):
         tf_img = TraModel(file, molfile=molfile, params=params).convert2img()
         if isinstance(tf_img, BagItBaseConverter):
-            # check if composered model is in BagIt format
             list_images = tf_img.images
             dst_list = []
             for img in list_images:
                 tf_arr = [img]
                 dst_list.append(tf_arr)
 
-            memory = to_zip_bag_it_response(dst_list)
+            archive_fname = getattr(file, 'name', None) or 'spectrum'
+            memory = to_zip_flat_bagit_response(
+                dst_list, archive_fname, tf_img.archive_entry_stems,
+            )
         else:
             memory = to_zip_response([tf_img])
         return send_file(

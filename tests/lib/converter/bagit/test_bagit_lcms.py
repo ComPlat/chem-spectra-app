@@ -207,9 +207,8 @@ def test_flat_layout_ignores_non_jdx_siblings():
         assert len(converter.data) == 1
 
 
-def test_flat_layout_uvvis_only_treated_as_standard_ni():
-    """A flat zip with only a UV/Vis JCAMP must still be accepted: the user
-    has the right to work on UV/Vis alone, no LC/MS required."""
+def test_flat_layout_uvvis_only_goes_through_lcms_group():
+    """UV/Vis traces use the LCMS composer path (with LC/MS/TIC), not NIComposer."""
     uvvis_jdx = """##TITLE=UV-Vis only
 ##JCAMP-DX=5.00
 ##DATA TYPE=UV/VIS SPECTRUM
@@ -230,7 +229,6 @@ def test_flat_layout_uvvis_only_treated_as_standard_ni():
 
         assert converter.data is not None
         assert len(converter.data) == 1
-        # Single non-LCMS entry → no combined image (need >=2 composers).
         assert converter.combined_image is None
 
 

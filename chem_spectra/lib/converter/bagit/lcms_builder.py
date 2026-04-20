@@ -82,6 +82,7 @@ def append_lcms_group(
     list_images,
     list_csv,
     list_composer,
+    archive_stems=None,
 ):
     """Build the LCMS composer for ``lcms_paths`` and extend the BagIt lists.
 
@@ -126,6 +127,13 @@ def append_lcms_group(
     n = len(files)
     if n == 0:
         return
+
+    if archive_stems is not None:
+        ordered = sorted(lcms_paths)
+        for path in ordered:
+            base = os.path.basename(path)
+            stem = os.path.splitext(base)[0].replace('.', '_')
+            archive_stems.append(stem)
 
     list_files.extend(files)
     list_images.extend([preview] + [None] * (n - 1))

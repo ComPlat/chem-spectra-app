@@ -41,6 +41,71 @@ def to_zip_response(src_tmp_arr, filename=False, src_idx=-1):
     return memory
 
 
+def zip_base_stem_from_fname(fname):
+    """Stem of the uploaded file name (e.g. ``LCMS_OpenLab.zip`` → ``LCMS_OpenLab``)."""
+    if not fname:
+        return 'spectrum'
+    s = str(fname).replace('\\', '/').split('/')[-1]
+    parts = s.split('.')
+    if len(parts) > 2 and parts[-2] in ('edit', 'peak'):
+        base = '.'.join(parts[:-2])
+    elif len(parts) > 1:
+        base = '.'.join(parts[:-1])
+    else:
+        base = parts[0]
+    return base.replace(' ', '_')
+
+
+def to_zip_flat_bagit_response(dst_list, fname, entry_stems):
+    """Build a single-level zip (no ``curve_N/`` folders) for ELN clients.
+
+    Each spectrum row becomes files named ``{zip_base}_{entry_stem}.{ext}`` at
+    the archive root. Combined preview uses ``{zip_base}_combined.{ext}``.
+    """
+    base = zip_base_stem_from_fname(fname)
+    memory = io.BytesIO()
+    used = set()
+    curve_idx = 0
+    with zipfile.ZipFile(memory, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for sub in dst_list:
+            if isinstance(sub, (list, tuple)):
+                stem = (
+                    entry_stems[curve_idx]
+                    if curve_idx < len(entry_stems)
+                    else str(curve_idx)
+                )
+                curve_idx += 1
+                sub_list = [el for el in sub if el]
+                for tmp in sub_list:
+                    abs_path = tmp.name
+                    ext = basename(abs_path).split('.')[-1]
+                    arc = f'{base}_{stem}.{ext}'.replace(' ', '_')
+                    n = 0
+                    while arc in used:
+                        n += 1
+                        arc = f'{base}_{stem}_{n}.{ext}'.replace(' ', '_')
+                    used.add(arc)
+                    zf.write(abs_path, arc)
+                for tmp in sub_list:
+                    tmp.close()
+            else:
+                tmp = sub
+                if not tmp:
+                    continue
+                abs_path = tmp.name
+                ext = basename(abs_path).split('.')[-1]
+                arc = f'{base}_combined.{ext}'.replace(' ', '_')
+                n = 0
+                while arc in used:
+                    n += 1
+                    arc = f'{base}_combined_{n}.{ext}'.replace(' ', '_')
+                used.add(arc)
+                zf.write(abs_path, arc)
+                tmp.close()
+    memory.seek(0)
+    return memory
+
+
 def to_zip_bag_it_response(src_tmp_arr, filename=False, src_idx=-1):
     tmp_arr = [el for el in src_tmp_arr if el]
     memory = io.BytesIO()

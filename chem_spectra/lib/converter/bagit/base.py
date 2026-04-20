@@ -8,7 +8,6 @@ from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.composer.ni import NIComposer
-from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 from chem_spectra.lib.converter.share import parse_params
 from chem_spectra.lib.converter.bagit.lcms_builder import append_lcms_group
@@ -20,10 +19,15 @@ class BagItBaseConverter:
     def __init__(self, target_dir, params=False, fname=''):
         self.raw_params = params
         self.params = parse_params(params)
+        self.archive_entry_stems = []
         if target_dir is None:
             self.data, self.images, self.list_csv, self.combined_image = None, None, None, None
         else:
-            self.data, self.images, self.list_csv, self.combined_image = self.__read(target_dir, fname)
+            ret = self.__read(target_dir, fname)
+            if ret is None:
+                self.data, self.images, self.list_csv, self.combined_image = None, None, None, None
+            else:
+                self.data, self.images, self.list_csv, self.combined_image = ret
 
     def __read(self, target_dir, fname):
         list_file_names = []
@@ -45,20 +49,14 @@ class BagItBaseConverter:
         list_csv = []
         list_composer = []
         lcms_paths = []
+        archive_stems = []
         for file_name in list_file_names:
             jcamp_path = os.path.join(data_dir_path, file_name)
             base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
-            if base_cv.typ == 'MS':
-                mscv = JcampMSConverter(base_cv)
-                mscp = MSComposer(mscv)
-                list_composer.append(mscp)
-                tf_jcamp = mscp.tf_jcamp()
-                list_files.append(tf_jcamp)
-                tf_img = mscp.tf_img()
-                list_images.append(tf_img)
-                tf_csv = mscp.tf_csv()
-                list_csv.append(tf_csv)
-            elif base_cv.typ == 'LC/MS':
+            stem = os.path.splitext(file_name)[0].replace('.', '_')
+            # BagIt / flat LCMS zips: keep all chromatogram and MS traces in one
+            # LCMSConverterAppComposer (incl. MASS SPECTRUM), not JcampMSConverter/ms.py.
+            if base_cv.typ in ('MS', 'LC/MS', 'UVVIS', 'HPLC UVVIS'):
                 lcms_paths.append(jcamp_path)
             else:
                 try:
@@ -74,11 +72,15 @@ class BagItBaseConverter:
                 list_images.append(tf_img)
                 tf_csv = nicp.tf_csv()
                 list_csv.append(tf_csv)
+                archive_stems.append(stem)
 
         append_lcms_group(
             lcms_paths, self.raw_params,
             list_files, list_images, list_csv, list_composer,
+            archive_stems=archive_stems,
         )
+
+        self.archive_entry_stems = archive_stems
 
         combined_image = self.__combine_images(list_composer)
 

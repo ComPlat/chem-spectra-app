@@ -6,12 +6,13 @@ canonical (single-file/BagIt) flow.
 """
 
 import json
+import os
 from typing import Iterable, List, Optional
 
 from flask import Response, make_response, send_file
 
 from chem_spectra.controller.helper.file_container import FileContainer
-from chem_spectra.controller.helper.share import to_zip_bag_it_response
+from chem_spectra.controller.helper.share import to_zip_flat_bagit_response
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 
 
@@ -61,7 +62,19 @@ def build_lcms_zip_response_from_uploads(
             else:
                 dst_list.append([tf_jcamp_file])
 
-        memory = to_zip_bag_it_response(dst_list)
+        upload_list = list(uploads)
+        archive_fname = next(
+            (getattr(u, 'filename', None) for u in upload_list if getattr(u, 'filename', None)),
+            None,
+        ) or 'spectrum'
+        entry_stems = sorted([
+            os.path.splitext(getattr(u, 'filename', '') or 'file')[0].replace('.', '_')
+            for u in upload_list
+        ])
+        if len(entry_stems) != len(list_jcamps):
+            entry_stems = [str(i) for i in range(len(list_jcamps))]
+
+        memory = to_zip_flat_bagit_response(dst_list, archive_fname, entry_stems)
         rsp = make_response(send_file(
             memory,
             download_name=download_name,

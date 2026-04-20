@@ -17,6 +17,14 @@
         "DLS intensity": ["DLS INTENSITY", "DLS intensity"],
         "DIFFERENTIAL SCANNING CALORIMETRY": ["DIFFERENTIAL SCANNING CALORIMETRY"],
         "GAS CHROMATOGRAPHY": ["GAS CHROMATOGRAPHY"],
-        "LC/MS": ["LC/MS", "LCMS", "LC-MS"]
+        "LC/MS": [
+            "LC/MS",
+            "LCMS",
+            "LC-MS",
+            "MASS TIC",
+            "MASS SPECTRUM",
+            "TOTAL ION CHROMATOGRAM",
+            "TOTAL ION CHROMATOGRAPHY"
+        ]
     }
 }
