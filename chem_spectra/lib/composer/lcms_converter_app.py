@@ -94,6 +94,10 @@ class LCMSConverterAppComposer:
     def tf_img(self):
         if self._should_refresh_jcamp() and not self._peaks_applied:
             self.tf_jcamp()
+        # Preview is often built in ``build_lcms_composer`` (BagIt / batch path) or
+        # inside ``tf_jcamp`` (peak integration). Avoid a second identical render.
+        if self._image is not None:
+            return self._image
         if self.data:
             preview = lcms_preview_image_from_jdx_files(self.data, self.params)
             if preview:
@@ -151,3 +155,7 @@ class LCMSConverterAppComposer:
             self._peaks_applied = True
         
         return self.data[0] if self.data else None
+
+    def tf_csv(self):
+        """Pas d’export CSV dédié pour l’instant (aligné sur le groupe BagIt LCMS)."""
+        return None

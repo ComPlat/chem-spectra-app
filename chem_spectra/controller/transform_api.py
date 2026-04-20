@@ -1,8 +1,6 @@
-from cmath import log
-from crypt import methods
-import json
 import collections.abc
-from multiprocessing.dummy import Array
+import json
+
 from flask import (
     Blueprint, request, send_file, make_response, abort
 )
@@ -17,6 +15,7 @@ from chem_spectra.controller.helper.lcms_response import (
 
 from chem_spectra.model.transformer import TransformerModel as TraModel
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
+from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 
 
 trans_api = Blueprint('transform_api', __name__)
@@ -38,7 +37,8 @@ def zip_jcamp_n_img():
     )
     if uploaded_lcms_files:
         return build_lcms_zip_response_from_uploads(
-            uploaded_lcms_files, extract_params(request)
+            uploaded_lcms_files,
+            extract_params(request),
         )
 
     file = FileContainer(request.files['file'])
@@ -96,6 +96,25 @@ def zip_jcamp_n_img():
                 )
             )
             rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
+        elif isinstance(cmpsr, LCMSConverterAppComposer):
+            tf_jcamp = cmpsr.tf_jcamp()
+            tf_img = cmpsr.tf_img()
+            tf_csv = cmpsr.tf_csv()
+            spc_type = 'hplc'
+            if (tf_csv is not None and tf_csv != False):
+                memory = to_zip_response([tf_jcamp, tf_img, tf_csv])
+            else:
+                memory = to_zip_response([tf_jcamp, tf_img])
+            rsp = make_response(
+                send_file(
+                    memory,
+                    download_name='spectrum.zip',
+                    as_attachment=True
+                )
+            )
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps(
+                {'spc_type': spc_type, 'invalid_molfile': invalid_molfile}
+            )
         else:
             tf_jcamp, tf_img, tf_csv = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
 

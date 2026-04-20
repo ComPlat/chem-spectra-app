@@ -1,8 +1,8 @@
 import io
 import json
 import os
-import tempfile
 import re
+import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -214,7 +214,10 @@ def _extract_xy_from_jdx_content(content: str) -> Tuple[List[float], List[float]
 def _extract_ms_page(
     content: str,
     target_page=None,
+    *,
+    first_page_only: bool = False,
 ) -> Tuple[List[float], List[float], Optional[float], Optional[str]]:
+    """Parse MS JCAMP. If ``first_page_only`` and ``target_page`` is None, return after the first spectrum block."""
     lines = content.splitlines()
     threshold = None
     for line in lines:
@@ -235,6 +238,8 @@ def _extract_ms_page(
         if current_label and ("##DATA TABLE" in upper or "##PEAK TABLE" in upper or "##XYDATA" in upper):
             xs, ys = _extract_xy_from_lines(lines, idx + 1)
             if xs and ys:
+                if first_page_only and target_page is None:
+                    return xs, ys, threshold, current_label
                 pages.append((current_label, xs, ys))
             continue
 
@@ -261,6 +266,59 @@ def _extract_ms_page(
         if target_label is None or label == target_label:
             return xs, ys, threshold, label
     return pages[0][1], pages[0][2], threshold, pages[0][0]
+
+
+def _mz_page_param_explicit(mz_page) -> bool:
+    """True when the client asked for a specific MS page / RT (not default first page)."""
+    if mz_page is None:
+        return False
+    return bool(str(mz_page).strip())
+
+
+def _extract_ms_page_first_page_from_path(path: str) -> Tuple[List[float], List[float], Optional[float], Optional[str]]:
+    """Read MZ JCAMP line-by-line; stop after the first spectrum block (preview / fresh upload).
+
+    Avoids loading multi-hundred-MB files and parsing every ##PAGE block.
+    """
+    threshold: Optional[float] = None
+    lines: List[str] = []
+    current_label: Optional[str] = None
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as handle:
+            for raw in handle:
+                line = raw.rstrip("\n\r")
+                lines.append(line)
+                idx = len(lines) - 1
+                lu = line.upper()
+                if lu.startswith("##$CSTHRESHOLD"):
+                    _, _, r = line.partition("=")
+                    threshold = _as_float(r.strip())
+                    continue
+                stripped = line.strip()
+                upper = stripped.upper()
+                if upper.startswith("##PAGE="):
+                    current_label = stripped.split("=", 1)[1].strip()
+                    continue
+                if current_label and (
+                    "##DATA TABLE" in upper
+                    or "##PEAK TABLE" in upper
+                    or "##XYDATA" in upper
+                ):
+                    xs, ys = _extract_xy_from_lines(lines, idx + 1)
+                    if xs and ys:
+                        thr = threshold
+                        if thr is not None and thr > 1.0:
+                            thr = thr / 100.0
+                        return xs, ys, thr, current_label
+    except OSError:
+        pass
+
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as handle:
+            content = handle.read()
+    except OSError:
+        return [], [], None, None
+    return _extract_ms_page(content, None, first_page_only=True)
 
 
 def _extract_uvvis_from_peak_content(content: str, target_wavelength=None):
@@ -552,6 +610,7 @@ def lcms_preview_image_from_jdx_files(
     jdx_files: List,
     params: Optional[Dict] = None,
 ) -> Optional[tempfile.NamedTemporaryFile]:
+    """Build LC/MS preview PNG."""
     if not jdx_files:
         return None
     paths: List[str] = []
@@ -570,6 +629,7 @@ def lcms_preview_image_from_jdx_files(
     mz_page = normalized_params.get("lcms_mz_page")
     mz_page_data = normalized_params.get("lcms_mz_page_data")
     ms_threshold_from_param = _as_float(normalized_params.get("thres"))
+    selected_ms_peaks = _extract_ms_peaks_from_param(mz_page_data)
 
     peak_path = _pick_jdx_path(paths, "uvvis.peak", "peak.jdx")
     mz_path = _pick_jdx_path(paths, "_mz", "mz")
@@ -617,10 +677,18 @@ def lcms_preview_image_from_jdx_files(
     ms_rt_label = _format_rt_label(ms_rt)
     if mz_path:
         try:
-            with open(mz_path, "r", encoding="utf-8", errors="ignore") as handle:
-                mz_content = handle.read()
-            ms_data = _extract_ms_page(mz_content, mz_page)
-            if ms_data:
+            if selected_ms_peaks:
+                # Pics MS déjà fournis par l'ELN : inutile de lire tout le JCAMP MZ.
+                ms_data = None
+            elif _mz_page_param_explicit(mz_page):
+                with open(mz_path, "r", encoding="utf-8", errors="ignore") as handle:
+                    mz_content = handle.read()
+                ms_data = _extract_ms_page(mz_content, mz_page, first_page_only=False)
+            else:
+                # Nouvel upload : uniquement la première page, lecture flux (arrêt après 1er spectre).
+                ms_data = _extract_ms_page_first_page_from_path(mz_path)
+
+            if ms_data and ms_data[0]:
                 ms_threshold = ms_data[2]
                 ms_page_label = _format_ms_page_label(ms_data[3]) or _format_ms_page_label(mz_page)
                 if ms_rt is None:
@@ -629,7 +697,6 @@ def lcms_preview_image_from_jdx_files(
         except Exception:
             ms_data = None
 
-    selected_ms_peaks = _extract_ms_peaks_from_param(mz_page_data)
     active_ms_threshold = ms_threshold_from_param
     if active_ms_threshold is None or active_ms_threshold <= 0.0:
         active_ms_threshold = ms_threshold

@@ -15,6 +15,7 @@ import numpy as np  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib import ticker  # noqa: E402
 
+
 class BagItBaseConverter:
     def __init__(self, target_dir, params=False, fname=''):
         self.raw_params = params
@@ -52,8 +53,8 @@ class BagItBaseConverter:
         archive_stems = []
         for file_name in list_file_names:
             jcamp_path = os.path.join(data_dir_path, file_name)
-            base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
             stem = os.path.splitext(file_name)[0].replace('.', '_')
+            base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
             # BagIt / flat LCMS zips: keep all chromatogram and MS traces in one
             # LCMSConverterAppComposer (incl. MASS SPECTRUM), not JcampMSConverter/ms.py.
             if base_cv.typ in ('MS', 'LC/MS', 'UVVIS', 'HPLC UVVIS'):

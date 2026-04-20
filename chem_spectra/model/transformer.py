@@ -13,6 +13,7 @@ from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
+from chem_spectra.lib.converter.bagit.lcms_builder import build_lcms_composer
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
@@ -254,28 +255,39 @@ class TransformerModel:
     def jcamp2cvp(self):
         tf = store_str_in_tmp(self.file.core)
         jbcv = JcampBaseConverter(tf.name, self.params)
-        tf.close()
         invalid_molfile = False
         # conversion
         if jbcv.typ == 'MS':
+            tf.close()
             mscv = JcampMSConverter(jbcv)
             mscp = MSComposer(mscv)
             return mscv, mscp, invalid_molfile
+        if jbcv.typ in ('LC/MS', 'UVVIS', 'HPLC UVVIS'):
+            # Align with BagIt: CHEMSPECTRA UVVIS peak / LC-MS JCAMP → LCMS composer, not NI.
+            lcms_cp = build_lcms_composer([tf.name], self.params)
+            tf.close()
+            if lcms_cp is not None:
+                return lcms_cp, lcms_cp, invalid_molfile
+            tf = store_str_in_tmp(self.file.core)
+            jbcv = JcampBaseConverter(tf.name, self.params)
+            tf.close()
         else:
-            isSimulateNMR = False
-            if self.params and 'simulatenmr' in self.params:
-                isSimulateNMR = self.params['simulatenmr']
-            decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNMR)   # noqa: E501
-            
-            if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
-                invalid_molfile = True
-                final_decorated_jbcv = decorated_jbcv['origin_jbcv']
-            else:
-                final_decorated_jbcv = decorated_jbcv
+            tf.close()
+        # NI path (NMR & autres, ou repli si build LCMS seul fichier a échoué)
+        isSimulateNMR = False
+        if self.params and 'simulatenmr' in self.params:
+            isSimulateNMR = self.params['simulatenmr']
+        decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNMR)   # noqa: E501
 
-            nicv = JcampNIConverter(final_decorated_jbcv)
-            nicp = NIComposer(nicv)
-            return nicv, nicp, invalid_molfile
+        if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
+            invalid_molfile = True
+            final_decorated_jbcv = decorated_jbcv['origin_jbcv']
+        else:
+            final_decorated_jbcv = decorated_jbcv
+
+        nicv = JcampNIConverter(final_decorated_jbcv)
+        nicp = NIComposer(nicv)
+        return nicv, nicp, invalid_molfile
 
     def tf_predict(self):
         target = json.loads(self.params['predict'])

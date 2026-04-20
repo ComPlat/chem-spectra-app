@@ -41,7 +41,10 @@ def _close_silently(handles):
             pass
 
 
-def build_lcms_composer(jcamp_paths, params=None) -> Optional[LCMSConverterAppComposer]:
+def build_lcms_composer(
+    jcamp_paths,
+    params=None,
+) -> Optional[LCMSConverterAppComposer]:
     """Build a single LCMSConverterAppComposer from a group of LC/MS JCAMP files.
 
     The LC/MS pipeline expects ``NamedTemporaryFile`` handles, so each input
