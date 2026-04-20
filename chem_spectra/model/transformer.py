@@ -262,8 +262,7 @@ class TransformerModel:
             mscv = JcampMSConverter(jbcv)
             mscp = MSComposer(mscv)
             return mscv, mscp, invalid_molfile
-        if jbcv.typ in ('LC/MS', 'UVVIS', 'HPLC UVVIS'):
-            # Align with BagIt: CHEMSPECTRA UVVIS peak / LC-MS JCAMP → LCMS composer, not NI.
+        if jbcv.typ in ('LC/MS', 'HPLC UVVIS'):
             lcms_cp = build_lcms_composer([tf.name], self.params)
             tf.close()
             if lcms_cp is not None:
