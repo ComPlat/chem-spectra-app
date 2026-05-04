@@ -1,0 +1,91 @@
+flowchart LR
+  Request["transform_api request"]
+
+  subgraph controller [Controller]
+    ZipAll["zip_jcamp_n_img"]
+    ZipJcamp["zip_jcamp"]
+    ZipImage["zip_image"]
+    DirectJcamp["jcamp"]
+    DirectImage["image"]
+    NMRium["nmrium"]
+    CombineImages["combine_images"]
+  end
+
+  subgraph model [Model]
+    ToComposer["TransformerModel.to_composer()"]
+    ConvertJcamp["convert2jcamp()"]
+    ConvertImage["convert2img()"]
+    TransformNMRium["tf_nmrium()"]
+    Combine["tf_combine()"]
+  end
+
+  subgraph outputDecision [Output Decision]
+    BagIt["BagItBaseConverter"]
+    Sequence["sequence of composers"]
+    SingleComposer["single composer"]
+    DirectFile["direct generated file"]
+    CombinedImage["combined image output"]
+  end
+
+  subgraph outputs [Outputs]
+    ZipResponse["spectrum.zip"]
+    JcampFile["spectrum.jdx"]
+    ImageFile["spectrum.png"]
+    ExtraInfo["X-Extra-Info-JSON\nspc_type invalid_molfile"]
+    Error403["abort(403)"]
+    Error404["abort(404)"]
+    Error400["abort(400)"]
+  end
+
+  Request --> ZipAll
+  Request --> ZipJcamp
+  Request --> ZipImage
+  Request --> DirectJcamp
+  Request --> DirectImage
+  Request --> NMRium
+  Request --> CombineImages
+
+  ZipAll --> ToComposer
+  ZipJcamp --> ConvertJcamp
+  ZipImage --> ConvertImage
+  DirectJcamp --> ConvertJcamp
+  DirectImage --> ConvertImage
+  NMRium --> TransformNMRium
+  CombineImages --> Combine
+
+  ToComposer --> BagIt
+  ToComposer --> Sequence
+  ToComposer --> SingleComposer
+  ToComposer -->|"no composer"| Error403
+  ConvertJcamp --> BagIt
+  ConvertJcamp --> DirectFile
+  ConvertImage --> BagIt
+  ConvertImage --> DirectFile
+  TransformNMRium --> DirectFile
+  TransformNMRium -->|"None"| Error404
+  Combine --> CombinedImage
+  Combine -->|"missing output"| Error400
+
+  BagIt --> ZipResponse
+  Sequence --> ZipResponse
+  SingleComposer --> ZipResponse
+  SingleComposer --> ExtraInfo
+  BagIt --> ExtraInfo
+  Sequence --> ExtraInfo
+  DirectFile --> JcampFile
+  DirectFile --> ImageFile
+  CombinedImage --> ZipResponse
+
+  classDef request fill:#eef5ff,stroke:#4c78a8,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef decision fill:#fff8dc,stroke:#b07d12,stroke-width:1px
+  classDef output fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+  classDef error fill:#fdecea,stroke:#e15759,stroke-width:1px
+
+  class Request request
+  class ZipAll,ZipJcamp,ZipImage,DirectJcamp,DirectImage,NMRium,CombineImages controller
+  class ToComposer,ConvertJcamp,ConvertImage,TransformNMRium,Combine model
+  class BagIt,Sequence,SingleComposer,DirectFile,CombinedImage decision
+  class ZipResponse,JcampFile,ImageFile,ExtraInfo output
+  class Error403,Error404,Error400 error

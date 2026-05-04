@@ -1,0 +1,43 @@
+flowchart TB
+  Frontend["ELN backend or client"]
+
+  subgraph controller [Controller]
+    Controller["Flask route"]
+    Params["extract_params()"]
+    FileContainer["FileContainer"]
+  end
+
+  subgraph model [Model]
+    Transformer["TransformerModel"]
+  end
+
+  subgraph lib [Lib]
+    Converter["Converter"]
+    Composer["Composer"]
+  end
+
+  Response["JSON, file, or ZIP response"]
+
+  Frontend -->|"file molfile form params"| Controller
+  Controller --> FileContainer
+  Controller --> Params
+  FileContainer -->|"uploaded content"| Transformer
+  Params -->|"normalized form fields"| Transformer
+  Transformer -->|"select pipeline"| Converter
+  Converter -->|"parsed spectrum data"| Composer
+  Composer -->|"JCAMP PNG CSV peaks"| Transformer
+  Transformer -->|"generated temp files"| Controller
+  Controller --> Response
+  Response --> Frontend
+
+  classDef client fill:#eef5ff,stroke:#4c78a8,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef lib fill:#f2efff,stroke:#8f63c6,stroke-width:1px
+  classDef output fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+
+  class Frontend client
+  class Controller,Params,FileContainer controller
+  class Transformer model
+  class Converter,Composer lib
+  class Response output
