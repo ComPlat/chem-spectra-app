@@ -1,18 +1,12 @@
-"""Tests for LC/MS handling inside BagIt archives.
-
-These tests exercise the new ``build_lcms_composer`` integration in
-``BagItBaseConverter``. They build self-contained BagIt directories on the fly
-(rather than depending on binary fixtures) so that the layout under test is
-explicit and the suite is robust to fixture changes.
-"""
 import os
 import tempfile
 
-import pytest
-
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
-from chem_spectra.lib.converter.bagit.lcms_builder import build_lcms_composer
+from chem_spectra.lib.converter.bagit.lcms_builder import (
+    build_lcms_composer,
+    classify_lcms_stems,
+)
 
 
 LCMS_JDX_TEMPLATE = """##TITLE={title}
@@ -52,10 +46,6 @@ CV_JDX_TEMPLATE = """##TITLE={title}
 
 
 def _write_bagit_layout(root: str, files: dict) -> str:
-    """Materialize a minimal BagIt directory tree under ``root``.
-
-    ``files`` maps filename → JCAMP content for ``data/``.
-    """
     data_dir = os.path.join(root, 'data')
     os.makedirs(data_dir, exist_ok=True)
     for name, content in files.items():
@@ -67,11 +57,6 @@ def _write_bagit_layout(root: str, files: dict) -> str:
 
 
 def _write_flat_layout(root: str, files: dict) -> str:
-    """Drop JCAMP files directly under ``root`` (no ``data/``, no ``bagit.txt``).
-
-    Used to model a user upload that bundles ``.jdx`` files at the root of a
-    plain zip archive (e.g. an LCMS export with ``uvvis.peak.jdx`` etc.).
-    """
     for name, content in files.items():
         with open(os.path.join(root, name), 'w', encoding='utf-8') as fh:
             fh.write(content)
@@ -92,11 +77,9 @@ def test_lcms_only_bagit_groups_into_single_composer():
         assert len(converter.data) == 3
         assert len(converter.images) == 3
         assert len(converter.list_csv) == 3
-        # Image+csv attached only to the first item of the group.
         assert converter.images[1] is None and converter.images[2] is None
         assert converter.list_csv[0] is None
         assert converter.list_csv[1] is None and converter.list_csv[2] is None
-        # Combined image must be None when LCMS is involved.
         assert converter.combined_image is None
 
 
@@ -125,12 +108,10 @@ def test_mixed_bagit_keeps_existing_branches_and_adds_lcms_group():
 
         assert converter.data is not None
         assert len(converter.data) == 4
-        assert converter.combined_image is None  # LCMS guard wins over CV combine.
+        assert converter.combined_image is None
 
 
 def test_pure_cv_bagit_remains_strictly_master_compatible():
-    """A BagIt with no LC/MS content must still go through CV combining and
-    yield a combined image, exactly like on master."""
     with tempfile.TemporaryDirectory() as td:
         _write_bagit_layout(td, {
             'a_cv.jdx': CV_JDX_TEMPLATE.format(title='CV A'),
@@ -158,9 +139,6 @@ def test_build_lcms_composer_returns_composer_with_temp_handles(tmp_path):
     assert isinstance(composer, LCMSConverterAppComposer)
     assert composer.data is not None
     assert len(composer.data) == 2
-    # Each entry should be a NamedTemporaryFile-like handle pointing at a real
-    # file on disk so that downstream consumers (zip writer, base64 encoder)
-    # can re-read it.
     for handle in composer.data:
         assert hasattr(handle, 'name')
         assert os.path.isfile(handle.name)
@@ -173,9 +151,6 @@ def test_build_lcms_composer_skips_missing_path(tmp_path):
 
 
 def test_flat_layout_lcms_groups_into_single_composer():
-    """A directory with LC/MS ``.jdx`` files at the root (no BagIt envelope)
-    must be picked up by ``BagItBaseConverter`` and treated like a BagIt
-    ``data/`` folder."""
     with tempfile.TemporaryDirectory() as td:
         _write_flat_layout(td, {
             'tic.peak.jdx': LCMS_JDX_TEMPLATE.format(title='TIC peak'),
@@ -188,12 +163,10 @@ def test_flat_layout_lcms_groups_into_single_composer():
 
         assert converter.data is not None
         assert len(converter.data) == 4
-        assert converter.combined_image is None  # LCMS guard
+        assert converter.combined_image is None
 
 
 def test_flat_layout_ignores_non_jdx_siblings():
-    """In flat layout we must not feed README/manifest files into the JCAMP
-    parser; only ``.jdx`` files are picked up."""
     with tempfile.TemporaryDirectory() as td:
         _write_flat_layout(td, {
             'tic.peak.jdx': LCMS_JDX_TEMPLATE.format(title='TIC peak'),
@@ -208,7 +181,6 @@ def test_flat_layout_ignores_non_jdx_siblings():
 
 
 def test_flat_layout_uvvis_only_goes_through_lcms_group():
-    """UV/Vis traces use the LCMS composer path (with LC/MS/TIC), not NIComposer."""
     uvvis_jdx = """##TITLE=UV-Vis only
 ##JCAMP-DX=5.00
 ##DATA TYPE=UV/VIS SPECTRUM
@@ -233,14 +205,10 @@ def test_flat_layout_uvvis_only_goes_through_lcms_group():
 
 
 def test_bagit_layout_unchanged_when_data_subdir_present():
-    """Regression guard: presence of ``data/`` must keep the strict BagIt
-    behaviour (root-level files are NOT picked up as fallback)."""
     with tempfile.TemporaryDirectory() as td:
         _write_bagit_layout(td, {
             'a_cv.jdx': CV_JDX_TEMPLATE.format(title='CV A'),
         })
-        # Drop a stray .jdx at the root: it must be ignored because data/
-        # exists and is the canonical source.
         with open(os.path.join(td, 'stray.jdx'), 'w', encoding='utf-8') as fh:
             fh.write(CV_JDX_TEMPLATE.format(title='Stray'))
 
@@ -251,8 +219,6 @@ def test_bagit_layout_unchanged_when_data_subdir_present():
 
 
 def test_bagit_skips_lcms_group_when_builder_fails(monkeypatch):
-    """If the LC/MS builder raises, the BagIt processing must continue with
-    its remaining (non-LCMS) entries instead of crashing."""
     import chem_spectra.lib.converter.bagit.lcms_builder as lcms_builder_module
 
     def boom(_paths, _params):
@@ -266,6 +232,158 @@ def test_bagit_skips_lcms_group_when_builder_fails(monkeypatch):
             'b_lcms.jdx': LCMS_JDX_TEMPLATE.format(title='LCMS B'),
         })
         converter = BagItBaseConverter(td)
-        # Only the CV entry survives; LCMS group is skipped silently.
         assert converter.data is not None
         assert len(converter.data) == 1
+
+
+UVVIS_NTUPLES = """##TITLE=Spectrum
+##JCAMP-DX=5.00 $$ chemotion-converter-app (1.8.0)
+##DATA TYPE=HPLC UV-VIS
+##DATA CLASS=NTUPLES
+##XUNITS=MINUTES
+##YUNITS=SIGNAL
+##NPOINTS=2
+##PAGE=Wavelength= 210.0
+##XYDATA=(XY..XY)
+0.0, 1.0
+1.0, 2.0
+##END=
+"""
+
+MASS_TIC_POS = """##TITLE=Spectrum
+##JCAMP-DX=5.00 $$ chemotion-converter-app (1.8.0)
+##DATA TYPE=MASS TIC
+##DATA CLASS=PEAK TABLE
+##SCAN_MODE=positiv
+##XUNITS=MINUTES
+##YUNITS=COUNTS
+##NPOINTS=2
+##PEAK TABLE=(XY..XY)
+0.0, 1.0
+1.0, 2.0
+##END=
+"""
+
+MASS_TIC_NEG = MASS_TIC_POS.replace('SCAN_MODE=positiv', 'SCAN_MODE=negativ')
+
+MASS_SPEC_POS = """##TITLE=Spectrum
+##JCAMP-DX=5.00 $$ chemotion-converter-app (1.8.0)
+##DATA TYPE=MASS SPECTRUM
+##DATA CLASS=NTUPLES
+##SCAN_MODE=positiv
+##XUNITS=m/z
+##YUNITS=Intensity
+##NPOINTS=2
+##PEAK TABLE=(XY..XY)
+100.0, 10.0
+200.0, 20.0
+##END=
+"""
+
+MASS_SPEC_NEG = MASS_SPEC_POS.replace('SCAN_MODE=positiv', 'SCAN_MODE=negativ')
+
+UNKNOWN_TYPE = """##TITLE=Spectrum
+##JCAMP-DX=5.00
+##DATA TYPE=SOMETHING NEW
+##NPOINTS=1
+##XYDATA=(XY..XY)
+0.0, 0.0
+##END=
+"""
+
+
+def _write_jdx(directory, name, content):
+    path = os.path.join(directory, name)
+    with open(path, 'w', encoding='utf-8') as fh:
+        fh.write(content)
+    return path
+
+
+def test_classify_lcms_stems_returns_empty_list_for_no_inputs():
+    assert classify_lcms_stems([]) == []
+
+
+def test_classify_lcms_stems_maps_openlab_layout_to_eln_recognisable_stems(tmp_path):
+    paths = [
+        _write_jdx(tmp_path, '01.jdx', MASS_TIC_NEG),
+        _write_jdx(tmp_path, '02.jdx', MASS_TIC_POS),
+        _write_jdx(tmp_path, 'NTUPLES0.jdx', UVVIS_NTUPLES),
+        _write_jdx(tmp_path, 'NTUPLES1.jdx', MASS_SPEC_NEG),
+        _write_jdx(tmp_path, 'NTUPLES2.jdx', MASS_SPEC_POS),
+    ]
+    assert classify_lcms_stems(paths) == [
+        'lcms_tic_neg',
+        'lcms_tic_pos',
+        'lcms_uvvis',
+        'lcms_mz_neg',
+        'lcms_mz_pos',
+    ]
+
+
+def test_classify_lcms_stems_keeps_source_name_for_unknown_type(tmp_path):
+    path = _write_jdx(tmp_path, 'mystery.jdx', UNKNOWN_TYPE)
+    assert classify_lcms_stems([path]) == ['mystery']
+
+
+def test_classify_lcms_stems_keeps_source_name_when_scan_mode_missing(tmp_path):
+    content = MASS_TIC_POS.replace('##SCAN_MODE=positiv\n', '')
+    path = _write_jdx(tmp_path, 'tic.jdx', content)
+    assert classify_lcms_stems([path]) == ['lcms_tic']
+
+
+def test_classify_lcms_stems_keeps_source_name_on_semantic_collision(tmp_path):
+    paths = [
+        _write_jdx(tmp_path, 'first.jdx', MASS_TIC_POS),
+        _write_jdx(tmp_path, 'second.jdx', MASS_TIC_POS),
+    ]
+    assert classify_lcms_stems(paths) == ['first', 'second']
+
+
+def test_classify_lcms_stems_handles_unreadable_path_gracefully(tmp_path):
+    paths = [
+        str(tmp_path / 'does_not_exist.jdx'),
+        _write_jdx(tmp_path, 'uvvis.jdx', UVVIS_NTUPLES),
+    ]
+    assert classify_lcms_stems(paths) == ['does_not_exist', 'lcms_uvvis']
+
+
+def test_bagit_archive_stems_include_both_uvvis_source_and_prebaked_peak(tmp_path):
+    data_dir = tmp_path / 'data'
+    data_dir.mkdir()
+
+    _write_jdx(data_dir, '01.jdx', MASS_TIC_NEG)
+    _write_jdx(data_dir, 'NTUPLES0.jdx', UVVIS_NTUPLES)
+    _write_jdx(data_dir, 'NTUPLES1.jdx', MASS_SPEC_POS)
+    with open(tmp_path / 'bagit.txt', 'w', encoding='utf-8') as fh:
+        fh.write('BagIt-Version: 0.97\n')
+
+    converter = BagItBaseConverter(str(tmp_path))
+    assert converter.data is not None
+    assert converter.archive_entry_stems == [
+        'lcms_tic_neg',
+        'lcms_uvvis',
+        'lcms_uvvis.peak',
+        'lcms_mz_pos',
+    ]
+    assert converter.combined_image is None
+    assert converter.images[0] is None
+    assert converter.images[1] is not None
+    assert converter.images[2] is None
+    assert converter.images[3] is None
+
+
+def test_classify_lcms_stems_detects_re_uploaded_peak_via_marker(tmp_path):
+    peak_content = """##TITLE=Spectrum
+##JCAMP-DX=5.00
+##DATA TYPE=LC/MS
+##DATA CLASS=PEAK TABLE
+
+$$ === CHEMSPECTRA UVVIS PEAK TABLE ===
+##PAGE=210.0
+##DATA TABLE= (XY..XY), PEAKS
+0.0, 1.0;
+1.0, 2.0;
+##END=
+"""
+    path = _write_jdx(tmp_path, 'cf9d2f40_table_lcms_uvvis_peak.jdx', peak_content)
+    assert classify_lcms_stems([path]) == ['lcms_uvvis.peak']

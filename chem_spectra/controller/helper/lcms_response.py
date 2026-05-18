@@ -1,12 +1,4 @@
-"""LCMS-specific Flask response builders.
-
-Encapsulates the multi-file LCMS upload path served by
-``/zip_jcamp_n_img`` so the generic transform_api stays focused on the
-canonical (single-file/BagIt) flow.
-"""
-
 import json
-import os
 from typing import Iterable, List, Optional
 
 from flask import Response, make_response, send_file
@@ -14,10 +6,10 @@ from flask import Response, make_response, send_file
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.share import to_zip_flat_bagit_response
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
+from chem_spectra.lib.converter.bagit.lcms_builder import classify_lcms_stems
 
 
 def _materialize_uploads(uploads: Iterable) -> List:
-    """Convert raw Flask file uploads into closeable temporary files."""
     temp_files = []
     for item in uploads:
         container = FileContainer(item)
@@ -39,40 +31,30 @@ def build_lcms_zip_response_from_uploads(
     params: Optional[dict],
     download_name: str = 'spectrum.zip',
 ) -> Response:
-    """Bundle a batch of LCMS JCAMP uploads into a BagIt-style zip response.
-
-    Mirrors what ``BagItBaseConverter`` produces for a BagIt LCMS dataset, but
-    starts from individual files instead of an archive.
-    """
-    temp_files = _materialize_uploads(uploads)
+    upload_list = list(uploads)
+    temp_files = _materialize_uploads(upload_list)
     try:
         composer = LCMSConverterAppComposer(temp_files, None, params)
+        composer.tf_jcamp()
+        preview = composer.tf_img()
 
-        updated_jcamp = composer.tf_jcamp()
-        if updated_jcamp and updated_jcamp not in temp_files:
-            temp_files.append(updated_jcamp)
-
-        tf_img = composer.tf_img()
         list_jcamps = composer.data or temp_files
+        entry_stems = classify_lcms_stems([f.name for f in list_jcamps])
+        if len(entry_stems) != len(list_jcamps):
+            entry_stems = [str(i) for i in range(len(list_jcamps))]
 
-        dst_list = []
-        for idx, tf_jcamp_file in enumerate(list_jcamps):
-            if idx == 0 and tf_img is not None:
-                dst_list.append([tf_jcamp_file, tf_img])
-            else:
-                dst_list.append([tf_jcamp_file])
+        preview_idx = next(
+            (i for i, s in enumerate(entry_stems) if s == 'lcms_uvvis'),
+            0,
+        )
+        dst_list = [[f] for f in list_jcamps]
+        if preview is not None and dst_list:
+            dst_list[preview_idx].append(preview)
 
-        upload_list = list(uploads)
         archive_fname = next(
             (getattr(u, 'filename', None) for u in upload_list if getattr(u, 'filename', None)),
             None,
         ) or 'spectrum'
-        entry_stems = sorted([
-            os.path.splitext(getattr(u, 'filename', '') or 'file')[0].replace('.', '_')
-            for u in upload_list
-        ])
-        if len(entry_stems) != len(list_jcamps):
-            entry_stems = [str(i) for i in range(len(list_jcamps))]
 
         memory = to_zip_flat_bagit_response(dst_list, archive_fname, entry_stems)
         rsp = make_response(send_file(
@@ -81,7 +63,7 @@ def build_lcms_zip_response_from_uploads(
             as_attachment=True,
         ))
         rsp.headers['X-Extra-Info-JSON'] = json.dumps(
-            {'spc_type': 'hplc', 'invalid_molfile': False}
+            {'spc_type': 'lcms', 'invalid_molfile': False}
         )
         return rsp
     finally:

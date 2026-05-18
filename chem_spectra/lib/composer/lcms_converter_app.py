@@ -1,5 +1,6 @@
 import tempfile
 import json
+import logging
 from typing import List, Optional, Dict
 
 from chem_spectra.lib.external.chemotion_converter_lcms import (
@@ -8,6 +9,35 @@ from chem_spectra.lib.external.chemotion_converter_lcms import (
     lcms_df_from_uvvis_jdx,
     lcms_uvvis_peak_jcamp_from_df,
 )
+
+logger = logging.getLogger(__name__)
+
+UVVIS_PEAK_MARKER = "CHEMSPECTRA UVVIS PEAK TABLE"
+
+_UVVIS_DATA_TYPE_TOKENS = (
+    "HPLC UV-VIS",
+    "HPLC UV/VIS",
+    "UV-VIS",
+    "UV/VIS",
+    "ULTRAVIOLET",
+)
+
+_MARKER_SCAN_CHUNK = 65536
+
+
+def has_uvvis_peak_marker(path: Optional[str]) -> bool:
+    if not path:
+        return False
+    try:
+        with open(path, 'r', encoding='utf-8', errors='ignore') as handle:
+            while True:
+                chunk = handle.read(_MARKER_SCAN_CHUNK)
+                if not chunk:
+                    return False
+                if UVVIS_PEAK_MARKER in chunk:
+                    return True
+    except OSError:
+        return False
 
 
 class LCMSConverterAppComposer:
@@ -21,6 +51,7 @@ class LCMSConverterAppComposer:
         self._image = image
         self.params = params
         self._peaks_applied = False
+        self._ensure_uvvis_peak_file()
 
     @staticmethod
     def _has_lcms_edits(params: Optional[Dict]) -> bool:
@@ -94,8 +125,6 @@ class LCMSConverterAppComposer:
     def tf_img(self):
         if self._should_refresh_jcamp() and not self._peaks_applied:
             self.tf_jcamp()
-        # Preview is often built in ``build_lcms_composer`` (BagIt / batch path) or
-        # inside ``tf_jcamp`` (peak integration). Avoid a second identical render.
         if self._image is not None:
             return self._image
         if self.data:
@@ -109,6 +138,78 @@ class LCMSConverterAppComposer:
             if jdx_file.name.lower().endswith(('peak.jdx', 'edit.jdx')):
                 return jdx_file
         return None
+
+    @staticmethod
+    def _is_uvvis_source(jdx_file) -> bool:
+        path = getattr(jdx_file, 'name', None) if jdx_file else None
+        if not path:
+            return False
+        try:
+            with open(path, 'r', encoding='utf-8', errors='ignore') as handle:
+                for _ in range(200):
+                    raw = handle.readline()
+                    if not raw:
+                        break
+                    line = raw.strip()
+                    if not line.startswith('##'):
+                        if line:
+                            continue
+                        break
+                    if not line.upper().startswith('##DATA TYPE'):
+                        continue
+                    value = line.split('=', 1)[1].strip().upper() if '=' in line else ''
+                    return any(token in value for token in _UVVIS_DATA_TYPE_TOKENS)
+        except OSError:
+            return False
+        return False
+
+    def _resolve_uvvis_title(self) -> str:
+        title = ''
+        if isinstance(self.params, dict):
+            title = self.params.get('fname') or ''
+        if title:
+            title = title.replace('.jdx', '').replace('.edit', '').replace('.peak', '')
+        return title or 'lc_ms_spectrum'
+
+    def _ensure_uvvis_peak_file(self) -> None:
+        if not self.data:
+            return
+
+        for jdx_file in self.data:
+            name = (getattr(jdx_file, 'name', '') or '').lower()
+            if name.endswith(('peak.jdx', 'edit.jdx')):
+                return
+            if has_uvvis_peak_marker(getattr(jdx_file, 'name', None)):
+                return
+
+        for idx, jdx_file in enumerate(self.data):
+            path = getattr(jdx_file, 'name', None)
+            if not path or not self._is_uvvis_source(jdx_file):
+                continue
+            try:
+                lc_df = lcms_df_from_uvvis_jdx(path)
+            except Exception as err:
+                logger.debug("UVVIS peak prebake: parse failed on %s: %s", path, err)
+                continue
+            if lc_df is None or lc_df.empty:
+                continue
+
+            try:
+                new_file = lcms_uvvis_peak_jcamp_from_df(
+                    lc_df, self._resolve_uvvis_title(), self.params,
+                )
+            except Exception as err:
+                logger.warning(
+                    "UVVIS peak prebake: generator raised on %s: %s", path, err,
+                )
+                return
+
+            if new_file is None:
+                return
+
+            self.data.insert(idx + 1, new_file)
+            self._image = None
+            return
 
     def tf_jcamp(self):
         if not self.data:
@@ -157,5 +258,4 @@ class LCMSConverterAppComposer:
         return self.data[0] if self.data else None
 
     def tf_csv(self):
-        """Pas d’export CSV dédié pour l’instant (aligné sur le groupe BagIt LCMS)."""
         return None
