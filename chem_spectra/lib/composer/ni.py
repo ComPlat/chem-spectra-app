@@ -14,6 +14,9 @@ import csv
 from chem_spectra.lib.composer.base import (  # noqa: E402, F401
     extrac_dic, calc_npoints, BaseComposer
 )
+from chem_spectra.lib.composer.integration_extras import (  # noqa: E402
+    parse_split_lines,
+)
 from chem_spectra.lib.shared.calc import (  # noqa: E402
     calc_mpy_center, calc_ks, get_curve_endpoint, cal_slope, cal_xyIntegration,
 )
@@ -181,6 +184,11 @@ class NIComposer(BaseComposer):
             '##$OBSERVEDINTEGRALS= (X Y Z)\n',
         ]
 
+    def __gen_headers_integration_groups(self):
+        return [
+            '##$OBSERVEDINTEGRALSGROUPS=\n',
+        ]
+
     def __gen_headers_mpy_integ(self):
         return [
             '##$OBSERVEDMULTIPLETS=\n',
@@ -340,6 +348,10 @@ class NIComposer(BaseComposer):
         meta.extend(self.__gen_headers_im())
         meta.extend(self.__gen_headers_integration())
         meta.extend(self.gen_integration_info())
+        groups_body = self.gen_integration_groups_info()
+        if groups_body:
+            meta.extend(self.__gen_headers_integration_groups())
+            meta.extend(groups_body)
         meta.extend(self.__gen_headers_mpy_integ())
         meta.extend(self.gen_mpy_integ_info())
         meta.extend(self.__gen_headers_mpy_peaks())
@@ -543,7 +555,12 @@ class NIComposer(BaseComposer):
                     xLStr = split_itg[0].strip()
                     xUStr = split_itg[1].strip()
                     areaStr = split_itg[2].strip()
-                    self.all_itgs.append({'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)})    # noqa: E501
+                    rebuilt_itg = {'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)}
+                    if len(split_itg) >= 5:
+                        rebuilt_split_lines = parse_split_lines(split_itg[4])
+                        if rebuilt_split_lines:
+                            rebuilt_itg['splitLines'] = rebuilt_split_lines
+                    self.all_itgs.append(rebuilt_itg)
         
 
         # ----- Calculate multiplicity -----

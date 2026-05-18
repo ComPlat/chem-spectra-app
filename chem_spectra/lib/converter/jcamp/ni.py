@@ -68,6 +68,7 @@ class JcampNIConverter:  # nmr & IR
         self.auto_peaks = None
         self.edit_peaks = None
         self.itg_table = []
+        self.itg_groups_table = []
         self.mpy_itg_table = []
         self.mpy_pks_table = []
         self.max_min_peaks_table = []
@@ -576,6 +577,9 @@ class JcampNIConverter:  # nmr & IR
         target = self.dic.get('$OBSERVEDINTEGRALS')
         if target:
             self.itg_table = ['\n'.join(target[0].split('\n')[1:]), '\n']
+        target_groups = self.dic.get('$OBSERVEDINTEGRALSGROUPS')
+        if target_groups:
+            self.itg_groups_table = [target_groups[0], '\n']
 
     def __read_multiplicity_from_file(self):
         target1 = self.dic.get('$OBSERVEDMULTIPLETS')

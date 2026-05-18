@@ -3,6 +3,10 @@ from chem_spectra.lib.shared.misc import is_number
 from chem_spectra.lib.shared.calc import (  # noqa: E402
     calc_mpy_center
 )
+from chem_spectra.lib.composer.integration_extras import (  # noqa: E402
+    sanitize_split_lines, format_split_lines,
+    sanitize_group_id, format_observed_integrals_groups_table,
+)
 
 
 def extrac_dic(core, key):
@@ -220,12 +224,31 @@ class BaseComposer:
         itg_stack = core_itg.get('stack') or []
         mpy_stack = core_mpy.get('stack') or []
 
+        for itg in itg_stack:
+            cleaned = sanitize_split_lines(
+                itg.get('splitLines'), itg.get('xL'), itg.get('xU'),
+            )
+            if cleaned is not None:
+                itg['splitLines'] = cleaned
+            elif 'splitLines' in itg:
+                del itg['splitLines']
+
+            group_id = sanitize_group_id(itg.get('visualSplitGroupId'))
+            if group_id is not None:
+                itg['visualSplitGroupId'] = group_id
+            elif 'visualSplitGroupId' in itg:
+                del itg['visualSplitGroupId']
+
         self.all_itgs = itg_stack
         for itg in itg_stack:
             skip = False
             for mpy in mpy_stack:
                 if (itg['xL'] == mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):     # pylint: disable=c0301
                     mpy['area'] = itg['area']
+                    if 'splitLines' in itg:
+                        mpy['splitLines'] = itg['splitLines']
+                    if 'visualSplitGroupId' in itg:
+                        mpy['visualSplitGroupId'] = itg['visualSplitGroupId']
                     self.mpys.append(mpy)
                     skip = True
                     break
@@ -239,14 +262,26 @@ class BaseComposer:
                 absoluteArea = 0
                 if 'absoluteArea' in itg:
                     absoluteArea = itg['absoluteArea']
-                table.extend([
-                    '({}, {}, {}, {})\n'.format(
-                        itg['xL'] - self.refShift,
-                        itg['xU'] - self.refShift,
-                        float(itg['area']) * self.refArea,
-                        absoluteArea,
-                    ),
-                ])
+                split_token = format_split_lines(itg.get('splitLines'))
+                if split_token is None:
+                    table.append(
+                        '({}, {}, {}, {})\n'.format(
+                            itg['xL'] - self.refShift,
+                            itg['xU'] - self.refShift,
+                            float(itg['area']) * self.refArea,
+                            absoluteArea,
+                        ),
+                    )
+                else:
+                    table.append(
+                        '({}, {}, {}, {}, "{}")\n'.format(
+                            itg['xL'] - self.refShift,
+                            itg['xU'] - self.refShift,
+                            float(itg['area']) * self.refArea,
+                            absoluteArea,
+                            split_token,
+                        ),
+                    )
             return table
         elif self.core.params['integration'].get('edited'):
             return []
@@ -268,6 +303,21 @@ class BaseComposer:
             return itg_stack
         else:
             return self.core.itg_table
+
+    def gen_integration_groups_info(self):
+        if len(self.itgs) > 0:
+            return format_observed_integrals_groups_table(self.itgs)
+
+        raw = getattr(self.core, 'itg_groups_table', None) or []
+        if not raw:
+            return []
+        body = raw[0] if isinstance(raw, (list, tuple)) and raw else raw
+        if not isinstance(body, str) or not body.strip():
+            return []
+        lines = [line for line in body.splitlines() if line.strip()]
+        if not lines:
+            return []
+        return [line + '\n' for line in lines]
 
     def gen_mpy_integ_info(self):
         ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
