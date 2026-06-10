@@ -374,6 +374,185 @@ class NIComposer(BaseComposer):
             return -1
         return 1
 
+    def _ensure_itg_mpy_from_core_tables(self):
+        refShift = self.refShift
+        if (len(self.all_itgs) == 0 and len(self.core.itg_table) > 0
+                and not self.core.params['integration'].get('edited')
+                and ('originStack' not in self.core.params['integration'])):
+            core_itg_table = self.core.itg_table[0]
+            for itg in core_itg_table.split('\n'):
+                clear_itg = itg.replace('(', '').replace(')', '')
+                split_itg = clear_itg.split(',')
+                if len(split_itg) > 2:
+                    self.all_itgs.append({
+                        'xL': float(split_itg[0].strip()),
+                        'xU': float(split_itg[1].strip()),
+                        'area': float(split_itg[2].strip()),
+                    })
+
+        if (len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0
+                and not self.core.params['integration'].get('edited')
+                and ('originStack' not in self.core.params['integration'])):
+            tmp_dic_mpy_peaks = {}
+            core_mpy_pks_table = self.core.mpy_pks_table[0]
+            for peak in core_mpy_pks_table.split('\n'):
+                clear_peak = peak.replace('(', '').replace(')', '')
+                split_peak = clear_peak.split(',')
+                idx_peakStr = split_peak[0].strip()
+                if idx_peakStr not in tmp_dic_mpy_peaks:
+                    tmp_dic_mpy_peaks[idx_peakStr] = []
+                tmp_dic_mpy_peaks[idx_peakStr].append({
+                    'x': float(split_peak[1].strip()),
+                    'y': float(split_peak[2].strip()),
+                })
+
+            for mpy in self.core.mpy_itg_table[0].split('\n'):
+                clear_mpy = mpy.replace('(', '').replace(')', '')
+                split_mpy = clear_mpy.split(',')
+                if len(split_mpy) <= 7:
+                    continue
+                idxStr = split_mpy[0].strip()
+                mpy_item = {
+                    'mpyType': split_mpy[6].strip(),
+                    'xExtent': {
+                        'xL': float(split_mpy[1].strip()) + refShift,
+                        'xU': float(split_mpy[2].strip()) + refShift,
+                    },
+                    'yExtent': {
+                        'yL': float(split_mpy[3].strip()) + refShift,
+                        'yU': float(split_mpy[4].strip()) + refShift,
+                    },
+                    'peaks': tmp_dic_mpy_peaks.get(idxStr, []),
+                    'area': 1.0,
+                }
+                self.mpys.append(mpy_item)
+
+    def plot_overlays(self, plt, y_values=None, adjust_xlim=True):
+        y_values = self.core.ys if y_values is None else y_values
+        y_max, y_min = np.max(y_values), np.min(y_values)
+        h = y_max - y_min
+        w = self.core.boundary['x']['max'] - self.core.boundary['x']['min']
+        y_boundary_max = y_max + h * 0.5
+
+        faktor = self.__fakto()
+        path_data = [
+            (mpath.Path.MOVETO, (0, faktor * 5)),
+            (mpath.Path.LINETO, (0, faktor * 20)),
+        ]
+        codes, verts = zip(*path_data)
+        marker = mpath.Path(verts, codes)
+
+        circle = mpath.Path.unit_circle()
+        cirle_verts = np.concatenate([circle.vertices, verts])
+        cirle_codes = np.concatenate([circle.codes, codes])
+        cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
+
+        x_peaks, y_peaks = [], []
+        if self.core.edit_peaks:
+            x_peaks = self.core.edit_peaks['x']
+            y_peaks = self.core.edit_peaks['y']
+        elif self.core.auto_peaks:
+            x_peaks = self.core.auto_peaks['x']
+            y_peaks = self.core.auto_peaks['y']
+
+        x_peckers, y_peckers = [], []
+        x_peaks_ref, y_peaks_ref = [], []
+        if self.core.is_cyclic_volta:
+            display_scale = getattr(self, '_cv_density_scale', 1.0)
+            x_peaks, y_peaks = [], []
+            listMaxMinPeaks = self.core.params['list_max_min_peaks'] or []
+            for peak in listMaxMinPeaks:
+                max_peak = peak.get('max')
+                min_peak = peak.get('min')
+                x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
+                x_min_peak, y_min_peak = self.__get_xy_of_peak(min_peak)
+                if x_max_peak == '' and x_min_peak == '':
+                    continue
+                if x_max_peak == '' and y_max_peak == '':
+                    x_peaks.extend([x_min_peak])
+                    y_peaks.extend([y_min_peak])
+                elif x_min_peak == '' and y_min_peak == '':
+                    x_peaks.extend([x_max_peak])
+                    y_peaks.extend([y_max_peak])
+                else:
+                    is_ref = peak.get('isRef', False)
+                    if is_ref:
+                        x_peaks_ref.extend([x_max_peak, x_min_peak])
+                        y_peaks_ref.extend([y_max_peak, y_min_peak])
+                    else:
+                        x_peaks.extend([x_max_peak, x_min_peak])
+                        y_peaks.extend([y_max_peak, y_min_peak])
+                if peak.get('pecker') is not None:
+                    pecker = peak['pecker']
+                    x_peckers.append(pecker['x'])
+                    y_peckers.append(pecker['y'])
+
+            if display_scale != 1.0:
+                y_peaks = [y * display_scale for y in y_peaks]
+                y_peckers = [y * display_scale for y in y_peckers]
+                y_peaks_ref = [y * display_scale for y in y_peaks_ref]
+
+            for i in range(len(x_peaks)):
+                x_pos = x_peaks[i]
+                y_pos = y_peaks[i] + h * 0.1
+                peak_label = 'x: {x}\ny: {y}'.format(
+                    x='{:.2e}'.format(x_pos), y='{:.2e}'.format(y_peaks[i]),
+                )
+                plt.text(x_pos, y_pos, peak_label)
+
+            for i in range(len(x_peaks_ref)):
+                x_pos = x_peaks_ref[i]
+                y_pos = y_peaks_ref[i] + h * 0.1
+                peak_label = 'x: {x}\ny: {y}'.format(
+                    x='{:.2e}'.format(x_pos), y='{:.2e}'.format(y_peaks_ref[i]),
+                )
+                plt.text(x_pos, y_pos, peak_label)
+
+        if x_peaks:
+            plt.plot(x_peaks, y_peaks, 'r', ls='', marker=marker, markersize=50)
+        if x_peckers:
+            plt.plot(x_peckers, y_peckers, 'g', ls='', marker=marker, markersize=50)
+        if x_peaks_ref:
+            plt.plot(x_peaks_ref, y_peaks_ref, 'r', ls='', marker=cut_star_marker, markersize=50)
+
+        refShift, refArea = self.refShift, self.refArea
+        self._ensure_itg_mpy_from_core_tables()
+
+        itg_value_position_y = y_min - h * 0.25
+        if len(self.mpys) == 0:
+            itg_value_position_y = y_min - h * 0.05
+        itg_h = (y_max + h * 0.6) * 1.1
+        y_boundary_max = self.__draw_integrals(
+            plt, refShift, refArea, y_max, h, itg_value_position_y, itg_h,
+        )
+        y_boundary_min = itg_value_position_y - h * 0.1
+
+        mpy_h = y_min - h * 0.03
+        for mpy in self.mpys:
+            xL = mpy['xExtent']['xL'] - refShift
+            xU = mpy['xExtent']['xU'] - refShift
+            typ = mpy['mpyType']
+            plt.plot([xL, xU], [mpy_h, mpy_h], color='#DA70D6')
+            plt.plot([xL, xL], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')
+            plt.plot([xU, xU], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')
+            plt.text(
+                (xL + xU) / 2, mpy_h - h * 0.01,
+                '{:0.3f} ({})'.format(calc_mpy_center(mpy['peaks'], refShift, typ), typ),
+                color='#DA70D6', size=7, rotation=90., ha='right', va='top',
+                rotation_mode='anchor',
+            )
+            for p in mpy['peaks']:
+                x = p['x'] - refShift
+                plt.plot([x, x], [mpy_h, mpy_h + h * 0.02], color='#DA70D6')
+
+        self.__generate_info_box(plt)
+        y_boundary_max = self.__draw_peaks(
+            plt, x_peaks, y_peaks, h, w,
+            y_boundary_max * (1.1 if self.core.is_ir else 1.5),
+            adjust_xlim=adjust_xlim,
+        )
+        return y_boundary_min, y_boundary_max
+
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['figure.dpi'] = 200
@@ -412,199 +591,7 @@ class NIComposer(BaseComposer):
                 self._cv_axis_exp = 0
             self._cv_axis_base = (10.0 ** self._cv_axis_exp) if self._cv_axis_exp != 0 else 1.0
 
-        # PLOT peaks
-        faktor = self.__fakto()
-        path_data = [
-            (mpath.Path.MOVETO, (0, faktor * 5)),
-            (mpath.Path.LINETO, (0, faktor * 20)),
-        ]
-        codes, verts = zip(*path_data)
-        marker = mpath.Path(verts, codes)
-
-        circle = mpath.Path.unit_circle()
-        cirle_verts = np.concatenate([circle.vertices, verts])
-        cirle_codes = np.concatenate([circle.codes, codes])
-        cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
-
-        x_peaks = []
-        y_peaks = []
-        if self.core.edit_peaks:
-            x_peaks = self.core.edit_peaks['x']
-            y_peaks = self.core.edit_peaks['y']
-        elif self.core.auto_peaks:
-            x_peaks = self.core.auto_peaks['x']
-            y_peaks = self.core.auto_peaks['y']
-
-        x_peckers = []
-        y_peckers = []
-        x_peaks_ref, y_peaks_ref = [], []
-        if self.core.is_cyclic_volta:
-            display_scale = getattr(self, '_cv_density_scale', 1.0)
-            x_peaks = []
-            y_peaks = []
-            listMaxMinPeaks = []
-            if self.core.params['list_max_min_peaks'] is not None:
-                listMaxMinPeaks = self.core.params['list_max_min_peaks']
-
-            for peak in listMaxMinPeaks:
-                max_peak, min_peak = None, None
-                if 'max' in peak:
-                    max_peak = peak['max']
-                if 'min' in peak:
-                    min_peak = peak['min']
-                x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
-                x_min_peak, y_min_peak = self.__get_xy_of_peak(min_peak)
-
-                if (x_max_peak == '' and x_min_peak == ''):
-                    # ignore if missing both max and min peak
-                    continue
-
-                if (x_max_peak == '' and y_max_peak == ''):
-                    x_peaks.extend([x_min_peak])
-                    y_peaks.extend([y_min_peak])
-                elif (x_min_peak == '' and y_min_peak == ''):
-                    x_peaks.extend([x_max_peak])
-                    y_peaks.extend([y_max_peak])
-                else:
-                    is_ref = peak.get('isRef', False) if 'isRef' in peak else False
-                    if is_ref:
-                        x_peaks_ref.extend([x_max_peak, x_min_peak])
-                        y_peaks_ref.extend([y_max_peak, y_min_peak])
-                    else:
-                        x_peaks.extend([x_max_peak, x_min_peak])
-                        y_peaks.extend([y_max_peak, y_min_peak])
-
-                if 'pecker' in peak and peak['pecker'] is not None:
-                    pecker = peak['pecker']
-                    x_pecker, y_pecker = pecker['x'], pecker['y']
-                    x_peckers.append(x_pecker)
-                    y_peckers.append(y_pecker)
-
-            # display x value of peak for cyclic voltammetry
-            if display_scale != 1.0:
-                y_peaks = [y * display_scale for y in y_peaks]
-                y_peckers = [y * display_scale for y in y_peckers]
-                y_peaks_ref = [y * display_scale for y in y_peaks_ref]
-
-            for i in range(len(x_peaks)):
-                x_pos = x_peaks[i]
-                y_pos = y_peaks[i] + h * 0.1
-                x_float = '{:.2e}'.format(x_pos)
-                y_float = '{:.2e}'.format(y_peaks[i])
-                peak_label = 'x: {x}\ny: {y}'.format(x=x_float, y=y_float)
-                plt.text(x_pos, y_pos, peak_label)
-
-            # display x value of ref peak for cyclic voltammetry
-            for i in range(len(x_peaks_ref)):
-                x_pos = x_peaks_ref[i]
-                y_pos = y_peaks_ref[i] + h * 0.1
-                x_float = '{:.2e}'.format(x_pos)
-                y_float = '{:.2e}'.format(y_peaks_ref[i])
-                peak_label = 'x: {x}\ny: {y}'.format(x=x_float, y=y_float)
-                plt.text(x_pos, y_pos, peak_label)
-
-        plt.plot(
-            x_peaks,
-            y_peaks,
-            'r',
-            ls='',
-            marker=marker,
-            markersize=50,
-        )
-
-        plt.plot(
-            x_peckers,
-            y_peckers,
-            'g',
-            ls='',
-            marker=marker,
-            markersize=50,
-        )
-
-        plt.plot(
-            x_peaks_ref,
-            y_peaks_ref,
-            'r',
-            ls='',
-            marker=cut_star_marker,
-            markersize=50,
-        )
-
-        # ----- Calculate integration -----
-        refShift, refArea = self.refShift, self.refArea
-        if (len(self.all_itgs) == 0 and len(self.core.itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
-            core_itg_table = self.core.itg_table[0]
-            itg_table = core_itg_table.split('\n')
-            for itg in itg_table:
-                clear_itg = itg.replace('(', '')
-                clear_itg = clear_itg.replace(')', '')
-                split_itg = clear_itg.split(',')
-                if (len(split_itg) > 2):
-                    xLStr = split_itg[0].strip()
-                    xUStr = split_itg[1].strip()
-                    areaStr = split_itg[2].strip()
-                    self.all_itgs.append({'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)})    # noqa: E501
-        
-
-        # ----- Calculate multiplicity -----
-        if (len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
-            core_mpy_pks_table = self.core.mpy_pks_table[0]
-            mpy_pks_table = core_mpy_pks_table.split('\n')
-            tmp_dic_mpy_peaks = {}
-            for peak in mpy_pks_table:
-                clear_peak = peak.replace('(', '')
-                clear_peak = clear_peak.replace(')', '')
-                split_peak = clear_peak.split(',')
-                idx_peakStr = split_peak[0].strip()
-                xStr = split_peak[1].strip()
-                yStr = split_peak[2].strip()
-                if idx_peakStr not in tmp_dic_mpy_peaks:
-                    tmp_dic_mpy_peaks[idx_peakStr] = []
-                
-                tmp_dic_mpy_peaks[idx_peakStr].append({'x': float(xStr), 'y': float(yStr)})
-
-            core_mpy_itg_table = self.core.mpy_itg_table[0]
-            mpy_itg_table = core_mpy_itg_table.split('\n')
-            for mpy in mpy_itg_table:
-                clear_mpy = mpy.replace('(', '')
-                clear_mpy = clear_mpy.replace(')', '')
-                split_mpy = clear_mpy.split(',')
-                mpy_item = { 'mpyType': '', 'xExtent': {'xL': 0.0, 'xU': 0.0}, 'yExtent': {'yL': 0.0, 'yU': 0.0}, 'peaks': [], 'area': 1.0 }
-                if (len(split_mpy) > 7):
-                    idxStr = split_mpy[0].strip()
-                    xLStr = split_mpy[1].strip()
-                    xUStr = split_mpy[2].strip()
-                    mpy_item['xExtent']['xL'] = float(xLStr) + refShift
-                    mpy_item['xExtent']['xU'] = float(xUStr) + refShift
-                    yLStr = split_mpy[3].strip()
-                    yUStr = split_mpy[4].strip()
-                    mpy_item['yExtent']['yL'] = float(yLStr) + refShift
-                    mpy_item['yExtent']['yU'] = float(yUStr) + refShift
-                    typeStr = split_mpy[6].strip()
-                    mpy_item['mpyType'] = typeStr
-                    mpy_item['peaks'] = tmp_dic_mpy_peaks[idxStr]
-                    self.mpys.append(mpy_item)
-
-        # ----- PLOT integration -----
-        itg_h = y_max + h * 0.6
-        itg_h = itg_h + itg_h * 0.1
-        itg_value_position_y = y_min - h * 0.25
-        if (len(self.mpys) == 0):
-            itg_value_position_y =  y_min - h * 0.05
-        y_boundary_max = self.__draw_integrals(plt, refShift, refArea, y_max, h, itg_value_position_y, itg_h)
-        y_boundary_min = itg_value_position_y - h * 0.1
-        
-        # ----- PLOT multiplicity -----
-        mpy_h = y_min - h * 0.03
-        for mpy in self.mpys:
-            xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']    # noqa: E501
-            plt.plot([xL, xU], [mpy_h, mpy_h], color='#DA70D6')
-            plt.plot([xL, xL], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
-            plt.plot([xU, xU], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
-            plt.text((xL + xU) / 2, mpy_h - h * 0.01, '{:0.3f} ({})'.format(calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType']), typ), color='#DA70D6', size=7, rotation=90., ha='right', va='top', rotation_mode='anchor')  # noqa: E501
-            for p in peaks:
-                x = p['x']
-                plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.02], color='#DA70D6')  # noqa: E501
+        y_boundary_min, y_boundary_max = self.plot_overlays(plt, y_values, adjust_xlim=True)
 
         # PLOT label
         if (self.core.is_xrd):
@@ -626,11 +613,6 @@ class NIComposer(BaseComposer):
             plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
         plt.locator_params(nbins=self.__plt_nbins())
         plt.grid(False)
-
-        self.__generate_info_box(plt)
-
-        y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max * (1.1 if self.core.is_ir else 1.5))
-
 
         plt.ylim(
             y_boundary_min,
@@ -717,7 +699,7 @@ class NIComposer(BaseComposer):
         return y_boundary_max
         
 
-    def __draw_peaks(self, plt, x_peaks, y_peaks, h, w, y_boundary_max):
+    def __draw_peaks(self, plt, x_peaks, y_peaks, h, w, y_boundary_max, adjust_xlim=True):
         if self.core.non_nmr == True or len(x_peaks) == 0:
             return y_boundary_max
 
@@ -807,10 +789,11 @@ class NIComposer(BaseComposer):
         elif self.core.ncl == '1H':
             x_boundary_min = min(x_boundary_min, -0.2)
             x_boundary_max = max(x_boundary_max, 9.0)
-        plt.xlim(
-            x_boundary_max,
-            x_boundary_min,
-        )
+        if adjust_xlim:
+            plt.xlim(
+                x_boundary_max,
+                x_boundary_min,
+            )
         y_boundary_max = min(y_boundary_max, highest_peak_anotation)
         
         return y_boundary_max

@@ -327,8 +327,15 @@ class TransformerModel:
                 file.name = list_file_names[idx]
                 self.multiple_files[idx] = file
 
+        active_name = None
+        if 0 <= curve_idx < len(self.multiple_files):
+            active_name = self.multiple_files[curve_idx].name
+
         self.multiple_files.sort(key=lambda file: file.name)
-        
+
+        active_nicp = None
+        active_y_values = None
+
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
@@ -342,6 +349,7 @@ class TransformerModel:
                 nicp = NIComposer(nicv)
                 xs, ys = nicp.core.xs, nicp.core.ys
                 y_values = ys
+                is_active = active_name is not None and file.name == active_name
                 if nicp.core.is_cyclic_volta:
                     cv_state = {}
                     if extraParams:
@@ -404,6 +412,12 @@ class TransformerModel:
                         marker = 'v'
                 plt.plot(xs, y_values, label=filename, marker=marker)
 
+                if is_active:
+                    active_nicp = nicp
+                    active_y_values = y_values
+                    if nicp.core.is_cyclic_volta:
+                        nicp._cv_density_scale = scale
+
                 try:
                     x_max = np.max(xs)
                     x_min = np.min(xs)
@@ -417,43 +431,10 @@ class TransformerModel:
                     or nicp.core.is_dls_acf or nicp.core.is_dls_intensity):
                     any_forward_orientation = True
 
-                try:
-                    x_peaks, y_peaks = [], []
-                    if nicp.core.edit_peaks:
-                        x_peaks = nicp.core.edit_peaks['x']
-                        y_peaks = nicp.core.edit_peaks['y']
-                    elif nicp.core.auto_peaks:
-                        x_peaks = nicp.core.auto_peaks['x']
-                        y_peaks = nicp.core.auto_peaks['y']
-                    if (not nicp.core.is_cyclic_volta) and len(x_peaks) > 0 and len(x_peaks) == len(y_peaks):
-                        plt.plot(
-                            x_peaks,
-                            y_peaks,
-                            'r',
-                            ls='',
-                            marker=marker if marker != '' else mpath.Path(verts, codes),
-                            markersize=50,
-                        )
-                except Exception:
-                    pass
-
                 # PLOT label
                 core_label_x = nicp.core.label['x']
                 core_label_y = nicp.core.label['y']
                 if nicp.core.is_cyclic_volta:
-                    x_peaks, y_peaks = self.__get_cyclic_volta_ref_peaks(curve_idx, extraParams)
-                    if y_peaks and y_values is not ys:
-                        y_peaks = [y * scale for y in y_peaks]
-
-                    plt.plot(
-                        x_peaks,
-                        y_peaks,
-                        'r',
-                        ls='',
-                        marker=cut_star_marker,
-                        markersize=50,
-                    )
-
                     if core_label_x not in dic_x_label:
                         xlabel_set.append(core_label_x)
                         dic_x_label[core_label_x] = 1
@@ -477,6 +458,16 @@ class TransformerModel:
                     plt.xlim(global_x_max, global_x_min)
         except Exception:
             pass
+
+        if active_nicp is not None:
+            try:
+                y_boundary_min, y_boundary_max = active_nicp.plot_overlays(
+                    plt, active_y_values, adjust_xlim=False,
+                )
+                ymin, ymax = plt.gca().get_ylim()
+                plt.ylim(min(ymin, y_boundary_min), max(ymax, y_boundary_max))
+            except Exception:
+                pass
 
         plt.xlabel(xlabel, fontsize=18)
         plt.ylabel(ylabel, fontsize=18)
