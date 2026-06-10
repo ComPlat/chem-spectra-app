@@ -536,6 +536,22 @@ def _extract_uvvis_pages(content: str) -> List[Tuple[Optional[float], List[float
     return [(None, xs, ys)]
 
 
+def _uvvis_units_from_content(content: str) -> Tuple[Optional[str], Optional[str]]:
+    header = _header_from_content(content)
+    return _header_value(header, "XUNITS"), _header_value(header, "YUNITS")
+
+
+def lcms_uvvis_units_from_jdx(jdx_path: str) -> Tuple[Optional[str], Optional[str]]:
+    if not jdx_path or not os.path.exists(jdx_path):
+        return None, None
+    try:
+        with open(jdx_path, "r", encoding="utf-8", errors="ignore") as handle:
+            content = handle.read()
+        return _uvvis_units_from_content(content)
+    except Exception:
+        return None, None
+
+
 def _lc_df_from_uvvis_content(content: str) -> Optional[pd.DataFrame]:
     pages = _extract_uvvis_pages(content)
     if not pages:
@@ -660,6 +676,7 @@ def lcms_preview_image_from_jdx_files(
 
     uvvis_data = None
     uvvis_label = None
+    uvvis_x_units = None
     if peak_path:
         try:
             with open(peak_path, "r", encoding="utf-8", errors="ignore") as handle:
@@ -667,6 +684,7 @@ def lcms_preview_image_from_jdx_files(
             uvvis_data = _extract_uvvis_from_peak_content(uvvis_content, uvvis_wavelength)
             if uvvis_data:
                 uvvis_label = _format_wavelength_label(uvvis_data[4])
+                uvvis_x_units, _ = _uvvis_units_from_content(uvvis_content)
         except Exception:
             uvvis_data = None
 
@@ -729,7 +747,8 @@ def lcms_preview_image_from_jdx_files(
 
     if has_uvvis:
         xs, ys, edit_peaks, integrations, _wl = uvvis_data
-        xs_min = xs / 60.0
+        x_scale = 1.0 if (uvvis_x_units and "MINUTE" in uvvis_x_units.upper()) else (1.0 / 60.0)
+        xs_min = xs * x_scale
         uvvis_ax.plot(xs_min, ys)
 
         if edit_peaks:
@@ -739,7 +758,7 @@ def lcms_preview_image_from_jdx_files(
             ]
             codes, verts = zip(*path_data)
             marker = mpath.Path(verts, codes)
-            x_peaks = [p["x"] / 60.0 for p in edit_peaks]
+            x_peaks = [p["x"] * x_scale for p in edit_peaks]
             y_peaks = [p["y"] for p in edit_peaks]
             uvvis_ax.plot(
                 x_peaks,
@@ -755,8 +774,8 @@ def lcms_preview_image_from_jdx_files(
             y_min = float(np.min(ys))
             h = max(y_max - y_min, 1.0)
             for itg in integrations:
-                x_left = itg["xL"] / 60.0
-                x_right = itg["xU"] / 60.0
+                x_left = itg["xL"] * x_scale
+                x_right = itg["xU"] * x_scale
                 i_left, i_right = get_curve_endpoint(xs_min, ys, x_left, x_right)
                 cxs = xs_min[i_left:i_right]
                 cys = ys[i_left:i_right]
@@ -985,6 +1004,8 @@ def lcms_uvvis_peak_jcamp_from_df(
     lc_df: pd.DataFrame,
     title: str,
     params: Optional[Dict] = None,
+    x_units: Optional[str] = None,
+    y_units: Optional[str] = None,
 ) -> Optional[tempfile.NamedTemporaryFile]:
     if lc_df is None or lc_df.empty or "wavelength" not in lc_df.columns:
         return None
@@ -1163,9 +1184,13 @@ def lcms_uvvis_peak_jcamp_from_df(
             if x_left is None or x_right is None or area is None:
                 continue
             try:
-                # Convert from minutes to seconds
-                x_left = float(x_left) * 60.0 - float(ref_shift)
-                x_right = float(x_right) * 60.0 - float(ref_shift)
+                x_left = float(x_left)
+                x_right = float(x_right)
+                if not (resolved_x_units and "MINUTE" in resolved_x_units.upper()):
+                    x_left *= 60.0
+                    x_right *= 60.0
+                x_left -= float(ref_shift)
+                x_right -= float(ref_shift)
                 area = float(area) * ref_area
                 absolute_area = float(absolute_area)
             except Exception:
@@ -1180,6 +1205,9 @@ def lcms_uvvis_peak_jcamp_from_df(
         ordered = [p[0] for p in sorted(numeric_only, key=lambda p: p[1])]
     else:
         ordered = sorted(wavelength_values)
+
+    resolved_x_units = x_units or "RETENTION TIME"
+    resolved_y_units = y_units or "DETECTOR SIGNAL"
 
     content: List[str] = []
     for page_idx, wl in enumerate(ordered):
@@ -1196,11 +1224,11 @@ def lcms_uvvis_peak_jcamp_from_df(
             y_min, y_max = 0.0, 0.0
 
         edit_peaks = _peaks_for_page(peaks_input, page_idx, wl)
-        # Convert peak x values from minutes to seconds
-        for peak in edit_peaks:
-            if 'x' in peak:
-                peak['x'] = peak['x'] * 60.0
-        
+        if not (resolved_x_units and "MINUTE" in resolved_x_units.upper()):
+            for peak in edit_peaks:
+                if 'x' in peak:
+                    peak['x'] = peak['x'] * 60.0
+
         integration_meta, integration_stack = _integration_for_page(integration_input, page_idx, wl)
         integration_lines = _integration_lines(integration_meta or integration_input, integration_stack)
 
@@ -1214,8 +1242,8 @@ def lcms_uvvis_peak_jcamp_from_df(
             "##SYMBOL=X, Y\n",
             "##ORIGIN=\n",
             "##OWNER=\n",
-            "##XUNITS=RETENTION TIME\n",
-            "##YUNITS=DETECTOR SIGNAL\n",
+            f"##XUNITS={resolved_x_units}\n",
+            f"##YUNITS={resolved_y_units}\n",
             "##$CSCATEGORY=UVVIS PEAK TABLE\n",
         ]
         if page_idx == 0 and lcms_mz_page_hdr:

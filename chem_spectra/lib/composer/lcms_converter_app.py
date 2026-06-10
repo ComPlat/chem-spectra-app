@@ -8,6 +8,7 @@ from chem_spectra.lib.external.chemotion_converter_lcms import (
     lcms_df_from_peak_jdx,
     lcms_df_from_uvvis_jdx,
     lcms_uvvis_peak_jcamp_from_df,
+    lcms_uvvis_units_from_jdx,
 )
 
 logger = logging.getLogger(__name__)
@@ -195,8 +196,13 @@ class LCMSConverterAppComposer:
                 continue
 
             try:
+                x_units, y_units = lcms_uvvis_units_from_jdx(path)
                 new_file = lcms_uvvis_peak_jcamp_from_df(
-                    lc_df, self._resolve_uvvis_title(), self.params,
+                    lc_df,
+                    self._resolve_uvvis_title(),
+                    self.params,
+                    x_units=x_units,
+                    y_units=y_units,
                 )
             except Exception as err:
                 logger.warning(
@@ -222,6 +228,7 @@ class LCMSConverterAppComposer:
             
             if jdx_file:
                 lc_df = lcms_df_from_peak_jdx(jdx_file.name)
+                units_path = jdx_file.name
                 if lc_df is None or lc_df.empty:
                     lc_df = lcms_df_from_uvvis_jdx(jdx_file.name)
                 if (lc_df is None or lc_df.empty) and self.data:
@@ -231,6 +238,7 @@ class LCMSConverterAppComposer:
                         maybe_df = lcms_df_from_uvvis_jdx(candidate.name)
                         if maybe_df is not None and not maybe_df.empty:
                             lc_df = maybe_df
+                            units_path = candidate.name
                             break
                 if lc_df is not None and not lc_df.empty:
                     title = self.params.get('fname', 'lc_ms_spectrum')
@@ -238,7 +246,26 @@ class LCMSConverterAppComposer:
                         title = title.replace('.jdx', '').replace('.edit', '').replace('.peak', '')
                     else:
                         title = 'lc_ms_spectrum'
-                    new_file = lcms_uvvis_peak_jcamp_from_df(lc_df, title, self.params)
+                    x_units, y_units = lcms_uvvis_units_from_jdx(units_path)
+                    if not x_units or not y_units:
+                        for candidate in self.data:
+                            candidate_path = getattr(candidate, 'name', None)
+                            if not candidate_path or candidate_path == units_path:
+                                continue
+                            if not self._is_uvvis_source(candidate):
+                                continue
+                            src_x, src_y = lcms_uvvis_units_from_jdx(candidate_path)
+                            x_units = x_units or src_x
+                            y_units = y_units or src_y
+                            if x_units and y_units:
+                                break
+                    new_file = lcms_uvvis_peak_jcamp_from_df(
+                        lc_df,
+                        title,
+                        self.params,
+                        x_units=x_units,
+                        y_units=y_units,
+                    )
                     if new_file:
                         replaced = False
                         for idx, existing in enumerate(self.data):
