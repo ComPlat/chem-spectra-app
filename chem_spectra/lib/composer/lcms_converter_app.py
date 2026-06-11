@@ -178,7 +178,7 @@ class LCMSConverterAppComposer:
 
         for jdx_file in self.data:
             name = (getattr(jdx_file, 'name', '') or '').lower()
-            if name.endswith(('peak.jdx', 'edit.jdx')):
+            if name.endswith(('peak.jdx', 'edit.jdx')) and 'uvvis' in name:
                 return
             if has_uvvis_peak_marker(getattr(jdx_file, 'name', None)):
                 return

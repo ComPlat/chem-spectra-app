@@ -142,6 +142,24 @@ def test_init_handles_mixed_batch_inserts_peak_next_to_uvvis(uvvis_tmp, mass_tic
     assert _file_contains_marker(composer.data[2])
 
 
+def test_init_prebakes_uvvis_despite_non_uvvis_peak_sibling(uvvis_tmp, mass_tic_tmp):
+    tic_peak = _named_tmp(MASS_TIC_JDX)
+    tic_peak.close()
+    os.rename(tic_peak.name, tic_peak.name.replace(".jdx", ".peak.jdx"))
+    tic_peak.name = tic_peak.name.replace(".jdx", ".peak.jdx")
+    try:
+        composer = LCMSConverterAppComposer([tic_peak, uvvis_tmp], None, None)
+
+        assert len(composer.data) == 3
+        assert composer.data[0] is tic_peak
+        assert composer.data[1] is uvvis_tmp
+        assert composer.data[2].name.lower().endswith("peak.jdx")
+        assert _file_contains_marker(composer.data[2])
+    finally:
+        if os.path.exists(tic_peak.name):
+            os.unlink(tic_peak.name)
+
+
 def test_preview_pipeline_can_now_extract_uvvis(uvvis_tmp):
     from chem_spectra.lib.external.chemotion_converter_lcms import (
         _extract_uvvis_from_peak_content,

@@ -44,11 +44,15 @@ def _param_to_text(value):
 
 
 def normalize_lcms_filename(filename, src_filename=None):
-    """Prefer the source basename when the frontend posts both a ``src``
-    archive and a derived ``filename`` (e.g. ``run_42.edit``).
+    """Normalize an LCMS attachment filename for ELN grouping.
 
-    Keeps LCMS files from the same dataset grouped by their original archive
-    name; returns ``filename`` unchanged for non-LCMS uploads.
+    When the frontend posts both a source archive (``src_filename``) and a
+    derived ``filename`` (e.g. ``run_42.edit``), prefer the source basename so
+    files from the same dataset stay grouped.
+
+    Otherwise strip archive extensions and ``.edit`` suffixes from
+    ``filename``. Intended for LCMS save paths only — callers should not
+    invoke this helper for unrelated upload types.
     """
     if not filename and not src_filename:
         return filename
