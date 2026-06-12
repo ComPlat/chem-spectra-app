@@ -1,0 +1,60 @@
+flowchart TD
+  Start["TransformerModel.to_composer()"]
+  Ext{"Check file extension\nand params ext"}
+
+  subgraph ms [MS Branches]
+    Raw["raw mzml mzxml"]
+    MSPath["MSConverter\nMSComposer"]
+    Cdf["cdf"]
+    CdfPath["CdfBaseConverter\nCdfMSConverter\nMSComposer"]
+  end
+
+  subgraph zip [ZIP Branch]
+    Zip["zip"]
+    ExtractZip["Extract ZIP\nTemporaryDirectory"]
+    BrukerCheck{"Contains fid"}
+    ProcessedCheck{"Contains pdata"}
+    BrukerRaw["FidBaseConverter\nJcampNIConverter\nNIComposer"]
+    BrukerProcessed["FidHasBruckerProcessed\nmultiple NIComposer"]
+    BagItCheck{"Contains bagit.txt"}
+    BagItPath["BagItBaseConverter"]
+    ZipFail["False values"]
+  end
+
+  subgraph jcamp [JCAMP Fallback]
+    Jcamp["JCAMP or text input"]
+    JcampBase["JcampBaseConverter"]
+    JcampType{"Check jbcv typ"}
+    JcampMS["JcampMSConverter\nMSComposer"]
+    JcampNI["JcampNIConverter\nNIComposer"]
+  end
+
+  Start --> Ext
+  Ext --> Raw
+  Ext --> Cdf
+  Ext --> Zip
+  Ext --> Jcamp
+  Raw --> MSPath
+  Cdf --> CdfPath
+  Zip --> ExtractZip
+  ExtractZip --> BrukerCheck
+  BrukerCheck -->|"yes"| ProcessedCheck
+  ProcessedCheck -->|"yes"| BrukerProcessed
+  ProcessedCheck -->|"no"| BrukerRaw
+  BrukerCheck -->|"no"| BagItCheck
+  BagItCheck -->|"yes"| BagItPath
+  BagItCheck -->|"no"| ZipFail
+  Jcamp --> JcampBase
+  JcampBase --> JcampType
+  JcampType -->|"MS"| JcampMS
+  JcampType -->|"other"| JcampNI
+
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef decision fill:#fff8dc,stroke:#b07d12,stroke-width:1px
+  classDef lib fill:#f2efff,stroke:#8f63c6,stroke-width:1px
+  classDef error fill:#fdecea,stroke:#e15759,stroke-width:1px
+
+  class Start model
+  class Ext,BrukerCheck,ProcessedCheck,BagItCheck,JcampType decision
+  class Raw,Cdf,Zip,Jcamp,MSPath,CdfPath,ExtractZip,BrukerRaw,BrukerProcessed,BagItPath,JcampBase,JcampMS,JcampNI lib
+  class ZipFail error

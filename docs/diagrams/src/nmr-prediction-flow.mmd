@@ -1,0 +1,53 @@
+flowchart LR
+  Request["NMR prediction request\nJSON or form"]
+
+  subgraph controller [Controller]
+    Controller["inference_api.py\nNMR route"]
+    OptionalSpectrum["Optional spectrum parsing\n13C without peaks"]
+  end
+
+  subgraph model [Model]
+    Molecule["MoleculeModel\nRDKit molfile parsing"]
+    Transformer["TransformerModel.to_converter()\nextract edit_peaks"]
+    Inferencer["InferencerModel.predict_nmr()"]
+  end
+
+  subgraph lib [Lib]
+    Artist["ArtistLib.draw_nmr()\nSVG enrichment"]
+  end
+
+  subgraph external [External Service]
+    NMRShiftDB["URL_NSHIFTDB\nNMR prediction"]
+  end
+
+  Response["JSON response\noutline output svgs"]
+  Error["abort(400) or outline 503"]
+
+  Request --> Controller
+  Controller --> Molecule
+  Controller -->|"if peaks missing and layout is 13C"| OptionalSpectrum
+  OptionalSpectrum --> Transformer
+  Transformer --> Controller
+  Controller --> Inferencer
+  Molecule --> Inferencer
+  Inferencer -.-> NMRShiftDB
+  NMRShiftDB -.-> Inferencer
+  Inferencer --> Artist
+  Artist --> Response
+  Inferencer --> Error
+
+  classDef request fill:#eef5ff,stroke:#4c78a8,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef lib fill:#f2efff,stroke:#8f63c6,stroke-width:1px
+  classDef external fill:#fff4e6,stroke:#f28e2b,stroke-width:1px
+  classDef output fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+  classDef error fill:#fdecea,stroke:#e15759,stroke-width:1px
+
+  class Request request
+  class Controller,OptionalSpectrum controller
+  class Molecule,Transformer,Inferencer model
+  class Artist lib
+  class NMRShiftDB external
+  class Response output
+  class Error error

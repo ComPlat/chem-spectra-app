@@ -20,4 +20,4 @@ build/
 /chem_spectra/tmp/
 !/chem_spectra/tmp/.keep
 
-src/
+/src/

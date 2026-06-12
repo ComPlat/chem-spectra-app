@@ -1,0 +1,65 @@
+flowchart LR
+  Request["file_api request"]
+
+  subgraph controller [Controller]
+    Convert["file/convert\nJSON base64 or BagIt list"]
+    Save["file/save\nsource plus generated ZIP"]
+    Refresh["file/refresh\nJSON or generated ZIP"]
+    Molfile["molfile/convert\nmolecule metadata JSON"]
+  end
+
+  subgraph shared [Shared Inputs]
+    FileContainer["FileContainer\nfile src dst dst_list molfile"]
+    Params["extract_params()\nscan ext predict jcamp_idx"]
+  end
+
+  subgraph model [Model]
+    Transformer["TransformerModel\nconvert2jcamp_img tf_predict tf_combine"]
+    Molecule["MoleculeModel\nsmi mass svg"]
+  end
+
+  subgraph outputs [Outputs]
+    JsonBase64["JSON\nbase64 jcamp image"]
+    BagItJson["JSON\nlist_jcamps"]
+    ZipOutput["spectrum.zip\nsource generated predicted csv"]
+    MolfileJson["JSON\nsmi mass svg"]
+    Error400["abort(400)"]
+  end
+
+  Request --> Convert
+  Request --> Save
+  Request --> Refresh
+  Request --> Molfile
+
+  Convert --> FileContainer
+  Save --> FileContainer
+  Refresh --> FileContainer
+  Molfile --> FileContainer
+
+  Convert --> Params
+  Save --> Params
+  Refresh --> Params
+
+  FileContainer --> Transformer
+  Params --> Transformer
+  FileContainer --> Molecule
+
+  Transformer -->|"standard conversion"| JsonBase64
+  Transformer -->|"BagIt"| BagItJson
+  Transformer -->|"save or refresh list"| ZipOutput
+  Transformer -->|"conversion failed"| Error400
+  Molecule --> MolfileJson
+
+  classDef request fill:#eef5ff,stroke:#4c78a8,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef data fill:#fff8dc,stroke:#b07d12,stroke-width:1px
+  classDef output fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+  classDef error fill:#fdecea,stroke:#e15759,stroke-width:1px
+
+  class Request request
+  class Convert,Save,Refresh,Molfile controller
+  class FileContainer,Params data
+  class Transformer,Molecule model
+  class JsonBase64,BagItJson,ZipOutput,MolfileJson output
+  class Error400 error
