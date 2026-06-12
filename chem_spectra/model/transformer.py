@@ -19,7 +19,6 @@ from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 import matplotlib.pyplot as plt  # noqa: E402
-import matplotlib.path as mpath  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib import ticker  # noqa: E402
 
@@ -272,41 +271,10 @@ class TransformerModel:
         tf_jcamp = nicp.tf_jcamp()
         return tf_jcamp
 
-    def __get_cyclic_volta_ref_peaks(self, curve_idx, extraParams):
-        x_peaks, y_peaks = [], []
-        try:
-            extras_dict = json.loads(extraParams) if extraParams else None
-            cyclic_volta_str = extras_dict['cyclicvolta'] if extras_dict else None
-            cyclic_volta = json.loads(cyclic_volta_str) if cyclic_volta_str else None
-            spectra_list = cyclic_volta['spectraList'] if cyclic_volta else None
-            spectra_extra = spectra_list[curve_idx] if spectra_list and curve_idx < len(spectra_list) else None
-            list_peaks = spectra_extra['list'] if spectra_extra else []
-            x_peaks, y_peaks = [], []
-            for peak in list_peaks:
-                min_peak, max_peak, isRef = peak['min'], peak['max'], peak['isRef']
-                if isRef == True:
-                    x_peaks.extend([min_peak['x'], max_peak['x']])
-                    y_peaks.extend([min_peak['y'], max_peak['y']])
-        except:
-            pass
-
-        return x_peaks, y_peaks
-
     def tf_combine(self, list_file_names=None, extraParams=None):
         if not self.multiple_files:
             return False
 
-        path_data = [
-            (mpath.Path.MOVETO, (0, 5)),
-            (mpath.Path.LINETO, (0, 20)),
-        ]
-        codes, verts = zip(*path_data)
-
-        circle = mpath.Path.unit_circle()
-        cirle_verts = np.concatenate([circle.vertices, verts])
-        cirle_codes = np.concatenate([circle.codes, codes])
-        cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
-          
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
@@ -316,7 +284,6 @@ class TransformerModel:
         xlabel, ylabel = '', ''
         xlabel_set, ylabel_set = [], []
         dic_x_label, dic_y_label = {}, {}
-        marker = mpath.Path(verts, codes)
         global_x_min, global_x_max = None, None
         any_forward_orientation = False
 
@@ -383,19 +350,8 @@ class TransformerModel:
                         scale = float(cv_display.get('yScaleFactor', 1.0))
                     except Exception:
                         scale = 1.0
-                    print(
-                        "[combined:tf_combine] file=", filename,
-                        "cvDisplay=", cv_display,
-                        "scale=", scale,
-                        "y_max=", float(np.max(ys)) if len(ys) else None,
-                        "cv_state_source=", "extras" if extraParams else "params",
-                    )
                     if scale != 1.0:
                         y_values = ys * scale
-                        print(
-                            "[combined:tf_combine] file=", filename,
-                            "scaled_y_max=", float(np.max(y_values)) if len(y_values) else None,
-                        )
                     cv_mode = True
                     try:
                         cv_abs_max = max(cv_abs_max, float(np.max(np.abs(y_values))))
@@ -478,7 +434,6 @@ class TransformerModel:
 
         if cv_mode and cv_abs_max > 0:
             exp = int(np.floor(np.log10(cv_abs_max))) if cv_abs_max > 0 else 0
-            print(f"[tf_combine] cv_abs_max={cv_abs_max}, exp={exp}")
             base = (10.0 ** exp) if exp != 0 else 1.0
             ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _:
                 f"{(y / base):.3g}"

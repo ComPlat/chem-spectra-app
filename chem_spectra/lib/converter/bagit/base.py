@@ -86,6 +86,7 @@ class BagItBaseConverter:
             return None
 
         plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
         
         cv_mode = False
@@ -121,18 +122,8 @@ class BagItBaseConverter:
                     scale = float(cv_display.get('yScaleFactor', 1.0))
                 except Exception:
                     scale = 1.0
-                print(
-                    "[combined:bagit] file=", filename,
-                    "cvDisplay=", cv_display,
-                    "scale=", scale,
-                    "y_max=", float(np.max(ys)) if len(ys) else None,
-                )
                 if scale != 1.0:
                     y_values = ys * scale
-                    print(
-                        "[combined:bagit] file=", filename,
-                        "scaled_y_max=", float(np.max(y_values)) if len(y_values) else None,
-                    )
                 cv_mode = True
                 try:
                     cv_abs_max = max(cv_abs_max, float(np.max(np.abs(y_values))))
