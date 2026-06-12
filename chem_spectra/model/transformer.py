@@ -19,7 +19,6 @@ from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 import matplotlib.pyplot as plt  # noqa: E402
-import matplotlib.path as mpath  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib import ticker  # noqa: E402
 
@@ -272,42 +271,12 @@ class TransformerModel:
         tf_jcamp = nicp.tf_jcamp()
         return tf_jcamp
 
-    def __get_cyclic_volta_ref_peaks(self, curve_idx, extraParams):
-        x_peaks, y_peaks = [], []
-        try:
-            extras_dict = json.loads(extraParams) if extraParams else None
-            cyclic_volta_str = extras_dict['cyclicvolta'] if extras_dict else None
-            cyclic_volta = json.loads(cyclic_volta_str) if cyclic_volta_str else None
-            spectra_list = cyclic_volta['spectraList'] if cyclic_volta else None
-            spectra_extra = spectra_list[curve_idx] if spectra_list and curve_idx < len(spectra_list) else None
-            list_peaks = spectra_extra['list'] if spectra_extra else []
-            x_peaks, y_peaks = [], []
-            for peak in list_peaks:
-                min_peak, max_peak, isRef = peak['min'], peak['max'], peak['isRef']
-                if isRef == True:
-                    x_peaks.extend([min_peak['x'], max_peak['x']])
-                    y_peaks.extend([min_peak['y'], max_peak['y']])
-        except:
-            pass
-
-        return x_peaks, y_peaks
-
     def tf_combine(self, list_file_names=None, extraParams=None):
         if not self.multiple_files:
             return False
 
-        path_data = [
-            (mpath.Path.MOVETO, (0, 5)),
-            (mpath.Path.LINETO, (0, 20)),
-        ]
-        codes, verts = zip(*path_data)
-
-        circle = mpath.Path.unit_circle()
-        cirle_verts = np.concatenate([circle.vertices, verts])
-        cirle_codes = np.concatenate([circle.codes, codes])
-        cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
-          
         plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
         plt.rcParams['legend.loc'] = 'upper left'
         curve_idx = self.params.get('jcamp_idx', 0)
@@ -315,6 +284,8 @@ class TransformerModel:
         xlabel, ylabel = '', ''
         xlabel_set, ylabel_set = [], []
         dic_x_label, dic_y_label = {}, {}
+        global_x_min, global_x_max = None, None
+        any_forward_orientation = False
 
         cv_mode = False
         cv_abs_max = 0.0
@@ -323,8 +294,15 @@ class TransformerModel:
                 file.name = list_file_names[idx]
                 self.multiple_files[idx] = file
 
+        active_name = None
+        if 0 <= curve_idx < len(self.multiple_files):
+            active_name = self.multiple_files[curve_idx].name
+
         self.multiple_files.sort(key=lambda file: file.name)
-        
+
+        active_nicp = None
+        active_y_values = None
+
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
@@ -338,6 +316,7 @@ class TransformerModel:
                 nicp = NIComposer(nicv)
                 xs, ys = nicp.core.xs, nicp.core.ys
                 y_values = ys
+                is_active = active_name is not None and file.name == active_name
                 if nicp.core.is_cyclic_volta:
                     cv_state = {}
                     if extraParams:
@@ -371,19 +350,8 @@ class TransformerModel:
                         scale = float(cv_display.get('yScaleFactor', 1.0))
                     except Exception:
                         scale = 1.0
-                    print(
-                        "[combined:tf_combine] file=", filename,
-                        "cvDisplay=", cv_display,
-                        "scale=", scale,
-                        "y_max=", float(np.max(ys)) if len(ys) else None,
-                        "cv_state_source=", "extras" if extraParams else "params",
-                    )
                     if scale != 1.0:
                         y_values = ys * scale
-                        print(
-                            "[combined:tf_combine] file=", filename,
-                            "scaled_y_max=", float(np.max(y_values)) if len(y_values) else None,
-                        )
                     cv_mode = True
                     try:
                         cv_abs_max = max(cv_abs_max, float(np.max(np.abs(y_values))))
@@ -400,23 +368,29 @@ class TransformerModel:
                         marker = 'v'
                 plt.plot(xs, y_values, label=filename, marker=marker)
 
+                if is_active:
+                    active_nicp = nicp
+                    active_y_values = y_values
+                    if nicp.core.is_cyclic_volta:
+                        nicp._cv_density_scale = scale
+
+                try:
+                    x_max = np.max(xs)
+                    x_min = np.min(xs)
+                    global_x_min = x_min if global_x_min is None else min(global_x_min, x_min)
+                    global_x_max = x_max if global_x_max is None else max(global_x_max, x_max)
+                except Exception:
+                    pass
+                if (nicp.core.is_tga or nicp.core.is_gc or nicp.core.is_uv_vis or nicp.core.is_hplc_uv_vis
+                    or nicp.core.is_xrd or nicp.core.is_cyclic_volta or nicp.core.is_sec
+                    or nicp.core.is_cds or nicp.core.is_aif or nicp.core.is_emissions
+                    or nicp.core.is_dls_acf or nicp.core.is_dls_intensity):
+                    any_forward_orientation = True
+
                 # PLOT label
                 core_label_x = nicp.core.label['x']
                 core_label_y = nicp.core.label['y']
                 if nicp.core.is_cyclic_volta:
-                    x_peaks, y_peaks = self.__get_cyclic_volta_ref_peaks(curve_idx, extraParams)
-                    if y_peaks and y_values is not ys:
-                        y_peaks = [y * scale for y in y_peaks]
-
-                    plt.plot(
-                        x_peaks,
-                        y_peaks,
-                        'r',
-                        ls='',
-                        marker=cut_star_marker,
-                        markersize=50,
-                    )
-
                     if core_label_x not in dic_x_label:
                         xlabel_set.append(core_label_x)
                         dic_x_label[core_label_x] = 1
@@ -432,16 +406,34 @@ class TransformerModel:
 
             tf.close()
         
+        try:
+            if global_x_min is not None and global_x_max is not None:
+                if any_forward_orientation:
+                    plt.xlim(global_x_min, global_x_max)
+                else:
+                    plt.xlim(global_x_max, global_x_min)
+        except Exception:
+            pass
+
+        if active_nicp is not None:
+            try:
+                y_boundary_min, y_boundary_max = active_nicp.plot_overlays(
+                    plt, active_y_values, adjust_xlim=False,
+                )
+                ymin, ymax = plt.gca().get_ylim()
+                plt.ylim(min(ymin, y_boundary_min), max(ymax, y_boundary_max))
+            except Exception:
+                pass
+
         plt.xlabel(xlabel, fontsize=18)
         plt.ylabel(ylabel, fontsize=18)
         ax = plt.gca()
         if cv_mode:
             ymin, ymax = ax.get_ylim()
             cv_abs_max = max(abs(ymin), abs(ymax))
-            
+
         if cv_mode and cv_abs_max > 0:
             exp = int(np.floor(np.log10(cv_abs_max))) if cv_abs_max > 0 else 0
-            print(f"[tf_combine] cv_abs_max={cv_abs_max}, exp={exp}")
             base = (10.0 ** exp) if exp != 0 else 1.0
             ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _:
                 f"{(y / base):.3g}"
@@ -456,6 +448,7 @@ class TransformerModel:
                     fontsize=14,
                     clip_on=False
                 )
+        plt.grid(False)
         plt.legend()
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')
