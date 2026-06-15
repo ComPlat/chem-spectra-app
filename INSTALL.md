@@ -11,20 +11,9 @@ Use the file pyproject.toml to determine the version of Python required.
 ### 1.2. Clone repository and create env
 
 ```sh
-git clone --recurse-submodules https://github.com/ComPlat/chem-spectra-app.git
+git clone https://github.com/ComPlat/chem-spectra-app.git
 cd chem-spectra-app
 ```
-
-If the repository was cloned without submodules, initialize the test datasets:
-
-```sh
-git submodule update --init --recursive
-```
-
-The centralized test datasets live in the `test-datasets/` submodule
-([chem-spectra-test-files](https://github.com/ComPlat/chem-spectra-test-files)).
-Tests resolve dataset files automatically via `tests/dataset_catalog.py`.
-To use a different checkout, set `CHEMSPECTRA_TEST_FILES` to its root path.
 
 ALL the **FOLLOWING** commands are assumed to be executed while inside this
 `chem-spectra-app` folder.
@@ -152,22 +141,3 @@ gunicorn -w 4 -b 0.0.0.0:3007 server:app --daemon
 ```sh
 python -m pytest
 ```
-
-### 3.1. CI configuration (maintainers)
-
-The `test-datasets` submodule points to
-[ComPlat/chem-spectra-test-files](https://github.com/ComPlat/chem-spectra-test-files),
-which is currently **private**. GitHub Actions cannot clone it without credentials.
-
-Choose one fix:
-
-1. **Recommended for open test data:** make `chem-spectra-test-files` public.
-2. **Repository secret:** add `CHEMSPECTRA_TEST_FILES_PAT` on `chem-spectra-app`
-   (Settings → Secrets and variables → Actions). Use a fine-grained PAT or classic
-   PAT with read access to `ComPlat/chem-spectra-test-files`.
-3. **Organization setting:** in ComPlat org settings, allow GitHub Actions
-   workflows to access other private repositories (then the default
-   `GITHUB_TOKEN` may be sufficient).
-
-The workflow validates that `test-datasets/catalog/datasets.json` exists after
-checkout and prints these instructions if the submodule failed to initialize.
