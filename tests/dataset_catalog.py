@@ -98,6 +98,7 @@ LEGACY_SOURCE_PATH_TO_ID: dict[str, str] = {
     "ms/svs813f1.mzML": "MS-M-005",
     "xrd/Test_data_op_001_XRD.jdx": "XRD-004",
     "xrd/Test_data_op_002_XRD.jdx": "XRD-005",
+    "CHI-224_10.jdx": "NMR-029",
 }
 
 

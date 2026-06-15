@@ -5,7 +5,6 @@ import zipfile
 from tests.dataset_catalog import dataset_path, legacy_source_path
 
 file_jdx = '13C-DEPT135.dx'
-file_inte_mpy_jdx = 'CHI-224_10.jdx'
 result_dir = 'result/'
 
 peaks_str = '745.0957757310398,0.2787140606224312#1018.4864309069585,0.31625977127489585#1154.473492548866,0.32047998816450246'  # noqa:
