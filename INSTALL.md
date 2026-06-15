@@ -152,3 +152,22 @@ gunicorn -w 4 -b 0.0.0.0:3007 server:app --daemon
 ```sh
 python -m pytest
 ```
+
+### 3.1. CI configuration (maintainers)
+
+The `test-datasets` submodule points to
+[ComPlat/chem-spectra-test-files](https://github.com/ComPlat/chem-spectra-test-files),
+which is currently **private**. GitHub Actions cannot clone it without credentials.
+
+Choose one fix:
+
+1. **Recommended for open test data:** make `chem-spectra-test-files` public.
+2. **Repository secret:** add `CHEMSPECTRA_TEST_FILES_PAT` on `chem-spectra-app`
+   (Settings → Secrets and variables → Actions). Use a fine-grained PAT or classic
+   PAT with read access to `ComPlat/chem-spectra-test-files`.
+3. **Organization setting:** in ComPlat org settings, allow GitHub Actions
+   workflows to access other private repositories (then the default
+   `GITHUB_TOKEN` may be sufficient).
+
+The workflow validates that `test-datasets/catalog/datasets.json` exists after
+checkout and prints these instructions if the submodule failed to initialize.
