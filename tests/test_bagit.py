@@ -1,17 +1,12 @@
-from werkzeug.datastructures import FileStorage
 import tempfile
 import zipfile
-from chem_spectra.controller.helper.file_container import FileContainer
-from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
 
-from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 
-target_dir = './tests/fixtures/'
-source_dir = 'source/bagit/cv'
+from tests.dataset_catalog import dataset_path_str
 
 def test_bagit_converter():
-    target = target_dir + source_dir + '/File053_BagIt.zip'
+    target = dataset_path_str('CV-B-001')
     with tempfile.TemporaryDirectory() as td:
         with zipfile.ZipFile(target, 'r') as z:
             z.extractall(td)
