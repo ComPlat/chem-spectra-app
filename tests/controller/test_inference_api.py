@@ -4,9 +4,7 @@ from unittest import mock
 from fixtures.mock_predict_nmr import RequestPredictNmr, ResponsePredictNmr
 from fixtures.mock_predict_ir import ResponsePredictIr
 
-
-target_dir = './tests/fixtures/'
-source_dir = 'source/'
+from tests.dataset_catalog import dataset_path
 
 
 @mock.patch('requests.post', mock.Mock(return_value=ResponsePredictNmr()))
@@ -23,7 +21,7 @@ def test_api_chemspectra_predict_by_peaks_json(client):
 
 @mock.patch('requests.post', mock.Mock(return_value=ResponsePredictNmr()))
 def test_api_chemspectra_predict_by_peaks_form(client):
-    with open(target_dir + source_dir + '/molfile/svs813f1_B.mol', 'rb') as f:
+    with dataset_path('MOL-002').open('rb') as f:
         file_content = f.read()
     params = RequestPredictNmr().json()
     params = json.loads(params)
@@ -45,9 +43,9 @@ def test_api_chemspectra_predict_by_peaks_form(client):
 
 @mock.patch('requests.post', mock.Mock(return_value=ResponsePredictIr()))
 def test_api_chemspectra_predict_infrared(client):
-    with open(target_dir + source_dir + '/IR.dx', 'rb') as f:
+    with dataset_path('IR-004').open('rb') as f:
         spectrum_content = f.read()
-    with open(target_dir + source_dir + '/molfile/svs813f1_B.mol', 'rb') as f:
+    with dataset_path('MOL-002').open('rb') as f:
         molfile_content = f.read()
     data = {}
     data['molfile'] = (io.BytesIO(molfile_content), 'svs813f1_B.mol')

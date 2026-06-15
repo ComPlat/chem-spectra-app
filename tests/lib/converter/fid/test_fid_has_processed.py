@@ -5,7 +5,9 @@ import os
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 
-source_dir_1h = './tests/fixtures/source/bruker/1H.zip'
+from tests.dataset_catalog import dataset_path_str
+
+source_dir_1h = dataset_path_str('NMR-BZ-019')
 filename_1h = '1H'
 params_1h = {'fname':'1H.zip'}
 

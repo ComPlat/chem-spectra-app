@@ -11,9 +11,20 @@ Use the file pyproject.toml to determine the version of Python required.
 ### 1.2. Clone repository and create env
 
 ```sh
-git clone https://github.com/ComPlat/chem-spectra-app.git
+git clone --recurse-submodules https://github.com/ComPlat/chem-spectra-app.git
 cd chem-spectra-app
 ```
+
+If the repository was cloned without submodules, initialize the test datasets:
+
+```sh
+git submodule update --init --recursive
+```
+
+The centralized test datasets live in the `test-datasets/` submodule
+([chem-spectra-test-files](https://github.com/ComPlat/chem-spectra-test-files)).
+Tests resolve dataset files automatically via `tests/dataset_catalog.py`.
+To use a different checkout, set `CHEMSPECTRA_TEST_FILES` to its root path.
 
 ALL the **FOLLOWING** commands are assumed to be executed while inside this
 `chem-spectra-app` folder.

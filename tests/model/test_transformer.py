@@ -11,16 +11,18 @@ from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 from chem_spectra.lib.composer.ni import NIComposer
 
-source_dir_1h_bruker = './tests/fixtures/source/bruker/1H.zip'
-source_dir_1h_jcamp = './tests/fixtures/source/1H.dx'
+from tests.dataset_catalog import dataset_path_str
+
+source_dir_1h_bruker = dataset_path_str('NMR-BZ-019')
+source_dir_1h_jcamp = dataset_path_str('NMR-021')
 filename_1h = '1H'
 params_1h_bruker = {'fname':'1H.zip', 'ext':'zip'}
 params_1h_jcamp = {'fname':'1H.dx', 'ext':'dx'}
 params_1h_bruker_check_nmr = {'fname':'1H.zip', 'ext':'zip', 'simulatenmr': True}
 params_1h_jcamp_check_nmr = {'fname':'1H.dx', 'ext':'dx', 'simulatenmr': True}
 
-source_dir_molfile = './tests/fixtures/source/molfile/svs813f1_B.mol'
-source_dir_invalid_molfile = './tests/fixtures/source/molfile/invalid_molfile.mol'
+source_dir_molfile = dataset_path_str('MOL-002')
+source_dir_invalid_molfile = dataset_path_str('MOL-001')
 
 def is_list_of_instance(list_data, cls):
     for item in list_data:

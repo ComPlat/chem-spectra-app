@@ -2,6 +2,8 @@ from werkzeug.datastructures import FileStorage
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.transformer import TransformerModel as TraModel
 
+from tests.dataset_catalog import legacy_source_path
+
 target_dir = './tests/fixtures/'
 source_dir = 'source/'
 result_dir = 'result/'
@@ -21,7 +23,7 @@ MS_dx = '/ms/ms_v6.dx'
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def __fixture_path(orig_filename):
-    return target_dir + source_dir + orig_filename
+    return legacy_source_path(orig_filename)
 
 
 def __generated_jcamp_temp(path, params=False):

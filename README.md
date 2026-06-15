@@ -15,6 +15,22 @@ The frontend is provided by [chem-spectra-client](https://github.com/ComPlat/che
 2. [Demo & step-by-step manual](https://github.com/ComPlat/react-spectra-editor/blob/master/DEMO_MANUAL.md)
 3. Software's [Archicture](./docs/ARCHITECTURE.md)
 
+### Clone with test datasets
+
+```bash
+git clone --recurse-submodules https://github.com/ComPlat/chem-spectra-app.git
+```
+
+Or, after a plain clone:
+
+```bash
+git submodule update --init --recursive
+```
+
+Test datasets are provided by the `test-datasets/` submodule
+([chem-spectra-test-files](https://github.com/ComPlat/chem-spectra-test-files)).
+Override the dataset root with `CHEMSPECTRA_TEST_FILES` if needed.
+
 ### Run test
 
 ```bash

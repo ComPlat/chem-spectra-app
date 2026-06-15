@@ -2,19 +2,17 @@ import io
 import json
 import zipfile
 
+from tests.dataset_catalog import dataset_path, legacy_source_path
 
-target_dir = './tests/fixtures/'
-source_dir = 'source/'
 file_jdx = '13C-DEPT135.dx'
 file_inte_mpy_jdx = 'CHI-224_10.jdx'
 result_dir = 'result/'
-source_dir_invalid_molfile = './tests/fixtures/source/molfile/invalid_molfile.mol'
 
 peaks_str = '745.0957757310398,0.2787140606224312#1018.4864309069585,0.31625977127489585#1154.473492548866,0.32047998816450246'  # noqa:
 
 
 def test_zip_jcamp_n_img(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+    with open(legacy_source_path(file_jdx), 'rb') as f:
         file_content = f.read()
     data = dict(
         file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
@@ -32,10 +30,10 @@ def test_zip_jcamp_n_img(client):
     assert header_json['invalid_molfile'] is False
 
 def test_zip_jcamp_n_img_invalid_molfile(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+    with open(legacy_source_path(file_jdx), 'rb') as f:
         file_content = f.read()
 
-    with open(source_dir_invalid_molfile, 'rb') as f:
+    with dataset_path('MOL-001').open('rb') as f:
         molfile = f.read()
 
     data = dict(
@@ -58,7 +56,7 @@ def test_zip_jcamp_n_img_invalid_molfile(client):
 
 
 def test_zip_jcamp_n_img_with_peaks_str(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+    with open(legacy_source_path(file_jdx), 'rb') as f:
         file_content = f.read()
     data = dict(
         file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
@@ -75,7 +73,7 @@ def test_zip_jcamp_n_img_with_peaks_str(client):
 
 
 def test_zip_jcamp(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+    with open(legacy_source_path(file_jdx), 'rb') as f:
         file_content = f.read()
     data = dict(
         file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
@@ -91,7 +89,7 @@ def test_zip_jcamp(client):
 
 
 def test_zip_image(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+    with open(legacy_source_path(file_jdx), 'rb') as f:
         file_content = f.read()
     data = dict(
         file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
@@ -120,7 +118,7 @@ def test_combine_images(client):
 
 
 def test_image(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+    with open(legacy_source_path(file_jdx), 'rb') as f:
         file_content = f.read()
     data = dict(
         file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
