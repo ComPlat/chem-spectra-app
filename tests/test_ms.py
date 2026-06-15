@@ -13,7 +13,7 @@ def test_ms_mzml_converter_composer():
     params = {'mass': 230.079907196}
 
     with dataset_path('MS-M-005').open('rb') as f:
-        file = FileStorage(f)
+        file = FileStorage(f, filename='svs813f1.mzML')
         file = FileContainer(file)
         mscv = MSConverter(file, params)
         mscp = MSComposer(mscv)
@@ -32,7 +32,7 @@ def test_ms_raw_converter_composer():
     params = {'mass': 230.079907196}
 
     with dataset_path('MS-R-004').open('rb') as f:
-        file = FileStorage(f)
+        file = FileStorage(f, filename='MS_ESI.RAW')
         file = FileContainer(file)
         mscv = MSConverter(file, params)
         mscp = MSComposer(mscv)
