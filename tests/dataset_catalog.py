@@ -65,7 +65,6 @@ def dataset_path_str(dataset_id: str) -> str:
     return str(dataset_path(dataset_id))
 
 
-# Legacy paths under tests/fixtures/source/ mapped to catalog IDs.
 LEGACY_SOURCE_PATH_TO_ID: dict[str, str] = {
     "13C-CPD.dx": "NMR-019",
     "13C-DEPT135.dx": "NMR-020",

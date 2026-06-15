@@ -9,20 +9,9 @@ jobs:
     - uses: actions/checkout@v5
       with:
         submodules: recursive
-        # chem-spectra-test-files is private; use a PAT with repo read access,
-        # or enable org-wide GITHUB_TOKEN access, or make the dataset repo public.
         token: ${{ secrets.CHEMSPECTRA_TEST_FILES_PAT != '' && secrets.CHEMSPECTRA_TEST_FILES_PAT || github.token }}
     - name: Verify test-datasets submodule
-      run: |
-        if [ ! -f test-datasets/catalog/datasets.json ]; then
-          echo "::error::Submodule test-datasets is missing."
-          echo "chem-spectra-test-files is a private repository."
-          echo "Fix options:"
-          echo "  1. Add repo secret CHEMSPECTRA_TEST_FILES_PAT (read access to ComPlat/chem-spectra-test-files)"
-          echo "  2. Enable org setting: Actions may access other repositories in ComPlat"
-          echo "  3. Make ComPlat/chem-spectra-test-files public"
-          exit 1
-        fi
+      run: test -f test-datasets/catalog/datasets.json
     - uses: actions/setup-python@v6
       with:
         check-latest: true
