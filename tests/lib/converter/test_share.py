@@ -224,6 +224,68 @@ def test_parse_solvent():
     #TODO: need to be updated
     assert 1==1
 
+
+def test_parse_solvent_uses_existing_ref_name_for_1h_solvent_ranges():
+    base = type('MockBase', (), {
+        'ncl': '1H',
+        'params': {'ref_name': None},
+        'dic': {
+            '$CSSOLVENTNAME': ['DMSO-d6 (quin)'],
+            '$CSSOLVENTVALUE': ['2.5'],
+            '$CSSOLVENTX': ['0'],
+            '.SOLVENTNAME': [''],
+            '.SHIFTREFERENCE': [''],
+        },
+        'solv_peaks': [],
+    })()
+
+    parse_solvent(base)
+
+    assert base.solv_peaks == [(2.48, 2.52)]
+    assert base.dic['$CSSOLVENTNAME'] == ['DMSO-d6 (quin)']
+
+
+def test_parse_solvent_uses_existing_ref_name_for_13c_solvent_ranges():
+    base = type('MockBase', (), {
+        'ncl': '13C',
+        'params': {'ref_name': None},
+        'dic': {
+            '$CSSOLVENTNAME': ['Chloroform-d (t)'],
+            '$CSSOLVENTVALUE': ['77.16'],
+            '$CSSOLVENTX': ['0'],
+            '.SOLVENTNAME': [''],
+            '.SHIFTREFERENCE': [''],
+        },
+        'solv_peaks': [],
+    })()
+
+    parse_solvent(base)
+
+    assert base.solv_peaks == [(74.16, 80.16)]
+    assert base.dic['$CSSOLVENTNAME'] == ['Chloroform-d (t)']
+
+
+def test_parse_solvent_falls_back_when_existing_ref_is_auto_offset():
+    base = type('MockBase', (), {
+        'ncl': '1H',
+        'params': {'ref_name': None},
+        'dic': {
+            '$CSSOLVENTNAME': ['AUTO-OFFSET'],
+            '$CSSOLVENTVALUE': ['0.000000'],
+            '$CSSOLVENTX': ['4.238162'],
+            '.SOLVENTNAME': ['DMSO'],
+            '.SHIFTREFERENCE': ['DMSO'],
+        },
+        'solv_peaks': [],
+    })()
+
+    parse_solvent(base)
+
+    assert base.solv_peaks == [(2.48, 2.52)]
+    assert base.dic['$CSSOLVENTNAME'] == ['DMSO-d6 (quin)']
+    assert base.dic['$CSSOLVENTVALUE'] == ['2.5']
+    assert base.dic['$CSSOLVENTX'] == ['0']
+
 def test_parse_dsc_meta_data():
     params = {'dsc_meta_data': '{"meltingPoint": "1.0", "tg": "1.0"}'}
     parsed_data = parse_params(params)
