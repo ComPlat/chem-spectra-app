@@ -105,6 +105,11 @@ def zip_jcamp_n_img():
                 memory = to_zip_response([tf_jcamp, tf_img, tf_csv])
             else:
                 memory = to_zip_response([tf_jcamp, tf_img])
+            for handle in (cmpsr.data or []):
+                try:
+                    handle.close()
+                except Exception:
+                    pass
             rsp = make_response(
                 send_file(
                     memory,
