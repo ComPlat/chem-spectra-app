@@ -21,7 +21,7 @@ def __parse_xy_points(base):
 
 
 def make_ni_data_ys(base, target_idx):
-    if base.data is None and base.dic['XYPOINTS']:
+    if base.data is None and base.dic.get('XYPOINTS'):
         base.data = __parse_xy_points(base)
     elif base.data_format and base.data_format == '(XY..XY)':
         base.data = __parse_xy_points(base)
@@ -54,8 +54,15 @@ def make_ni_data_xs(base):
 
 
 def make_ms_data_xsys(base):
-    if base.data is None and base.dic['XYPOINTS']:
-        base.data = [__parse_xy_points(base)]
+    if base.data is None:
+        has_xy = bool(base.dic.get('XYPOINTS'))
+        has_xy_old = (
+            base.data_format
+            and base.data_format == '(XY..XY)'
+            and base.dic.get('XYDATA_OLD')
+        )
+        if has_xy or has_xy_old:
+            base.data = [__parse_xy_points(base)]
 
     # base.data type is dict
     if isinstance(base.data, dict):

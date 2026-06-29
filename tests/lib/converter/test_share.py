@@ -29,6 +29,9 @@ def expected_default_params():
         'axesUnits': None,
         'detector': None,
         'dsc_meta_data': None,
+        'lcms_uvvis_wavelength': None,
+        'lcms_mz_page': None,
+        'lcms_mz_page_data': None,
     }
 
 def test_parse_params_without_params(expected_default_params):
@@ -228,6 +231,12 @@ def test_parse_dsc_meta_data():
     params = {'dsc_meta_data': '{"meltingPoint": "1.0", "tg": "1.0"}'}
     parsed_data = parse_params(params)
     assert parsed_data['dsc_meta_data'] == {"meltingPoint": "1.0", "tg": "1.0"}
+
+
+def test_parse_lcms_mz_page_data():
+    params = {'lcms_mz_page_data': '{"0":[{"x":101.1,"y":1000}]}'}
+    parsed_data = parse_params(params)
+    assert parsed_data['lcms_mz_page_data'] == '{"0":[{"x":101.1,"y":1000}]}'
     
 def test_reduce_pts_when_does_not_have_any_x():
     array_data = []

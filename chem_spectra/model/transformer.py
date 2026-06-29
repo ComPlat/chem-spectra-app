@@ -13,6 +13,7 @@ from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
+from chem_spectra.lib.converter.bagit.lcms_builder import build_lcms_composer
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
@@ -65,6 +66,31 @@ def search_bag_it_file(td):
         return False
 
 
+def search_jdx_dir(td):
+    try:
+        def _has_jdx(path):
+            try:
+                return any(
+                    name.lower().endswith('.jdx')
+                    for name in os.listdir(path)
+                    if os.path.isfile(os.path.join(path, name))
+                )
+            except OSError:
+                return False
+
+        if _has_jdx(td):
+            return td
+        subdirs = []
+        for entry in os.listdir(td):
+            sub = os.path.join(td, entry)
+            if os.path.isdir(sub) and _has_jdx(sub):
+                subdirs.append(sub)
+        return subdirs[0] if len(subdirs) == 1 else False
+    except OSError:
+        return False
+    return False
+
+
 class TransformerModel:
     def __init__(self, file, molfile=None, params=False, multiple_files=False):
         self.file = file
@@ -74,12 +100,16 @@ class TransformerModel:
 
     def convert2jcamp(self):
         cmpsr, _ = self.to_composer()
+        if not cmpsr:
+            return False
         if isinstance(cmpsr, BagItBaseConverter):
             return cmpsr
         return cmpsr.tf_jcamp()
 
     def convert2img(self):
         cmpsr, _ = self.to_composer()
+        if not cmpsr:
+            return False
         if isinstance(cmpsr, BagItBaseConverter):
             return cmpsr
         return cmpsr.tf_img()
@@ -124,7 +154,7 @@ class TransformerModel:
             cv, _ = self.cdf2cvp()
             return cv
         if is_zip or is_zip_by_params:
-            cv, _ = self.zip2cvp()
+            cv, _, _ = self.zip2cvp()
             return cv
         else:
             cv, _ = self.jcamp2cvp()
@@ -145,45 +175,52 @@ class TransformerModel:
         return mscv, mscp
 
     def zip2cvp(self):
-        fbcv = False
         with tempfile.TemporaryDirectory() as td:
-            tz = store_byte_in_tmp(self.file.bcore, suffix='.zip')
-            with zipfile.ZipFile(tz.name, 'r') as z:
-                z.extractall(td)
+            with store_byte_in_tmp(self.file.bcore, suffix='.zip') as tz:
+                with zipfile.ZipFile(tz.name, 'r') as z:
+                    # Guard against Zip Slip (directory traversal) attacks.
+                    td_real = os.path.realpath(td) + os.sep
+                    for member in z.infolist():
+                        member_path = os.path.realpath(
+                            os.path.join(td, member.filename)
+                        )
+                        if not member_path.startswith(td_real):
+                            return False, False, False
+                    z.extractall(td)
             target_dir, has_processed_files = search_brucker_binary(td)
             if target_dir:
                 # NMR data
                 if (has_processed_files):
                     return self.zip2cv_with_processed_file(target_dir, self.params, self.file.name)
+                fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
+                if not fbcv:
+                    return False, False, False
+
+                isSimulateNMR = False
+                if self.params and 'simulatenmr' in self.params:
+                    isSimulateNMR = self.params['simulatenmr']
+                decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNMR)   # noqa: E501
+                invalid_molfile = False
+                if self.molfile is None:
+                    invalid_molfile = True
+                if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
+                    invalid_molfile = True
+                    final_decorated_jbcv = decorated_jbcv['origin_jbcv']
                 else:
-                    fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
-                    if not fbcv:
-                        return False, False, False
+                    final_decorated_jbcv = decorated_jbcv
+                nicv = JcampNIConverter(final_decorated_jbcv)
+                nicp = NIComposer(nicv)
+                return nicv, nicp, invalid_molfile
 
-                    isSimulateNMR = False
-                    if self.params and 'simulatenmr' in self.params:
-                        isSimulateNMR = self.params['simulatenmr']
-                    decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNMR)   # noqa: E501
+            is_bagit = search_bag_it_file(td)
+            if is_bagit:
+                bagcv = BagItBaseConverter(is_bagit, self.params, self.file.name)
+                return bagcv, bagcv, False
 
-                    # if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
-                    #     # return if molfile is invalid
-                    #     return None, decorated_jbcv
-                    invalid_molfile = False
-                    if self.molfile is None:
-                        invalid_molfile = True
-                    if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
-                        invalid_molfile = True
-                        final_decorated_jbcv = decorated_jbcv['origin_jbcv']
-                    else:
-                        final_decorated_jbcv = decorated_jbcv
-                    nicv = JcampNIConverter(final_decorated_jbcv)
-                    nicp = NIComposer(nicv)
-                    return nicv, nicp, invalid_molfile
-            else:
-                is_bagit = search_bag_it_file(td)
-                if is_bagit:
-                    bagcv = BagItBaseConverter(td, self.params, self.file.name)
-                    return bagcv, bagcv, False
+            jdx_dir = search_jdx_dir(td)
+            if jdx_dir:
+                bagcv = BagItBaseConverter(jdx_dir, self.params, self.file.name)
+                return bagcv, bagcv, False
 
         return False, False, False
 
@@ -229,28 +266,38 @@ class TransformerModel:
     def jcamp2cvp(self):
         tf = store_str_in_tmp(self.file.core)
         jbcv = JcampBaseConverter(tf.name, self.params)
-        tf.close()
         invalid_molfile = False
         # conversion
         if jbcv.typ == 'MS':
+            tf.close()
             mscv = JcampMSConverter(jbcv)
             mscp = MSComposer(mscv)
             return mscv, mscp, invalid_molfile
+        if jbcv.typ in ('LC/MS', 'HPLC UVVIS'):
+            lcms_cp = build_lcms_composer([tf.name], self.params)
+            tf.close()
+            if lcms_cp is not None:
+                return lcms_cp, lcms_cp, invalid_molfile
+            tf = store_str_in_tmp(self.file.core)
+            jbcv = JcampBaseConverter(tf.name, self.params)
+            tf.close()
         else:
-            isSimulateNMR = False
-            if self.params and 'simulatenmr' in self.params:
-                isSimulateNMR = self.params['simulatenmr']
-            decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNMR)   # noqa: E501
-            
-            if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
-                invalid_molfile = True
-                final_decorated_jbcv = decorated_jbcv['origin_jbcv']
-            else:
-                final_decorated_jbcv = decorated_jbcv
+            tf.close()
+        # NI path (NMR & autres, ou repli si build LCMS seul fichier a échoué)
+        isSimulateNMR = False
+        if self.params and 'simulatenmr' in self.params:
+            isSimulateNMR = self.params['simulatenmr']
+        decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNMR)   # noqa: E501
 
-            nicv = JcampNIConverter(final_decorated_jbcv)
-            nicp = NIComposer(nicv)
-            return nicv, nicp, invalid_molfile
+        if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
+            invalid_molfile = True
+            final_decorated_jbcv = decorated_jbcv['origin_jbcv']
+        else:
+            final_decorated_jbcv = decorated_jbcv
+
+        nicv = JcampNIConverter(final_decorated_jbcv)
+        nicp = NIComposer(nicv)
+        return nicv, nicp, invalid_molfile
 
     def tf_predict(self):
         target = json.loads(self.params['predict'])
@@ -426,6 +473,9 @@ class TransformerModel:
                     if (idx == len(self.multiple_files) - 1):
                         xlabel = ', '.join(xlabel_set)
                         ylabel = ', '.join(ylabel_set)
+                elif (nicp.core.non_nmr == False):
+                    xlabel = "Chemical shift ({})".format(core_label_x.lower())
+                    ylabel = "Intensity ({})".format(core_label_y.lower())
                 else:
                     xlabel = "X ({})".format(core_label_x)
                     ylabel = "Y ({})".format(core_label_y)

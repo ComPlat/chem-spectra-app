@@ -1,10 +1,11 @@
 import io
-from typing import Sequence
 import zipfile
 import math
 import os.path as os_path
 from os.path import basename
 import collections.abc
+
+from chem_spectra.controller.helper.lcms import extract_lcms_params, LCMS_PARAM_KEYS
 
 
 ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw', 'mzml', 'mzxml', 'jcamp'])
@@ -37,6 +38,71 @@ def to_zip_response(src_tmp_arr, filename=False, src_idx=-1):
     memory.seek(0)
     for tmp in tmp_arr:
         tmp.close()
+    return memory
+
+
+def zip_base_stem_from_fname(fname):
+    """Stem of the uploaded file name (e.g. ``LCMS_OpenLab.zip`` → ``LCMS_OpenLab``)."""
+    if not fname:
+        return 'spectrum'
+    s = str(fname).replace('\\', '/').split('/')[-1]
+    parts = s.split('.')
+    if len(parts) > 2 and parts[-2] in ('edit', 'peak'):
+        base = '.'.join(parts[:-2])
+    elif len(parts) > 1:
+        base = '.'.join(parts[:-1])
+    else:
+        base = parts[0]
+    return base.replace(' ', '_')
+
+
+def to_zip_flat_bagit_response(dst_list, fname, entry_stems):
+    """Build a single-level zip (no ``curve_N/`` folders) for ELN clients.
+
+    Each spectrum row becomes files named ``{zip_base}_{entry_stem}.{ext}`` at
+    the archive root. Combined preview uses ``{zip_base}_combined.{ext}``.
+    """
+    base = zip_base_stem_from_fname(fname)
+    memory = io.BytesIO()
+    used = set()
+    curve_idx = 0
+    with zipfile.ZipFile(memory, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for sub in dst_list:
+            if isinstance(sub, (list, tuple)):
+                stem = (
+                    entry_stems[curve_idx]
+                    if curve_idx < len(entry_stems)
+                    else str(curve_idx)
+                )
+                curve_idx += 1
+                sub_list = [el for el in sub if el]
+                for tmp in sub_list:
+                    abs_path = tmp.name
+                    ext = basename(abs_path).split('.')[-1]
+                    arc = f'{base}_{stem}.{ext}'.replace(' ', '_')
+                    n = 0
+                    while arc in used:
+                        n += 1
+                        arc = f'{base}_{stem}_{n}.{ext}'.replace(' ', '_')
+                    used.add(arc)
+                    zf.write(abs_path, arc)
+                for tmp in sub_list:
+                    tmp.close()
+            else:
+                tmp = sub
+                if not tmp:
+                    continue
+                abs_path = tmp.name
+                ext = basename(abs_path).split('.')[-1]
+                arc = f'{base}_combined.{ext}'.replace(' ', '_')
+                n = 0
+                while arc in used:
+                    n += 1
+                    arc = f'{base}_combined_{n}.{ext}'.replace(' ', '_')
+                used.add(arc)
+                zf.write(abs_path, arc)
+                tmp.close()
+    memory.seek(0)
     return memory
 
 
@@ -108,6 +174,7 @@ def extract_params(request):
     data_type_mapping = request.form.get('data_type_mapping', default='')
     detector = request.form.get('detector', default=None)
     dsc_meta_data = request.form.get('dsc_meta_data', default=None)
+    lcms_params = extract_lcms_params(request)
 
     params = {
         'peaks_str': request.form.get('peaks_str', default=None),
@@ -133,6 +200,7 @@ def extract_params(request):
         'data_type_mapping': data_type_mapping,
         'detector': detector,
         'dsc_meta_data': dsc_meta_data,
+        **lcms_params,
     }
     has_params = (
         params.get('peaks_str') or
@@ -149,7 +217,8 @@ def extract_params(request):
         params.get('integration') or
         params.get('multiplicity') or
         params.get('fname') or
-        params.get('simulatenmr')
+        params.get('simulatenmr') or
+        any(params.get(key) for key in LCMS_PARAM_KEYS)
     )
     if not has_params:
         params = False
