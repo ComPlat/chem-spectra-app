@@ -103,7 +103,11 @@ def _copy_to_named_tmp(path: str) -> tempfile.NamedTemporaryFile:
     suffix = '_{}'.format(base) if base else (os.path.splitext(path)[1] or '')
     tf = tempfile.NamedTemporaryFile(suffix=suffix)
     with open(path, 'rb') as src:
-        tf.write(src.read())
+        while True:
+            chunk = src.read(1024 * 1024)
+            if not chunk:
+                break
+            tf.write(chunk)
     tf.seek(0)
     return tf
 
