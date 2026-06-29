@@ -176,17 +176,17 @@ class TransformerModel:
 
     def zip2cvp(self):
         with tempfile.TemporaryDirectory() as td:
-            tz = store_byte_in_tmp(self.file.bcore, suffix='.zip')
-            with zipfile.ZipFile(tz.name, 'r') as z:
-                # Guard against Zip Slip (directory traversal) attacks.
-                td_real = os.path.realpath(td) + os.sep
-                for member in z.infolist():
-                    member_path = os.path.realpath(
-                        os.path.join(td, member.filename)
-                    )
-                    if not member_path.startswith(td_real):
-                        return False, False, False
-                z.extractall(td)
+            with store_byte_in_tmp(self.file.bcore, suffix='.zip') as tz:
+                with zipfile.ZipFile(tz.name, 'r') as z:
+                    # Guard against Zip Slip (directory traversal) attacks.
+                    td_real = os.path.realpath(td) + os.sep
+                    for member in z.infolist():
+                        member_path = os.path.realpath(
+                            os.path.join(td, member.filename)
+                        )
+                        if not member_path.startswith(td_real):
+                            return False, False, False
+                    z.extractall(td)
             target_dir, has_processed_files = search_brucker_binary(td)
             if target_dir:
                 # NMR data
@@ -214,7 +214,7 @@ class TransformerModel:
 
             is_bagit = search_bag_it_file(td)
             if is_bagit:
-                bagcv = BagItBaseConverter(td, self.params, self.file.name)
+                bagcv = BagItBaseConverter(is_bagit, self.params, self.file.name)
                 return bagcv, bagcv, False
 
             jdx_dir = search_jdx_dir(td)
