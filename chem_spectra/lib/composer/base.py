@@ -382,7 +382,7 @@ class BaseComposer:
                         '({}, {}, {})\n'.format(
                             mk_idx,
                             p['x'] - self.refShift,
-                            p['y'] - self.refShift,
+                            p['y'],
                         ),
                     ])
             return table
