@@ -304,7 +304,24 @@ def _extract_ms_page_first_page_from_path(path: str) -> Tuple[List[float], List[
                     or "##PEAK TABLE" in upper
                     or "##XYDATA" in upper
                 ):
-                    xs, ys = _extract_xy_from_lines(lines, idx + 1)
+                    # Stream the first spectrum block (avoid reading the whole file).
+                    xs: List[float] = []
+                    ys: List[float] = []
+                    for raw_data in handle:
+                        data_line = raw_data.rstrip("\n\r")
+                        data_upper = data_line.strip().upper()
+                        if data_upper.startswith("##") or data_upper.startswith("$$"):
+                            break
+                        numbers = _FLOAT_RE.findall(data_line.replace(";", " "))
+                        if len(numbers) < 2:
+                            continue
+                        for j in range(0, len(numbers) - 1, 2):
+                            x_val = _as_float(numbers[j])
+                            y_val = _as_float(numbers[j + 1])
+                            if x_val is None or y_val is None:
+                                continue
+                            xs.append(x_val)
+                            ys.append(y_val)
                     if xs and ys:
                         thr = threshold
                         if thr is not None and thr > 1.0:
@@ -924,8 +941,6 @@ def lcms_preview_image_from_jdx_files(
 
 
 def lcms_df_from_peak_jdx(jdx_path: str) -> Optional[pd.DataFrame]:
-    import pandas as pd
-    
     if not jdx_path or not os.path.exists(jdx_path):
         return None
     
@@ -986,7 +1001,7 @@ def lcms_df_from_peak_jdx(jdx_path: str) -> Optional[pd.DataFrame]:
             df = pd.DataFrame(rows, columns=['RetentionTime', 'DetectorSignal', 'wavelength'])
             return df
         return None
-    except Exception as e:
+    except Exception:
         return None
 
 
