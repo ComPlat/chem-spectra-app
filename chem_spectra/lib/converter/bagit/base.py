@@ -82,6 +82,7 @@ class BagItBaseConverter:
         )
 
         self.archive_entry_stems = archive_stems
+        self._composers = list_composer
 
         combined_image = self.__combine_images(list_composer)
 
@@ -95,6 +96,33 @@ class BagItBaseConverter:
             jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
             list_jcamps.append(jcamp)
         return list_jcamps
+
+    @property
+    def spc_type(self):
+        """Derive the spectrum type label from the contained composers.
+
+        Returns the actual type (e.g. ``'NMR SPECTRUM'``, ``'INFRARED
+        SPECTRUM'``, ``'lcms'``) rather than a blanket ``'bagit'``, so
+        callers can distinguish NMR / CV / UVVIS / LC-MS BagIt payloads.
+        """
+        composers = getattr(self, '_composers', None) or []
+        if not composers:
+            return 'bagit'
+
+        types = set()
+        for c in composers:
+            if isinstance(c, LCMSConverterAppComposer):
+                types.add('lcms')
+            elif hasattr(c, 'core'):
+                core = c.core
+                if getattr(core, 'typ', None) == 'NMR':
+                    types.add(getattr(core, 'ncl', 'NMR'))
+                else:
+                    types.add(getattr(core, 'typ', ''))
+
+        if len(types) == 1:
+            return types.pop()
+        return 'bagit'
 
     def __combine_images(self, list_composer, list_file_names = None):
         if len(list_composer) <= 1:

@@ -77,7 +77,7 @@ def zip_jcamp_n_img():
                     as_attachment=True
                 )
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': 'bagit', 'invalid_molfile': invalid_molfile})
+            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': cmpsr.spc_type, 'invalid_molfile': invalid_molfile})
         elif isinstance(cmpsr, collections.abc.Sequence):
             dst_list = []
             spc_type = ''
