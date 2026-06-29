@@ -10,7 +10,7 @@ class FileContainer:
         self.name = src and src.filename
         self.mimetype = src and src.mimetype
         self.bcore = src and src.stream.read()
-        if (self.mimetype in ['application/zip', 'application/octet-stream']) and zipfile.is_zipfile(src):
+        if src and zipfile.is_zipfile(src):
             with zipfile.ZipFile(src) as z:
                 total_file_size = sum(e.file_size for e in z.infolist())
                 try:
