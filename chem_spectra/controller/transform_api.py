@@ -100,7 +100,7 @@ def zip_jcamp_n_img():
             tf_jcamp = cmpsr.tf_jcamp()
             tf_img = cmpsr.tf_img()
             tf_csv = cmpsr.tf_csv()
-            spc_type = 'hplc'
+            spc_type = 'lcms'
             if (tf_csv is not None and tf_csv != False):
                 memory = to_zip_response([tf_jcamp, tf_img, tf_csv])
             else:
