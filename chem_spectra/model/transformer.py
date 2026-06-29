@@ -185,10 +185,7 @@ class TransformerModel:
                         os.path.join(td, member.filename)
                     )
                     if not member_path.startswith(td_real):
-                        raise ValueError(
-                            "Zip entry escapes target directory: "
-                            f"{member.filename}"
-                        )
+                        return False, False, False
                 z.extractall(td)
             target_dir, has_processed_files = search_brucker_binary(td)
             if target_dir:

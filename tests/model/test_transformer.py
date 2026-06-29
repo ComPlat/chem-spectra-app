@@ -327,3 +327,16 @@ def test_zip2cvp_returns_false_when_no_recognised_content():
     assert converter is False
     assert composer is False
     assert invalid_molfile is False
+
+
+def test_zip2cvp_returns_false_on_zip_slip_attempt():
+    """A zip file containing directory traversal paths (Zip Slip) must fail
+    closed by returning (False, False, False) rather than raising an uncaught exception."""
+    file = _make_zip_filecontainer('zip_slip.zip', {
+        '../../escape.txt': 'malicious content',
+    })
+    transformer = TransformerModel(file, params={'fname': 'zip_slip.zip', 'ext': 'zip'})
+    converter, composer, invalid_molfile = transformer.zip2cvp()
+    assert converter is False
+    assert composer is False
+    assert invalid_molfile is False
