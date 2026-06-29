@@ -108,7 +108,7 @@ def test_mixed_bagit_keeps_existing_branches_and_adds_lcms_group():
 
         assert converter.data is not None
         assert len(converter.data) == 4
-        assert converter.combined_image is None
+        assert converter.combined_image is not None
 
 
 def test_pure_cv_bagit_remains_strictly_master_compatible():

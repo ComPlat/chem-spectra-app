@@ -124,11 +124,11 @@ class BagItBaseConverter:
             return types.pop()
         return 'bagit'
 
-    def __combine_images(self, list_composer, list_file_names = None):
-        if len(list_composer) <= 1:
+    def __combine_images(self, list_composer, list_file_names=None):
+        non_lcms = [c for c in list_composer if not isinstance(c, LCMSConverterAppComposer)]
+        if len(non_lcms) <= 1:
             return None
-        if any(isinstance(c, LCMSConverterAppComposer) for c in list_composer):
-            return None
+        list_composer = non_lcms
         if isinstance(list_composer[0].core, JcampMSConverter):
             return None
 
