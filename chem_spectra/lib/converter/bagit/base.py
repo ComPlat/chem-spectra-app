@@ -67,6 +67,8 @@ class BagItBaseConverter:
                 pass
 
         for file_name in list_file_names:
+            if not file_name.lower().endswith('.jdx'):
+                continue
             jcamp_path = os.path.join(data_dir_path, file_name)
             stem = os.path.splitext(file_name)[0].replace('.', '_')
             base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
