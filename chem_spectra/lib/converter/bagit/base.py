@@ -8,6 +8,7 @@ from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.composer.ni import NIComposer
+from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 from chem_spectra.lib.converter.share import parse_params
 from chem_spectra.lib.converter.bagit.lcms_builder import append_lcms_group
@@ -51,28 +52,51 @@ class BagItBaseConverter:
         list_composer = []
         lcms_paths = []
         archive_stems = []
+        # Determine if there is any LC/MS or UV-Vis context to group MS files.
+        has_lcms_context = False
+        for file_name in list_file_names:
+            if not file_name.lower().endswith('.jdx'):
+                continue
+            jcamp_path = os.path.join(data_dir_path, file_name)
+            try:
+                base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
+                if base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS'):
+                    has_lcms_context = True
+                    break
+            except Exception:
+                pass
+
         for file_name in list_file_names:
             jcamp_path = os.path.join(data_dir_path, file_name)
             stem = os.path.splitext(file_name)[0].replace('.', '_')
             base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
             # BagIt / flat LCMS zips: keep all chromatogram and MS traces in one
             # LCMSConverterAppComposer (incl. MASS SPECTRUM), not JcampMSConverter/ms.py.
-            if base_cv.typ in ('MS', 'LC/MS', 'UVVIS', 'HPLC UVVIS'):
+            is_lcms_candidate = base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS') or (base_cv.typ == 'MS' and has_lcms_context)
+            if is_lcms_candidate:
                 lcms_paths.append(jcamp_path)
             else:
                 try:
-                    nicv = JcampNIConverter(base_cv)
+                    if base_cv.typ == 'MS':
+                        # Standalone MS path
+                        mscv = JcampMSConverter(base_cv)
+                        nicp = MSComposer(mscv)
+                    else:
+                        nicv = JcampNIConverter(base_cv)
+                        nicp = NIComposer(nicv)
                 except KeyError as err:
                     print(f"Skip empty JCAMP {file_name}: {err}")
                     continue
-                nicp = NIComposer(nicv)
                 list_composer.append(nicp)
                 tf_jcamp = nicp.tf_jcamp()
                 list_files.append(tf_jcamp)
                 tf_img = nicp.tf_img()
                 list_images.append(tf_img)
-                tf_csv = nicp.tf_csv()
-                list_csv.append(tf_csv)
+                if base_cv.typ == 'MS':
+                    list_csv.append(None)
+                else:
+                    tf_csv = nicp.tf_csv()
+                    list_csv.append(tf_csv)
                 archive_stems.append(stem)
 
         append_lcms_group(
@@ -125,12 +149,14 @@ class BagItBaseConverter:
         return 'bagit'
 
     def __combine_images(self, list_composer, list_file_names=None):
-        non_lcms = [c for c in list_composer if not isinstance(c, LCMSConverterAppComposer)]
-        if len(non_lcms) <= 1:
+        non_lcms_ni = [
+            c for c in list_composer
+            if not isinstance(c, LCMSConverterAppComposer)
+            and not isinstance(c.core, JcampMSConverter)
+        ]
+        if len(non_lcms_ni) <= 1:
             return None
-        list_composer = non_lcms
-        if isinstance(list_composer[0].core, JcampMSConverter):
-            return None
+        list_composer = non_lcms_ni
 
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14
