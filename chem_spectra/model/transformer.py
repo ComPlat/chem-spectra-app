@@ -176,6 +176,17 @@ class TransformerModel:
         with tempfile.TemporaryDirectory() as td:
             tz = store_byte_in_tmp(self.file.bcore, suffix='.zip')
             with zipfile.ZipFile(tz.name, 'r') as z:
+                # Guard against Zip Slip (directory traversal) attacks.
+                td_real = os.path.realpath(td) + os.sep
+                for member in z.infolist():
+                    member_path = os.path.realpath(
+                        os.path.join(td, member.filename)
+                    )
+                    if not member_path.startswith(td_real):
+                        raise ValueError(
+                            "Zip entry escapes target directory: "
+                            f"{member.filename}"
+                        )
                 z.extractall(td)
             target_dir, has_processed_files = search_brucker_binary(td)
             if target_dir:
