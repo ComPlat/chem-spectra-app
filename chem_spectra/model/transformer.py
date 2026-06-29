@@ -80,10 +80,12 @@ def search_jdx_dir(td):
 
         if _has_jdx(td):
             return td
+        subdirs = []
         for entry in os.listdir(td):
             sub = os.path.join(td, entry)
             if os.path.isdir(sub) and _has_jdx(sub):
-                return sub
+                subdirs.append(sub)
+        return subdirs[0] if len(subdirs) == 1 else False
     except OSError:
         return False
     return False
