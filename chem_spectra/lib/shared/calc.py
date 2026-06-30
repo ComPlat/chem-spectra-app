@@ -51,6 +51,8 @@ def get_curve_endpoint(xs, ys, x1, x2):
         if toggle and not (xL <= val and val <= xU):
             toggle = False
             iU = idx
+    if toggle:
+        iU = len(xs)
     return iL, iU
 
 
