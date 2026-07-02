@@ -14,6 +14,7 @@ import csv
 from chem_spectra.lib.composer.base import (  # noqa: E402, F401
     extrac_dic, calc_npoints, BaseComposer
 )
+from chem_spectra.lib.composer.integration_utils import group_visual_splits  # noqa: E402
 from chem_spectra.lib.shared.calc import (  # noqa: E402
     calc_mpy_center, calc_ks, get_curve_endpoint, cal_slope, cal_xyIntegration,
 )
@@ -181,6 +182,21 @@ class NIComposer(BaseComposer):
             '##$OBSERVEDINTEGRALS= (X Y Z)\n',
         ]
 
+    def __gen_headers_integration_groups(self):
+        return [
+            '##$OBSERVEDINTEGRALSGROUPS= (X Y)\n',
+        ]
+
+    def __gen_headers_csit_factor(self):
+        return [
+            '##$CSITFACTOR=\n',
+        ]
+
+    def __gen_headers_csit_area(self):
+        return [
+            '##$CSITAREA=\n',
+        ]
+
     def __gen_headers_mpy_integ(self):
         return [
             '##$OBSERVEDMULTIPLETS=\n',
@@ -338,12 +354,27 @@ class NIComposer(BaseComposer):
         meta.extend(self.__gen_header_user_input_meta_data())
         meta.extend(self.gen_spectrum_orig())
         meta.extend(self.__gen_headers_im())
-        meta.extend(self.__gen_headers_integration())
-        meta.extend(self.gen_integration_info())
-        meta.extend(self.__gen_headers_mpy_integ())
-        meta.extend(self.gen_mpy_integ_info())
-        meta.extend(self.__gen_headers_mpy_peaks())
-        meta.extend(self.gen_mpy_peaks_info())
+        integration_info = self.gen_integration_info()
+        if integration_info:
+            meta.extend(self.__gen_headers_integration())
+            meta.extend(integration_info)
+        integration_groups = self.gen_integration_groups_info()
+        if integration_groups:
+            meta.extend(self.__gen_headers_integration_groups())
+            meta.extend(integration_groups)
+        csit_factor = self.gen_csit_factor_info()
+        if csit_factor:
+            meta.extend(self.__gen_headers_csit_factor())
+            meta.extend(csit_factor)
+        csit_area = self.gen_csit_area_info()
+        if csit_area:
+            meta.extend(self.__gen_headers_csit_area())
+            meta.extend(csit_area)
+        if not self.core.non_nmr:
+            meta.extend(self.__gen_headers_mpy_integ())
+            meta.extend(self.gen_mpy_integ_info())
+            meta.extend(self.__gen_headers_mpy_peaks())
+            meta.extend(self.gen_mpy_peaks_info())
         meta.extend(self.__gen_header_simulation())
         meta.extend(self.gen_simulation_info())
         if self.core.is_cyclic_volta:
@@ -546,8 +577,8 @@ class NIComposer(BaseComposer):
                     self.all_itgs.append({'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)})    # noqa: E501
         
 
-        # ----- Calculate multiplicity -----
-        if (len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
+        # ----- Calculate multiplicity (NMR only) -----
+        if (not self.core.non_nmr and len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
             core_mpy_pks_table = self.core.mpy_pks_table[0]
             mpy_pks_table = core_mpy_pks_table.split('\n')
             tmp_dic_mpy_peaks = {}
@@ -591,20 +622,21 @@ class NIComposer(BaseComposer):
         itg_value_position_y = y_min - h * 0.25
         if (len(self.mpys) == 0):
             itg_value_position_y =  y_min - h * 0.05
-        y_boundary_max = self.__draw_integrals(plt, refShift, refArea, y_max, h, itg_value_position_y, itg_h)
+        y_boundary_max = self.__draw_integrals(plt, refShift, refArea, y_max, h, itg_value_position_y)
         y_boundary_min = itg_value_position_y - h * 0.1
         
-        # ----- PLOT multiplicity -----
-        mpy_h = y_min - h * 0.03
-        for mpy in self.mpys:
-            xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']    # noqa: E501
-            plt.plot([xL, xU], [mpy_h, mpy_h], color='#DA70D6')
-            plt.plot([xL, xL], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
-            plt.plot([xU, xU], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
-            plt.text((xL + xU) / 2, mpy_h - h * 0.01, '{:0.3f} ({})'.format(calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType']), typ), color='#DA70D6', size=7, rotation=90., ha='right', va='top', rotation_mode='anchor')  # noqa: E501
-            for p in peaks:
-                x = p['x']
-                plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.02], color='#DA70D6')  # noqa: E501
+        # ----- PLOT multiplicity (NMR only) -----
+        if not self.core.non_nmr:
+            mpy_h = y_min - h * 0.03
+            for mpy in self.mpys:
+                xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']    # noqa: E501
+                plt.plot([xL, xU], [mpy_h, mpy_h], color='#DA70D6')
+                plt.plot([xL, xL], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
+                plt.plot([xU, xU], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
+                plt.text((xL + xU) / 2, mpy_h - h * 0.01, '{:0.3f} ({})'.format(calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType']), typ), color='#DA70D6', size=7, rotation=90., ha='right', va='top', rotation_mode='anchor')  # noqa: E501
+                for p in peaks:
+                    x = p['x']
+                    plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.02], color='#DA70D6')  # noqa: E501
 
         # PLOT label
         if (self.core.is_xrd):
@@ -675,44 +707,83 @@ class NIComposer(BaseComposer):
         return tf_img
     
 
-    def __draw_integrals(self, plt, refShift, refArea, y_max, h, itg_value_position_y, itg_h):
+    def __uses_auc_drawing(self):
+        return self.core.is_hplc_uv_vis or self.core.is_uv_vis
+
+    def __baseline_y_at(self, x, x_left, y_left, x_right, y_right):
+        if x_right == x_left:
+            return y_left
+        slope = cal_slope(x_left, y_left, x_right, y_right)
+        return slope * (x - x_left) + y_left
+
+    def __y_on_curve_at(self, x, xs, ys):
+        if len(xs) == 0:
+            return 0
+        idx = int(np.argmin(np.abs(xs - x)))
+        return ys[idx]
+
+    def __draw_hplc_auc_region(self, plt, xL, xU, split_xs=None):
+        iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
+        cxs = self.core.xs[iL:iU]
+        cys = self.core.ys[iL:iU]
+        if len(cxs) == 0:
+            return
+        slope = cal_slope(cxs[0], cys[0], cxs[-1], cys[-1])
+        aucys = [cys[0]]
+        for i in range(1, len(cys)):
+            aucys.append(slope * (cxs[i] - cxs[0]) + cys[0])
+        plt.fill_between(cxs, y1=cys, y2=aucys, alpha=0.2, color='#FF0000')
+        for x_split in (split_xs or []):
+            if x_split <= xL or x_split >= xU:
+                continue
+            baseline_y = self.__baseline_y_at(x_split, cxs[0], cys[0], cxs[-1], cys[-1])
+            curve_y = self.__y_on_curve_at(x_split, cxs, cys)
+            y_lo, y_hi = sorted([baseline_y, curve_y])
+            plt.plot(
+                [x_split, x_split], [y_lo, y_hi],
+                color='#FF0000', linewidth=1.5, solid_capstyle='butt',
+            )
+
+    def __draw_integrals(self, plt, refShift, refArea, y_max, h, itg_value_position_y):
         y_boundary_max = y_max
-        for itg in self.all_itgs:
-            # integration marker
-            xL, xU, area = itg['xL'] - refShift, itg['xU'] - refShift, itg['area'] * refArea    # noqa: E501
-            # integration curve
+        if self.__uses_auc_drawing():
+            draw_groups = group_visual_splits(self.all_itgs, ref_shift=refShift)
+        else:
+            draw_groups = [
+                {'items': [itg], 'split_xs': []}
+                for itg in self.all_itgs
+            ]
+        for group in draw_groups:
+            items = group['items']
+            split_xs = group['split_xs']
+            xL = items[0]['xL'] - refShift
+            xU = items[-1]['xU'] - refShift
+
+            if self.__uses_auc_drawing():
+                self.__draw_hplc_auc_region(plt, xL, xU, split_xs)
+                continue
+
             ks = calc_ks(self.core.ys, y_max, h)
             iL, iU = get_curve_endpoint(self.core.xs, self.core.ys, xL, xU)
             ref = ks[iL]
             cxs = self.core.xs[iL:iU]
 
-            if self.core.is_hplc_uv_vis:
-                # fill area under curve
-                cys = self.core.ys[iL:iU]
-                slope = cal_slope(cxs[0], cys[0], cxs[len(cxs)-1], cys[len(cys)-1])  # noqa: E501
-                last_y = cys[0]
-                last_x = cxs[0]
-                aucys = [last_y]
-                for i in range(1, len(cys)):
-                    curr_x = cxs[i]
-                    curr_y = slope*(curr_x-last_x) + last_y
-                    aucys.append(curr_y)
-                    last_x = curr_x
-                    last_y = curr_y
-                plt.fill_between(cxs, y1=cys, y2=aucys, alpha=0.2, color='#FF0000')  # noqa: E501
-            else:
-                # display integration
-                plt.plot([xL, xU], [itg_value_position_y, itg_value_position_y], color='#228B22')
-                plt.plot([xL, xL], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
-                plt.plot([xU, xU], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
-                plt.text((xL + xU) / 2, itg_value_position_y - h * 0.01, '{:0.2f}'.format(area), color='#228B22', ha='right', rotation_mode='anchor', size=7, rotation=90.)   # noqa: E501
-                cys = (ks[iL:iU] - ref) * 1.5 + h * 0.15
-                plt.plot(cxs, cys, color='#228B22')
-                try:
-                    cys_max = np.max(cys)
-                    y_boundary_max = max(y_boundary_max, cys_max + h*0.1)
-                except:
-                    pass
+            for itg in items:
+                itg_xL = itg['xL'] - refShift
+                itg_xU = itg['xU'] - refShift
+                itg_area = float(itg.get('area') or 0) * refArea
+                plt.plot([itg_xL, itg_xU], [itg_value_position_y, itg_value_position_y], color='#228B22')
+                plt.plot([itg_xL, itg_xL], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
+                plt.plot([itg_xU, itg_xU], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
+                plt.text((itg_xL + itg_xU) / 2, itg_value_position_y - h * 0.01, '{:0.2f}'.format(itg_area), color='#228B22', ha='right', rotation_mode='anchor', size=7, rotation=90.)   # noqa: E501
+
+            cys = (ks[iL:iU] - ref) * 1.5 + h * 0.15
+            plt.plot(cxs, cys, color='#228B22')
+            try:
+                cys_max = np.max(cys)
+                y_boundary_max = max(y_boundary_max, cys_max + h * 0.1)
+            except Exception:
+                pass
 
         return y_boundary_max
         
