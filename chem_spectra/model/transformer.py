@@ -273,7 +273,7 @@ class TransformerModel:
             mscv = JcampMSConverter(jbcv)
             mscp = MSComposer(mscv)
             return mscv, mscp, invalid_molfile
-        if jbcv.typ in ('LC/MS', 'HPLC UVVIS'):
+        if jbcv.typ == 'LC/MS':
             lcms_cp = build_lcms_composer([tf.name], self.params)
             tf.close()
             if lcms_cp is not None:
