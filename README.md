@@ -12,8 +12,12 @@ The frontend is provided by [chem-spectra-client](https://github.com/ComPlat/che
 ## Documentation
 
 1. [Installation](INSTALL.md)
-2. [Demo & step-by-step manual](https://github.com/ComPlat/react-spectra-editor/blob/master/DEMO_MANUAL.md)
-3. Software's [Archicture](./docs/ARCHITECTURE.md)
+2. [Developer onboarding](docs/onboarding.md)
+3. [Backend architecture](docs/architecture.md)
+4. [API reference](docs/api-reference.md)
+5. [Core runtime flows](docs/core-flows.md)
+6. [Diagram maintenance](docs/dev/diagrams.md)
+7. [Demo & step-by-step manual](https://github.com/ComPlat/react-spectra-editor/blob/master/DEMO_MANUAL.md)
 
 ### Run test
 

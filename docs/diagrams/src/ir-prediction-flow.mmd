@@ -1,0 +1,55 @@
+flowchart LR
+  Request["IR prediction request\nspectrum and molfile"]
+
+  subgraph controller [Controller]
+    Controller["inference_api.py\nIR route"]
+    FileContainer["FileContainer\nwrap uploaded files"]
+  end
+
+  subgraph model [Model]
+    Molecule["MoleculeModel\nRDKit molecule"]
+    FunctionalGroups["MoleculeModel.fgs()\nfunctional groups"]
+    Inferencer["InferencerModel.predict_ir()"]
+  end
+
+  subgraph lib [Lib]
+    Infrared["InfraredLib.standarize()\nnormalize spectrum"]
+    Artist["ArtistLib.draw_ir()\nSVG enrichment"]
+  end
+
+  subgraph external [External Service]
+    DeepIR["URL_DEEPIR\nIR prediction"]
+  end
+
+  Response["JSON response\noutline output svgs"]
+  Error["abort(400) or outline 503"]
+
+  Request --> Controller
+  Controller --> FileContainer
+  FileContainer --> Molecule
+  Controller --> Inferencer
+  Molecule --> Inferencer
+  Inferencer --> Infrared
+  Inferencer --> FunctionalGroups
+  Infrared -.-> DeepIR
+  FunctionalGroups -.-> DeepIR
+  DeepIR -.-> Inferencer
+  Inferencer --> Artist
+  Artist --> Response
+  Inferencer --> Error
+
+  classDef request fill:#eef5ff,stroke:#4c78a8,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef lib fill:#f2efff,stroke:#8f63c6,stroke-width:1px
+  classDef external fill:#fff4e6,stroke:#f28e2b,stroke-width:1px
+  classDef output fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+  classDef error fill:#fdecea,stroke:#e15759,stroke-width:1px
+
+  class Request request
+  class Controller,FileContainer controller
+  class Molecule,FunctionalGroups,Inferencer model
+  class Infrared,Artist lib
+  class DeepIR external
+  class Response output
+  class Error error
