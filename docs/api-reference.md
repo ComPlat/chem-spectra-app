@@ -42,4 +42,4 @@ Use `docs/architecture.md` for component boundaries and `docs/core-flows.md` for
 
 | Route | Handler | Main input | Main output |
 |---|---|---|---|
-| `GET /api/v1/chemspectra/spectra_layouts` | `get_spectra_layouts()` | none | JSON layout mapping from JCAMP data type configuration |
+| `GET /api/v1/chemspectra/spectra_layouts` | `fetch_mapping()` | none | JSON layout mapping from JCAMP data type configuration |
