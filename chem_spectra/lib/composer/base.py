@@ -31,7 +31,7 @@ def coupling_string(js):
     return ', ' + ' '.join([str(j) for j in js])
 
 
-def is_metadata_to_be_ignored(keyword):
+def is_metadata_to_be_ignored(keyword, is_ntuples=False):
     chemspectra_managed = {
         '$OBSERVEDINTEGRALS',
         '$OBSERVEDINTEGRALSGROUPS',
@@ -42,6 +42,13 @@ def is_metadata_to_be_ignored(keyword):
     }
     if keyword in chemspectra_managed:
         return True
+    if keyword == 'XYPOINTS':
+        # XYPOINTS is the authoritative data table for XYPOINTS-classified
+        # spectra (e.g. HPLC) and must stay in the original-metadata dump.
+        # For NTUPLES-classified spectra (e.g. MASS SPECTRUM / LC-MS) it's
+        # a stray leftover LDR that duplicates the NTUPLES data table, so
+        # it should be suppressed like XYDATA/XYDATA_OLD already are.
+        return is_ntuples
     return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE', 'DATACLASS']
 
 
@@ -137,8 +144,9 @@ class BaseComposer:
         content = self.__header_original_metadata()
         if self.core.dic is None: return content
 
+        is_ntuples = 'NTUPLES' in (self.core.dic.get('DATACLASS') or [])
         for key, value in self.core.dic.items():
-            if is_metadata_to_be_ignored(key):
+            if is_metadata_to_be_ignored(key, is_ntuples):
                 continue
             str_value = value
             str_key = key

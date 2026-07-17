@@ -21,3 +21,5 @@ build/
 !/chem_spectra/tmp/.keep
 
 /src/
+
+CLAUDE.md
