@@ -1,9 +1,10 @@
-import matplotlib.pyplot as plt
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
+# NIComposer selects the Agg backend on import, so import pyplot after it
 from chem_spectra.lib.composer.ni import NIComposer
+import matplotlib.pyplot as plt  # noqa: E402
 
 source_nmr = './tests/fixtures/source/1H.dx'
 
@@ -82,13 +83,12 @@ def test_plot_overlays_returns_boundaries(ni_composer):
     ni_composer.core.mpy_itg_table = ['(1, 1.0, 2.0, 0.0, 1.0, 0.0, m, 1.0)\n']
     ni_composer.core.mpy_pks_table = ['(1, 1.5, 100.0)\n']
 
-    plt.figure()
+    fig = plt.figure()
     try:
         y_boundary_min, y_boundary_max = ni_composer.plot_overlays(
             plt, adjust_xlim=False,
         )
     finally:
-        plt.clf()
-        plt.cla()
+        plt.close(fig)
 
     assert y_boundary_min < y_boundary_max
