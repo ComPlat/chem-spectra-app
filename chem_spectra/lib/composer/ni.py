@@ -423,6 +423,7 @@ class NIComposer(BaseComposer):
 
         if (not self.core.non_nmr and len(self.mpys) == 0
                 and len(self.core.mpy_itg_table) > 0
+                and len(self.core.mpy_pks_table) > 0
                 and not self.core.params['integration'].get('edited')
                 and ('originStack' not in self.core.params['integration'])):
             tmp_dic_mpy_peaks = {}
@@ -430,6 +431,8 @@ class NIComposer(BaseComposer):
             for peak in core_mpy_pks_table.split('\n'):
                 clear_peak = peak.replace('(', '').replace(')', '')
                 split_peak = clear_peak.split(',')
+                if len(split_peak) < 3:
+                    continue
                 idx_peakStr = split_peak[0].strip()
                 if idx_peakStr not in tmp_dic_mpy_peaks:
                     tmp_dic_mpy_peaks[idx_peakStr] = []
@@ -444,6 +447,11 @@ class NIComposer(BaseComposer):
                 if len(split_mpy) <= 7:
                     continue
                 idxStr = split_mpy[0].strip()
+                peaks = tmp_dic_mpy_peaks.get(idxStr, [])
+                if not peaks:
+                    # calc_mpy_center divides by the peak count, so a
+                    # multiplet without matching peaks cannot be drawn
+                    continue
                 mpy_item = {
                     'mpyType': split_mpy[6].strip(),
                     'xExtent': {
@@ -454,7 +462,7 @@ class NIComposer(BaseComposer):
                         'yL': float(split_mpy[3].strip()) + refShift,
                         'yU': float(split_mpy[4].strip()) + refShift,
                     },
-                    'peaks': tmp_dic_mpy_peaks.get(idxStr, []),
+                    'peaks': peaks,
                     'area': 1.0,
                 }
                 self.mpys.append(mpy_item)

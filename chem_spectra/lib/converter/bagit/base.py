@@ -2,6 +2,7 @@ import os
 import base64
 import tempfile
 import json
+import logging
 import math
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
@@ -15,6 +16,8 @@ from chem_spectra.lib.converter.bagit.lcms_builder import append_lcms_group
 import numpy as np  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib import ticker  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 
 class BagItBaseConverter:
@@ -166,7 +169,10 @@ class BagItBaseConverter:
         
         cv_mode = False
         cv_abs_max = 0.0
-        active_idx = self.params.get('jcamp_idx', 0) or 0
+        try:
+            active_idx = int(self.params.get('jcamp_idx', 0) or 0)
+        except (TypeError, ValueError):
+            active_idx = 0
         active_composer = None
         active_y_values = None
         for idx, composer in enumerate(list_composer):
@@ -246,7 +252,9 @@ class BagItBaseConverter:
                 ymin, ymax = plt.gca().get_ylim()
                 plt.ylim(min(ymin, y_boundary_min), max(ymax, y_boundary_max))
             except Exception:
-                pass
+                logger.exception(
+                    'combine_images: failed to draw overlays for active spectrum'
+                )
 
         if cv_mode and cv_abs_max > 0:
             exp = int(math.floor(math.log10(cv_abs_max))) if cv_abs_max > 0 else 0

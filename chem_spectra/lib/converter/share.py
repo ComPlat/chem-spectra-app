@@ -55,7 +55,10 @@ def parse_params(params):
     waveLength = json.loads(waveLength) if waveLength else default_wavelength
 
     jcamp_idx = params.get('jcamp_idx', 0)
-    jcamp_idx = jcamp_idx if jcamp_idx else 0
+    try:
+        jcamp_idx = int(jcamp_idx) if jcamp_idx else 0
+    except (TypeError, ValueError):
+        jcamp_idx = 0
     axesUnitsJson = params.get('axesUnits')
     axesUnitsDic = json.loads(axesUnitsJson) if axesUnitsJson else None
     axesUnits = None

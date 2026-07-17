@@ -1,4 +1,5 @@
 import json
+import logging
 import zipfile
 import tempfile
 import glob     # noqa: F401
@@ -24,6 +25,8 @@ import numpy as np  # noqa: E402
 from matplotlib import ticker  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
+
+logger = logging.getLogger(__name__)
 
 
 def find_dir(path, name):
@@ -326,7 +329,10 @@ class TransformerModel:
         plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
         plt.rcParams['legend.loc'] = 'upper left'
-        curve_idx = self.params.get('jcamp_idx', 0)
+        try:
+            curve_idx = int(self.params.get('jcamp_idx', 0) or 0)
+        except (TypeError, ValueError):
+            curve_idx = 0
 
         xlabel, ylabel = '', ''
         xlabel_set, ylabel_set = [], []
@@ -420,6 +426,14 @@ class TransformerModel:
                     active_y_values = y_values
                     if nicp.core.is_cyclic_volta:
                         nicp._cv_density_scale = scale
+                        # the combine endpoint may deliver the CV state only
+                        # via extraParams, in which case parse_params left
+                        # list_max_min_peaks empty
+                        if not nicp.core.params.get('list_max_min_peaks'):
+                            spectra_list = cv_state.get('spectraList') or []
+                            if 0 <= curve_idx < len(spectra_list):
+                                nicp.core.params['list_max_min_peaks'] = \
+                                    (spectra_list[curve_idx] or {}).get('list')
 
                 try:
                     x_max = np.max(xs)
@@ -463,7 +477,7 @@ class TransformerModel:
                 else:
                     plt.xlim(global_x_max, global_x_min)
         except Exception:
-            pass
+            logger.exception('tf_combine: failed to set global x-limits')
 
         if active_nicp is not None:
             try:
@@ -473,7 +487,9 @@ class TransformerModel:
                 ymin, ymax = plt.gca().get_ylim()
                 plt.ylim(min(ymin, y_boundary_min), max(ymax, y_boundary_max))
             except Exception:
-                pass
+                logger.exception(
+                    'tf_combine: failed to draw overlays for active spectrum'
+                )
 
         plt.xlabel(xlabel, fontsize=18)
         plt.ylabel(ylabel, fontsize=18)
