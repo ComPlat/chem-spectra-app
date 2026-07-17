@@ -41,6 +41,14 @@ def __target_peaks_meta(filename):
     return meta_target.read().decode('utf-8', errors='ignore')
 
 
+def __generated_composer(orig_filename, params=False):
+    with open(target_dir + source_dir + orig_filename, 'rb') as f:
+        file = FileContainer(FileStorage(f))
+        molfile = FileContainer(FileStorage(None))
+        _, composer, _ = TraModel(file, molfile, params).jcamp2cvp()
+    return composer
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #
 # generate peaks + origin files

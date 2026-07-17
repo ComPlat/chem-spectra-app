@@ -3,14 +3,14 @@ import zipfile
 from flask import current_app
 import logging
 
-DEFAULT_MAX_ZIP_SIZE = 100   #100MB
+DEFAULT_MAX_ZIP_SIZE = 200   # MB; raised from 100 to accommodate BagIt LCMS archives
 
 class FileContainer:
     def __init__(self, src=False):
         self.name = src and src.filename
         self.mimetype = src and src.mimetype
         self.bcore = src and src.stream.read()
-        if (self.mimetype in ['application/zip', 'application/octet-stream']) and zipfile.is_zipfile(src):
+        if src and zipfile.is_zipfile(src):
             with zipfile.ZipFile(src) as z:
                 total_file_size = sum(e.file_size for e in z.infolist())
                 try:

@@ -5,14 +5,19 @@ This backend web service provides NMR/IR/MS processing for jcamp/RAW/mzML files.
 ![GitHub release (release name instead of tag name)](https://img.shields.io/github/v/release/ComPlat/chem-spectra-app?include_prereleases&label=version)
 ![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)
 ![Testing](https://github.com/ComPlat/chem-spectra-app/actions/workflows/unit_test.yml/badge.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 The frontend is provided by [chem-spectra-client](https://github.com/ComPlat/chem-spectra-client).
 
 ## Documentation
 
 1. [Installation](INSTALL.md)
-2. [Demo & step-by-step manual](https://github.com/ComPlat/react-spectra-editor/blob/master/DEMO_MANUAL.md)
-3. Software's [Archicture](./docs/ARCHITECTURE.md)
+2. [Developer onboarding](docs/onboarding.md)
+3. [Backend architecture](docs/architecture.md)
+4. [API reference](docs/api-reference.md)
+5. [Core runtime flows](docs/core-flows.md)
+6. [Diagram maintenance](docs/dev/diagrams.md)
+7. [Demo & step-by-step manual](https://github.com/ComPlat/react-spectra-editor/blob/master/DEMO_MANUAL.md)
 
 ### Run test
 

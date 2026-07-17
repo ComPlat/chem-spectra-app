@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chem-spectra-app"
-version = "1.4.0"
+version = "1.5.1"
 requires-python = ">= 3.12"
 description = "A backend service to process files obtained from chemical spectroscopy."
-license = "AGPL-3.0-only"
+license = "MIT"
 readme = "README.md"
 keywords = ["chemistry", "spectra", "analysis"]
 classifiers = [
@@ -15,11 +15,11 @@ classifiers = [
     "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "flask==3.*",
-  "gunicorn==23.*",
+  "flask==2.*",
+  "gunicorn==22.*",
   "matplotlib==3.*",
   "netCDF4==1.*",
-  "numpy==2.*",
+  "numpy>=2.0,<2.4",
   "pymzml==2.*",
   "requests==2.*",
   "rdkit==2025.*",
@@ -27,7 +27,7 @@ dependencies = [
   "werkzeug==3.*",
   "scipy==1.*",
   "pyopenms==3.*",
-  "nmrglue@git+https://github.com/ComPlat/nmrglue.git@2e3893edff4892f5bc1645b3f0a7150cf9526109"
+  "nmrglue@git+https://github.com/ComPlat/nmrglue.git@2e3893edff4892f5bc1645b3f0a7150cf9526109",
 ]
 
 [project.optional-dependencies]

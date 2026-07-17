@@ -1,0 +1,50 @@
+%%{init: {"flowchart": {"nodeSpacing": 35, "rankSpacing": 45, "curve": "basis"}} }%%
+flowchart LR
+  ZipUpload["ZIP upload"]
+
+  FileContainer["FileContainer\nread bytes check MAX_ZIP_SIZE"]
+  Transformer["TransformerModel.zip2cvp()"]
+  TempDir["TemporaryDirectory\nextract ZIP"]
+  BrukerSearch{"Bruker FID?"}
+  ProcessedSearch{"Processed pdata?"}
+  RawBruker["FidBaseConverter\nraw FID"]
+  ProcessedBruker["FidHasBruckerProcessed\nprocessed spectra"]
+  Decorate["decorate_sim_property()\noptional simulated NMR"]
+  BrukerOutput["JcampNIConverter\nNIComposer or list"]
+  BagItSearch{"BagIt archive?"}
+  BagIt["BagItBaseConverter\nJCAMP images CSV image"]
+
+  Failure["False False False\nunsupported ZIP shape"]
+  Response["Controller response\nZIP JSON or abort"]
+
+  ZipUpload --> FileContainer
+  FileContainer --> Transformer
+  Transformer --> TempDir
+  TempDir --> BrukerSearch
+  BrukerSearch -->|"yes"| ProcessedSearch
+  ProcessedSearch -->|"no"| RawBruker
+  ProcessedSearch -->|"yes"| ProcessedBruker
+  RawBruker --> Decorate
+  ProcessedBruker --> Decorate
+  Decorate --> BrukerOutput
+  BrukerSearch -->|"no"| BagItSearch
+  BagItSearch -->|"yes"| BagIt
+  BagItSearch -->|"no"| Failure
+  BrukerOutput --> Response
+  BagIt --> Response
+  Failure --> Response
+
+  classDef request fill:#eef5ff,stroke:#4c78a8,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef decision fill:#fff8dc,stroke:#b07d12,stroke-width:1px
+  classDef lib fill:#f2efff,stroke:#8f63c6,stroke-width:1px
+  classDef output fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+  classDef error fill:#fdecea,stroke:#e15759,stroke-width:1px
+
+  class ZipUpload request
+  class FileContainer,Response controller
+  class Transformer,Decorate model
+  class BrukerSearch,ProcessedSearch,BagItSearch decision
+  class TempDir,RawBruker,ProcessedBruker,BrukerOutput,BagIt lib
+  class Failure error

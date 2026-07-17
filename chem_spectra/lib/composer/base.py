@@ -3,6 +3,13 @@ from chem_spectra.lib.shared.misc import is_number
 from chem_spectra.lib.shared.calc import (  # noqa: E402
     calc_mpy_center
 )
+from chem_spectra.lib.composer.integration_utils import (  # noqa: E402
+    build_integration_groups_lines,
+    build_integration_lines,
+    filter_valid_integrations,
+    integration_uses_auc_column,
+    serialize_integration_stack,
+)
 
 
 def extrac_dic(core, key):
@@ -25,6 +32,16 @@ def coupling_string(js):
 
 
 def is_metadata_to_be_ignored(keyword):
+    chemspectra_managed = {
+        '$OBSERVEDINTEGRALS',
+        '$OBSERVEDINTEGRALSGROUPS',
+        '$OBSERVEDMULTIPLETS',
+        '$OBSERVEDMULTIPLETSPEAKS',
+        '$CSITAREA',
+        '$CSITFACTOR',
+    }
+    if keyword in chemspectra_managed:
+        return True
     return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE', 'DATACLASS']
 
 
@@ -198,8 +215,16 @@ class BaseComposer:
 
         return content
 
+    def _join_meta(self, meta_lines):
+        for idx, item in enumerate(meta_lines):
+            if not isinstance(item, str):
+                raise TypeError(
+                    'meta item at index {} must be str, got {}'.format(idx, type(item).__name__)
+                )
+        return ''.join(meta_lines)
+
     def tf_jcamp(self):
-        meta = ''.join(self.meta)
+        meta = self._join_meta(self.meta)
         tf = tempfile.NamedTemporaryFile(suffix='.jdx')
         tf.write(bytes(meta, 'UTF-8'))
         tf.seek(0)
@@ -209,18 +234,21 @@ class BaseComposer:
         if not hasattr(self.core, 'params'):
             return
         core_itg = self.core.params.get('integration')
-        core_mpy = self.core.params.get('multiplicity')
-        if (not core_itg) or (not core_mpy):
+        core_mpy = self.core.params.get('multiplicity') or {}
+        if not core_itg:
             return
         rArea = core_itg.get('refArea') or 1
         rFact = core_itg.get('refFactor') or 1
         self.refArea = float(rFact) / float(rArea)
         self.refShift = core_itg.get('shift') or 0
         # = = = = =
-        itg_stack = core_itg.get('stack') or []
-        mpy_stack = core_mpy.get('stack') or []
-
+        itg_stack = filter_valid_integrations(core_itg.get('stack') or [])
         self.all_itgs = itg_stack
+        if getattr(self.core, 'non_nmr', True):
+            self.itgs = list(itg_stack)
+            return
+
+        mpy_stack = core_mpy.get('stack') or []
         for itg in itg_stack:
             skip = False
             for mpy in mpy_stack:
@@ -232,75 +260,117 @@ class BaseComposer:
             if not skip:
                 self.itgs.append(itg)
 
-    def gen_integration_info(self):
-        if len(self.itgs) > 0:
-            table = []
-            for itg in self.itgs:
-                absoluteArea = 0
-                if 'absoluteArea' in itg:
-                    absoluteArea = itg['absoluteArea']
-                table.extend([
-                    '({}, {}, {}, {})\n'.format(
-                        itg['xL'] - self.refShift,
-                        itg['xU'] - self.refShift,
-                        float(itg['area']) * self.refArea,
-                        absoluteArea,
-                    ),
-                ])
-            return table
-        elif self.core.params['integration'].get('edited'):
+    def _is_hplc_uv_vis(self):
+        return getattr(self.core, 'is_hplc_uv_vis', False)
+
+    def _supports_visual_split(self):
+        """Visual integration splits are HPLC/UV-Vis only; NMR keeps legacy behavior."""
+        return self._is_hplc_uv_vis() or getattr(self.core, 'is_uv_vis', False)
+
+    def _build_integration_lines(self, items):
+        use_auc_column = integration_uses_auc_column(items, self._is_hplc_uv_vis())
+        return build_integration_lines(items, self.refArea, self.refShift, use_auc_column)
+
+    def __serialize_multiplicity_stack(self, mpy_stack):
+        if not mpy_stack:
             return []
-        elif 'stack' in self.core.params['integration']:
-            itg_stack = self.core.params['integration']['stack'] or []
-            if 'originStack' not in self.core.params['integration']:
+        if isinstance(mpy_stack[0], str):
+            return mpy_stack
+        ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        table = []
+        for idx, mpy in enumerate(mpy_stack):
+            table.append(
+                '({}, {}, {}, {}, {}, {}, {}, {}{})\n'.format(
+                    idx + 1,
+                    mpy['xExtent']['xL'] - self.refShift,
+                    mpy['xExtent']['xU'] - self.refShift,
+                    calc_mpy_center(mpy['peaks'], self.refShift, mpy['mpyType']),   # noqa: E501
+                    float(mpy.get('area', 1)) * self.refArea,
+                    idx + 1,
+                    mpy['mpyType'],
+                    ascii_uppercase[idx],
+                    coupling_string(mpy.get('js', [])),
+                )
+            )
+        return table
+
+    def gen_integration_info(self):
+        core_itg = self.core.params.get('integration') or {}
+        if core_itg.get('edited'):
+            if len(self.itgs) > 0:
+                return self._build_integration_lines(self.itgs)
+            return []
+        if len(self.itgs) > 0:
+            return self._build_integration_lines(self.itgs)
+        if 'stack' in core_itg:
+            itg_stack = core_itg.get('stack') or []
+            if 'originStack' not in core_itg:
                 itg_stack = self.core.itg_table
 
             if len(itg_stack) == 0:
                 return []
-            if 'stack' in self.core.params['multiplicity']:
-                mpy_stack = self.core.params['multiplicity']['stack'] or []
+            core_mpy = self.core.params.get('multiplicity') or {}
+            if 'stack' in core_mpy:
+                mpy_stack = core_mpy.get('stack') or []
 
                 if len(mpy_stack) > 0:
                     for itg in itg_stack:
+                        if not isinstance(itg, dict):
+                            continue
                         for mpy in mpy_stack:
                             if (itg['xL'] == mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):     # pylint: disable=c0301
                                 return []
-            return itg_stack
-        else:
-            return self.core.itg_table
+            return serialize_integration_stack(
+                itg_stack, self.refArea, self.refShift, self._is_hplc_uv_vis(),
+            )
+        return self.core.itg_table
+
+    def gen_integration_groups_info(self):
+        if not self._supports_visual_split() or len(self.itgs) == 0:
+            return []
+        return build_integration_groups_lines(self.itgs)
+
+    def gen_csit_factor_info(self):
+        if len(self.itgs) == 0 or not hasattr(self.core, 'params'):
+            return []
+        core_itg = self.core.params.get('integration') or {}
+        if not core_itg.get('edited'):
+            return []
+        ref_factor = core_itg.get('refFactor', 1)
+        return ['{}\n'.format(ref_factor)]
+
+    def gen_csit_area_info(self):
+        if len(self.itgs) == 0 or not hasattr(self.core, 'params'):
+            return []
+        core_itg = self.core.params.get('integration') or {}
+        if not core_itg.get('edited'):
+            return []
+        ref_area = core_itg.get('refArea', 1)
+        return ['{}\n'.format(ref_area)]
 
     def gen_mpy_integ_info(self):
-        ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        if len(self.mpys) > 0:
-            table = []
-            for idx, mpy in enumerate(self.mpys):
-                table.extend([
-                    '({}, {}, {}, {}, {}, {}, {}, {}{})\n'.format(
-                        idx + 1,
-                        mpy['xExtent']['xL'] - self.refShift,
-                        mpy['xExtent']['xU'] - self.refShift,
-                        calc_mpy_center(mpy['peaks'], self.refShift, mpy['mpyType']),   # noqa: E501
-                        float(mpy['area']) * self.refArea,
-                        idx + 1,
-                        mpy['mpyType'],
-                        ascii_uppercase[idx],
-                        coupling_string(mpy['js']),
-                    ),
-                ])
-            return table
-        elif self.core.params['multiplicity'].get('edited'):
+        if getattr(self.core, 'non_nmr', True):
             return []
-        elif 'stack' in self.core.params['multiplicity']:
-            if 'originStack' not in self.core.params['integration']:
+        core_mpy = self.core.params.get('multiplicity') or {}
+        if len(self.mpys) > 0:
+            return self.__serialize_multiplicity_stack(self.mpys)
+        elif core_mpy.get('edited'):
+            return []
+        elif 'stack' in core_mpy:
+            core_itg = self.core.params.get('integration') or {}
+            if 'originStack' not in core_itg:
                 return self.core.mpy_itg_table
-            return self.core.params['multiplicity']['stack']
+            return self.__serialize_multiplicity_stack(core_mpy.get('stack') or [])
         else:
             return self.core.mpy_itg_table
 
     def gen_mpy_peaks_info(self):
+        if getattr(self.core, 'non_nmr', True):
+            return []
+        core_mpy = self.core.params.get('multiplicity') or {}
         if len(self.mpys) > 0:
             table = []
-            mpy_stack = self.core.params['multiplicity'].get('stack') or []
+            mpy_stack = core_mpy.get('stack') or []
             for mk in mpy_stack:
                 mk_idx = 0
                 for idx, mpy in enumerate(self.mpys):
@@ -312,11 +382,11 @@ class BaseComposer:
                         '({}, {}, {})\n'.format(
                             mk_idx,
                             p['x'] - self.refShift,
-                            p['y'] - self.refShift,
+                            p['y'],
                         ),
                     ])
             return table
-        elif self.core.params['multiplicity'].get('edited'):
+        elif core_mpy.get('edited'):
             return []
         else:
             return self.core.mpy_pks_table

@@ -1,0 +1,50 @@
+flowchart LR
+  Request["HTTP request\nfiles form json"]
+
+  subgraph controller [Controller]
+    Controller["Route\nfile_api or transform_api"]
+    FileContainer["FileContainer\nread stream check ZIP size"]
+    ExtractParams["extract_params()\nform fields to params"]
+    ZipHelpers["ZIP helpers\nto_zip_response\nto_zip_bag_it_response"]
+  end
+
+  subgraph model [Model]
+    Transformer["TransformerModel\nselect conversion pipeline"]
+  end
+
+  subgraph lib [Lib]
+    Converter["Converter\nparse source format"]
+    Composer["Composer\ngenerate output artifacts"]
+  end
+
+  Response["HTTP response\nJSON file or ZIP"]
+  TempFiles["Temporary files\nNamedTemporaryFile TemporaryDirectory"]
+
+  Request --> Controller
+  Controller --> FileContainer
+  Controller --> ExtractParams
+  FileContainer --> Transformer
+  ExtractParams --> Transformer
+  Transformer --> Converter
+  Converter --> Composer
+  Composer --> ZipHelpers
+  Composer --> Response
+  ZipHelpers --> Response
+  FileContainer -.-> TempFiles
+  Transformer -.-> TempFiles
+  Converter -.-> TempFiles
+  Composer -.-> TempFiles
+
+  classDef request fill:#eef5ff,stroke:#4c78a8,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef lib fill:#f2efff,stroke:#8f63c6,stroke-width:1px
+  classDef data fill:#fff8dc,stroke:#b07d12,stroke-width:1px
+  classDef output fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+
+  class Request request
+  class Controller,FileContainer,ExtractParams,ZipHelpers controller
+  class Transformer model
+  class Converter,Composer lib
+  class TempFiles data
+  class Response output

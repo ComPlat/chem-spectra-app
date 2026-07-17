@@ -1,0 +1,52 @@
+flowchart TB
+  Server["server.py\napp = create_app()"]
+  Factory["chem_spectra/__init__.py\ncreate_app()"]
+
+  subgraph controllers [Controller Layer]
+    FileApi["file_api.py\nfile convert save refresh molfile"]
+    TransformApi["transform_api.py\nzip jcamp image nmrium combine"]
+    InferenceApi["inference_api.py\nNMR IR MS prediction routes"]
+    LayoutApi["spectra_layout_api.py\nspectra layout mapping"]
+    Helpers["controller/helper\nFileContainer extract_params ZIP helpers"]
+  end
+
+  subgraph models [Model Layer]
+    Transformer["TransformerModel\nconversion orchestration"]
+    Inferencer["InferencerModel\nprediction orchestration"]
+    Molecule["MoleculeModel\nRDKit molecule wrapper"]
+  end
+
+  subgraph lib [Lib Layer]
+    Converters["lib/converter\nJCAMP FID CDF MS BagIt NMRium"]
+    Composers["lib/composer\nBase NI MS output generation"]
+    Chem["lib/chem\nartist functional groups"]
+    Shared["lib/shared and data_pipeline\nbuffers calculations IR pipeline"]
+  end
+
+  Server --> Factory
+  Factory --> FileApi
+  Factory --> TransformApi
+  Factory --> InferenceApi
+  Factory --> LayoutApi
+  FileApi --> Helpers
+  TransformApi --> Helpers
+  FileApi --> Transformer
+  TransformApi --> Transformer
+  InferenceApi --> Inferencer
+  InferenceApi --> Molecule
+  Transformer --> Converters
+  Transformer --> Composers
+  Inferencer --> Shared
+  Inferencer --> Chem
+  Molecule --> Chem
+  Composers --> Shared
+
+  classDef entry fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef lib fill:#f2efff,stroke:#8f63c6,stroke-width:1px
+
+  class Server,Factory entry
+  class FileApi,TransformApi,InferenceApi,LayoutApi,Helpers controller
+  class Transformer,Inferencer,Molecule model
+  class Converters,Composers,Chem,Shared lib
