@@ -52,6 +52,27 @@ MASS_TIC_JDX = """##TITLE=Spectrum
 ##END=
 """
 
+# jcampconverter (react-spectra-editor's frontend JCAMP parser) can't parse
+# the ##XYPOINTS= LDR — only ##XYDATA=/##DATA TABLE=/##PEAK TABLE=. Some
+# chemotion-converter-app TIC exports use ##XYPOINTS= as the primary data
+# block, which this composer must normalize since it otherwise passes
+# source bytes through untouched.
+XYPOINTS_TIC_JDX = """##TITLE=Spectrum
+##JCAMP-DX=5.00 $$ chemotion-converter-app (1.9.2)
+##DATA TYPE=MASS TIC
+##DATA CLASS=XYPOINTS
+##XUNITS=MINUTES
+##YUNITS=ARBITRARY UNITS
+##FIRSTX=0.0
+##LASTX=2.0
+##NPOINTS=3
+##XYPOINTS= (XY..XY)
+0.0, 100;
+1.0, 5000;
+2.0, 200;
+##END=
+"""
+
 
 def _named_tmp(content: str) -> tempfile.NamedTemporaryFile:
     tf = tempfile.NamedTemporaryFile(suffix=".jdx", delete=False)
@@ -79,6 +100,18 @@ def uvvis_tmp():
 @pytest.fixture
 def mass_tic_tmp():
     tf = _named_tmp(MASS_TIC_JDX)
+    yield tf
+    try:
+        tf.close()
+        if os.path.exists(tf.name):
+            os.unlink(tf.name)
+    except OSError:
+        pass
+
+
+@pytest.fixture
+def xypoints_tic_tmp():
+    tf = _named_tmp(XYPOINTS_TIC_JDX)
     yield tf
     try:
         tf.close()
@@ -173,3 +206,61 @@ def test_preview_pipeline_can_now_extract_uvvis(uvvis_tmp):
     assert result is not None
     xs, ys, _edit_peaks, _integrations, _wl = result
     assert len(xs) > 0 and len(ys) > 0
+
+
+def test_init_normalizes_xypoints_ldr_to_xydata(xypoints_tic_tmp):
+    # jcampconverter (the frontend parser) can't read ##XYPOINTS=. This
+    # composer passes source bytes through untouched otherwise, so it must
+    # rewrite the LDR (and the DATA CLASS declaring it) to ##XYDATA=,
+    # matching what NIComposer/MSComposer already normalize to.
+    LCMSConverterAppComposer([xypoints_tic_tmp], None, None)
+
+    with open(xypoints_tic_tmp.name, "r", encoding="utf-8", errors="ignore") as h:
+        content = h.read()
+
+    assert "##XYPOINTS=" not in content
+    assert "##DATA CLASS=XYDATA" in content
+    assert "##XYDATA= (XY..XY)" in content
+    # data values themselves must be untouched
+    assert "0.0, 100;" in content
+    assert "1.0, 5000;" in content
+    assert "2.0, 200;" in content
+
+
+def test_init_leaves_non_xypoints_ldr_untouched(mass_tic_tmp):
+    with open(mass_tic_tmp.name, "r", encoding="utf-8", errors="ignore") as h:
+        before = h.read()
+
+    LCMSConverterAppComposer([mass_tic_tmp], None, None)
+
+    with open(mass_tic_tmp.name, "r", encoding="utf-8", errors="ignore") as h:
+        after = h.read()
+
+    assert before == after
+
+
+def test_init_does_not_touch_triple_hash_xypoints_metadata_echo():
+    # ###XYPOINTS= (three hashes) is chem-spectra-app's own original-metadata
+    # echo format, not a live LDR jcampconverter would try to parse — the
+    # normalization must only match the real double-hash ##XYPOINTS= LDR.
+    content = (
+        "##TITLE=Spectrum\n"
+        "##DATA TYPE=CYCLIC VOLTAMMETRY\n"
+        "##DATA CLASS=XYDATA\n"
+        "##XYDATA= (X++(Y..Y))\n"
+        "1 2 3\n"
+        "$$ === CHEMSPECTRA ORIGINAL METADATA ===\n"
+        "###XYPOINTS= (XY..XY)\n"
+        "0.0, 100;\n"
+        "##END=\n"
+    )
+    tf = _named_tmp(content)
+    try:
+        LCMSConverterAppComposer([tf], None, None)
+        with open(tf.name, "r", encoding="utf-8", errors="ignore") as h:
+            after = h.read()
+        assert after == content
+    finally:
+        tf.close()
+        if os.path.exists(tf.name):
+            os.unlink(tf.name)
