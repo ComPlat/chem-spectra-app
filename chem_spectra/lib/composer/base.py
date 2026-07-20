@@ -49,7 +49,7 @@ def is_metadata_to_be_ignored(keyword, is_ntuples=False):
         # a stray leftover LDR that duplicates the NTUPLES data table, so
         # it should be suppressed like XYDATA/XYDATA_OLD already are.
         return is_ntuples
-    return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE', 'DATACLASS']
+    return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE']
 
 
 TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'
