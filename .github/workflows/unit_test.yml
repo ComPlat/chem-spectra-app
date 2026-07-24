@@ -7,6 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
+      with:
+        submodules: recursive
+        token: ${{ secrets.CHEMSPECTRA_TEST_FILES_PAT != '' && secrets.CHEMSPECTRA_TEST_FILES_PAT || github.token }}
+    - name: Verify test-datasets submodule
+      run: test -f test-datasets/catalog/datasets.json
     - uses: actions/setup-python@v6
       with:
         check-latest: true

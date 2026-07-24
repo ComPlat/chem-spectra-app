@@ -1,9 +1,8 @@
 import io
 import json
 
+from tests.dataset_catalog import dataset_path, legacy_source_path
 
-target_dir = './tests/fixtures/'
-source_dir = 'source/'
 file_jdx = '13C-DEPT135.dx'
 bagit_file = 'bagit/cv/File053_BagIt.zip'
 cv_file_jdx = 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'
@@ -20,7 +19,7 @@ def test_api_chemspectra_file_convert_without_file(client):
 
 
 def test_api_chemspectra_file_convert(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+    with open(legacy_source_path(file_jdx), 'rb') as f:
         file_content = f.read()
     data = dict(
         file=(io.BytesIO(file_content), '13C-DEPT135.dx'),
@@ -35,7 +34,7 @@ def test_api_chemspectra_file_convert(client):
     assert response.mimetype == 'application/json'
 
 def test_api_chemspectra_file_convert_bagit_format(client):
-    with open(target_dir + source_dir + bagit_file, 'rb') as f:
+    with open(legacy_source_path(bagit_file), 'rb') as f:
         file_content = f.read()
     data = dict(
         file=(io.BytesIO(file_content), 'File053_BagIt.zip'),
@@ -54,7 +53,7 @@ def test_api_chemspectra_file_convert_bagit_format(client):
     
 
 def test_api_chemspectra_file_save_single_file(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+    with open(legacy_source_path(file_jdx), 'rb') as f:
         file_content = f.read()
     data = dict(
         src=(io.BytesIO(file_content), '13C-DEPT135.dx'),
@@ -71,7 +70,7 @@ def test_api_chemspectra_file_save_single_file(client):
     assert response.mimetype == 'application/zip'
 
 def test_api_chemspectra_file_save_multiple_files(client):
-    with open(target_dir + source_dir + cv_file_jdx, 'rb') as f:
+    with open(legacy_source_path(cv_file_jdx), 'rb') as f:
         file_content = f.read()
     data = dict(
         src=(io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'),
@@ -88,7 +87,7 @@ def test_api_chemspectra_file_save_multiple_files(client):
     assert response.mimetype == 'application/zip'
 
 def test_api_chemspectra_file_refresh_single_file(client):
-    with open(target_dir + source_dir + file_jdx, 'rb') as f:
+    with open(legacy_source_path(file_jdx), 'rb') as f:
         file_content = f.read()
     data = dict(
         dst=(io.BytesIO(file_content), '13C-DEPT135.dx'),
@@ -104,7 +103,7 @@ def test_api_chemspectra_file_refresh_single_file(client):
     assert response.mimetype == 'application/json'
 
 def test_api_chemspectra_file_refresh_multiple_files(client):
-    with open(target_dir + source_dir + cv_file_jdx, 'rb') as f:
+    with open(legacy_source_path(cv_file_jdx), 'rb') as f:
         file_content = f.read()
     data = dict(
         dst_list=[(io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'), (io.BytesIO(file_content), 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx')],
@@ -120,7 +119,7 @@ def test_api_chemspectra_file_refresh_multiple_files(client):
     assert response.mimetype == 'application/zip'
 
 def test_api_chemspectra_molfile_convert(client):
-    with open(target_dir + source_dir + '/molfile/svs813f1_B.mol', 'rb') as f:
+    with dataset_path('MOL-002').open('rb') as f:
         file_content = f.read()
     data = dict(
         molfile=(io.BytesIO(file_content), 'svs813f1_B.mol'),

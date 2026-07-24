@@ -2,6 +2,7 @@ from werkzeug.datastructures import FileStorage
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.transformer import TransformerModel as TraModel
 
+from tests.dataset_catalog import legacy_source_path
 
 target_dir = './tests/fixtures/'
 source_dir = 'source/'
@@ -24,7 +25,7 @@ separator_a = '$$ === CHEMSPECTRA PEAK TABLE AUTO ==='
 separator = '$$ === CHEMSPECTRA INTEGRALS AND MULTIPLETS ==='
 
 def __generated_peaks_meta(orig_filename, params=False):
-    with open(target_dir + source_dir + orig_filename, 'rb') as f:
+    with open(legacy_source_path(orig_filename), 'rb') as f:
         file = FileContainer(FileStorage(f))
         molfile = FileContainer(FileStorage(None))
         _, nicp, _ = TraModel(file, molfile, params).jcamp2cvp()
