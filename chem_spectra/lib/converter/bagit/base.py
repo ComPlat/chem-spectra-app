@@ -2,6 +2,7 @@ import os
 import base64
 import tempfile
 import json
+import logging
 import math
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
@@ -15,6 +16,8 @@ from chem_spectra.lib.converter.bagit.lcms_builder import append_lcms_group
 import numpy as np  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib import ticker  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 
 class BagItBaseConverter:
@@ -161,10 +164,17 @@ class BagItBaseConverter:
         list_composer = non_lcms_ni
 
         plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
         
         cv_mode = False
         cv_abs_max = 0.0
+        try:
+            active_idx = int(self.params.get('jcamp_idx', 0) or 0)
+        except (TypeError, ValueError):
+            active_idx = 0
+        active_composer = None
+        active_y_values = None
         for idx, composer in enumerate(list_composer):
             filename = str(idx)
             if (list_file_names is not None) and idx < len(list_file_names):
@@ -211,6 +221,14 @@ class BagItBaseConverter:
                     marker = 'v'
 
             plt.plot(xs, y_values, label=filename, marker=marker)
+
+            is_active = idx == active_idx
+            if is_active:
+                active_composer = composer
+                active_y_values = y_values
+                if composer.core.is_cyclic_volta:
+                    composer._cv_density_scale = scale
+
             # PLOT label
             if (composer.core.is_xrd):
                 waveLength = composer.core.params['waveLength']
@@ -226,6 +244,18 @@ class BagItBaseConverter:
             else:
                 plt.ylabel("Y ({})".format(composer.core.label['y']), fontsize=18)
         
+        if active_composer is not None:
+            try:
+                y_boundary_min, y_boundary_max = active_composer.plot_overlays(
+                    plt, active_y_values, adjust_xlim=False,
+                )
+                ymin, ymax = plt.gca().get_ylim()
+                plt.ylim(min(ymin, y_boundary_min), max(ymax, y_boundary_max))
+            except Exception:
+                logger.exception(
+                    'combine_images: failed to draw overlays for active spectrum'
+                )
+
         if cv_mode and cv_abs_max > 0:
             exp = int(math.floor(math.log10(cv_abs_max))) if cv_abs_max > 0 else 0
             base = (10.0 ** exp) if exp != 0 else 1.0
