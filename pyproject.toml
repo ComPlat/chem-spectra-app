@@ -23,7 +23,7 @@ dependencies = [
   "pymzml==2.*",
   "requests==2.*",
   "rdkit==2025.*",
-  "setuptools==80.*",
+  "setuptools>=80,<84",
   "werkzeug==3.*",
   "scipy==1.*",
   "pyopenms==3.*",

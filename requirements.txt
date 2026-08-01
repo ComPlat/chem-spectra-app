@@ -33,7 +33,7 @@ rdkit==2025.3.6
 regex==2025.9.18
 requests==2.33.0
 scipy==1.16.2
-setuptools==80.9.0
+setuptools==83.0.0
 six==1.17.0
 tzdata==2025.2
 urllib3==2.7.0
