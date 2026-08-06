@@ -95,19 +95,37 @@ class JcampBaseConverter:
                 return key
         return ''
 
+    # Data tables nmrglue may expose, in the order we trust them. Note that
+    # nmrglue renames a plain ##XYDATA= record to XYDATA_OLD on read, so
+    # 'XYDATA' is never a live key here.
+    DATA_TABLE_KEYS = ('XYPOINTS', 'XYDATA_OLD')
+
     def __set_dataclass(self):
         data_class = self.dataclasses
         if 'XYPOINTS' in data_class:
             return 'XYPOINTS'
         elif 'XYDATA' in data_class:
             return 'XYDATA_OLD'
+        # Some valid JCAMP-DX files omit ##DATA CLASS altogether. Fall back to
+        # whichever data table the reader actually found.
+        for key in self.DATA_TABLE_KEYS:
+            if self.dic.get(key):
+                return key
         return ''
 
     def __set_dataformat(self):
-        try:
-            return self.dic[self.dataclass][0].split('\n')[0]
-        except: # noqa
-            pass
+        # The declared ##DATA CLASS and the actual data-table LDR can disagree.
+        # chemotion-converter-app 1.9.0-1.9.2 wrote ##DATA CLASS=XYPOINTS
+        # alongside a ##XYDATA=(XY..XY) table; reading the format off the
+        # declared class alone raised KeyError and silently fell back to
+        # '(X++(Y..Y))', which makes the callers synthesise an evenly spaced X
+        # axis and throw the real X column away. Probe the declared class
+        # first, then the other tables the reader may have populated.
+        keys = (self.dataclass,) + self.DATA_TABLE_KEYS
+        for key in keys:
+            values = self.dic.get(key) if key else None
+            if values:
+                return values[0].split('\n')[0]
         return '(X++(Y..Y))'
 
     def __is_em_wave(self):
