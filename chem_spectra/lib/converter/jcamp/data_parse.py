@@ -13,10 +13,14 @@ def __num_pts(base, x_max, x_min):
 
 def __parse_xy_points(base):
     pts = []
-    if 'XYPOINTS' in base.dic:
+    if base.dic.get('XYPOINTS'):
         pts = base.dic['XYPOINTS'][0].split('\n')[1:]
     elif base.data_format and base.data_format == '(XY..XY)':
-        pts = base.dic['XYDATA_OLD'][0].split('\n')[1:]
+        # A ##XYDATA= record carrying an (XY..XY) table, e.g. anything written
+        # by chemotion-converter-app 1.9.0-1.9.2. nmrglue exposes it as
+        # XYDATA_OLD.
+        xydata_old = base.dic.get('XYDATA_OLD')
+        pts = xydata_old[0].split('\n')[1:] if xydata_old else []
     return np.array([[float(p) for p in pt.split(',')]for pt in pts])
 
 
