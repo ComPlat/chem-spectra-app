@@ -3,8 +3,10 @@ from werkzeug.datastructures import FileStorage
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 
-source_nmr = './tests/fixtures/source/1H.dx'
-source_ir = './tests/fixtures/source/IR.dx'
+from tests.dataset_catalog import dataset_path_str
+
+source_nmr = dataset_path_str('NMR-021')
+source_ir = dataset_path_str('IR-004')
 
 @pytest.fixture
 def jcamp_file_1h():

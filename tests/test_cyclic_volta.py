@@ -1,21 +1,17 @@
-from werkzeug.datastructures import FileStorage
-
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 from chem_spectra.lib.composer.ni import NIComposer
-from chem_spectra.controller.helper.file_container import FileContainer
 
-target_dir = './tests/fixtures/'
-source_dir = 'source/cyclicvoltammetry'
+from tests.dataset_catalog import dataset_path_str
+
+CV_FIXTURE = dataset_path_str('CV-009')
 
 def test_cv_base_converter():
-    target = target_dir + source_dir + '/RCV_LSH-R444_full+Fc.jdx'
-    jbcv = JcampBaseConverter(target)
+    jbcv = JcampBaseConverter(CV_FIXTURE)
     assert jbcv.is_cyclic_volta == True
 
 def test_cv_ni_converter():
-    target = target_dir + source_dir + '/RCV_LSH-R444_full+Fc.jdx'
-    jbcv = JcampBaseConverter(target)
+    jbcv = JcampBaseConverter(CV_FIXTURE)
     nicv = JcampNIConverter(jbcv)
     assert nicv.is_cyclic_volta == True
     assert nicv.datatype == 'CYCLIC VOLTAMMETRY'
@@ -23,8 +19,7 @@ def test_cv_ni_converter():
     assert nicv.ys[0] == 5.34724E-06
 
 def test_cv_compose():
-    target = target_dir + source_dir + '/RCV_LSH-R444_full+Fc.jdx'
-    jbcv = JcampBaseConverter(target)
+    jbcv = JcampBaseConverter(CV_FIXTURE)
     nicv = JcampNIConverter(jbcv)
     nicmpsr = NIComposer(nicv)
     assert "$$ === CHEMSPECTRA CYCLIC VOLTAMMETRY ===\n" in nicmpsr.meta
