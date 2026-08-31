@@ -130,6 +130,34 @@ def test_params_meta_IR_dx():
     meta_target = __target_peaks_meta('ps/ps_' + meta_IR_dx)
     assert ps_meta_content == meta_target
 
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+# explicitly cleared peaks (peaks_str='') must not fall back
+# to auto-detection nor keep any previously saved edit peaks
+# https://github.com/ComPlat/chem-spectra-app/issues/288
+#
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+clear_peaks_params = {
+    'peaks_str': '',
+}
+
+
+def test_clear_peaks_removes_previously_saved_edit_peaks():
+    meta_content = __generated_peaks_meta(
+        'edit/edit_' + H1_dx, clear_peaks_params
+    )
+    edit_block = meta_content.split(separator_a)[0]
+    assert '##NPOINTS=0\n' in edit_block
+    assert '##PEAKTABLE= (XY..XY)\n##END=' in edit_block
+
+
+def test_clear_peaks_does_not_auto_detect():
+    meta_content = __generated_peaks_meta(H1_dx, clear_peaks_params)
+    edit_block = meta_content.split(separator_a)[0]
+    assert '##NPOINTS=0\n' in edit_block
+    assert '##PEAKTABLE= (XY..XY)\n##END=' in edit_block
+
 """
 def test_params_meta_1H():
     ps_meta_content = __generated_peaks_meta(H1_dx, params_1)
