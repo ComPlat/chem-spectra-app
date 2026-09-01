@@ -73,18 +73,37 @@ class BaseComposer:
         self.prepare_itg_mpy()
 
     def __header_pk_common(self, category):
-        return [
+        header_lines = [
             '##TITLE={}\n'.format(self.title),
             '##JCAMP-DX=5.00\n',
             '##DATA TYPE={}PEAKTABLE\n'.format(self.core.typ),
             '##DATA CLASS=PEAKTABLE\n',
             '##$CSCATEGORY={}\n'.format(category),
             '##$CSTHRESHOLD={}\n'.format(self.core.threshold),
+        ]
+
+        # The frontend's info panel (chem.js#buildPeakFeature) reads
+        # .OBSERVEFREQUENCY/.SOLVENTNAME straight off whichever peak-table block
+        # is active (auto or edit), never falling back to the SPECTRUM ORIG
+        # block. Previously only __header_nmr (SPECTRUM ORIG-only) wrote these,
+        # so the info panel showed "NaN MHz" and a blank solvent whenever a
+        # peak-table block was the active feature - i.e. always, since
+        # extractParams never selects the raw spectrum feature for display.
+        observe_frequency = extrac_dic(self.core, '.OBSERVEFREQUENCY')
+        if observe_frequency:
+            header_lines.append('##.OBSERVE FREQUENCY={}\n'.format(observe_frequency))
+
+        solvent_name = extrac_dic(self.core, '.SOLVENTNAME')
+        if solvent_name:
+            header_lines.append('##.SOLVENT NAME={}\n'.format(solvent_name))
+
+        header_lines += [
             '##MAXX={}\n'.format(self.core.boundary['x']['max']),
             '##MAXY={}\n'.format(self.core.boundary['y']['max']),
             '##MINX={}\n'.format(self.core.boundary['x']['min']),
             '##MINY={}\n'.format(self.core.boundary['y']['min'])
         ]
+        return header_lines
 
     def __create_sample_description(self):
         ref_name = (
@@ -131,12 +150,12 @@ class BaseComposer:
             TEXT_ORIGINAL_METADATA,
         ]
 
-    def gen_headers_root(self):
+    def gen_headers_root(self, blocks=1):
         return [
             '##TITLE={}\n'.format(self.title),
             '##JCAMP-DX=5.0\n',
             '##DATA TYPE=LINK\n',
-            '##BLOCKS=1\n',  # TBD
+            '##BLOCKS={}\n'.format(blocks),
             '\n'
         ]
 

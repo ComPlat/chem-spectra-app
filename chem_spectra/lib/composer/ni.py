@@ -345,55 +345,57 @@ class NIComposer(BaseComposer):
         return content
 
     def __compose(self):
-        meta = []
-        meta.extend(self.gen_headers_root())
+        body = []
 
-        meta.extend(self.__gen_headers_spectrum_orig())
+        body.extend(self.__gen_headers_spectrum_orig())
         if self.core.is_sec:
-            meta.extend(self.__gen_header_sec())
-        meta.extend(self.__gen_header_user_input_meta_data())
-        meta.extend(self.gen_spectrum_orig())
-        meta.extend(self.__gen_headers_im())
+            body.extend(self.__gen_header_sec())
+        body.extend(self.__gen_header_user_input_meta_data())
+        body.extend(self.gen_spectrum_orig())
+        body.extend(self.__gen_headers_im())
         integration_info = self.gen_integration_info()
         if integration_info:
-            meta.extend(self.__gen_headers_integration())
-            meta.extend(integration_info)
+            body.extend(self.__gen_headers_integration())
+            body.extend(integration_info)
         integration_groups = self.gen_integration_groups_info()
         if integration_groups:
-            meta.extend(self.__gen_headers_integration_groups())
-            meta.extend(integration_groups)
+            body.extend(self.__gen_headers_integration_groups())
+            body.extend(integration_groups)
         csit_factor = self.gen_csit_factor_info()
         if csit_factor:
-            meta.extend(self.__gen_headers_csit_factor())
-            meta.extend(csit_factor)
+            body.extend(self.__gen_headers_csit_factor())
+            body.extend(csit_factor)
         csit_area = self.gen_csit_area_info()
         if csit_area:
-            meta.extend(self.__gen_headers_csit_area())
-            meta.extend(csit_area)
+            body.extend(self.__gen_headers_csit_area())
+            body.extend(csit_area)
         if not self.core.non_nmr:
-            meta.extend(self.__gen_headers_mpy_integ())
-            meta.extend(self.gen_mpy_integ_info())
-            meta.extend(self.__gen_headers_mpy_peaks())
-            meta.extend(self.gen_mpy_peaks_info())
-        meta.extend(self.__gen_header_simulation())
-        meta.extend(self.gen_simulation_info())
+            body.extend(self.__gen_headers_mpy_integ())
+            body.extend(self.gen_mpy_integ_info())
+            body.extend(self.__gen_headers_mpy_peaks())
+            body.extend(self.gen_mpy_peaks_info())
+        body.extend(self.__gen_header_simulation())
+        body.extend(self.gen_simulation_info())
         if self.core.is_cyclic_volta:
-            meta.extend(self.__gen_header_cyclic_voltammetry())
-            meta.extend(self.__gen_cyclic_voltammetry_medadata())
-            meta.extend(self.__gen_cyclic_voltammetry_data_peaks())
-        meta.extend(self.gen_ending())
+            body.extend(self.__gen_header_cyclic_voltammetry())
+            body.extend(self.__gen_cyclic_voltammetry_medadata())
+            body.extend(self.__gen_cyclic_voltammetry_data_peaks())
+        body.extend(self.gen_ending())
 
-        meta.extend(self.gen_headers_peaktable_edit())
-        meta.extend(self.gen_edit_peaktable())
-        meta.extend(self.gen_ending())
+        body.extend(self.gen_headers_peaktable_edit())
+        body.extend(self.gen_edit_peaktable())
+        body.extend(self.gen_ending())
 
-        meta.extend(self.gen_headers_peaktable_auto())
-        meta.extend(self.gen_auto_peaktable())
-        meta.extend(self.gen_ending())
+        body.extend(self.gen_headers_peaktable_auto())
+        body.extend(self.gen_auto_peaktable())
+        body.extend(self.gen_ending())
 
-        meta.extend(self.generate_original_metadata())
+        body.extend(self.generate_original_metadata())
 
-        meta.extend(self.gen_ending())
+        body.extend(self.gen_ending())
+
+        blocks = sum(1 for line in body if line.startswith('$$ ==='))
+        meta = self.gen_headers_root(blocks) + body
         return meta
 
     def __plt_nbins(self):
