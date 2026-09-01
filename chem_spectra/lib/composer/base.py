@@ -131,12 +131,12 @@ class BaseComposer:
             TEXT_ORIGINAL_METADATA,
         ]
 
-    def gen_headers_root(self):
+    def gen_headers_root(self, blocks=1):
         return [
             '##TITLE={}\n'.format(self.title),
             '##JCAMP-DX=5.0\n',
             '##DATA TYPE=LINK\n',
-            '##BLOCKS=1\n',  # TBD
+            '##BLOCKS={}\n'.format(blocks),
             '\n'
         ]
 

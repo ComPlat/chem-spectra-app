@@ -44,6 +44,20 @@ def test_integrals():
         integration = composer.gen_integration_info()
         assert integration == test_integration
 
+def test_blocks_count_matches_sub_block_markers():
+    with open(target_dir + source_dir + file_inte_mpy_jdx, 'rb') as f:
+        file = FileStorage(f)
+        file = FileContainer(file)
+        molfile = FileContainer(None)
+        composer, _ = TraModel(file, molfile=molfile, params=params).to_composer()
+        meta = composer.meta
+        actual_blocks = sum(1 for line in meta if line.startswith('$$ ==='))
+        blocks_line = next(line for line in meta if line.startswith('##BLOCKS='))
+        declared_blocks = int(blocks_line.strip().split('=')[1])
+        assert declared_blocks == actual_blocks
+        assert actual_blocks > 1
+
+
 def test_multiplicity():
     test_multi = ['(1, 7.5077135686230382916, 7.5755592725546643251, 7.5429235558567508946, 1.9512717547792841621, 4, m, A)\n(2, 7.4369542455041628415, 7.5006376363111479932, 7.4632254127310462266, 1, 2, m, B)\n(3, 7.3374749618252721461, 7.4082342849441475963, 7.3728951424095283684, 1.9811011720186100238, 4, m, C)', '\n']
     with open(target_dir + source_dir + file_inte_mpy_jdx, 'rb') as f:
