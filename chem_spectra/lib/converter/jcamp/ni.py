@@ -422,14 +422,16 @@ class JcampNIConverter:  # nmr & IR
             pass
 
     def __parse_edit(self):
+        peaks_str = self.params['peaks_str']
+        if not peaks_str:
+            self.edit_peaks = {'x': [], 'y': []}
+            return
         edit_x = []
         edit_y = []
-        for p in self.params['peaks_str'].split('#'):
+        for p in peaks_str.split('#'):
             info = p.split(',')
             edit_x.append(float(info[0]))
             edit_y.append(float(info[1]))
-        if len(edit_x) == 0:
-            return
         self.edit_peaks = {'x': edit_x, 'y': edit_y}
 
     def __exec_peak_picking_logic(self, refresh_solvent=False):
@@ -551,7 +553,7 @@ class JcampNIConverter:  # nmr & IR
         self.__read_edit_peaks()
         if not self.auto_peaks or not self.params['delta'] == 0.0:
             self.__run_auto_pick_peak()
-        if self.params['peaks_str']:
+        if self.params['peaks_str'] is not None:
             self.__parse_edit()
 
     def __read_voltammetry_data_from_file(self):
