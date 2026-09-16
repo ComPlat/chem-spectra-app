@@ -61,6 +61,25 @@ def test_combine():
     assert tf is not None
 
 
+def test_combine_with_active_spectrum_overlays():
+    with open(source_dir_1h_jcamp, 'rb') as f:
+        file_1 = FileContainer(FileStorage(f))
+
+    with open(source_dir_1h_jcamp, 'rb') as f:
+        file_2 = FileContainer(FileStorage(f))
+
+    # jcamp_idx picks the active spectrum whose overlays are drawn; a string
+    # value must be tolerated (form params arrive untyped)
+    params = {**params_1h_jcamp, 'jcamp_idx': '1'}
+    with open(source_dir_molfile, "r") as molfile:
+        tranform_model = TransformerModel(None, molfile=molfile, params=params, multiple_files=[file_1, file_2])
+
+        tf = tranform_model.tf_combine(list_file_names=['a.dx', 'b.dx'])
+    assert tf is not None
+    tf.seek(0)
+    assert tf.read(8) == b'\x89PNG\r\n\x1a\n'
+
+
 def test_zip2cv_with_processed_file():
     with open(source_dir_molfile, 'rb') as f:
         molfile = FileContainer(FileStorage(f))
