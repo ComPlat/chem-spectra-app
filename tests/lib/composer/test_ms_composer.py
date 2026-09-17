@@ -4,7 +4,9 @@ from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.composer.ms import MSComposer
 
-source = './tests/fixtures/source/ms/ms_v6.dx'
+from tests.dataset_catalog import dataset_path_str
+
+source = dataset_path_str('MS-007')
 
 @pytest.fixture
 def jcamp_file():

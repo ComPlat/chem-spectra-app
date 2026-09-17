@@ -3,12 +3,11 @@ from werkzeug.datastructures import FileStorage
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.molecule import MoleculeModel
 
-target_dir = './tests/fixtures/'
-source_dir = 'source/'
+from tests.dataset_catalog import dataset_path
 
 
 def test_molfile2chem():
-    with open(target_dir + source_dir + '/molfile/svs813f1_B.mol', 'rb') as f:
+    with dataset_path('MOL-002').open('rb') as f:
         molfile = FileContainer(FileStorage(f))
         mm = MoleculeModel(molfile)
 

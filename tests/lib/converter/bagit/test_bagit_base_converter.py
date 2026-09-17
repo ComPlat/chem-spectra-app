@@ -1,16 +1,18 @@
-from chem_spectra.lib.converter.bagit.base import BagItBaseConverter as BagItConveter
 import tempfile
 import zipfile
 import mimetypes
 import base64
 
-target_dir = './tests/fixtures/source/bagit/'
-cv_layout_path = target_dir + 'cv/File053_BagIt.zip'
-aif_layout_path = target_dir + 'aif/aif.zip'
-emissions_layout_path = target_dir + 'emissions/emissions.zip'
-dls_acf_layout_path = target_dir + 'dls_acf/dls_acf.zip'
-dls_intensity_layout_path = target_dir + 'dls_intensity/dls_intensity.zip'
-dsc_layout_path = target_dir + 'dsc/dsc.zip'
+from chem_spectra.lib.converter.bagit.base import BagItBaseConverter as BagItConveter
+
+from tests.dataset_catalog import dataset_path_str
+
+cv_layout_path = dataset_path_str('CV-B-001')
+aif_layout_path = dataset_path_str('AIF-003')
+emissions_layout_path = dataset_path_str('EM-002')
+dls_acf_layout_path = dataset_path_str('DLS-002')
+dls_intensity_layout_path = dataset_path_str('DLS-003')
+dsc_layout_path = dataset_path_str('DSC-B-002')
 
 def assertFileType(file, mimeStr):
     assert mimetypes.guess_type(file.name)[0] == mimeStr

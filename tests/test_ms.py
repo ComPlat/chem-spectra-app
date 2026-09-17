@@ -6,15 +6,14 @@ from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.controller.helper.file_container import FileContainer
 
-target_dir = './tests/fixtures/'
-source_dir = 'source/'
+from tests.dataset_catalog import dataset_path, dataset_path_str
 
 
 def test_ms_mzml_converter_composer():
     params = {'mass': 230.079907196}
 
-    with open(target_dir + source_dir + '/ms/svs813f1.mzML', 'rb') as f:
-        file = FileStorage(f)
+    with dataset_path('MS-M-005').open('rb') as f:
+        file = FileStorage(f, filename='svs813f1.mzML')
         file = FileContainer(file)
         mscv = MSConverter(file, params)
         mscp = MSComposer(mscv)
@@ -32,8 +31,8 @@ def test_ms_mzml_converter_composer():
 def test_ms_raw_converter_composer():
     params = {'mass': 230.079907196}
 
-    with open(target_dir + source_dir + '/ms/MS_ESI.RAW', 'rb') as f:
-        file = FileStorage(f)
+    with dataset_path('MS-R-004').open('rb') as f:
+        file = FileStorage(f, filename='MS_ESI.RAW')
         file = FileContainer(file)
         mscv = MSConverter(file, params)
         mscp = MSComposer(mscv)
@@ -50,7 +49,7 @@ def test_ms_raw_converter_composer():
 def test_ms_jcamp_converter_composer():
     params = {'mass': 230.079907196}
 
-    target = target_dir + source_dir + '/ms/svs813f1.jdx'
+    target = dataset_path_str('MS-008')
     jbcv = JcampBaseConverter(target, params)
     mscv = JcampMSConverter(jbcv)
     mscp = MSComposer(mscv)
@@ -67,7 +66,7 @@ def test_ms_jcamp_converter_composer():
 def test_jcamp_single_point_last_line():
     params = {'mass': 230.079907196}
 
-    target = target_dir + source_dir + '/ms/MS_ESI.jdx'
+    target = dataset_path_str('MS-006')
     jbcv = JcampBaseConverter(target, params)
     mscv = JcampMSConverter(jbcv)
     mscp = MSComposer(mscv)

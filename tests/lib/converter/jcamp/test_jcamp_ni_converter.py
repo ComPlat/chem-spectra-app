@@ -2,7 +2,9 @@ import pytest
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 
-source_nmr = './tests/fixtures/source/1H.dx'
+from tests.dataset_catalog import dataset_path_str
+
+source_nmr = dataset_path_str('NMR-021')
 
 @pytest.fixture
 def jcamp_file_1h():
