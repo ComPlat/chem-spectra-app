@@ -25,11 +25,16 @@ class JcampBaseConverter:
         self.typ = self.__typ()
         self.fname = self.params.get('fname')
         if not self.typ:
+            # a caller-supplied data_type_mapping REPLACES the built-in one,
+            # so pointing at data_type.json would be useless advice there
+            source = ('the data_type_mapping supplied with this request'
+                      if self.params.get('user_data_type_mapping')
+                      else 'data_type.json')
             logger.warning(
                 'unrecognised ##DATA TYPE= %s in %r; processing it as a '
-                'generic curve. Add it to data_type.json if this app '
-                'should handle it as a known technique.',
-                self.datatypes, self.fname,
+                'generic curve. Add it to %s if this app should handle it '
+                'as a known technique.',
+                self.datatypes, self.fname, source,
             )
         self.is_em_wave = self.__is_em_wave()
         self.is_ir = self.__is_ir()

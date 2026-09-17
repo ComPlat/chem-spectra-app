@@ -16,6 +16,7 @@ from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
 source_nmr = './tests/fixtures/source/1H.dx'
 source_ir = './tests/fixtures/source/IR.dx'
 source_hplc = './tests/fixtures/source/hplc/chromatogram.jdx'
+source_chi = './tests/fixtures/source/CHI-224_10.jdx'
 
 HPLC_HEADER = '##DATA TYPE=HPLC UV/VIS SPECTRUM'
 
@@ -88,8 +89,14 @@ def test_auxiliary_blocks_stay_unmapped():
     with open(path) as handle:
         mapped = {v.upper() for vals in json.load(handle)['datatypes'].values() for v in vals}
 
-    for auxiliary in ['NMR FID', 'NMR PEAK TABLE', 'NMP PEAK ASSIGNMENTS',
-                      'INFRARED PEAK TABLE', 'INFRARED INTERFEROGRAM']:
+    # the first five occur in this repo's own fixtures (PEAK ASSIGNMENTS in 12
+    # blocks, NMR FID in 8, NMRPEAKTABLE and NMR PEAK ASSIGNMENTS in 2 each,
+    # NMR PEAK TABLE in 1); the rest are spellings chemotion-converter-app can
+    # emit, including its malformed 'NMP' variant
+    for auxiliary in ['PEAK ASSIGNMENTS', 'NMR FID', 'NMRPEAKTABLE',
+                      'NMR PEAK ASSIGNMENTS', 'NMR PEAK TABLE',
+                      'NMP PEAK ASSIGNMENTS', 'INFRARED PEAK TABLE',
+                      'INFRARED INTERFEROGRAM']:
         assert auxiliary not in mapped
 
 
@@ -179,3 +186,66 @@ def test_absent_user_mapping_falls_back_to_builtin(value):
     base = JcampBaseConverter(source_hplc, {'data_type_mapping': value})
     assert base.typ == 'HPLC UVVIS'
     assert JcampNIConverter(base).threshold == 0.05
+
+
+def test_example_mapping_stays_in_sync_with_the_live_one():
+    """`data_type.json.example` seeds a fresh install and had drifted.
+
+    `spectra_layout_api.load_data_types()` copies it into place on
+    FileNotFoundError, so a new deploy comes up with whatever it contains.
+    It was missing the entire LC/MS key before this branch; without this
+    test the same drift recurs while the suite stays green.
+    """
+    import json
+    import os
+    from chem_spectra.lib.converter.jcamp import base as base_module
+
+    directory = os.path.dirname(base_module.__file__)
+    with open(os.path.join(directory, 'data_type.json')) as handle:
+        live = json.load(handle)
+    with open(os.path.join(directory, 'data_type.json.example')) as handle:
+        example = json.load(handle)
+
+    assert example == live
+
+
+def test_block_selection_agrees_with_classification(tmp_path):
+    """Classification and block selection must not point at different blocks.
+
+    CHI-224_10.jdx is LINK / NMR SPECTRUM / NMR PEAK TABLE. Renaming the
+    trailing auxiliary block to MASS TIC makes it a datatype that is mapped
+    but sits last in the flattened value order of data_type.json, while
+    NMR SPECTRUM sits first. Before this branch __index_target took the last
+    match and selected the MASS TIC block (target_idx 1) while
+    __set_datatype classified the file as NMR from the first matching key --
+    the two disagreed. Both now take the first recognised block in the
+    file's own order.
+    """
+    body = open(source_chi).read().replace(
+        '##DATA TYPE=\tNMR PEAK TABLE', '##DATA TYPE=\tMASS TIC', 1,
+    )
+    target = tmp_path / 'link_nmr_then_tic.jdx'
+    target.write_text(body)
+
+    base = JcampBaseConverter(str(target))
+    assert base.datatypes == ['LINK', 'NMR SPECTRUM', 'MASS TIC']
+    assert base.typ == 'NMR'
+    # 0 = the NMR SPECTRUM block once the single LINK entry is discounted;
+    # 1 would be the MASS TIC block that classification did not choose
+    assert JcampNIConverter(base).target_idx == 0
+
+
+def test_warning_points_at_the_mapping_that_is_actually_in_effect(
+        jcamp_with_datatype, user_mapping_params, caplog):
+    """A caller-supplied mapping replaces the built-in one.
+
+    Telling such a caller to 'add it to data_type.json' is useless advice --
+    that file is not consulted for their request.
+    """
+    JcampBaseConverter(jcamp_with_datatype('NEUTRON SCATTERING'), user_mapping_params)
+    assert 'data_type_mapping supplied with this request' in caplog.text
+    assert 'data_type.json' not in caplog.text
+
+    caplog.clear()
+    JcampBaseConverter(jcamp_with_datatype('NEUTRON SCATTERING'))
+    assert 'data_type.json' in caplog.text
