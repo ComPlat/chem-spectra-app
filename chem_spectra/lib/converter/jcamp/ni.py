@@ -125,16 +125,23 @@ class JcampNIConverter:  # nmr & IR
                 target = json.load(mapping_file).get("datatypes").values()
                 target_topics = [value.upper() for values in target for value in values]
 
+        idx = None
         for tp in target_topics:
             if tp in self.datatypes:
                 idx = self.datatypes.index(tp)
 
+        if idx is None:
+            # Nothing in this file is a recognised datatype -- either the
+            # ##DATA TYPE= header is absent or its value is unmapped. Fall
+            # back to the first block instead of raising, and return before
+            # the LINK offset below, which would drive the index negative.
+            return 0
+
         if 'LINK' in self.datatypes:
             count_link = self.datatypes.count('LINK')
-            # idx -= 1
             idx -= count_link
 
-        return idx
+        return max(idx, 0)
 
     def __count_block(self):
         count = 1

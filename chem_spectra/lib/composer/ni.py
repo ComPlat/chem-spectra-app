@@ -427,12 +427,13 @@ class NIComposer(BaseComposer):
         plt.plot(self.core.xs, y_values)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
 
-        # High -> low is the NMR/IR convention; everything else reads
-        # forward. This list has to be extended by hand for each technique,
-        # and twice it was not: DSC was omitted when it was added, though it
-        # is the same thermal family as TGA, and LC/MS has no is_* flag at
-        # all so it silently inherited the NMR default. Both were drawn
-        # mirrored.
+        # High -> low is the convention for NMR, IR, Raman and MS, which
+        # are the techniques the fallback branch below is *meant* to cover.
+        # The forward list has to be extended by hand for each new
+        # technique, and twice it was not: DSC was omitted when it was
+        # added, though it is the same thermal family as TGA, and LC/MS has
+        # no is_* flag at all so it silently inherited the reversed default.
+        # Both were drawn mirrored.
         draws_forward = (
             self.core.is_tga or self.core.is_gc or self.core.is_uv_vis
             or self.core.is_hplc_uv_vis or self.core.is_xrd
