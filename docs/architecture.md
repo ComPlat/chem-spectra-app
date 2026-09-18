@@ -441,6 +441,60 @@ When adding a new parameter:
 - normalize it in `parse_params()` if it is used by converters or composers;
 - add tests for at least one endpoint that passes the parameter.
 
+### How a Technique Is Classified
+
+Almost every rendering decision in the non-MS pipeline derives from one
+value: `typ`, the technique the file represents. Nothing else in the backend
+has this much reach, and until recently nothing documented it.
+
+The chain is:
+
+```
+##DATA TYPE=  ->  data_type.json  ->  typ  ->  is_* flags  ->  rendering
+```
+
+1. `JcampBaseConverter.__read()` hands `nmrglue` the file; every
+   `##DATA TYPE=` record in it lands in `self.datatypes`, uppercased, in the
+   order the blocks appear.
+2. `__set_datatype()` walks those datatypes **in the file's own order** and
+   returns the first that appears in `data_type.json`.
+3. `__typ()` maps that back onto the mapping's key, which is `typ`.
+4. `JcampNIConverter.__index_target()` independently picks the **first
+   recognised** block as the one whose numbers are read.
+5. Sixteen booleans (`is_xrd`, `is_cyclic_volta`, ... plus `is_em_wave` and
+   `non_nmr`) are derived from `typ`, and consumers branch on them to decide
+   axis labels, x-orientation, peak threshold, integration and multiplicity.
+
+Three properties of this chain are load-bearing and easy to break:
+
+**File order decides, not mapping order.** Steps 2 and 4 both take the
+*first recognised* datatype in the file. They used to disagree — one took
+the first matching mapping key, the other the last matching mapping value —
+so a file could be classified from one block and have its data read from
+another. The order of keys in `data_type.json` is an accident of when
+entries were appended and must not be treated as precedence.
+
+**Auxiliary blocks are deliberately absent from the mapping.** A JCAMP file
+routinely carries a primary block plus auxiliary ones — `NMR FID`,
+`PEAK ASSIGNMENTS`, `NMR PEAK TABLE`, `NMRPEAKTABLE`,
+`NMR PEAK ASSIGNMENTS`, and from `chemotion-converter-app` also
+`NMP PEAK ASSIGNMENTS`, `INFRARED PEAK TABLE` and `INFRARED INTERFEROGRAM`.
+Because step 4 stops at the first *recognised* block, adding any of these to
+`data_type.json` would make every affected file read the auxiliary block
+instead of its spectrum. `test_auxiliary_blocks_stay_unmapped` enforces this.
+
+**An unrecognised datatype is not an error.** `typ` becomes `''`, a warning
+naming the datatype is logged, and the file is processed as a generic curve
+rather than being rejected or — as it once was — silently treated as NMR.
+Callers can supply their own mapping through the `data_type_mapping` form
+field, which **replaces** the built-in file rather than extending it.
+
+`data_type.json` is served verbatim to the frontend by
+`spectra_layout_api.load_data_types()`, so any key added to that document
+becomes part of the API payload. Notes about the mapping belong in code, not
+in the JSON. `data_type.json.example` seeds a fresh install when the live
+file is missing and must stay identical to it.
+
 ### Converter and Composer Interaction
 
 Converters are input-oriented. They answer: "What data is in this file?"
