@@ -74,7 +74,11 @@ class FidBaseConverter:
         self.is_xrd = self.__is_xrd()
         self.is_cyclic_volta = self.__is_cyclic_volta()
         self.is_cds = self.__is_cds()
-        self.non_nmr = self.__non_nmr()
+        # A free induction decay is an NMR measurement by definition, and
+        # self.typ is the literal 'NMR' above. This used to call a predicate
+        # testing typ against ten other techniques, which could never match:
+        # dead code that read like live dispatch.
+        self.non_nmr = False
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
         self.solv_peaks = []
@@ -83,9 +87,6 @@ class FidBaseConverter:
 
     def __is_em_wave(self):
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
-
-    def __non_nmr(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION', 'CYCLIC VOLTAMMETRY', 'CIRCULAR DICHROISM SPECTROSCOPY', 'GAS CHROMATOGRAPHY']  # noqa: E501
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
