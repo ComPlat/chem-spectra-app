@@ -258,3 +258,38 @@ def test_reduce_pts_when_reached_limitation():
     reduced_data = reduce_pts(data)
     assert np.array_equal(reduced_data, expected_data)
     
+
+def test_parse_params_tolerates_a_partial_cyclicvolta_payload():
+    """The ELN does not guarantee spectraList or the entry's 'list'.
+
+    ViewSpectra.js reads `spectraList?.[curveIdx]` and bails when it is
+    missing, so a payload without it is not a client error. Subscripting it
+    unconditionally made this a 500.
+    """
+    import json
+    from chem_spectra.lib.converter.share import parse_params
+
+    assert parse_params(
+        {'cyclic_volta': json.dumps({'cvDisplay': {}})}
+    )['list_max_min_peaks'] is None
+
+    assert parse_params(
+        {'cyclic_volta': json.dumps({'spectraList': [{}]})}
+    )['list_max_min_peaks'] is None
+
+    assert parse_params({
+        'cyclic_volta': json.dumps({'spectraList': [{'list': []}]}),
+        'jcamp_idx': 5,
+    })['list_max_min_peaks'] is None
+
+
+def test_cv_shift_offset_tolerates_a_spectra_entry_without_shift():
+    from chem_spectra.lib.shared.calc import (
+        cal_cyclic_volta_shift_prev_offset_at_index,
+    )
+
+    assert cal_cyclic_volta_shift_prev_offset_at_index(
+        {'spectraList': [{}]}, 0) == 0.0
+    assert cal_cyclic_volta_shift_prev_offset_at_index(
+        {'spectraList': [{'hasRefPeak': True, 'shift': {'prevValue': 2.0}}]},
+        0) == 2.0
