@@ -23,3 +23,6 @@ build/
 /src/
 
 CLAUDE.md
+
+*.zip
+!tests/fixtures/**/*.zip

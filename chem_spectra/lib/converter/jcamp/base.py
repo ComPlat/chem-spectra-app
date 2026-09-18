@@ -1,10 +1,13 @@
 import nmrglue as ng
 import json
+import logging
 
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
 import os
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
+
+logger = logging.getLogger(__name__)
 
 class JcampBaseConverter:
     def __init__(self, path, params=False):
@@ -21,6 +24,18 @@ class JcampBaseConverter:
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = self.__typ()
         self.fname = self.params.get('fname')
+        if not self.typ:
+            # a caller-supplied data_type_mapping REPLACES the built-in one,
+            # so pointing at data_type.json would be useless advice there
+            source = ('the data_type_mapping supplied with this request'
+                      if self.params.get('user_data_type_mapping')
+                      else 'data_type.json')
+            logger.warning(
+                'unrecognised ##DATA TYPE= %s in %r; processing it as a '
+                'generic curve. Add it to %s if this app should handle it '
+                'as a known technique.',
+                self.datatypes, self.fname, source,
+            )
         self.is_em_wave = self.__is_em_wave()
         self.is_ir = self.__is_ir()
         self.is_tga = self.__is_tga()
@@ -54,6 +69,12 @@ class JcampBaseConverter:
         else:
             return json.loads(user_dt_mapping)['datatypes']
 
+    def __data_type_mappings(self):
+        if self.params.get('user_data_type_mapping'):
+            return self.__read_user_data_type_mapping()
+        with open(data_type_json, 'r') as mapping_file:
+            return json.load(mapping_file)['datatypes']
+
     def __set_datatype(self):
         dts = self.datatypes
         dt_dict = {
@@ -65,29 +86,22 @@ class JcampBaseConverter:
             'UVVIS': 'UV/VIS SPECTRUM',
         }
 
-        if self.params.get('user_data_type_mapping'):
-            data_type_mappings = self.__read_user_data_type_mapping()
-        else:
-            with open(data_type_json, 'r') as mapping_file:
-                data_type_mappings = json.load(mapping_file)["datatypes"]
+        data_type_mappings = self.__data_type_mappings()
 
-        for key, values in data_type_mappings.items():
-            values = [value.upper() for value in values]
-            for dt in dts:
-                if dt in values and key in dt_dict:
-                    return dt_dict[key]
-                elif dt in values and not key in dt_dict:
-                    return key
+        # The file's own block order decides, not the order data_type.json
+        # happens to list its keys in. The first recognised ##DATA TYPE= is
+        # the primary measurement; auxiliary blocks (NMR FID, peak tables)
+        # are deliberately absent from the mapping so they are skipped here.
+        for dt in dts:
+            for key, values in data_type_mappings.items():
+                if dt in [value.upper() for value in values]:
+                    return dt_dict.get(key, key)
         return ''
 
     def __typ(self):
         dt = self.datatype
 
-        if self.params.get('user_data_type_mapping'):
-            data_type_mappings = self.__read_user_data_type_mapping()
-        else:
-            with open(data_type_json, 'r') as mapping_file:
-                data_type_mappings = json.load(mapping_file)["datatypes"]
+        data_type_mappings = self.__data_type_mappings()
 
         for key, values in data_type_mappings.items():
             values = [value.upper() for value in values]
@@ -114,14 +128,12 @@ class JcampBaseConverter:
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
 
     def __non_nmr(self):
-        if self.params.get('user_data_type_mapping'):
-            data_type_mappings = self.__read_user_data_type_mapping()
-        else:
-            with open(data_type_json, 'r') as mapping_file:
-                data_type_mappings = json.load(mapping_file).get("datatypes")
-
-        dts = [dt for dt in data_type_mappings.keys() if dt != 'NMR']
-        return self.typ in dts
+        # Equivalent to the old "typ is some mapped key other than NMR" for
+        # every mapped datatype, and differs only for an unrecognised one:
+        # that used to land here as False, which handed the file to the NMR
+        # branch and drew it with chemical-shift axes and multiplet analysis
+        # it has no basis for.
+        return self.typ != 'NMR'
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
