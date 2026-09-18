@@ -427,7 +427,22 @@ class NIComposer(BaseComposer):
         plt.plot(self.core.xs, y_values)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
 
-        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_gc or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd or self.core.is_cyclic_volta or self.core.is_sec or self.core.is_cds or self.core.is_aif or self.core.is_emissions or self.core.is_dls_acf or self.core.is_dls_intensity) else [x_max, x_min]    # noqa: E501
+        # High -> low is the NMR/IR convention; everything else reads
+        # forward. This list has to be extended by hand for each technique,
+        # and twice it was not: DSC was omitted when it was added, though it
+        # is the same thermal family as TGA, and LC/MS has no is_* flag at
+        # all so it silently inherited the NMR default. Both were drawn
+        # mirrored.
+        draws_forward = (
+            self.core.is_tga or self.core.is_gc or self.core.is_uv_vis
+            or self.core.is_hplc_uv_vis or self.core.is_xrd
+            or self.core.is_cyclic_volta or self.core.is_sec
+            or self.core.is_cds or self.core.is_aif or self.core.is_emissions
+            or self.core.is_dls_acf or self.core.is_dls_intensity
+            or self.core.is_dsc                       # thermal, like TGA
+            or getattr(self.core, 'typ', '') == 'LC/MS'  # retention time
+        )
+        xlim_left, xlim_right = [x_min, x_max] if draws_forward else [x_max, x_min]
         plt.xlim(xlim_left, xlim_right)
         y_max, y_min = np.max(y_values), np.min(y_values)
         h = y_max - y_min
@@ -441,6 +456,7 @@ class NIComposer(BaseComposer):
                 self._cv_axis_exp = int(np.floor(np.log10(ymax_abs)))
             else:
                 self._cv_axis_exp = 0
+            print(f"[tf_img] ymax_abs={ymax_abs}, exp={self._cv_axis_exp}")
             self._cv_axis_base = (10.0 ** self._cv_axis_exp) if self._cv_axis_exp != 0 else 1.0
 
         # PLOT peaks
@@ -676,7 +692,6 @@ class NIComposer(BaseComposer):
                 self._cv_axis_exp = int(np.floor(np.log10(ymax_abs)))
             else:
                 self._cv_axis_exp = 0
-            print(f"[tf_img] ymax_abs={ymax_abs}, exp={self._cv_axis_exp}")
             self._cv_axis_base = (10.0 ** self._cv_axis_exp) if self._cv_axis_exp != 0 else 1.0
 
             ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _:
