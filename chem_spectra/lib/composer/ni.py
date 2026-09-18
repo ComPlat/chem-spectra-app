@@ -456,7 +456,6 @@ class NIComposer(BaseComposer):
                 self._cv_axis_exp = int(np.floor(np.log10(ymax_abs)))
             else:
                 self._cv_axis_exp = 0
-            print(f"[tf_img] ymax_abs={ymax_abs}, exp={self._cv_axis_exp}")
             self._cv_axis_base = (10.0 ** self._cv_axis_exp) if self._cv_axis_exp != 0 else 1.0
 
         # PLOT peaks
