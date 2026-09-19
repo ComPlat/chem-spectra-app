@@ -12,8 +12,8 @@ code and it would agree with any regression.
 Expected values were extracted by execution, and DSC and LC/MS carry the
 corrected forward orientation this branch fixes.
 
-The unrecognised-datatype case is deliberately absent: on master it raises
-UnboundLocalError from JcampNIConverter.__index_target, which PR #291 fixes.
+The unrecognised-datatype case is included: since #291 such a file takes
+the generic curve path instead of raising from __index_target.
 """
 
 import json
@@ -168,3 +168,17 @@ def test_dsc_matches_tga_orientation(render, tmp_path):
     dsc = render(_mapping_keys()['DIFFERENTIAL SCANNING CALORIMETRY'][0], tmp_path)
     tga = render(_mapping_keys()['THERMOGRAVIMETRIC ANALYSIS'][0], tmp_path)
     assert dsc['orientation'] == tga['orientation'] == 'forward'
+
+
+def test_unrecognised_datatype_rendering(render, tmp_path):
+    """The generic curve path, which #291 established.
+
+    A datatype absent from data_type.json is not an error: it renders with
+    the default threshold, the reversed fallback orientation and generic
+    axis labels.
+    """
+    drawn = render('NEUTRON SCATTERING', tmp_path)
+    assert drawn['threshold'] == 0.5
+    assert drawn['orientation'] == 'reversed'
+    assert _x_style(drawn['xlabel']) == 'generic'
+    assert _y_style(drawn['ylabel']) == 'generic'

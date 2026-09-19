@@ -116,6 +116,17 @@ class JcampNIConverter:  # nmr & IR
     
 
     def __index_target(self):
+        """Index of the block holding the primary measurement.
+
+        Only PRIMARY datatypes belong in data_type.json. Auxiliary blocks that
+        sit alongside a primary one in the same file -- NMR FID, NMR PEAK
+        TABLE, NMP PEAK ASSIGNMENTS, INFRARED PEAK TABLE, INFRARED
+        INTERFEROGRAM -- are deliberately absent from it, because this picks
+        the first RECOGNISED block and would otherwise read the auxiliary one
+        instead of the spectrum. test_auxiliary_blocks_stay_unmapped enforces
+        this. A datatype missing from the map is not an error: the file takes
+        the generic curve path and JcampBaseConverter logs it.
+        """
         if self.params.get('user_data_type_mapping'):
             data_type_mappings = self.__read_user_data_type_mapping()
             target = data_type_mappings.values()
@@ -125,16 +136,21 @@ class JcampNIConverter:  # nmr & IR
                 target = json.load(mapping_file).get("datatypes").values()
                 target_topics = [value.upper() for values in target for value in values]
 
+        # Take the first recognised block in the file's own order. The old
+        # loop had no break, so the LAST entry of the flattened mapping won
+        # instead -- an order nobody chose, and one that could disagree with
+        # the classification in JcampBaseConverter.__set_datatype.
         idx = None
-        for tp in target_topics:
-            if tp in self.datatypes:
-                idx = self.datatypes.index(tp)
+        for pos, dt in enumerate(self.datatypes):
+            if dt in target_topics:
+                idx = pos
+                break
 
         if idx is None:
-            # Nothing in this file is a recognised datatype -- either the
-            # ##DATA TYPE= header is absent or its value is unmapped. Fall
-            # back to the first block instead of raising, and return before
-            # the LINK offset below, which would drive the index negative.
+            # Nothing in this file is a recognised datatype. Fall back to the
+            # first block and skip the LINK offset below: it would drive the
+            # index negative and silently read the last block instead. The
+            # unrecognised datatype is logged by JcampBaseConverter.
             return 0
 
         if 'LINK' in self.datatypes:

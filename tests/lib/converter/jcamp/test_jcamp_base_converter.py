@@ -54,7 +54,10 @@ def test_missing_datatype_header_does_not_raise(tmp_path):
 
     converter = JcampBaseConverter(str(target))
     assert converter.datatypes == []
-    assert converter.non_nmr is False   # master's behaviour for typ == ''
+    assert converter.typ == ''
+    # since #291, typ == '' means non-NMR: the file takes the generic curve
+    # path rather than being handed to the NMR branch
+    assert converter.non_nmr is True
 
 
 def test_missing_datatype_header_survives_the_whole_transform(tmp_path):
@@ -80,18 +83,3 @@ def test_missing_datatype_header_survives_the_whole_transform(tmp_path):
     )
     assert response.status_code == 200
 
-
-def test_unrecognised_datatype_also_survives_block_selection(tmp_path):
-    """The same __index_target path, reached by an unmapped value.
-
-    An absent header and an unmapped value both leave no recognised
-    datatype, so both hit the unbound index.
-    """
-    body = open(source_ir, encoding='utf-8').read().replace(
-        '##DATA TYPE=INFRARED SPECTRUM', '##DATA TYPE=NEUTRON SCATTERING', 1)
-    target = tmp_path / 'unmapped.jdx'
-    target.write_text(body, encoding='utf-8')
-
-    from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
-    converter = JcampNIConverter(JcampBaseConverter(str(target)))
-    assert converter.target_idx == 0
