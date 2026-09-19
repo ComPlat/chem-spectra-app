@@ -13,7 +13,10 @@ class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = parse_params(params)
         self.dic, self.data = self.__read(path)
-        self.datatypes = self.dic['DATATYPE']
+        # A file with no ##DATA TYPE= at all raised KeyError straight out of
+        # the request. An absent header is no more exceptional than an
+        # unrecognised one, so it takes the same path.
+        self.datatypes = self.dic.get('DATATYPE') or []
         self.datatypes = [datatype.upper() for datatype in self.datatypes]
         self.datatype = self.__set_datatype()
         self.dataclasses = {}

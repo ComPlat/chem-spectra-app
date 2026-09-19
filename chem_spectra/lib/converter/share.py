@@ -78,10 +78,14 @@ def parse_params(params):
     lcms_mz_page = params.get('lcms_mz_page')
     lcms_mz_page_data = params.get('lcms_mz_page_data')
     if (cyclicvolta is not None):
-        spectraList = cyclicvolta['spectraList']
-        if (len(spectraList) > 0):
-            spectra = spectraList[jcamp_idx]
-            listMaxMinPeaks = spectra['list']
+        # The ELN does not guarantee these keys: ViewSpectra.js reads
+        # `spectraList?.[curveIdx]` and bails when it is missing. Subscripting
+        # them unconditionally made the backend stricter than the contract the
+        # frontend honours, so a partial payload was a 500.
+        spectraList = cyclicvolta.get('spectraList') or []
+        if 0 <= jcamp_idx < len(spectraList):
+            spectra = spectraList[jcamp_idx] or {}
+            listMaxMinPeaks = spectra.get('list')
 
     try:
         if select_x and float(select_x) != 0.0 and ref_name != '- - -':

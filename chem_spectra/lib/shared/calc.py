@@ -150,9 +150,10 @@ def cal_cyclic_volta_shift_prev_offset_at_index(cyclic_data, index=0):
     if index == len(spectra_list):
       return 0.0
     
-    spectra = spectra_list[index]
+    spectra = spectra_list[index] or {}
     hasRefPeak = spectra.get('hasRefPeak', False) == True
-    shift = spectra['shift']
+    # optional for the same reason as spectraList, guarded three lines above
+    shift = spectra.get('shift') or {}
     if 'prevValue' in shift:
         offset = shift['prevValue'] if hasRefPeak else -shift['prevValue']
 
