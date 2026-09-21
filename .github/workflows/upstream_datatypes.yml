@@ -33,16 +33,27 @@ jobs:
       - name: Compare against the checked-in snapshot
         run: |
           python - <<'PY'
-          import re, sys
+          import ast, re, sys
 
           SNAPSHOT = 'tests/fixtures/converter_app_data_types.txt'
 
-          block = re.search(r'DATA_TYPES = \((.*?)\n\)',
+          # Parse the tuple rather than matching quoted text. A regex for
+          # '...' silently skips a "..." entry, so upstream adding one
+          # double-quoted datatype would leave this job green while the
+          # drift it exists to catch went unreported.
+          block = re.search(r'DATA_TYPES\s*=\s*(\(.*?\n\))',
                             open('/tmp/upstream_options.py', encoding='utf-8').read(), re.S)
           if block is None:
               sys.exit('Could not find DATA_TYPES upstream -- options.py may have been '
                        'restructured. Check it by hand and update the fetch if so.')
-          upstream = set(re.findall(r"'([^']+)'", block.group(1)))
+          try:
+              parsed = ast.literal_eval(block.group(1))
+          except (ValueError, SyntaxError) as exc:
+              sys.exit('DATA_TYPES is no longer a plain literal (%s). It may now be '
+                       'built at runtime; this job needs rewriting.' % exc)
+          if not all(isinstance(entry, str) for entry in parsed):
+              sys.exit('DATA_TYPES contains non-string entries; this job assumes strings.')
+          upstream = set(parsed)
 
           snapshot = {line.strip() for line in open(SNAPSHOT, encoding='utf-8')
                       if line.strip() and not line.startswith('#')}

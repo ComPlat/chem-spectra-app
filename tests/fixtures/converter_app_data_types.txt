@@ -11,13 +11,17 @@
 # twelve datatypes were unmapped here, five of them auxiliary and
 # correctly so, the rest not.
 #
-# To refresh:
+# To refresh, parse the tuple rather than grepping for quoted text -- a
+# regex for '...' silently skips a "..." entry:
 #
 #   curl -fsSL https://raw.githubusercontent.com/ComPlat/chemotion-converter-app/\
-#     refs/heads/master/converter_app/options.py | sed -n '/^DATA_TYPES = (/,/^)/p'
+#     refs/heads/master/converter_app/options.py -o /tmp/o.py
+#   python -c "import ast,re; \
+#     print('\n'.join(ast.literal_eval(re.search(r'DATA_TYPES\s*=\s*(\(.*?\n\))', \
+#     open('/tmp/o.py').read(), re.S).group(1))))"
 #
-# then deal with whatever the test reports. Refreshing it without reading
-# the failures defeats the point.
+# Keep this header, then deal with whatever the test reports. Refreshing it
+# without reading the failures defeats the point.
 #
 # .github/workflows/upstream_datatypes.yml runs that fetch weekly and fails
 # when this snapshot has drifted, so it should not go stale silently.
