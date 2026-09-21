@@ -80,7 +80,12 @@ SPECTRUM_TECHNIQUES = {
                              em_wave=True),
     'RAMAN': SpectrumTechnique('RAMAN', x_reversed=True, threshold=0.07,
                           em_wave=True),
-    'MS': SpectrumTechnique('MS', x_reversed=True, threshold=0.05),
+    # MS is not routed through TechniqueComposer yet: every production
+    # `typ == 'MS'` path goes to MSComposer (transformer.py:273, :381,
+    # bagit/base.py:82), which draws sticks and never calls plt.xlim, so
+    # m/z renders ascending. This entry is therefore unread today, and
+    # x_reversed=False is what it must be when the MS fold makes it live.
+    'MS': SpectrumTechnique('MS', x_reversed=False, threshold=0.05),
 
     'HPLC UVVIS': SpectrumTechnique('HPLC UVVIS', x_reversed=False, threshold=0.05),
     'UVVIS': SpectrumTechnique('UVVIS', x_reversed=False, threshold=0.05,

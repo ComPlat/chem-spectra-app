@@ -35,7 +35,9 @@ EXPECTED = {
     'NMR':                               (0.005, 'reversed', 'chemical_shift', 'intensity'),
     'INFRARED':                          (0.93,  'reversed', 'generic',        'generic'),
     'RAMAN':                             (0.07,  'reversed', 'generic',        'generic'),
-    'MS':                                (0.05,  'reversed', 'generic',        'generic'),
+    # MS never reaches this composer in production -- see the note in
+    # techniques.py. The row records what it must do when it does.
+    'MS':                                (0.05,  'forward',  'generic',        'generic'),
     'HPLC UVVIS':                        (0.05,  'forward',  'generic',        'generic'),
     'UVVIS':                             (0.05,  'forward',  'generic',        'generic'),
     'THERMOGRAVIMETRIC ANALYSIS':        (1.05,  'forward',  'generic',        'generic'),
