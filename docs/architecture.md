@@ -450,7 +450,7 @@ has this much reach, and until recently nothing documented it.
 The chain is:
 
 ```
-##DATA TYPE=  ->  data_type.json  ->  typ  ->  is_* flags  ->  rendering
+##DATA TYPE=  ->  data_type.json  ->  typ  ->  SpectrumTechnique  ->  rendering
 ```
 
 1. `JcampBaseConverter.__read()` hands `nmrglue` the file; every
@@ -461,9 +461,20 @@ The chain is:
 3. `__typ()` maps that back onto the mapping's key, which is `typ`.
 4. `JcampTechniqueConverter.__index_target()` independently picks the **first
    recognised** block as the one whose numbers are read.
-5. Sixteen booleans (`is_xrd`, `is_cyclic_volta`, ... plus `is_em_wave` and
-   `non_nmr`) are derived from `typ`, and consumers branch on them to decide
-   axis labels, x-orientation, peak threshold, integration and multiplicity.
+5. `typ` selects one `SpectrumTechnique` descriptor from
+   `SPECTRUM_TECHNIQUES` in `converter/jcamp/techniques.py`, which is what
+   consumers read to decide axis labels, x-orientation, peak threshold,
+   integration and multiplicity. An unrecognised datatype gets
+   `UNKNOWN_TECHNIQUE`.
+
+**Add a technique by adding a `data_type.json` entry and a
+`SPECTRUM_TECHNIQUES` entry — not by adding a branch.** A parity test fails
+if either exists without the other. The sixteen `is_*` booleans still exist
+as properties over the descriptor, for call sites not yet migrated; do not
+add new consumers of them, and do not derive new behaviour from `typ`
+directly. Converters not fed by `data_type.json` (Bruker FID, NMRium) carry
+no descriptor, and `BaseComposer._technique()` resolves them from their own
+`non_nmr` instead.
 
 Three properties of this chain are load-bearing and easy to break:
 

@@ -14,12 +14,21 @@ key, so a technique becomes one mapping line plus one entry here.
 
 The axis and threshold values were extracted from the pre-refactor tree by
 execution, not by reading, and are pinned by
-`tests/lib/composer/test_technique_rendering_matrix.py`. The NMR gates and
-`cv_scaling` are not yet consumed by anything, so they are pinned only
-against each other by `test_kinds.py`; they will need render-level
-assertions when they are wired up.
+`tests/lib/composer/test_technique_rendering_matrix.py`.
 
-Note on the NMR gates: `non_nmr` currently gates four unrelated concerns --
+The four NMR gates are consumed by `BaseComposer` and `TechniqueComposer`,
+and their behaviour is covered by `tests/lib/composer/test_non_nmr_gates.py`
+-- flipping any of them to the wrong value fails the suite. Two fields are
+**not** yet read and so are pinned only by table-to-table parity in
+`tests/lib/converter/jcamp/test_techniques.py`:
+
+- `cv_scaling`, which nothing consumes at all;
+- `threshold`, because `converter/jcamp/technique.py` still carries its own
+  threshold table.
+
+Both need render-level assertions when they are wired up.
+
+Note on the NMR gates: `non_nmr` gated four unrelated concerns --
 integration pairing, multiplicity output, axis-label style and peak
 annotation. They are separate fields here on purpose. Today all four are
 True only for NMR, so collapsing them into one boolean would reproduce
@@ -49,11 +58,11 @@ class SpectrumTechnique:
     # - - - the four concerns `non_nmr` gates, deliberately separate - - -
     # composer/base.py prepare_itg_mpy: pair integrations with multiplets
     nmr_integration: bool = False
-    # composer/base.py gen_mpy_*_info, composer/ni.py meta and drawing
+    # composer/base.py gen_mpy_*_info, composer/technique.py meta and drawing
     multiplicity: bool = False
-    # composer/ni.py __draw_peaks: annotate peaks on the plot
+    # composer/technique.py __draw_peaks: annotate peaks on the plot
     peak_annotation: bool = False
-    # composer/ni.py __gen_headers_spectrum_orig: the fuller NMR header block
+    # composer/technique.py __gen_headers_spectrum_orig: the fuller NMR header
     nmr_headers: bool = False
 
     # - - - groupings and per-technique extras - - -
