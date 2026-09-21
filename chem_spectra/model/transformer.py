@@ -157,7 +157,9 @@ class TransformerModel:
             cv, _, _ = self.zip2cvp()
             return cv
         else:
-            cv, _ = self.jcamp2cvp()
+            # jcamp2cvp returns (converter, composer, invalid_molfile);
+            # unpacking two of them raised ValueError on every JCAMP file
+            cv, _, _ = self.jcamp2cvp()
             return cv
 
     def ms2composer(self):
