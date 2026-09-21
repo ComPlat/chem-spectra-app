@@ -387,7 +387,8 @@ class TransformerModel:
                 self.multiple_files[idx] = file
 
         self.multiple_files.sort(key=lambda file: file.name)
-        
+
+        plotted_any = False
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
@@ -396,8 +397,20 @@ class TransformerModel:
                 mscv = JcampMSConverter(jbcv)
                 mscp = MSComposer(mscv)
                 plt.plot(mscp.core.xs, mscp.core.ys, label=filename)
+                plotted_any = True
             else:
-                nicv = JcampNIConverter(jbcv)
+                try:
+                    nicv = JcampNIConverter(jbcv)
+                except UnparsableJcampData:
+                    # one unusable file should not lose the whole overlay;
+                    # if every file is unusable nothing is plotted and the
+                    # controller's `if not tf_combine: abort(400)` fires
+                    logger.warning(
+                        'no parsable data in %r; leaving it out of the '
+                        'combined image', filename,
+                    )
+                    tf.close()
+                    continue
                 nicp = NIComposer(nicv)
                 xs, ys = nicp.core.xs, nicp.core.ys
                 y_values = ys
@@ -462,6 +475,7 @@ class TransformerModel:
                         filename = 'DESORPTION'
                         marker = 'v'
                 plt.plot(xs, y_values, label=filename, marker=marker)
+                plotted_any = True
 
                 # PLOT label
                 core_label_x = nicp.core.label['x']
@@ -522,6 +536,14 @@ class TransformerModel:
                     fontsize=14,
                     clip_on=False
                 )
+        if not plotted_any:
+            # every file was unusable; an empty image would look like a
+            # successful overlay of nothing. Returning False lets the
+            # controller's `if not tf_combine: abort(400)` reject it.
+            logger.warning('no usable spectra to combine; rejecting the request')
+            plt.clf()
+            plt.cla()
+            return False
         plt.legend()
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')

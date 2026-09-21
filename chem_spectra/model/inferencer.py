@@ -6,6 +6,7 @@ from flask import current_app
 import logging
 
 from chem_spectra.lib.data_pipeline.infrared import InfraredLib
+from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 from chem_spectra.lib.chem.artist import ArtistLib
 
 hdr_nsdb = {
@@ -183,7 +184,9 @@ class InferencerModel:
             )
             outcome['output']['result'][0]['svgs'] = svgs
             return outcome
-        except TypeError:
+        except (TypeError, UnparsableJcampData):
+            # UnparsableJcampData: the uploaded spectrum has no readable data
+            # array, which is a bad upload rather than a server fault
             return {
                 'outline': {
                     'code': 400,

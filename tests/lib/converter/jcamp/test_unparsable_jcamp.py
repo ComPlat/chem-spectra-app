@@ -68,3 +68,86 @@ def test_a_parsable_file_is_unaffected(client):
             content_type='multipart/form-data',
         )
     assert response.status_code == 200
+
+
+# - - - the other controller paths that build a converter - - -
+#
+# Guarding jcamp2cvp alone was not enough: five other sites construct a
+# JcampNIConverter, and four of them are reachable from an upload. Found by
+# review of #294, after the first version of this change claimed the class
+# of bug was handled when only one path was.
+
+source_molfile = './tests/fixtures/source/molfile/svs813f1_B.mol'
+source_good = './tests/fixtures/source/IR.dx'
+
+
+def _bad():
+    return io.BytesIO(open(source_unparsable, 'rb').read())
+
+
+def _good():
+    return io.BytesIO(open(source_good, 'rb').read())
+
+
+def test_predict_by_peaks_form_rejects_it(client):
+    """to_converter() now returns False, and the caller dereferenced it.
+
+    `cv.edit_peaks` on a bool raised AttributeError
+    (controller/inference_api.py).
+    """
+    response = client.post(
+        '/predict/by_peaks_form',
+        data={
+            'spectrum': (_bad(), 'x.jdx'),
+            'molfile': (io.BytesIO(open(source_molfile, 'rb').read()), 'm.mol'),
+            'layout': '13C',
+            # 'peaks' omitted on purpose: the handler defaults it to '{}'.
+            # Passing '' makes json.loads blow up before the code under
+            # test is reached -- a separate robustness gap, not this one.
+        },
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 400
+
+
+def test_predict_infrared_reports_it_in_the_outline(client):
+    """This endpoint reports errors in the body, not the status code."""
+    response = client.post(
+        '/predict/infrared',
+        data={
+            'spectrum': (_bad(), 'x.jdx'),
+            'molfile': (io.BytesIO(open(source_molfile, 'rb').read()), 'm.mol'),
+        },
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 200
+    assert response.get_json()['outline']['code'] == 400
+
+
+def test_combine_images_skips_an_unusable_file(client):
+    """One bad file must not lose the overlay of the good ones."""
+    response = client.post(
+        '/combine_images',
+        data={'files[]': [(_bad(), 'a.jdx'), (_good(), 'b.dx')]},
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 200
+
+
+def test_combine_images_rejects_an_overlay_of_nothing(client):
+    """All files unusable: an empty image would look like success."""
+    response = client.post(
+        '/combine_images',
+        data={'files[]': [(_bad(), 'a.jdx'), (_bad(), 'b.jdx')]},
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 400
+
+
+def test_combine_images_is_unaffected_for_usable_files(client):
+    response = client.post(
+        '/combine_images',
+        data={'files[]': [(_good(), 'a.dx'), (_good(), 'b.dx')]},
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 200
