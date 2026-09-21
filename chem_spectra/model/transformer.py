@@ -1,4 +1,5 @@
 import json
+import logging
 import zipfile
 import tempfile
 import glob     # noqa: F401
@@ -19,12 +20,15 @@ from chem_spectra.lib.composer.ni import NIComposer
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
+from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.path as mpath  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib import ticker  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
+
+logger = logging.getLogger(__name__)
 
 
 def find_dir(path, name):
@@ -297,7 +301,17 @@ class TransformerModel:
         else:
             final_decorated_jbcv = decorated_jbcv
 
-        nicv = JcampNIConverter(final_decorated_jbcv)
+        try:
+            nicv = JcampNIConverter(final_decorated_jbcv)
+        except UnparsableJcampData:
+            # Same shape as zip2cvp's failure return, so the controllers'
+            # existing `if not cmpsr: abort(...)` handles it rather than the
+            # exception escaping as a 500.
+            logger.warning(
+                'no parsable data in %r; treating it as unconvertible',
+                getattr(self.file, 'name', None),
+            )
+            return False, False, invalid_molfile
         nicp = NIComposer(nicv)
         return nicv, nicp, invalid_molfile
 
