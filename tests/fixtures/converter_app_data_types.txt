@@ -1,0 +1,48 @@
+# Snapshot of DATA_TYPES from chemotion-converter-app.
+#
+# Source : converter_app/options.py
+# Repo   : https://github.com/ComPlat/chemotion-converter-app
+# Commit : 72568d985621 (2026-08-19)
+# Version: 1.9.3
+# Taken  : 2026-09-21
+#
+# This exists because the two lists live in different repositories and
+# nothing keeps them in step. That drift is what produced PR #291:
+# twelve datatypes were unmapped here, five of them auxiliary and
+# correctly so, the rest not.
+#
+# To refresh: re-run the snippet in the docstring of
+# tests/lib/converter/jcamp/test_datatype_coverage.py, then deal with
+# whatever the test reports. Refreshing it without reading the failures
+# defeats the point.
+#
+CIRCULAR DICHROISM SPECTROSCOPY
+CONTINUOUS MASS SPECTRUM
+CYCLIC VOLTAMMETRY
+DIFFERENTIAL SCANNING CALORIMETRY
+DLS ACF
+DLS intensity
+Emissions
+GAS CHROMATOGRAPHY
+GEL PERMEATION CHROMATOGRAPHY
+HPLC UV-VIS
+INFRARED INTERFEROGRAM
+INFRARED PEAK TABLE
+INFRARED SPECTRUM
+INFRARED TRANSFERED SPECTRUM
+MASS SPECTRUM
+MASS TIC
+NMP PEAK ASSIGNMENTS
+NMR FID
+NMR PEAK TABLE
+NMR SPECTRUM
+RAMAN SPECTRUM
+SINGLE CRYSTAL X-RAY DIFFRACTION
+SIZE EXCLUSION CHROMATOGRAPHY
+SORPTION-DESORPTION MEASUREMENT
+SQUID
+TENSIOMETRY
+THERMOGRAVIMETRIC ANALYSIS
+UV-VIS
+X-RAY DIFFRACTION
+LINEAR SWEEP VOLTAMMETRY
