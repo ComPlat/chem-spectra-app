@@ -5,10 +5,22 @@ step. That drift is what produced PR #291: twelve datatypes were unmapped
 in `data_type.json`, five of them auxiliary and correctly so, the rest not
 -- and files of those types were silently misclassified.
 
-A direct import is impossible across repos, so this compares against a
-checked-in snapshot, `tests/fixtures/converter_app_data_types.txt`. That
-only catches drift when the snapshot is refreshed, so it is a backstop and
-not a substitute for being told when `DATA_TYPES` changes upstream.
+This compares against a checked-in snapshot,
+`tests/fixtures/converter_app_data_types.txt`, rather than reading upstream
+directly. Reading it directly is perfectly possible -- the file is one
+curl away at
+
+    https://raw.githubusercontent.com/ComPlat/chemotion-converter-app/refs/heads/master/converter_app/options.py
+
+-- but not from here. This module runs on every push, and a test that
+fetches from another repository fails for reasons that have nothing to do
+with the change being pushed: an upstream edit, a rate limit, an offline
+runner. PR CI should go red for one reason only.
+
+The live check exists, in `.github/workflows/upstream_datatypes.yml`, which
+runs weekly and does exactly that curl. That is where a network dependency
+and a non-deterministic result belong, because there a red build means
+precisely "upstream moved".
 
 To refresh the snapshot, from a checkout of chemotion-converter-app::
 

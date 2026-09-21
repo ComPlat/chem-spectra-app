@@ -11,10 +11,16 @@
 # twelve datatypes were unmapped here, five of them auxiliary and
 # correctly so, the rest not.
 #
-# To refresh: re-run the snippet in the docstring of
-# tests/lib/converter/jcamp/test_datatype_coverage.py, then deal with
-# whatever the test reports. Refreshing it without reading the failures
-# defeats the point.
+# To refresh:
+#
+#   curl -fsSL https://raw.githubusercontent.com/ComPlat/chemotion-converter-app/\
+#     refs/heads/master/converter_app/options.py | sed -n '/^DATA_TYPES = (/,/^)/p'
+#
+# then deal with whatever the test reports. Refreshing it without reading
+# the failures defeats the point.
+#
+# .github/workflows/upstream_datatypes.yml runs that fetch weekly and fails
+# when this snapshot has drifted, so it should not go stale silently.
 #
 CIRCULAR DICHROISM SPECTROSCOPY
 CONTINUOUS MASS SPECTRUM
