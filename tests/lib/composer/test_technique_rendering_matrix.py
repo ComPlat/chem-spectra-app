@@ -6,7 +6,7 @@ orientation, x-label style and y-label style.
 
 The axis assertions capture what the composer actually draws, by spying on
 `plt.xlim`/`plt.xlabel`/`plt.ylabel`, rather than re-deriving the condition
-in `NIComposer.tf_img`. Re-deriving it would make the test a copy of the
+in `TechniqueComposer.tf_img`. Re-deriving it would make the test a copy of the
 code and it would agree with any regression.
 
 Expected values were extracted by execution, and DSC and LC/MS carry the
@@ -22,10 +22,10 @@ import os
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
-# NIComposer selects the Agg backend on import, so import pyplot after it
-from chem_spectra.lib.composer.ni import NIComposer
-import chem_spectra.lib.composer.ni as ni_module
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+# TechniqueComposer selects the Agg backend on import, so import pyplot after it
+from chem_spectra.lib.composer.technique import TechniqueComposer
+import chem_spectra.lib.composer.technique as technique_module
 
 SOURCE = './tests/fixtures/source/hplc/chromatogram.jdx'
 HEADER = '##DATA TYPE=HPLC UV/VIS SPECTRUM'
@@ -69,7 +69,7 @@ def _mapping_keys():
 def render():
     """Render a spectrum of the given datatype; report what it drew."""
     template = open(SOURCE).read()
-    saved = (ni_module.plt.xlim, ni_module.plt.xlabel, ni_module.plt.ylabel)
+    saved = (technique_module.plt.xlim, technique_module.plt.xlabel, technique_module.plt.ylabel)
 
     def _render(datatype, tmp_path):
         target = tmp_path / 'probe.jdx'
@@ -91,15 +91,15 @@ def render():
             drawn['ylabel'] = text
             return real_ylabel(text, **kwargs)
 
-        ni_module.plt.xlim = spy_xlim
-        ni_module.plt.xlabel = spy_xlabel
-        ni_module.plt.ylabel = spy_ylabel
+        technique_module.plt.xlim = spy_xlim
+        technique_module.plt.xlabel = spy_xlabel
+        technique_module.plt.ylabel = spy_ylabel
         try:
-            converter = JcampNIConverter(JcampBaseConverter(str(target)))
-            composer = NIComposer(converter)
+            converter = JcampTechniqueConverter(JcampBaseConverter(str(target)))
+            composer = TechniqueComposer(converter)
             composer.tf_img().close()
         finally:
-            ni_module.plt.xlim, ni_module.plt.xlabel, ni_module.plt.ylabel = saved
+            technique_module.plt.xlim, technique_module.plt.xlabel, technique_module.plt.ylabel = saved
 
         low, high = drawn['xlim']
         drawn['orientation'] = 'forward' if low < high else 'reversed'
@@ -107,7 +107,7 @@ def render():
         return drawn
 
     yield _render
-    ni_module.plt.xlim, ni_module.plt.xlabel, ni_module.plt.ylabel = saved
+    technique_module.plt.xlim, technique_module.plt.xlabel, technique_module.plt.ylabel = saved
 
 
 def _x_style(label):

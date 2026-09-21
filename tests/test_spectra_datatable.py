@@ -28,9 +28,9 @@ def __generated_jcamp_temp(path, params=False):
     with open(path, 'rb') as f:
         file = FileContainer(FileStorage(f))
         molfile = FileContainer(FileStorage(None))
-        nicv, nicp, _ = TraModel(file, molfile, params).jcamp2cvp()
-        jcamp = nicp.tf_jcamp()
-    return nicv, nicp, jcamp
+        tcv, tcp, _ = TraModel(file, molfile, params).jcamp2cvp()
+        jcamp = tcp.tf_jcamp()
+    return tcv, tcp, jcamp
 
 
 def __target_peaks_meta(filename):

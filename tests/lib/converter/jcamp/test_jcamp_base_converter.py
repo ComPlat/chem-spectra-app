@@ -64,7 +64,7 @@ def test_missing_datatype_header_survives_the_whole_transform(tmp_path):
     """The endpoint, not just the base converter.
 
     Guarding `self.dic['DATATYPE']` alone is not enough: the transform then
-    builds JcampNIConverter, whose __index_target() left `idx` unbound when
+    builds JcampTechniqueConverter, whose __index_target() left `idx` unbound when
     no datatype is recognised, so the 500 simply moved one frame down. This
     asserts the full controller path, which is what the caller sees.
     """

@@ -27,9 +27,9 @@ def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
         file = FileContainer(FileStorage(f))
         molfile = FileContainer(FileStorage(None))
-        _, nicp, _ = TraModel(file, molfile, params).jcamp2cvp()
+        _, tcp, _ = TraModel(file, molfile, params).jcamp2cvp()
 
-    parts = ''.join(nicp.meta).split(separator)
+    parts = ''.join(tcp.meta).split(separator)
     assert len(parts) == 2
 
     meta_content = parts[1]

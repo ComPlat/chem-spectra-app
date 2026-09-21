@@ -9,7 +9,7 @@ import pytest
 from werkzeug.datastructures import FileStorage
 
 from chem_spectra.controller.helper.file_container import FileContainer
-from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.model.transformer import TransformerModel
 
@@ -29,7 +29,7 @@ def _converter_for(path, params):
 @pytest.mark.parametrize('path', [source_nmr, source_ir])
 def test_to_converter_returns_a_converter_for_jcamp(path):
     # this raised ValueError: too many values to unpack (expected 2)
-    assert isinstance(_converter_for(path, {'ext': 'jdx'}), JcampNIConverter)
+    assert isinstance(_converter_for(path, {'ext': 'jdx'}), JcampTechniqueConverter)
 
 
 def test_to_converter_returns_ms_converter_for_ms_jcamp():

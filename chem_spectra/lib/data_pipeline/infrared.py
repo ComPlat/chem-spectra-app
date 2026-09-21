@@ -3,7 +3,7 @@ from scipy import interpolate as sc_interpolate
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 
 
 curve_begin_idx = 600
@@ -11,7 +11,7 @@ curve_begin_idx = 600
 
 class InfraredLib:
     def __init__(self, spectrum):
-        self.nicv = self.__read_spectrum(spectrum)
+        self.tcv = self.__read_spectrum(spectrum)
 
     def __order(self, x_i, y_i):
         x_o = x_i
@@ -67,12 +67,12 @@ class InfraredLib:
     def __read_spectrum(self, spc):
         tf = store_str_in_tmp(spc.core, suffix='.jdx')
         jbcv = JcampBaseConverter(tf.name)
-        nicv = JcampNIConverter(jbcv)
+        tcv = JcampTechniqueConverter(jbcv)
         tf.close()
-        return nicv
+        return tcv
 
     def standarize(self):
-        x_order, y_order = self.__order(self.nicv.xs, self.nicv.ys)
+        x_order, y_order = self.__order(self.tcv.xs, self.tcv.ys)
         x_full, y_full = self.__concat_boundary(x_order, y_order)
         x_itp, y_itp = self.__interpolate(x_full, y_full)
         y_itp = y_itp ** 0.5

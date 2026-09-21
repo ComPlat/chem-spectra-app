@@ -17,7 +17,17 @@ THRESHOLD_XRD = 1.00
 THRESHOLD_EMISSION = 0.5
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
-class JcampNIConverter:  # nmr & IR
+class JcampTechniqueConverter:
+    """Reads a JCAMP file for any technique dispatched by its descriptor.
+
+    Formerly JcampTechniqueConverter, where NI meant "NMR & IR" -- the two
+    techniques it handled when it was written. It now covers every technique
+    in SPECTRUM_TECHNIQUES except mass spectrometry, which still has its own
+    converter and composer. The name states where the pipeline is going:
+    MS is a technique too, and folding it in is a deferred action in
+    IMPLEMENTATION-PLAN.spectrum-kind-refactor.md.
+    """
+
     def __init__(self, base):
         self.base = base
         self.params = base.params
@@ -30,6 +40,10 @@ class JcampNIConverter:  # nmr & IR
         self.dic = base.dic
         self.data = make_ni_data_ys(base, self.target_idx)
         self.title = base.title
+        # the descriptor travels with the flags it backs; without it the
+        # composer falls back to UNKNOWN_TECHNIQUE and draws every technique
+        # with the generic-curve defaults
+        self.technique = getattr(base, 'technique', None)
         self.is_em_wave = base.is_em_wave
         self.is_ir = base.is_ir
         self.is_tga = base.is_tga

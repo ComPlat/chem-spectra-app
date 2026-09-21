@@ -25,7 +25,7 @@ TEXT_INTEGRATION = '$$ === CHEMSPECTRA INTEGRATION ===\n'
 TEXT_MULTIPLICITY = '$$ === CHEMSPECTRA MULTIPLICITY ===\n'
 
 
-class NIComposer(BaseComposer):
+class TechniqueComposer(BaseComposer):
     def __init__(self, core):
         super().__init__(core)
         self.title = core.fname
@@ -166,7 +166,7 @@ class NIComposer(BaseComposer):
         ]
 
     def __gen_headers_spectrum_orig(self):
-        if self.core.is_em_wave or self.core.non_nmr:
+        if self._technique().em_wave or not self._technique().nmr_headers:
             return self.__header_base() + self.__header_params()
         else:
             return self.__header_base() + \
@@ -370,7 +370,7 @@ class NIComposer(BaseComposer):
         if csit_area:
             meta.extend(self.__gen_headers_csit_area())
             meta.extend(csit_area)
-        if not self.core.non_nmr:
+        if self._technique().multiplicity:
             meta.extend(self.__gen_headers_mpy_integ())
             meta.extend(self.gen_mpy_integ_info())
             meta.extend(self.__gen_headers_mpy_peaks())
@@ -427,24 +427,14 @@ class NIComposer(BaseComposer):
         plt.plot(self.core.xs, y_values)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
 
-        # High -> low is the convention for NMR, IR, Raman and MS, which
-        # are the techniques the fallback branch below is *meant* to cover.
-        # The forward list has to be extended by hand for each new
-        # technique, and twice it was not: DSC was omitted when it was
-        # added, though it is the same thermal family as TGA, and LC/MS has
-        # no is_* flag at all so it silently inherited the reversed default.
-        # Both were drawn mirrored.
-        draws_forward = (
-            self.core.is_tga or self.core.is_gc or self.core.is_uv_vis
-            or self.core.is_hplc_uv_vis or self.core.is_xrd
-            or self.core.is_cyclic_volta or self.core.is_sec
-            or self.core.is_cds or self.core.is_aif or self.core.is_emissions
-            or self.core.is_dls_acf or self.core.is_dls_intensity
-            or self.core.is_dsc                       # thermal, like TGA
-            or getattr(self.core, 'typ', '') == 'LC/MS'  # retention time
-        )
-        xlim_left, xlim_right = [x_min, x_max] if draws_forward else [x_max, x_min]
-        plt.xlim(xlim_left, xlim_right)
+        # high -> low is the NMR/IR convention; every other technique reads
+        # forward. This was a twelve-flag or-chain that had to be extended by
+        # hand for each new technique -- and was not, which is why DSC and
+        # LC/MS are still drawn reversed (BUG-6, BUG-7).
+        if self._technique().x_reversed:
+            plt.xlim(x_max, x_min)
+        else:
+            plt.xlim(x_min, x_max)
         y_max, y_min = np.max(y_values), np.min(y_values)
         h = y_max - y_min
         w = x_max - x_min
@@ -594,7 +584,7 @@ class NIComposer(BaseComposer):
         
 
         # ----- Calculate multiplicity (NMR only) -----
-        if (not self.core.non_nmr and len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
+        if (self._technique().multiplicity and len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
             core_mpy_pks_table = self.core.mpy_pks_table[0]
             mpy_pks_table = core_mpy_pks_table.split('\n')
             tmp_dic_mpy_peaks = {}
@@ -642,7 +632,7 @@ class NIComposer(BaseComposer):
         y_boundary_min = itg_value_position_y - h * 0.1
         
         # ----- PLOT multiplicity (NMR only) -----
-        if not self.core.non_nmr:
+        if self._technique().multiplicity:
             mpy_h = y_min - h * 0.03
             for mpy in self.mpys:
                 xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']    # noqa: E501
@@ -659,19 +649,10 @@ class NIComposer(BaseComposer):
             waveLength = self.core.params['waveLength']
             label = "X ({}), WL={} nm".format(self.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
             plt.xlabel((label), fontsize=18)
-        elif (self.core.is_cyclic_volta):
-            plt.xlabel("{}".format(self.core.label['x']), fontsize=18)
-        elif (self.core.non_nmr == False):
-            plt.xlabel("Chemical shift ({})".format(self.core.label['x'].lower()), fontsize=18)
         else:
-            plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
+            plt.xlabel(self.__x_label(), fontsize=18)
 
-        if (self.core.is_cyclic_volta):
-            plt.ylabel("{}".format(self.core.label['y']), fontsize=18)
-        elif (self.core.non_nmr == False):
-            plt.ylabel("Intensity ({})".format(self.core.label['y'].lower()), fontsize=18)
-        else:
-            plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
+        plt.ylabel(self.__y_label(), fontsize=18)
         plt.locator_params(nbins=self.__plt_nbins())
         plt.grid(False)
 
@@ -721,6 +702,22 @@ class NIComposer(BaseComposer):
         plt.cla()
         return tf_img
     
+
+    def __x_label(self):
+        style = self._technique().x_axis
+        if style == 'raw':
+            return "{}".format(self.core.label['x'])
+        if style == 'chemical_shift':
+            return "Chemical shift ({})".format(self.core.label['x'].lower())
+        return "X ({})".format(self.core.label['x'])
+
+    def __y_label(self):
+        style = self._technique().y_axis
+        if style == 'raw':
+            return "{}".format(self.core.label['y'])
+        if style == 'intensity':
+            return "Intensity ({})".format(self.core.label['y'].lower())
+        return "Y ({})".format(self.core.label['y'])
 
     def __uses_auc_drawing(self):
         return self.core.is_hplc_uv_vis or self.core.is_uv_vis
@@ -804,7 +801,7 @@ class NIComposer(BaseComposer):
         
 
     def __draw_peaks(self, plt, x_peaks, y_peaks, h, w, y_boundary_max):
-        if self.core.non_nmr == True or len(x_peaks) == 0:
+        if not self._technique().peak_annotation or len(x_peaks) == 0:
             return y_boundary_max
 
         params = self.core.params

@@ -16,22 +16,22 @@ import numpy as np
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
-from chem_spectra.lib.composer.ni import NIComposer
-import chem_spectra.lib.composer.ni as ni_module
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.composer.technique import TechniqueComposer
+import chem_spectra.lib.composer.technique as technique_module
 
 SOURCE = './tests/fixtures/source/cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'
 
 
 def _composer(params=False):
-    return NIComposer(JcampNIConverter(JcampBaseConverter(SOURCE, params)))
+    return TechniqueComposer(JcampTechniqueConverter(JcampBaseConverter(SOURCE, params)))
 
 
 def _render_capture(composer):
     """Run tf_img, capturing the first plotted series and the axis labels."""
     drawn = {}
-    real_plot = ni_module.plt.plot
-    real_xlabel, real_ylabel = ni_module.plt.xlabel, ni_module.plt.ylabel
+    real_plot = technique_module.plt.plot
+    real_xlabel, real_ylabel = technique_module.plt.xlabel, technique_module.plt.ylabel
 
     def spy_plot(*args, **kwargs):
         if 'series' not in drawn and len(args) >= 2:
@@ -46,15 +46,15 @@ def _render_capture(composer):
         drawn['ylabel'] = text
         return real_ylabel(text, **kwargs)
 
-    ni_module.plt.plot = spy_plot
-    ni_module.plt.xlabel = spy_xlabel
-    ni_module.plt.ylabel = spy_ylabel
+    technique_module.plt.plot = spy_plot
+    technique_module.plt.xlabel = spy_xlabel
+    technique_module.plt.ylabel = spy_ylabel
     try:
         composer.tf_img().close()
     finally:
-        ni_module.plt.plot = real_plot
-        ni_module.plt.xlabel = real_xlabel
-        ni_module.plt.ylabel = real_ylabel
+        technique_module.plt.plot = real_plot
+        technique_module.plt.xlabel = real_xlabel
+        technique_module.plt.ylabel = real_ylabel
     return drawn
 
 

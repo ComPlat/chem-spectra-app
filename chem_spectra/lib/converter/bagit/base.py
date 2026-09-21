@@ -5,9 +5,9 @@ import json
 import math
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
-from chem_spectra.lib.composer.ni import NIComposer
+from chem_spectra.lib.composer.technique import TechniqueComposer
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 from chem_spectra.lib.converter.share import parse_params
@@ -82,22 +82,22 @@ class BagItBaseConverter:
                     if base_cv.typ == 'MS':
                         # Standalone MS path
                         mscv = JcampMSConverter(base_cv)
-                        nicp = MSComposer(mscv)
+                        tcp = MSComposer(mscv)
                     else:
-                        nicv = JcampNIConverter(base_cv)
-                        nicp = NIComposer(nicv)
+                        tcv = JcampTechniqueConverter(base_cv)
+                        tcp = TechniqueComposer(tcv)
                 except KeyError as err:
                     print(f"Skip empty JCAMP {file_name}: {err}")
                     continue
-                list_composer.append(nicp)
-                tf_jcamp = nicp.tf_jcamp()
+                list_composer.append(tcp)
+                tf_jcamp = tcp.tf_jcamp()
                 list_files.append(tf_jcamp)
-                tf_img = nicp.tf_img()
+                tf_img = tcp.tf_img()
                 list_images.append(tf_img)
                 if base_cv.typ == 'MS':
                     list_csv.append(None)
                 else:
-                    tf_csv = nicp.tf_csv()
+                    tf_csv = tcp.tf_csv()
                     list_csv.append(tf_csv)
                 archive_stems.append(stem)
 
@@ -151,14 +151,14 @@ class BagItBaseConverter:
         return 'bagit'
 
     def __combine_images(self, list_composer, list_file_names=None):
-        non_lcms_ni = [
+        non_lcms_techniques = [
             c for c in list_composer
             if not isinstance(c, LCMSConverterAppComposer)
             and not isinstance(c.core, JcampMSConverter)
         ]
-        if len(non_lcms_ni) <= 1:
+        if len(non_lcms_techniques) <= 1:
             return None
-        list_composer = non_lcms_ni
+        list_composer = non_lcms_techniques
 
         plt.rcParams['figure.figsize'] = [16, 9]
         plt.rcParams['font.size'] = 14

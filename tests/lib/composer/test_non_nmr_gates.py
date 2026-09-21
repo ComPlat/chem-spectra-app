@@ -14,8 +14,8 @@ not set it at all.
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
-from chem_spectra.lib.composer.ni import NIComposer
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.composer.technique import TechniqueComposer
 from chem_spectra.lib.composer.base import BaseComposer
 
 source_nmr = './tests/fixtures/source/1H.dx'
@@ -28,7 +28,7 @@ MPY = {'xExtent': {'xL': 1.0, 'xU': 2.0}, 'yExtent': {'yL': 0.0, 'yU': 1.0},
 
 
 def _composer(path):
-    return NIComposer(JcampNIConverter(JcampBaseConverter(path)))
+    return TechniqueComposer(JcampTechniqueConverter(JcampBaseConverter(path)))
 
 
 def _repair(composer):
