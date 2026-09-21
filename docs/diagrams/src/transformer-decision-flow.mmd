@@ -14,8 +14,8 @@ flowchart TD
     ExtractZip["Extract ZIP\nTemporaryDirectory"]
     BrukerCheck{"Contains fid"}
     ProcessedCheck{"Contains pdata"}
-    BrukerRaw["FidBaseConverter\nJcampNIConverter\nNIComposer"]
-    BrukerProcessed["FidHasBruckerProcessed\nmultiple NIComposer"]
+    BrukerRaw["FidBaseConverter\nJcampTechniqueConverter\nTechniqueComposer"]
+    BrukerProcessed["FidHasBruckerProcessed\nmultiple TechniqueComposer"]
     BagItCheck{"Contains bagit.txt"}
     BagItPath["BagItBaseConverter"]
     ZipFail["False values"]
@@ -26,7 +26,7 @@ flowchart TD
     JcampBase["JcampBaseConverter"]
     JcampType{"Check jbcv typ"}
     JcampMS["JcampMSConverter\nMSComposer"]
-    JcampNI["JcampNIConverter\nNIComposer"]
+    JcampNI["JcampTechniqueConverter\nTechniqueComposer"]
   end
 
   Start --> Ext

@@ -236,9 +236,9 @@ The main branches are:
 |---|---|
 | `raw`, `mzml`, `mzxml` | `MSConverter` -> `MSComposer` |
 | `cdf` | `CdfBaseConverter` -> `CdfMSConverter` -> `MSComposer` |
-| `zip` with Bruker `fid` | `FidBaseConverter` or `FidHasBruckerProcessed` -> `JcampNIConverter` -> `NIComposer` |
+| `zip` with Bruker `fid` | `FidBaseConverter` or `FidHasBruckerProcessed` -> `JcampTechniqueConverter` -> `TechniqueComposer` |
 | `zip` with `bagit.txt` | `BagItBaseConverter` |
-| JCAMP-like input | `JcampBaseConverter` -> `JcampMSConverter`/`MSComposer` or `JcampNIConverter`/`NIComposer` |
+| JCAMP-like input | `JcampBaseConverter` -> `JcampMSConverter`/`MSComposer` or `JcampTechniqueConverter`/`TechniqueComposer` |
 
 The ZIP path is more complex:
 
@@ -257,7 +257,7 @@ Examples:
 - `ms2composer()` creates `MSConverter` and then wraps it in `MSComposer`.
 - `cdf2cvp()` writes the uploaded bytes to a temporary `.cdf` file, creates `CdfBaseConverter`, then `CdfMSConverter`, then `MSComposer`.
 - `jcamp2cvp()` writes the uploaded text to a temporary file, creates `JcampBaseConverter`, then branches on `jbcv.typ`.
-- Bruker ZIP conversion produces NMR-like converter data, then creates `JcampNIConverter` and `NIComposer`.
+- Bruker ZIP conversion produces NMR-like converter data, then creates `JcampTechniqueConverter` and `TechniqueComposer`.
 
 When modifying `TransformerModel`, be careful with return shapes. Some callers expect:
 
@@ -459,7 +459,7 @@ The chain is:
 2. `__set_datatype()` walks those datatypes **in the file's own order** and
    returns the first that appears in `data_type.json`.
 3. `__typ()` maps that back onto the mapping's key, which is `typ`.
-4. `JcampNIConverter.__index_target()` independently picks the **first
+4. `JcampTechniqueConverter.__index_target()` independently picks the **first
    recognised** block as the one whose numbers are read.
 5. Sixteen booleans (`is_xrd`, `is_cyclic_volta`, ... plus `is_em_wave` and
    `non_nmr`) are derived from `typ`, and consumers branch on them to decide
@@ -504,10 +504,10 @@ Composers are output-oriented. They answer: "How should this normalized data be 
 Examples:
 
 - `JcampBaseConverter` reads JCAMP and classifies the spectrum.
-- `JcampNIConverter` converts non-MS JCAMP data into the shape expected by `NIComposer`.
+- `JcampTechniqueConverter` converts non-MS JCAMP data into the shape expected by `TechniqueComposer`.
 - `JcampMSConverter` converts MS JCAMP data into the shape expected by `MSComposer`.
 - `MSConverter` reads or prepares mass spectrometry data from RAW, mzML, or mzXML.
-- `NIComposer` writes JCAMP-like output, renders PNG images, and can produce CSV data for supported non-MS workflows.
+- `TechniqueComposer` writes JCAMP-like output, renders PNG images, and can produce CSV data for supported non-MS workflows.
 - `MSComposer` writes mass-spectrum JCAMP output, renders MS images, and exposes `prism_peaks()`.
 
 ### Temporary Files
@@ -601,7 +601,7 @@ Contains output-generation logic.
 Important files:
 
 - `base.py` for common JCAMP output sections, metadata, peak tables, integration, and multiplicity support.
-- `ni.py` for NMR and many non-MS output workflows.
+- `technique.py` for every non-MS technique.
 - `ms.py` for mass spectrum output and peak extraction.
 
 Modify this layer when generated output changes.
@@ -694,7 +694,7 @@ Used in:
 
 The codebase is structured as a single Flask application with internal modules rather than separate services.
 
-This keeps endpoint registration and deployment simple, but it means shared workflows such as `TransformerModel` and `NIComposer` have a broad impact. Test changes in these areas across multiple endpoint families.
+This keeps endpoint registration and deployment simple, but it means shared workflows such as `TransformerModel` and `TechniqueComposer` have a broad impact. Test changes in these areas across multiple endpoint families.
 
 ### Request-Scoped Processing
 
