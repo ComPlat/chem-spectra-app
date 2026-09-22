@@ -242,11 +242,14 @@ class BaseComposer:
         """The core's spectrum-technique descriptor.
 
         Converters not fed by data_type.json carry no `technique` but do set
-        `non_nmr` themselves: FID hardcodes typ='NMR' and NMRium sets
-        non_nmr=False. For those the fallback is the NMR descriptor, not the
-        generic curve -- that is the branch the old `non_nmr == False` chain
-        put them on. Falling back to UNKNOWN_TECHNIQUE instead stripped the
-        chemical-shift axis labels off every Bruker FID render.
+        `non_nmr` themselves. `NMRiumDataConverter` is the only one left:
+        tf_nmrium (model/transformer.py) hands it straight to
+        TechniqueComposer and it carries no descriptor, so this fallback is
+        what resolves it to NMR rather than the generic curve.
+
+        FID and every MS converter used to need this too. Both now set a
+        descriptor of their own, so the fallback is reached on the NMRium
+        path alone. It is kept because a converter added later may forget.
         """
         from chem_spectra.lib.converter.jcamp.techniques import (
             SPECTRUM_TECHNIQUES, UNKNOWN_TECHNIQUE,

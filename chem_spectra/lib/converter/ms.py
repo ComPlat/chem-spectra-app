@@ -1,3 +1,4 @@
+from chem_spectra.lib.converter.jcamp.techniques import technique_for
 import hashlib
 import subprocess as sbp
 import time
@@ -23,6 +24,9 @@ class MSConverter:
         self.bound_high = self.exact_mz + MARGIN
         self.bound_low = self.exact_mz - MARGIN
         self.typ = 'MS'
+        # RAW / mzML / mzXML never go through JCAMP classification; typ is
+        # stated literally above, so the descriptor is known here.
+        self.technique = technique_for(self.typ)
         self.dic = {}
         # - - - - - - - - - - -
         fn = file.name.split('.')

@@ -98,17 +98,6 @@ class JcampBaseConverter:
                 return key
         return ''
 
-    # `non_nmr` is the one predicate that survives, and not as a shim.
-    # JcampMSConverter copies it (converter/jcamp/ms.py) and carries no
-    # descriptor, so BaseComposer._technique() reaches it through
-    # `getattr(self.core, 'non_nmr', True)` -- that fallback is the MS path's
-    # only route to a descriptor. It goes when MS is folded in as a
-    # technique; see DEFERRED.md item 1. The other fifteen predicates are
-    # gone: every decision they carried is a field on the descriptor.
-    @property
-    def non_nmr(self):
-        return self.technique.key != 'NMR'
-
     def __set_dataclass(self):
         data_class = self.dataclasses
         if 'XYPOINTS' in data_class:

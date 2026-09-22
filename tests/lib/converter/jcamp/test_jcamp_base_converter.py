@@ -30,13 +30,13 @@ def test_init_jcamp_base_converter_success(jcamp_file_1h):
 def test_convert_jcamp_nmr(jcamp_file_1h):
     converter = JcampBaseConverter(jcamp_file_1h)
     assert converter is not None
-    assert converter.non_nmr == False
+    assert converter.technique.key == 'NMR'
     assert converter.ncl == "1H"
   
 def test_convert_jcamp_non_nmr(jcamp_file_ir):
     converter = JcampBaseConverter(jcamp_file_ir)
     assert converter is not None
-    assert converter.non_nmr == True
+    assert converter.technique.key != 'NMR'
     
 
 def test_missing_datatype_header_does_not_raise(tmp_path):
@@ -57,7 +57,7 @@ def test_missing_datatype_header_does_not_raise(tmp_path):
     assert converter.typ == ''
     # since #291, typ == '' means non-NMR: the file takes the generic curve
     # path rather than being handed to the NMR branch
-    assert converter.non_nmr is True
+    assert converter.technique.key != 'NMR'
 
 
 def test_missing_datatype_header_survives_the_whole_transform(tmp_path):

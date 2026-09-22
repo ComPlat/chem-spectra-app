@@ -1,4 +1,5 @@
 from chem_spectra.lib.converter.jcamp.data_parse import make_ms_data_xsys
+from chem_spectra.lib.converter.jcamp.techniques import technique_for
 from chem_spectra.lib.converter.share import reduce_pts
 import numpy as np
 
@@ -15,7 +16,10 @@ class JcampMSConverter:  # nmr & IR
         self.dic = base.dic
         self.data = make_ms_data_xsys(base)
         self.title = base.title
-        self.non_nmr = base.non_nmr
+        # MS is a technique in SPECTRUM_TECHNIQUES like any other. Carrying
+        # the descriptor is what lets BaseComposer._technique() resolve this
+        # core directly instead of inferring it from `non_nmr`.
+        self.technique = getattr(base, 'technique', None) or technique_for(self.typ)
         # - - - - - - - - - - -
         self.exact_mz, self.edit_scan, self.thres = self.__set_params(base.params)  # noqa
         self.bound_high = self.exact_mz + MARGIN
