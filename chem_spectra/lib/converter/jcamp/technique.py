@@ -222,7 +222,7 @@ class JcampTechniqueConverter:
     def __read_ys(self):
         ys = self.data
         # transmission only # IR ABS vs TRANS
-        if self.is_ir:
+        if self.technique.transmittance:
             y_median = np.median(ys)
             y_max = np.max(ys)
             if y_median < 0.5 * y_max:
@@ -439,14 +439,14 @@ class JcampTechniqueConverter:
 
         corr_data_ys = self.ys
         corr_height = height
-        if self.is_ir:
+        if self.technique.peaks_inverted:
             corr_data_ys = 1 - self.ys
             corr_height = 1 - height
 
         peak_idxs = signal.find_peaks(corr_data_ys, height=corr_height)[0]
 
         min_y = np.min(self.ys)
-        if not (self.is_ir or self.is_cds) and (max_y * 0.4 < -min_y):
+        if self.technique.negative_peaks and (max_y * 0.4 < -min_y):
             dept_corr_data_ys = 1 - self.ys
             dept_corr_height = height
             dept_peak_idxs = signal.find_peaks(dept_corr_data_ys, height=dept_corr_height)[0]
@@ -458,7 +458,7 @@ class JcampTechniqueConverter:
         auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx]} for idx in peak_idxs]
         auto_peaks.sort(key=lambda d: d['y'], reverse=True)
 
-        if self.is_ir:
+        if self.technique.peaks_inverted:
             auto_peaks = auto_peaks[-100:]
         elif self.ncl == '13C':
             simu_length = len(self.simu_peaks)

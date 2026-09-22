@@ -75,6 +75,22 @@ class SpectrumTechnique:
     # cyclic voltammetry y-scaling and the shared 10^n axis label
     cv_scaling: bool = False
 
+    # - - - signal polarity, three concerns that coincide for infrared - - -
+    # converter/jcamp/technique.py __read_ys: a transmittance trace stored the
+    # absorbance way up is inverted, judged by median against max.
+    transmittance: bool = False
+    # converter/jcamp/technique.py __exec_peak_picking_logic and
+    # __run_auto_pick_peak: bands are troughs, so find_peaks runs on 1 - ys
+    # and the auto table keeps the *lowest* hundred.
+    peaks_inverted: bool = False
+    # converter/jcamp/technique.py __exec_peak_picking_logic: fold in peaks
+    # found on the inverted series when the trace dips well below zero -- the
+    # DEPT case. Infrared opts out because peaks_inverted already did that
+    # work; circular dichroism opts out because its signal is genuinely
+    # bipolar and both lobes are real. Same effect, different reasons, so if
+    # one of them ever changes this field is the wrong place to express it.
+    negative_peaks: bool = True
+
 
 def _nmr(key):
     return SpectrumTechnique(
@@ -90,7 +106,8 @@ SPECTRUM_TECHNIQUES = {
     'NMR': _nmr('NMR'),
 
     'INFRARED': SpectrumTechnique('INFRARED', x_reversed=True, threshold=0.93,
-                             em_wave=True),
+                             em_wave=True, transmittance=True,
+                             peaks_inverted=True, negative_peaks=False),
     'RAMAN': SpectrumTechnique('RAMAN', x_reversed=True, threshold=0.07,
                           em_wave=True),
     # MS is not routed through TechniqueComposer yet: every production
@@ -114,7 +131,8 @@ SPECTRUM_TECHNIQUES = {
     'SIZE EXCLUSION CHROMATOGRAPHY': SpectrumTechnique(
         'SIZE EXCLUSION CHROMATOGRAPHY', x_reversed=False, threshold=0.5),
     'CIRCULAR DICHROISM SPECTROSCOPY': SpectrumTechnique(
-        'CIRCULAR DICHROISM SPECTROSCOPY', x_reversed=False, threshold=1.00),
+        'CIRCULAR DICHROISM SPECTROSCOPY', x_reversed=False, threshold=1.00,
+        negative_peaks=False),
     'SORPTION-DESORPTION MEASUREMENT': SpectrumTechnique(
         'SORPTION-DESORPTION MEASUREMENT', x_reversed=False, threshold=1.00),
     'Emissions': SpectrumTechnique('Emissions', x_reversed=False, threshold=0.5),
