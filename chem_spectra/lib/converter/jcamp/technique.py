@@ -199,7 +199,7 @@ class JcampTechniqueConverter:
             except:  # noqa
                 pass
 
-        if self.is_em_wave and beg_pt < end_pt:
+        if self.technique.em_wave and beg_pt < end_pt:
             buf = beg_pt
             beg_pt = end_pt
             end_pt = buf
@@ -263,7 +263,7 @@ class JcampTechniqueConverter:
 
         if 'absorb' in target['y'].lower() and not(self.is_uv_vis):  # IR ABS vs TRANS
             target['y'] = 'TRANSMITTANCE'
-        if (self.is_xrd):
+        if self.technique.x_axis == 'xrd':
             target['x'] = '2Theta'
             
         if 'axesUnits' in self.params and self.params['axesUnits'] is not None:
