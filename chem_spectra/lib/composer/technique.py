@@ -229,7 +229,7 @@ class TechniqueComposer(BaseComposer):
         return result
 
     def __gen_header_user_input_meta_data(self):
-        if self.core.is_dsc:
+        if self._technique().dsc_metadata:
             dsc_meta_data = self.core.params.get('dsc_meta_data', None)
             melting_point, tg_value = '', ''
             if dsc_meta_data is not None:
@@ -349,7 +349,7 @@ class TechniqueComposer(BaseComposer):
         meta.extend(self.gen_headers_root())
 
         meta.extend(self.__gen_headers_spectrum_orig())
-        if self.core.is_sec:
+        if self._technique().sec_headers:
             meta.extend(self.__gen_header_sec())
         meta.extend(self.__gen_header_user_input_meta_data())
         meta.extend(self.gen_spectrum_orig())
@@ -902,11 +902,11 @@ class TechniqueComposer(BaseComposer):
 
 
     def __generate_info_box(self, plotlib):
-        if not (self.core.is_sec or self.core.is_dsc):
+        if not self._technique().info_box:
             return
         core_dic = self.core.dic
         result = []
-        if self.core.is_sec:
+        if self._technique().info_box == 'sec':
             sec_data_key = ['MN', 'MW', 'MP', 'D']
             for key in sec_data_key:
                 dic_value = core_dic.get(key, [])

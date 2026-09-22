@@ -115,6 +115,18 @@ class SpectrumTechnique:
     # auc_column, which is why these are two fields.
     visual_split: bool = False
 
+    # - - - size exclusion chromatography and differential scanning - - -
+    # composer/technique.py __generate_info_box: which annotation box is
+    # drawn on the plot. '' draws none; 'sec' lists MN/MW/MP/D, 'dsc' lists
+    # the melting point and Tg. A discriminator rather than two booleans,
+    # because the box has exactly one variant per technique.
+    info_box: str = ''
+    # composer/technique.py __gen_header_sec: the SEC header block
+    sec_headers: bool = False
+    # composer/technique.py __gen_header_user_input_meta_data: melting point
+    # and Tg written into the JCAMP, from params or from the file's own LDRs
+    dsc_metadata: bool = False
+
 
 def _nmr(key):
     return SpectrumTechnique(
@@ -155,7 +167,8 @@ SPECTRUM_TECHNIQUES = {
         'CYCLIC VOLTAMMETRY', x_axis='raw', y_axis='raw',
         x_reversed=False, threshold=1.00, cyclic_voltammetry=True),
     'SIZE EXCLUSION CHROMATOGRAPHY': SpectrumTechnique(
-        'SIZE EXCLUSION CHROMATOGRAPHY', x_reversed=False, threshold=0.5),
+        'SIZE EXCLUSION CHROMATOGRAPHY', x_reversed=False, threshold=0.5,
+        info_box='sec', sec_headers=True),
     'CIRCULAR DICHROISM SPECTROSCOPY': SpectrumTechnique(
         'CIRCULAR DICHROISM SPECTROSCOPY', x_reversed=False, threshold=1.00,
         negative_peaks=False),
@@ -169,7 +182,8 @@ SPECTRUM_TECHNIQUES = {
     # Forward, like TGA. It was reversed until #292, because `is_dsc` was
     # never added to the hand-maintained orientation chain in tf_img.
     'DIFFERENTIAL SCANNING CALORIMETRY': SpectrumTechnique(
-        'DIFFERENTIAL SCANNING CALORIMETRY', x_reversed=False, threshold=1.05),
+        'DIFFERENTIAL SCANNING CALORIMETRY', x_reversed=False, threshold=1.05,
+        info_box='dsc', dsc_metadata=True),
 
     'GAS CHROMATOGRAPHY': SpectrumTechnique('GAS CHROMATOGRAPHY', x_reversed=False,
                                        threshold=0.5),
