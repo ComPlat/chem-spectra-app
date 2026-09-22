@@ -28,9 +28,9 @@ path, not just pinned by parity.
 `x_axis` was in the parity-only state too for `'xrd'`, until the composer's
 hardcoded `is_xrd` branch was migrated to read it -- see the review of #293.
 
-One field is **not** read by anything and so is pinned only by
-table-to-table parity in `tests/lib/converter/jcamp/test_techniques.py`:
-`cv_scaling`. It needs a render-level assertion when it is wired up.
+`cyclic_voltammetry` (formerly `cv_scaling`, which nothing consumed) is now
+read by all fourteen CV sites. Every field in this dataclass is read by
+something.
 
 Note on the NMR gates: `non_nmr` gated four unrelated concerns --
 integration pairing, multiplicity output, axis-label style and peak
@@ -72,8 +72,13 @@ class SpectrumTechnique:
     # - - - groupings and per-technique extras - - -
     # IR / Raman / UV-Vis share a header shape (the old `is_em_wave`)
     em_wave: bool = False
-    # cyclic voltammetry y-scaling and the shared 10^n axis label
-    cv_scaling: bool = False
+    # this technique is cyclic voltammetry. Fourteen sites across the
+    # converter, both composers, the bagit writer and the transformer ask
+    # exactly that question -- the shift offset, the display info, the data
+    # table, the y-scaling and the axis label. It was named `cv_scaling` for
+    # only the last of those and went unconsumed; the name now matches what
+    # it is asked.
+    cyclic_voltammetry: bool = False
 
     # - - - signal polarity, three concerns that coincide for infrared - - -
     # converter/jcamp/technique.py __read_ys: a transmittance trace stored the
@@ -137,7 +142,7 @@ SPECTRUM_TECHNIQUES = {
         'X-RAY DIFFRACTION', x_axis='xrd', x_reversed=False, threshold=1.00),
     'CYCLIC VOLTAMMETRY': SpectrumTechnique(
         'CYCLIC VOLTAMMETRY', x_axis='raw', y_axis='raw',
-        x_reversed=False, threshold=1.00, cv_scaling=True),
+        x_reversed=False, threshold=1.00, cyclic_voltammetry=True),
     'SIZE EXCLUSION CHROMATOGRAPHY': SpectrumTechnique(
         'SIZE EXCLUSION CHROMATOGRAPHY', x_reversed=False, threshold=0.5),
     'CIRCULAR DICHROISM SPECTROSCOPY': SpectrumTechnique(

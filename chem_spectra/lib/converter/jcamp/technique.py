@@ -667,7 +667,7 @@ class JcampTechniqueConverter:
         self.last_x = self.xs[-1]
 
     def __check_cylic_volta_shifted_info(self):
-        if self.is_cyclic_volta == False:
+        if not self.technique.cyclic_voltammetry:
             return
         
         cyclicvolta_data = self.params['cyclicvolta']

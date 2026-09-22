@@ -414,7 +414,7 @@ class TransformerModel:
                 tcp = TechniqueComposer(tcv)
                 xs, ys = tcp.core.xs, tcp.core.ys
                 y_values = ys
-                if tcp.core.is_cyclic_volta:
+                if tcp._technique().cyclic_voltammetry:
                     cv_state = {}
                     if extraParams:
                         try:
@@ -480,7 +480,7 @@ class TransformerModel:
                 # PLOT label
                 core_label_x = tcp.core.label['x']
                 core_label_y = tcp.core.label['y']
-                if tcp.core.is_cyclic_volta:
+                if tcp._technique().cyclic_voltammetry:
                     x_peaks, y_peaks = self.__get_cyclic_volta_ref_peaks(curve_idx, extraParams)
                     if y_peaks and y_values is not ys:
                         y_peaks = [y * scale for y in y_peaks]

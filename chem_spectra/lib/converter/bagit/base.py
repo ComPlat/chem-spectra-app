@@ -182,7 +182,7 @@ class BagItBaseConverter:
             
             xs, ys = composer.core.xs, composer.core.ys
             y_values = ys
-            if composer.core.is_cyclic_volta:
+            if composer._technique().cyclic_voltammetry:
                 cv_state = (
                     composer.core.params.get('cyclicvoltaSt')
                     or composer.core.params.get('cyclicvolta')
@@ -226,12 +226,12 @@ class BagItBaseConverter:
                 waveLength = composer.core.params['waveLength']
                 label = "X ({}), WL={} nm".format(composer.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
                 plt.xlabel((label), fontsize=18)
-            elif (composer.core.is_cyclic_volta):
+            elif (composer._technique().cyclic_voltammetry):
                 plt.xlabel("{}".format(composer.core.label['x']), fontsize=18)
             else:
                 plt.xlabel("X ({})".format(composer.core.label['x']), fontsize=18)
 
-            if (composer.core.is_cyclic_volta):
+            if (composer._technique().cyclic_voltammetry):
                 plt.ylabel("{}".format(composer.core.label['y']), fontsize=18)
             else:
                 plt.ylabel("Y ({})".format(composer.core.label['y']), fontsize=18)

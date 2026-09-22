@@ -36,7 +36,7 @@ class TechniqueComposer(BaseComposer):
         self.meta = self.__compose()
 
     def __cv_display_info(self):
-        if not getattr(self.core, 'is_cyclic_volta', False):
+        if not self._technique().cyclic_voltammetry:
             return None
 
         params = self.core.params if hasattr(self.core, 'params') else {}
@@ -287,7 +287,7 @@ class TechniqueComposer(BaseComposer):
 
     def __gen_cyclic_voltammetry_data_peaks(self):
         content = ['##$CSCYCLICVOLTAMMETRYDATA=\n']
-        if self.core.is_cyclic_volta:
+        if self._technique().cyclic_voltammetry:
             listMaxMinPeaks = self.core.max_min_peaks_table
             cyclicvolta_data = self.core.params['cyclicvolta']
             current_jcamp_idx = self.core.params['jcamp_idx']
@@ -377,7 +377,7 @@ class TechniqueComposer(BaseComposer):
             meta.extend(self.gen_mpy_peaks_info())
         meta.extend(self.__gen_header_simulation())
         meta.extend(self.gen_simulation_info())
-        if self.core.is_cyclic_volta:
+        if self._technique().cyclic_voltammetry:
             meta.extend(self.__gen_header_cyclic_voltammetry())
             meta.extend(self.__gen_cyclic_voltammetry_medadata())
             meta.extend(self.__gen_cyclic_voltammetry_data_peaks())
@@ -410,7 +410,7 @@ class TechniqueComposer(BaseComposer):
         plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
 
-        cv_info = self.__cv_display_info() if self.core.is_cyclic_volta else None
+        cv_info = self.__cv_display_info() if self._technique().cyclic_voltammetry else None
         self._cv_density_scale = 1.0
         if cv_info:
             cv_display = cv_info.get('cv_display') or {}
@@ -422,7 +422,7 @@ class TechniqueComposer(BaseComposer):
 
         # PLOT data
         y_values = self.core.ys
-        if self.core.is_cyclic_volta and self._cv_density_scale != 1.0:
+        if self._technique().cyclic_voltammetry and self._cv_density_scale != 1.0:
             y_values = self.core.ys * self._cv_density_scale
         plt.plot(self.core.xs, y_values)
         x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
@@ -443,7 +443,7 @@ class TechniqueComposer(BaseComposer):
         y_boundary_min = y_min - h * 0.2
         y_boundary_max = y_max + h * 0.5
 
-        if self.core.is_cyclic_volta:
+        if self._technique().cyclic_voltammetry:
             ymax_abs = max(abs(y_min), abs(y_max))
             if ymax_abs > 0:
                 self._cv_axis_exp = int(np.floor(np.log10(ymax_abs)))
@@ -477,7 +477,7 @@ class TechniqueComposer(BaseComposer):
         x_peckers = []
         y_peckers = []
         x_peaks_ref, y_peaks_ref = [], []
-        if self.core.is_cyclic_volta:
+        if self._technique().cyclic_voltammetry:
             display_scale = getattr(self, '_cv_density_scale', 1.0)
             x_peaks = []
             y_peaks = []
@@ -669,7 +669,7 @@ class TechniqueComposer(BaseComposer):
         )
 
         ax = plt.gca()
-        if self.core.is_cyclic_volta:
+        if self._technique().cyclic_voltammetry:
             ymax_abs = max(abs(y_boundary_min), abs(y_boundary_max))
             if ymax_abs > 0:
                 self._cv_axis_exp = int(np.floor(np.log10(ymax_abs)))
@@ -962,7 +962,7 @@ class TechniqueComposer(BaseComposer):
         })
 
     def tf_csv(self):
-        if self.core.is_cyclic_volta == False:
+        if not self._technique().cyclic_voltammetry:
             return None
         tf_csv = tempfile.NamedTemporaryFile(suffix='.csv')
         tf_csv.flush()
