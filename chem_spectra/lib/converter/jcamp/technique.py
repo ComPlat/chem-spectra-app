@@ -38,7 +38,6 @@ class JcampTechniqueConverter:
         # with the generic-curve defaults
         self.technique = getattr(base, 'technique', None) or technique_for(self.typ)
         self.ncl = base.ncl
-        self.is_dept = base.is_dept
         self.solv_peaks = base.solv_peaks
         # - - - - - - - - - - -
         self.fname = base.fname

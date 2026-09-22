@@ -290,8 +290,8 @@ class BaseComposer:
             if not skip:
                 self.itgs.append(itg)
 
-    def _is_hplc_uv_vis(self):
-        """Kept as the name the integration code reads; the AUC column is its only use."""
+    def _uses_auc_column(self):
+        """The integration table's AUC column. HPLC UV/VIS only."""
         return self._technique().auc_column
 
     def _supports_visual_split(self):
@@ -299,7 +299,7 @@ class BaseComposer:
         return self._technique().visual_split
 
     def _build_integration_lines(self, items):
-        use_auc_column = integration_uses_auc_column(items, self._is_hplc_uv_vis())
+        use_auc_column = integration_uses_auc_column(items, self._uses_auc_column())
         return build_integration_lines(items, self.refArea, self.refShift, use_auc_column)
 
     def __serialize_multiplicity_stack(self, mpy_stack):
@@ -352,7 +352,7 @@ class BaseComposer:
                             if (itg['xL'] == mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):     # pylint: disable=c0301
                                 return []
             return serialize_integration_stack(
-                itg_stack, self.refArea, self.refShift, self._is_hplc_uv_vis(),
+                itg_stack, self.refArea, self.refShift, self._uses_auc_column(),
             )
         return self.core.itg_table
 
