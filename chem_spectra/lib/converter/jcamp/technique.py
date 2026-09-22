@@ -37,22 +37,6 @@ class JcampTechniqueConverter:
         # composer falls back to UNKNOWN_TECHNIQUE and draws every technique
         # with the generic-curve defaults
         self.technique = getattr(base, 'technique', None) or technique_for(self.typ)
-        self.is_em_wave = base.is_em_wave
-        self.is_ir = base.is_ir
-        self.is_tga = base.is_tga
-        self.is_gc = base.is_gc
-        self.is_xrd = base.is_xrd
-        self.is_uv_vis = base.is_uv_vis
-        self.is_hplc_uv_vis = base.is_hplc_uv_vis
-        self.is_cyclic_volta = base.is_cyclic_volta
-        self.is_sec = base.is_sec if hasattr(base, 'is_sec') else False
-        self.is_cds = base.is_cds if hasattr(base, 'is_cds') else False
-        self.is_aif = base.is_aif if hasattr(base, 'is_aif') else False
-        self.is_emissions = base.is_emissions if hasattr(base, 'is_emissions') else False
-        self.is_dls_acf = base.is_dls_acf if hasattr(base, 'is_dls_acf') else False
-        self.is_dls_intensity = base.is_dls_intensity if hasattr(base, 'is_dls_intensity') else False
-        self.is_dsc = base.is_dsc if hasattr(base, 'is_dsc') else False
-        self.non_nmr = base.non_nmr
         self.ncl = base.ncl
         self.is_dept = base.is_dept
         self.solv_peaks = base.solv_peaks
@@ -588,7 +572,7 @@ class JcampTechniqueConverter:
             self.mpy_pks_table = target2
             self.mpy_pks_table.append('\n')
 
-    #     if self.ncl == '13C' and not self.is_dept and len(self.mpy_itg_table) == 0 and len(self.mpy_pks_table) == 0:
+    #     if self.ncl == '13C' and len(self.mpy_itg_table) == 0 and len(self.mpy_pks_table) == 0:
     #         self.__add_13C_mpy_programmatically()
 
     # def __add_13C_mpy_programmatically(self):

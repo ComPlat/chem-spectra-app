@@ -66,7 +66,6 @@ def test_fid_core_carries_the_nmr_descriptor(fid_composer):
     """
     assert fid_composer.core.technique is not None
     assert fid_composer.core.technique.key == 'NMR'
-    assert fid_composer.core.non_nmr is False
 
 
 def test_fid_renders_with_nmr_axis_labels(fid_composer):

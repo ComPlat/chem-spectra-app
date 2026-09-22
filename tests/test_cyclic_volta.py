@@ -17,7 +17,7 @@ def test_cv_ni_converter():
     target = target_dir + source_dir + '/RCV_LSH-R444_full+Fc.jdx'
     jbcv = JcampBaseConverter(target)
     tcv = JcampTechniqueConverter(jbcv)
-    assert tcv.is_cyclic_volta == True
+    assert tcv.technique.cyclic_voltammetry is True
     assert tcv.datatype == 'CYCLIC VOLTAMMETRY'
     assert tcv.xs[0] == 1.49048
     assert tcv.ys[0] == 5.34724E-06
