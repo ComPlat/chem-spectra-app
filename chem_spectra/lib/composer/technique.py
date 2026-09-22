@@ -429,8 +429,10 @@ class TechniqueComposer(BaseComposer):
 
         # high -> low is the NMR/IR convention; every other technique reads
         # forward. This was a twelve-flag or-chain that had to be extended by
-        # hand for each new technique -- and was not, which is why DSC and
-        # LC/MS are still drawn reversed (BUG-6, BUG-7).
+        # hand for each new technique -- and was not, which is how DSC and
+        # LC/MS came to be drawn reversed (BUG-6, BUG-7). Both read forward
+        # now: the descriptor carries the orientation, so there is no chain
+        # left to forget to extend.
         if self._technique().x_reversed:
             plt.xlim(x_max, x_min)
         else:
@@ -645,7 +647,7 @@ class TechniqueComposer(BaseComposer):
                     plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.02], color='#DA70D6')  # noqa: E501
 
         # PLOT label
-        if (self.core.is_xrd):
+        if self._technique().x_axis == 'xrd':
             waveLength = self.core.params['waveLength']
             label = "X ({}), WL={} nm".format(self.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
             plt.xlabel((label), fontsize=18)

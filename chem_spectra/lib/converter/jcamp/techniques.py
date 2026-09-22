@@ -23,6 +23,8 @@ and their behaviour is covered by `tests/lib/composer/test_non_nmr_gates.py`
 `tests/lib/converter/jcamp/test_techniques.py`:
 
 - `cv_scaling`, which nothing consumes at all;
+  (`x_axis='xrd'` was in this state too until the composer's hardcoded
+  `is_xrd` branch was migrated to read it -- see review of #293);
 - `threshold`, because `converter/jcamp/technique.py` still carries its own
   threshold table.
 
