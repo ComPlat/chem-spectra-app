@@ -722,7 +722,7 @@ class TechniqueComposer(BaseComposer):
         return "Y ({})".format(self.core.label['y'])
 
     def __uses_auc_drawing(self):
-        return self.core.is_hplc_uv_vis or self.core.is_uv_vis
+        return self._technique().visual_split
 
     def __baseline_y_at(self, x, x_left, y_left, x_right, y_right):
         if x_right == x_left:

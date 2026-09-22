@@ -291,11 +291,12 @@ class BaseComposer:
                 self.itgs.append(itg)
 
     def _is_hplc_uv_vis(self):
-        return getattr(self.core, 'is_hplc_uv_vis', False)
+        """Kept as the name the integration code reads; the AUC column is its only use."""
+        return self._technique().auc_column
 
     def _supports_visual_split(self):
         """Visual integration splits are HPLC/UV-Vis only; NMR keeps legacy behavior."""
-        return self._is_hplc_uv_vis() or getattr(self.core, 'is_uv_vis', False)
+        return self._technique().visual_split
 
     def _build_integration_lines(self, items):
         use_auc_column = integration_uses_auc_column(items, self._is_hplc_uv_vis())

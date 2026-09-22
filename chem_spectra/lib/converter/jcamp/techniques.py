@@ -105,6 +105,16 @@ class SpectrumTechnique:
     # refactor's to make. See CHANGELOG.refactor-finish-flag-migration.md.
     absorbance_label: bool = False
 
+    # - - - the two UV/VIS concerns, which cover different sets - - -
+    # composer/base.py _build_integration_lines and prepare_itg_mpy: the
+    # integration table gains an AUC column. HPLC UV/VIS only.
+    auc_column: bool = False
+    # composer/base.py _supports_visual_split and composer/technique.py
+    # __uses_auc_drawing: visual integration splits, and integrations drawn
+    # as areas. HPLC UV/VIS *and* plain UV/VIS -- a wider set than
+    # auc_column, which is why these are two fields.
+    visual_split: bool = False
+
 
 def _nmr(key):
     return SpectrumTechnique(
@@ -131,9 +141,10 @@ SPECTRUM_TECHNIQUES = {
     # x_reversed=False is what it must be when the MS fold makes it live.
     'MS': SpectrumTechnique('MS', x_reversed=False, threshold=0.05),
 
-    'HPLC UVVIS': SpectrumTechnique('HPLC UVVIS', x_reversed=False, threshold=0.05),
+    'HPLC UVVIS': SpectrumTechnique('HPLC UVVIS', x_reversed=False, threshold=0.05,
+                               auc_column=True, visual_split=True),
     'UVVIS': SpectrumTechnique('UVVIS', x_reversed=False, threshold=0.05,
-                          absorbance_label=True,
+                          absorbance_label=True, visual_split=True,
                           em_wave=True),
 
     'THERMOGRAVIMETRIC ANALYSIS': SpectrumTechnique(
