@@ -261,7 +261,7 @@ class JcampTechniqueConverter:
         except:  # noqa
             pass
 
-        if 'absorb' in target['y'].lower() and not(self.is_uv_vis):  # IR ABS vs TRANS
+        if 'absorb' in target['y'].lower() and not self.technique.absorbance_label:
             target['y'] = 'TRANSMITTANCE'
         if self.technique.x_axis == 'xrd':
             target['x'] = '2Theta'

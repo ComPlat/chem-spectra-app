@@ -90,6 +90,15 @@ class SpectrumTechnique:
     # bipolar and both lobes are real. Same effect, different reasons, so if
     # one of them ever changes this field is the wrong place to express it.
     negative_peaks: bool = True
+    # converter/jcamp/technique.py __set_label: a y-axis declaring absorbance
+    # is reported as absorbance rather than rewritten to TRANSMITTANCE.
+    # True only for UVVIS, which reproduces the pre-refactor `not is_uv_vis`
+    # guard exactly. NOTE: 'HPLC UVVIS' is a separate key and so does *not*
+    # get this, meaning an HPLC file declaring ##YUNITS=ABSORBANCE is
+    # relabelled TRANSMITTANCE -- the inverse quantity. Reachable, pinned by
+    # test_absorbance_label.py, and left as-is: it is a domain call, not the
+    # refactor's to make. See CHANGELOG.refactor-finish-flag-migration.md.
+    absorbance_label: bool = False
 
 
 def _nmr(key):
@@ -119,6 +128,7 @@ SPECTRUM_TECHNIQUES = {
 
     'HPLC UVVIS': SpectrumTechnique('HPLC UVVIS', x_reversed=False, threshold=0.05),
     'UVVIS': SpectrumTechnique('UVVIS', x_reversed=False, threshold=0.05,
+                          absorbance_label=True,
                           em_wave=True),
 
     'THERMOGRAVIMETRIC ANALYSIS': SpectrumTechnique(
