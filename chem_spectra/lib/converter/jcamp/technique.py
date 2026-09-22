@@ -4,17 +4,10 @@ from scipy import signal
 from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
+from chem_spectra.lib.converter.jcamp.techniques import technique_for
 import json
 import os
 
-THRESHOLD_IR = 0.93
-THRESHOLD_RAMAN = 0.07
-THRESHOLD_NMR = 0.005
-THRESHOLD_MS = 0.05
-THRESHOLD_UVVIS = 0.05
-THRESHOLD_TGA = 1.05
-THRESHOLD_XRD = 1.00
-THRESHOLD_EMISSION = 0.5
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
 class JcampTechniqueConverter:
@@ -43,7 +36,7 @@ class JcampTechniqueConverter:
         # the descriptor travels with the flags it backs; without it the
         # composer falls back to UNKNOWN_TECHNIQUE and draws every technique
         # with the generic-curve defaults
-        self.technique = getattr(base, 'technique', None)
+        self.technique = getattr(base, 'technique', None) or technique_for(self.typ)
         self.is_em_wave = base.is_em_wave
         self.is_ir = base.is_ir
         self.is_tga = base.is_tga
@@ -66,7 +59,7 @@ class JcampTechniqueConverter:
         # - - - - - - - - - - -
         self.fname = base.fname
         self.block_count = self.__count_block()
-        self.threshold = self.__thres()
+        self.threshold = self.technique.threshold
         self.obs_freq = self.__set_obs_freq()
         self.x_unit = self.__set_x_unit()
         self.ys = self.__read_ys()
@@ -97,37 +90,6 @@ class JcampTechniqueConverter:
             return ''
         else:
             return json.loads(user_dt_mapping)['datatypes']
-
-    def __thres(self):
-        dt = self.datatype
-        threshold_values = {
-            "NMR": THRESHOLD_NMR,
-            "INFRARED": THRESHOLD_IR,
-            "RAMAN": THRESHOLD_RAMAN,
-            "MS": THRESHOLD_MS,
-            "HPLC UVVIS": THRESHOLD_UVVIS,
-            "UVVIS": THRESHOLD_UVVIS,
-            "THERMOGRAVIMETRIC ANALYSIS": THRESHOLD_TGA,
-            "DLS ACF": THRESHOLD_TGA,
-            "X-RAY DIFFRACTION": THRESHOLD_XRD,
-            "CIRCULAR DICHROISM SPECTROSCOPY": THRESHOLD_XRD,
-            "CYCLIC VOLTAMMETRY": THRESHOLD_XRD,
-            "SORPTION-DESORPTION MEASUREMENT": THRESHOLD_XRD,
-            "DLS intensity": THRESHOLD_XRD,
-            "Emissions": THRESHOLD_EMISSION,
-            "DIFFERENTIAL SCANNING CALORIMETRY": THRESHOLD_TGA,
-        }
-
-        if self.params.get('user_data_type_mapping'):
-            data_type_mappings = self.__read_user_data_type_mapping()
-        else:
-            with open(data_type_json, 'r') as mapping_file:
-                data_type_mappings = json.load(mapping_file)["datatypes"]
-
-        key = next((k for k, v in data_type_mappings.items() if dt in v), None)
-
-        return threshold_values.get(key, 0.5)
-    
 
     def __index_target(self):
         """Index of the block holding the primary measurement.

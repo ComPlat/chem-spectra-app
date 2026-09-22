@@ -18,17 +18,19 @@ execution, not by reading, and are pinned by
 
 The four NMR gates are consumed by `BaseComposer` and `TechniqueComposer`,
 and their behaviour is covered by `tests/lib/composer/test_non_nmr_gates.py`
--- flipping any of them to the wrong value fails the suite. Two fields are
-**not** yet read and so are pinned only by table-to-table parity in
-`tests/lib/converter/jcamp/test_techniques.py`:
+-- flipping any of them to the wrong value fails the suite.
 
-- `cv_scaling`, which nothing consumes at all;
-  (`x_axis='xrd'` was in this state too until the composer's hardcoded
-  `is_xrd` branch was migrated to read it -- see review of #293);
-- `threshold`, because `converter/jcamp/technique.py` still carries its own
-  threshold table.
+`threshold` is read by `converter/jcamp/technique.py`, which used to carry a
+duplicate table keyed on the raw datatype string. Flipping NMR's value fails
+13 tests outside the parity file, so it is load-bearing on the peak-detection
+path, not just pinned by parity.
 
-Both need render-level assertions when they are wired up.
+`x_axis` was in the parity-only state too for `'xrd'`, until the composer's
+hardcoded `is_xrd` branch was migrated to read it -- see the review of #293.
+
+One field is **not** read by anything and so is pinned only by
+table-to-table parity in `tests/lib/converter/jcamp/test_techniques.py`:
+`cv_scaling`. It needs a render-level assertion when it is wired up.
 
 Note on the NMR gates: `non_nmr` gated four unrelated concerns --
 integration pairing, multiplicity output, axis-label style and peak
