@@ -86,7 +86,9 @@ class SpectrumTechnique:
     transmittance: bool = False
     # converter/jcamp/technique.py __exec_peak_picking_logic and
     # __run_auto_pick_peak: bands are troughs, so find_peaks runs on 1 - ys
-    # and the auto table keeps the *lowest* hundred.
+    # and the auto table keeps the *lowest* hundred. composer/technique.py
+    # also takes less headroom above the trace when drawing peak labels,
+    # because for a trough spectrum the labels hang below the baseline.
     peaks_inverted: bool = False
     # converter/jcamp/technique.py __exec_peak_picking_logic: fold in peaks
     # found on the inverted series when the trace dips well below zero -- the
@@ -126,6 +128,11 @@ class SpectrumTechnique:
     # composer/technique.py __gen_header_user_input_meta_data: melting point
     # and Tg written into the JCAMP, from params or from the file's own LDRs
     dsc_metadata: bool = False
+
+    # model/transformer.py tf_combine and converter/bagit/base.py: the trace
+    # is one branch of a sorption isotherm, labelled ADSORPTION or
+    # DESORPTION and marked '^' or 'v' depending on which way x runs.
+    sorption_branches: bool = False
 
 
 def _nmr(key):
@@ -173,7 +180,8 @@ SPECTRUM_TECHNIQUES = {
         'CIRCULAR DICHROISM SPECTROSCOPY', x_reversed=False, threshold=1.00,
         negative_peaks=False),
     'SORPTION-DESORPTION MEASUREMENT': SpectrumTechnique(
-        'SORPTION-DESORPTION MEASUREMENT', x_reversed=False, threshold=1.00),
+        'SORPTION-DESORPTION MEASUREMENT', x_reversed=False, threshold=1.00,
+        sorption_branches=True),
     'Emissions': SpectrumTechnique('Emissions', x_reversed=False, threshold=0.5),
     'DLS ACF': SpectrumTechnique('DLS ACF', x_reversed=False, threshold=1.05),
     'DLS intensity': SpectrumTechnique('DLS intensity', x_reversed=False,

@@ -660,7 +660,7 @@ class TechniqueComposer(BaseComposer):
 
         self.__generate_info_box(plt)
 
-        y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max * (1.1 if self.core.is_ir else 1.5))
+        y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max * (1.1 if self._technique().peaks_inverted else 1.5))
 
 
         plt.ylim(

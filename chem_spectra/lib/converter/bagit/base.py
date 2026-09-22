@@ -211,7 +211,7 @@ class BagItBaseConverter:
                 except Exception:
                     pass
             marker = ''
-            if composer.core.is_aif:
+            if composer._technique().sorption_branches:
                 first_x, last_x = xs[0], xs[len(xs)-1]
                 if first_x <= last_x:
                     filename = 'ADSORPTION'
@@ -222,7 +222,7 @@ class BagItBaseConverter:
 
             plt.plot(xs, y_values, label=filename, marker=marker)
             # PLOT label
-            if (composer.core.is_xrd):
+            if composer._technique().x_axis == 'xrd':
                 waveLength = composer.core.params['waveLength']
                 label = "X ({}), WL={} nm".format(composer.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
                 plt.xlabel((label), fontsize=18)
