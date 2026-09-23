@@ -20,6 +20,10 @@ def __parse_xy_points(base):
     return np.array([[float(p) for p in pt.split(',')]for pt in pts])
 
 
+class UnparsableJcampData(ValueError):
+    """nmrglue read the file but produced no usable data array."""
+
+
 def make_ni_data_ys(base, target_idx):
     if base.data is None and base.dic.get('XYPOINTS'):
         base.data = __parse_xy_points(base)
@@ -29,6 +33,16 @@ def make_ni_data_ys(base, target_idx):
     # base.data type is dict
     if isinstance(base.data, dict):
         return base.data['real'][target_idx]
+
+    if base.data is None:
+        # nmrglue returns None when it can parse no data array from the
+        # file. Dereferencing .shape here raised AttributeError straight out
+        # of the request; raising something named lets jcamp2cvp turn it
+        # into the same "could not convert" result any other unusable file
+        # produces.
+        raise UnparsableJcampData(
+            'no data array could be parsed from this JCAMP file'
+        )
 
     # base.data type is array
     data_shape = base.data.shape

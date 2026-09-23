@@ -1,4 +1,5 @@
 import json
+import logging
 import zipfile
 import tempfile
 import glob     # noqa: F401
@@ -19,12 +20,15 @@ from chem_spectra.lib.composer.technique import TechniqueComposer
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
+from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.path as mpath  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib import ticker  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
+
+logger = logging.getLogger(__name__)
 
 
 def find_dir(path, name):
@@ -297,7 +301,17 @@ class TransformerModel:
         else:
             final_decorated_jbcv = decorated_jbcv
 
-        tcv = JcampTechniqueConverter(final_decorated_jbcv)
+        try:
+            tcv = JcampTechniqueConverter(final_decorated_jbcv)
+        except UnparsableJcampData:
+            # Same shape as zip2cvp's failure return, so the controllers'
+            # existing `if not cmpsr: abort(...)` handles it rather than the
+            # exception escaping as a 500.
+            logger.warning(
+                'no parsable data in %r; treating it as unconvertible',
+                getattr(self.file, 'name', None),
+            )
+            return False, False, invalid_molfile
         tcp = TechniqueComposer(tcv)
         return tcv, tcp, invalid_molfile
 
@@ -373,7 +387,8 @@ class TransformerModel:
                 self.multiple_files[idx] = file
 
         self.multiple_files.sort(key=lambda file: file.name)
-        
+
+        plotted_any = False
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
@@ -382,8 +397,20 @@ class TransformerModel:
                 mscv = JcampMSConverter(jbcv)
                 mscp = MSComposer(mscv)
                 plt.plot(mscp.core.xs, mscp.core.ys, label=filename)
+                plotted_any = True
             else:
-                tcv = JcampTechniqueConverter(jbcv)
+                try:
+                    tcv = JcampTechniqueConverter(jbcv)
+                except UnparsableJcampData:
+                    # one unusable file should not lose the whole overlay;
+                    # if every file is unusable nothing is plotted and the
+                    # controller's `if not tf_combine: abort(400)` fires
+                    logger.warning(
+                        'no parsable data in %r; leaving it out of the '
+                        'combined image', filename,
+                    )
+                    tf.close()
+                    continue
                 tcp = TechniqueComposer(tcv)
                 xs, ys = tcp.core.xs, tcp.core.ys
                 y_values = ys
@@ -448,6 +475,7 @@ class TransformerModel:
                         filename = 'DESORPTION'
                         marker = 'v'
                 plt.plot(xs, y_values, label=filename, marker=marker)
+                plotted_any = True
 
                 # PLOT label
                 core_label_x = tcp.core.label['x']
@@ -508,6 +536,14 @@ class TransformerModel:
                     fontsize=14,
                     clip_on=False
                 )
+        if not plotted_any:
+            # every file was unusable; an empty image would look like a
+            # successful overlay of nothing. Returning False lets the
+            # controller's `if not tf_combine: abort(400)` reject it.
+            logger.warning('no usable spectra to combine; rejecting the request')
+            plt.clf()
+            plt.cla()
+            return False
         plt.legend()
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')

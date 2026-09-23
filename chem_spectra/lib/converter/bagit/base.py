@@ -5,6 +5,7 @@ import json
 import math
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.composer.technique import TechniqueComposer
@@ -84,7 +85,16 @@ class BagItBaseConverter:
                         mscv = JcampMSConverter(base_cv)
                         tcp = MSComposer(mscv)
                     else:
-                        tcv = JcampTechniqueConverter(base_cv)
+                        try:
+                            tcv = JcampTechniqueConverter(base_cv)
+                        except UnparsableJcampData:
+                            # one unusable member should not fail the whole
+                            # archive; the rest still convert
+                            logger.warning(
+                                'no parsable data in %r inside the archive; '
+                                'skipping it', jcamp_path,
+                            )
+                            continue
                         tcp = TechniqueComposer(tcv)
                 except KeyError as err:
                     print(f"Skip empty JCAMP {file_name}: {err}")
