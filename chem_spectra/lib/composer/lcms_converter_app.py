@@ -28,7 +28,7 @@ _MARKER_SCAN_CHUNK = 65536
 
 # jcampconverter (the frontend's JCAMP parser, react-spectra-editor's
 # ExtractJcamp) doesn't support the ##XYPOINTS= LDR, only
-# ##XYDATA=/##DATA TABLE=/##PEAK TABLE=. NIComposer/MSComposer always
+# ##XYDATA=/##DATA TABLE=/##PEAK TABLE=. TechniqueComposer/MSComposer always
 # regenerate their primary data block as ##XYDATA=, so the frontend never
 # sees ##XYPOINTS= from those paths. This LC/MS path instead passes source
 # bytes through verbatim, so a source file that uses ##XYPOINTS= (as

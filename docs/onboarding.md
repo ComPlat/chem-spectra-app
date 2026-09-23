@@ -117,7 +117,7 @@ It contains the domain-specific work:
 Most difficult spectroscopy behavior is implemented here, especially in:
 
 - `chem_spectra/lib/converter/`;
-- `chem_spectra/lib/composer/ni.py`;
+- `chem_spectra/lib/composer/technique.py`;
 - `chem_spectra/lib/composer/ms.py`;
 - `chem_spectra/lib/composer/base.py`.
 
@@ -214,7 +214,7 @@ Converters read source data:
 Composers generate output:
 
 - `BaseComposer` contains common JCAMP output building blocks.
-- `NIComposer` handles NMR and many non-MS spectrum outputs.
+- `TechniqueComposer` handles NMR and many non-MS spectrum outputs.
 - `MSComposer` handles mass spectrum output and peak extraction.
 
 The practical rule:

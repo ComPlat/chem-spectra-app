@@ -11,7 +11,7 @@ import json
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 
 source_nmr = './tests/fixtures/source/1H.dx'
 source_ir = './tests/fixtures/source/IR.dx'
@@ -43,7 +43,7 @@ UNMAPPED = ['SQUID', 'TENSIOMETRY', 'LINEAR SWEEP VOLTAMMETRY',
 @pytest.mark.parametrize('datatype', UNMAPPED)
 def test_unrecognised_datatype_does_not_raise(jcamp_with_datatype, datatype):
     # these raised UnboundLocalError from __index_target and surfaced as a 500
-    converter = JcampNIConverter(JcampBaseConverter(jcamp_with_datatype(datatype)))
+    converter = JcampTechniqueConverter(JcampBaseConverter(jcamp_with_datatype(datatype)))
     assert converter.target_idx == 0
 
 
@@ -122,7 +122,7 @@ def test_file_order_decides_between_two_recognised_datatypes(tmp_path):
 def test_known_files_classify_and_select_block_unchanged(path, expected_typ, expected_idx):
     base = JcampBaseConverter(path)
     assert base.typ == expected_typ
-    assert JcampNIConverter(base).target_idx == expected_idx
+    assert JcampTechniqueConverter(base).target_idx == expected_idx
 
 
 # - - - caller-supplied mapping - - -
@@ -161,12 +161,12 @@ def test_user_mapping_replaces_the_builtin_one(user_mapping_params):
     base = JcampBaseConverter(source_hplc, user_mapping_params)
     assert base.typ == ''
     assert base.non_nmr is True
-    assert JcampNIConverter(base).target_idx == 0
+    assert JcampTechniqueConverter(base).target_idx == 0
 
 
 def test_user_mapping_still_classifies_nmr(user_mapping_params):
     base = JcampBaseConverter(source_nmr, user_mapping_params)
-    converter = JcampNIConverter(base)
+    converter = JcampTechniqueConverter(base)
     assert base.typ == 'NMR'
     assert base.non_nmr is False
     assert converter.target_idx == 1
@@ -178,14 +178,14 @@ def test_user_mapping_drives_the_threshold(jcamp_with_datatype, user_mapping_par
     # separately from classification
     base = JcampBaseConverter(jcamp_with_datatype('X-RAY DIFFRACTION'), user_mapping_params)
     assert base.typ == 'X-RAY DIFFRACTION'
-    assert JcampNIConverter(base).threshold == 1.00
+    assert JcampTechniqueConverter(base).threshold == 1.00
 
 
 @pytest.mark.parametrize('value', ['', None])
 def test_absent_user_mapping_falls_back_to_builtin(value):
     base = JcampBaseConverter(source_hplc, {'data_type_mapping': value})
     assert base.typ == 'HPLC UVVIS'
-    assert JcampNIConverter(base).threshold == 0.05
+    assert JcampTechniqueConverter(base).threshold == 0.05
 
 
 def test_example_mapping_stays_in_sync_with_the_live_one():
@@ -232,7 +232,7 @@ def test_block_selection_agrees_with_classification(tmp_path):
     assert base.typ == 'NMR'
     # 0 = the NMR SPECTRUM block once the single LINK entry is discounted;
     # 1 would be the MASS TIC block that classification did not choose
-    assert JcampNIConverter(base).target_idx == 0
+    assert JcampTechniqueConverter(base).target_idx == 0
 
 
 def test_warning_points_at_the_mapping_that_is_actually_in_effect(

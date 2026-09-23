@@ -3,6 +3,7 @@ import json
 import logging
 
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
+from chem_spectra.lib.converter.jcamp.techniques import technique_for
 import os
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
@@ -39,22 +40,7 @@ class JcampBaseConverter:
                 'as a known technique.',
                 self.datatypes, self.fname, source,
             )
-        self.is_em_wave = self.__is_em_wave()
-        self.is_ir = self.__is_ir()
-        self.is_tga = self.__is_tga()
-        self.is_gc = self.__is_gc()
-        self.is_uv_vis = self.__is_uv_vis()
-        self.is_hplc_uv_vis = self.__is_hplc_uv_vis()
-        self.is_xrd = self.__is_xrd()
-        self.is_cyclic_volta = self.__is_cyclic_volta()
-        self.is_sec = self.__is_sec()
-        self.is_cds = self.__is_cds()
-        self.is_aif = self.__is_aif()
-        self.is_emissions = self.__is_emissions()
-        self.is_dls_acf = self.__is_dls_acf()
-        self.is_dls_intensity = self.__is_dls_intensity()
-        self.is_dsc = self.__is_dsc()
-        self.non_nmr = self.__non_nmr()
+        self.technique = technique_for(self.typ)
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
         self.solv_peaks = []
@@ -120,65 +106,84 @@ class JcampBaseConverter:
             return 'XYDATA_OLD'
         return ''
 
+    # - - - technique predicates, all derived from `kind` - - -
+    #
+    # These were sixteen booleans assigned in __init__, each re-deriving a
+    # fact `typ` already carries. They are properties now so nothing can set
+    # them out of step with the descriptor. Behaviour is unchanged: each is
+    # the key comparison the old private predicate made, and an unrecognised
+    # datatype gets UNKNOWN_TECHNIQUE whose key is '', so every one is False.
+
+    @property
+    def is_em_wave(self):
+        return self.technique.em_wave
+
+    @property
+    def non_nmr(self):
+        return self.technique.key != 'NMR'
+
+    @property
+    def is_ir(self):
+        return self.technique.key == 'INFRARED'
+
+    @property
+    def is_tga(self):
+        return self.technique.key == 'THERMOGRAVIMETRIC ANALYSIS'
+
+    @property
+    def is_gc(self):
+        return self.technique.key == 'GAS CHROMATOGRAPHY'
+
+    @property
+    def is_uv_vis(self):
+        return self.technique.key == 'UVVIS'
+
+    @property
+    def is_hplc_uv_vis(self):
+        return self.technique.key == 'HPLC UVVIS'
+
+    @property
+    def is_xrd(self):
+        return self.technique.key == 'X-RAY DIFFRACTION'
+
+    @property
+    def is_cyclic_volta(self):
+        return self.technique.key == 'CYCLIC VOLTAMMETRY'
+
+    @property
+    def is_sec(self):
+        return self.technique.key == 'SIZE EXCLUSION CHROMATOGRAPHY'
+
+    @property
+    def is_cds(self):
+        return self.technique.key == 'CIRCULAR DICHROISM SPECTROSCOPY'
+
+    @property
+    def is_aif(self):
+        return self.technique.key == 'SORPTION-DESORPTION MEASUREMENT'
+
+    @property
+    def is_emissions(self):
+        return self.technique.key == 'Emissions'
+
+    @property
+    def is_dls_acf(self):
+        return self.technique.key == 'DLS ACF'
+
+    @property
+    def is_dls_intensity(self):
+        return self.technique.key == 'DLS intensity'
+
+    @property
+    def is_dsc(self):
+        return self.technique.key == 'DIFFERENTIAL SCANNING CALORIMETRY'
+
     def __set_dataformat(self):
         try:
             return self.dic[self.dataclass][0].split('\n')[0]
         except: # noqa
             pass
         return '(X++(Y..Y))'
-
-    def __is_em_wave(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
-
-    def __non_nmr(self):
-        # Equivalent to the old "typ is some mapped key other than NMR" for
-        # every mapped datatype, and differs only for an unrecognised one:
-        # that used to land here as False, which handed the file to the NMR
-        # branch and drew it with chemical-shift axes and multiplet analysis
-        # it has no basis for.
-        return self.typ != 'NMR'
-
-    def __is_ir(self):
-        return self.typ in ['INFRARED']
-
-    def __is_tga(self):
-        return self.typ in ['THERMOGRAVIMETRIC ANALYSIS']
-
-    def __is_gc(self):
-        return self.typ in ['GAS CHROMATOGRAPHY']
-
-    def __is_uv_vis(self):
-        return self.typ in ['UVVIS']
-
-    def __is_hplc_uv_vis(self):
-        return self.typ in ['HPLC UVVIS']
-
-    def __is_xrd(self):
-        return self.typ in ['X-RAY DIFFRACTION']
-
-    def __is_cyclic_volta(self):
-        return self.typ in ['CYCLIC VOLTAMMETRY']
-
-    def __is_sec(self):
-        return self.typ in ['SIZE EXCLUSION CHROMATOGRAPHY']
-    
-    def __is_cds(self):
-        return self.typ in ['CIRCULAR DICHROISM SPECTROSCOPY']
-
-    def __is_aif(self):
-        return self.typ in ['SORPTION-DESORPTION MEASUREMENT']
-        
-    def __is_emissions(self):
-        return self.typ in ['Emissions']
-    
-    def __is_dls_acf(self):
-        return self.typ in ['DLS ACF']
-
-    def __is_dls_intensity(self):
-        return self.typ in ['DLS intensity']
-    
-    def __is_dsc(self):
-        return self.typ in ['DIFFERENTIAL SCANNING CALORIMETRY']
 
     def __ncl(self):
         try:

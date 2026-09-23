@@ -236,9 +236,9 @@ The main branches are:
 |---|---|
 | `raw`, `mzml`, `mzxml` | `MSConverter` -> `MSComposer` |
 | `cdf` | `CdfBaseConverter` -> `CdfMSConverter` -> `MSComposer` |
-| `zip` with Bruker `fid` | `FidBaseConverter` or `FidHasBruckerProcessed` -> `JcampNIConverter` -> `NIComposer` |
+| `zip` with Bruker `fid` | `FidBaseConverter` or `FidHasBruckerProcessed` -> `JcampTechniqueConverter` -> `TechniqueComposer` |
 | `zip` with `bagit.txt` | `BagItBaseConverter` |
-| JCAMP-like input | `JcampBaseConverter` -> `JcampMSConverter`/`MSComposer` or `JcampNIConverter`/`NIComposer` |
+| JCAMP-like input | `JcampBaseConverter` -> `JcampMSConverter`/`MSComposer` or `JcampTechniqueConverter`/`TechniqueComposer` |
 
 The ZIP path is more complex:
 
@@ -257,7 +257,7 @@ Examples:
 - `ms2composer()` creates `MSConverter` and then wraps it in `MSComposer`.
 - `cdf2cvp()` writes the uploaded bytes to a temporary `.cdf` file, creates `CdfBaseConverter`, then `CdfMSConverter`, then `MSComposer`.
 - `jcamp2cvp()` writes the uploaded text to a temporary file, creates `JcampBaseConverter`, then branches on `jbcv.typ`.
-- Bruker ZIP conversion produces NMR-like converter data, then creates `JcampNIConverter` and `NIComposer`.
+- Bruker ZIP conversion produces NMR-like converter data, then creates `JcampTechniqueConverter` and `TechniqueComposer`.
 
 When modifying `TransformerModel`, be careful with return shapes. Some callers expect:
 
@@ -441,6 +441,71 @@ When adding a new parameter:
 - normalize it in `parse_params()` if it is used by converters or composers;
 - add tests for at least one endpoint that passes the parameter.
 
+### How a Technique Is Classified
+
+Almost every rendering decision in the non-MS pipeline derives from one
+value: `typ`, the technique the file represents. Nothing else in the backend
+has this much reach, and until recently nothing documented it.
+
+The chain is:
+
+```
+##DATA TYPE=  ->  data_type.json  ->  typ  ->  SpectrumTechnique  ->  rendering
+```
+
+1. `JcampBaseConverter.__read()` hands `nmrglue` the file; every
+   `##DATA TYPE=` record in it lands in `self.datatypes`, uppercased, in the
+   order the blocks appear.
+2. `__set_datatype()` walks those datatypes **in the file's own order** and
+   returns the first that appears in `data_type.json`.
+3. `__typ()` maps that back onto the mapping's key, which is `typ`.
+4. `JcampTechniqueConverter.__index_target()` independently picks the **first
+   recognised** block as the one whose numbers are read.
+5. `typ` selects one `SpectrumTechnique` descriptor from
+   `SPECTRUM_TECHNIQUES` in `converter/jcamp/techniques.py`, which is what
+   consumers read to decide axis labels, x-orientation, peak threshold,
+   integration and multiplicity. An unrecognised datatype gets
+   `UNKNOWN_TECHNIQUE`.
+
+**Add a technique by adding a `data_type.json` entry and a
+`SPECTRUM_TECHNIQUES` entry — not by adding a branch.** A parity test fails
+if either exists without the other. The sixteen `is_*` booleans still exist
+as properties over the descriptor, for call sites not yet migrated; do not
+add new consumers of them, and do not derive new behaviour from `typ`
+directly. Converters not fed by `data_type.json` (Bruker FID, NMRium) carry
+no descriptor, and `BaseComposer._technique()` resolves them from their own
+`non_nmr` instead.
+
+Three properties of this chain are load-bearing and easy to break:
+
+**File order decides, not mapping order.** Steps 2 and 4 both take the
+*first recognised* datatype in the file. They used to disagree — one took
+the first matching mapping key, the other the last matching mapping value —
+so a file could be classified from one block and have its data read from
+another. The order of keys in `data_type.json` is an accident of when
+entries were appended and must not be treated as precedence.
+
+**Auxiliary blocks are deliberately absent from the mapping.** A JCAMP file
+routinely carries a primary block plus auxiliary ones — `NMR FID`,
+`PEAK ASSIGNMENTS`, `NMR PEAK TABLE`, `NMRPEAKTABLE`,
+`NMR PEAK ASSIGNMENTS`, and from `chemotion-converter-app` also
+`NMP PEAK ASSIGNMENTS`, `INFRARED PEAK TABLE` and `INFRARED INTERFEROGRAM`.
+Because step 4 stops at the first *recognised* block, adding any of these to
+`data_type.json` would make every affected file read the auxiliary block
+instead of its spectrum. `test_auxiliary_blocks_stay_unmapped` enforces this.
+
+**An unrecognised datatype is not an error.** `typ` becomes `''`, a warning
+naming the datatype is logged, and the file is processed as a generic curve
+rather than being rejected or — as it once was — silently treated as NMR.
+Callers can supply their own mapping through the `data_type_mapping` form
+field, which **replaces** the built-in file rather than extending it.
+
+`data_type.json` is served verbatim to the frontend by
+`spectra_layout_api.load_data_types()`, so any key added to that document
+becomes part of the API payload. Notes about the mapping belong in code, not
+in the JSON. `data_type.json.example` seeds a fresh install when the live
+file is missing and must stay identical to it.
+
 ### Converter and Composer Interaction
 
 Converters are input-oriented. They answer: "What data is in this file?"
@@ -450,10 +515,10 @@ Composers are output-oriented. They answer: "How should this normalized data be 
 Examples:
 
 - `JcampBaseConverter` reads JCAMP and classifies the spectrum.
-- `JcampNIConverter` converts non-MS JCAMP data into the shape expected by `NIComposer`.
+- `JcampTechniqueConverter` converts non-MS JCAMP data into the shape expected by `TechniqueComposer`.
 - `JcampMSConverter` converts MS JCAMP data into the shape expected by `MSComposer`.
 - `MSConverter` reads or prepares mass spectrometry data from RAW, mzML, or mzXML.
-- `NIComposer` writes JCAMP-like output, renders PNG images, and can produce CSV data for supported non-MS workflows.
+- `TechniqueComposer` writes JCAMP-like output, renders PNG images, and can produce CSV data for supported non-MS workflows.
 - `MSComposer` writes mass-spectrum JCAMP output, renders MS images, and exposes `prism_peaks()`.
 
 ### Temporary Files
@@ -547,7 +612,7 @@ Contains output-generation logic.
 Important files:
 
 - `base.py` for common JCAMP output sections, metadata, peak tables, integration, and multiplicity support.
-- `ni.py` for NMR and many non-MS output workflows.
+- `technique.py` for every non-MS technique.
 - `ms.py` for mass spectrum output and peak extraction.
 
 Modify this layer when generated output changes.
@@ -640,7 +705,7 @@ Used in:
 
 The codebase is structured as a single Flask application with internal modules rather than separate services.
 
-This keeps endpoint registration and deployment simple, but it means shared workflows such as `TransformerModel` and `NIComposer` have a broad impact. Test changes in these areas across multiple endpoint families.
+This keeps endpoint registration and deployment simple, but it means shared workflows such as `TransformerModel` and `TechniqueComposer` have a broad impact. Test changes in these areas across multiple endpoint families.
 
 ### Request-Scoped Processing
 

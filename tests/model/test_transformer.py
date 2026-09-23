@@ -10,8 +10,8 @@ from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 from chem_spectra.model.transformer import TransformerModel
 from chem_spectra.controller.helper.file_container import FileContainer
-from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
-from chem_spectra.lib.composer.ni import NIComposer
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.composer.technique import TechniqueComposer
 
 source_dir_1h_bruker = './tests/fixtures/source/bruker/1H.zip'
 source_dir_1h_jcamp = './tests/fixtures/source/1H.dx'
@@ -118,8 +118,8 @@ def test_jcamp_to_composer_invalid_molfile():
 
     tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp_check_nmr)
     converter, composer, invalid_molfile = tranform_model.jcamp2cvp()
-    assert isinstance(converter, JcampNIConverter)
-    assert isinstance(composer, NIComposer)
+    assert isinstance(converter, JcampTechniqueConverter)
+    assert isinstance(composer, TechniqueComposer)
     assert invalid_molfile is True
 
 def test_jcamp_to_composer_valid_molfile():
@@ -131,8 +131,8 @@ def test_jcamp_to_composer_valid_molfile():
 
     tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp)
     converter, composer, invalid_molfile = tranform_model.jcamp2cvp()
-    assert isinstance(converter, JcampNIConverter)
-    assert isinstance(composer, NIComposer)
+    assert isinstance(converter, JcampTechniqueConverter)
+    assert isinstance(composer, TechniqueComposer)
     assert invalid_molfile is False
 
 def test_to_composer_jcamp_invalid_molfile():
@@ -145,7 +145,7 @@ def test_to_composer_jcamp_invalid_molfile():
     tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp_check_nmr)
 
     composer, invalid_molfile = tranform_model.to_composer()
-    assert isinstance(composer, NIComposer)
+    assert isinstance(composer, TechniqueComposer)
     assert invalid_molfile is True
 
 
@@ -159,7 +159,7 @@ def test_to_composer_zip_invalid_molfile():
     tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_bruker_check_nmr)
 
     list_composers, invalid_molfile = tranform_model.to_composer()
-    assert is_list_of_instance(list_composers, NIComposer)
+    assert is_list_of_instance(list_composers, TechniqueComposer)
     assert invalid_molfile is True
 
 def test_to_composer_jcamp_valid_molfile():
@@ -172,7 +172,7 @@ def test_to_composer_jcamp_valid_molfile():
     tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp)
 
     composer, invalid_molfile = tranform_model.to_composer()
-    assert isinstance(composer, NIComposer)
+    assert isinstance(composer, TechniqueComposer)
     assert invalid_molfile is False
 
 def test_to_composer_zip_valid_molfile():
@@ -185,7 +185,7 @@ def test_to_composer_zip_valid_molfile():
     tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_bruker)
 
     list_composers, invalid_molfile = tranform_model.to_composer()
-    assert is_list_of_instance(list_composers, NIComposer)
+    assert is_list_of_instance(list_composers, TechniqueComposer)
     assert invalid_molfile is False
 
 def test_to_composer_mass_spectrum():
