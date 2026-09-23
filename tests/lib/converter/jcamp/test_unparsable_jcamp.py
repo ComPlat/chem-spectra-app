@@ -51,12 +51,12 @@ def test_the_parse_failure_is_named(client):
     """The exception says what went wrong, rather than AttributeError on
     'NoneType' from three frames down."""
     from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-    from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
+    from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 
     base = JcampBaseConverter(source_unparsable)
     assert base.data is None
     with pytest.raises(UnparsableJcampData):
-        JcampNIConverter(base)
+        JcampTechniqueConverter(base)
 
 
 def test_a_parsable_file_is_unaffected(client):
@@ -73,7 +73,7 @@ def test_a_parsable_file_is_unaffected(client):
 # - - - the other controller paths that build a converter - - -
 #
 # Guarding jcamp2cvp alone was not enough: five other sites construct a
-# JcampNIConverter, and four of them are reachable from an upload. Found by
+# JcampTechniqueConverter, and four of them are reachable from an upload. Found by
 # review of #294, after the first version of this change claimed the class
 # of bug was handled when only one path was.
 

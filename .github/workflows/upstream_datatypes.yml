@@ -1,0 +1,82 @@
+# Detects drift between chemotion-converter-app's DATA_TYPES and the
+# snapshot this repo checks in.
+#
+# Deliberately NOT part of the unit-test workflow. That runs on every push
+# and must fail only because of the change being pushed; fetching a file
+# from another repository would make it fail for reasons outside the PR --
+# an upstream edit, a rate limit, a sandboxed runner. This job carries the
+# network dependency instead, where a red build means exactly one thing.
+name: Upstream datatypes
+
+on:
+  schedule:
+    # Mondays, 06:17 UTC. Off the hour on purpose: scheduled jobs on the
+    # hour queue behind everyone else's.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check-upstream-datatypes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Fetch DATA_TYPES from chemotion-converter-app master
+        run: |
+          curl -fsSL --retry 3 --retry-delay 5 \
+            https://raw.githubusercontent.com/ComPlat/chemotion-converter-app/refs/heads/master/converter_app/options.py \
+            -o /tmp/upstream_options.py
+
+      - name: Compare against the checked-in snapshot
+        run: |
+          python - <<'PY'
+          import ast, re, sys
+
+          SNAPSHOT = 'tests/fixtures/converter_app_data_types.txt'
+
+          # Parse the tuple rather than matching quoted text. A regex for
+          # '...' silently skips a "..." entry, so upstream adding one
+          # double-quoted datatype would leave this job green while the
+          # drift it exists to catch went unreported.
+          block = re.search(r'DATA_TYPES\s*=\s*(\(.*?\n\))',
+                            open('/tmp/upstream_options.py', encoding='utf-8').read(), re.S)
+          if block is None:
+              sys.exit('Could not find DATA_TYPES upstream -- options.py may have been '
+                       'restructured. Check it by hand and update the fetch if so.')
+          try:
+              parsed = ast.literal_eval(block.group(1))
+          except (ValueError, SyntaxError) as exc:
+              sys.exit('DATA_TYPES is no longer a plain literal (%s). It may now be '
+                       'built at runtime; this job needs rewriting.' % exc)
+          if not all(isinstance(entry, str) for entry in parsed):
+              sys.exit('DATA_TYPES contains non-string entries; this job assumes strings.')
+          upstream = set(parsed)
+
+          snapshot = {line.strip() for line in open(SNAPSHOT, encoding='utf-8')
+                      if line.strip() and not line.startswith('#')}
+
+          added = sorted(upstream - snapshot)
+          removed = sorted(snapshot - upstream)
+
+          if not added and not removed:
+              print('In step: %d datatypes.' % len(upstream))
+              sys.exit(0)
+
+          print('DATA_TYPES has drifted from the snapshot.\n')
+          for d in added:
+              print('  ADDED upstream, unknown here: %s' % d)
+          for d in removed:
+              print('  REMOVED upstream, still in the snapshot: %s' % d)
+          print(
+              '\nRefresh %s from upstream, then make the suite green:\n'
+              '  - map the datatype in data_type.json and add a\n'
+              '    SPECTRUM_TECHNIQUES entry, or\n'
+              '  - add it to INTENTIONALLY_UNMAPPED in\n'
+              '    tests/lib/converter/jcamp/test_datatype_coverage.py with a reason.\n'
+              '\nA removed datatype usually means the exclusion list is stale.'
+              % SNAPSHOT)
+          sys.exit(1)
+          PY

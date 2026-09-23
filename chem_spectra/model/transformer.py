@@ -7,7 +7,7 @@ import os
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.converter.cdf.base import CdfBaseConverter
 from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
@@ -16,7 +16,7 @@ from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 from chem_spectra.lib.converter.bagit.lcms_builder import build_lcms_composer
 from chem_spectra.lib.converter.ms import MSConverter
-from chem_spectra.lib.composer.ni import NIComposer
+from chem_spectra.lib.composer.technique import TechniqueComposer
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
@@ -214,9 +214,9 @@ class TransformerModel:
                     final_decorated_jbcv = decorated_jbcv['origin_jbcv']
                 else:
                     final_decorated_jbcv = decorated_jbcv
-                nicv = JcampNIConverter(final_decorated_jbcv)
-                nicp = NIComposer(nicv)
-                return nicv, nicp, invalid_molfile
+                tcv = JcampTechniqueConverter(final_decorated_jbcv)
+                tcp = TechniqueComposer(tcv)
+                return tcv, tcp, invalid_molfile
 
             is_bagit = search_bag_it_file(td)
             if is_bagit:
@@ -264,9 +264,9 @@ class TransformerModel:
         #         final_decorated_jbcv.simu_peaks = decorated_jbcv.simu_peaks
 
             list_decorated_converters.append(final_decorated_jbcv)
-            nicv = JcampNIConverter(final_decorated_jbcv)
-            nicp = NIComposer(nicv)
-            list_decorated_composers.append(nicp)
+            tcv = JcampTechniqueConverter(final_decorated_jbcv)
+            tcp = TechniqueComposer(tcv)
+            list_decorated_composers.append(tcp)
         return list_decorated_converters, list_decorated_composers, invalid_molfile
 
     def jcamp2cvp(self):
@@ -302,7 +302,7 @@ class TransformerModel:
             final_decorated_jbcv = decorated_jbcv
 
         try:
-            nicv = JcampNIConverter(final_decorated_jbcv)
+            tcv = JcampTechniqueConverter(final_decorated_jbcv)
         except UnparsableJcampData:
             # Same shape as zip2cvp's failure return, so the controllers'
             # existing `if not cmpsr: abort(...)` handles it rather than the
@@ -312,8 +312,8 @@ class TransformerModel:
                 getattr(self.file, 'name', None),
             )
             return False, False, invalid_molfile
-        nicp = NIComposer(nicv)
-        return nicv, nicp, invalid_molfile
+        tcp = TechniqueComposer(tcv)
+        return tcv, tcp, invalid_molfile
 
     def tf_predict(self):
         target = json.loads(self.params['predict'])
@@ -331,8 +331,8 @@ class TransformerModel:
         converter = NMRiumDataConverter(self.file)
         if converter.is_2d == True or converter.data is None:
             return None
-        nicp = NIComposer(converter)
-        tf_jcamp = nicp.tf_jcamp()
+        tcp = TechniqueComposer(converter)
+        tf_jcamp = tcp.tf_jcamp()
         return tf_jcamp
 
     def __get_cyclic_volta_ref_peaks(self, curve_idx, extraParams):
@@ -400,7 +400,7 @@ class TransformerModel:
                 plotted_any = True
             else:
                 try:
-                    nicv = JcampNIConverter(jbcv)
+                    tcv = JcampTechniqueConverter(jbcv)
                 except UnparsableJcampData:
                     # one unusable file should not lose the whole overlay;
                     # if every file is unusable nothing is plotted and the
@@ -411,10 +411,10 @@ class TransformerModel:
                     )
                     tf.close()
                     continue
-                nicp = NIComposer(nicv)
-                xs, ys = nicp.core.xs, nicp.core.ys
+                tcp = TechniqueComposer(tcv)
+                xs, ys = tcp.core.xs, tcp.core.ys
                 y_values = ys
-                if nicp.core.is_cyclic_volta:
+                if tcp.core.is_cyclic_volta:
                     cv_state = {}
                     if extraParams:
                         try:
@@ -428,9 +428,9 @@ class TransformerModel:
                         ) or {}
                     if not cv_state:
                         cv_state = (
-                            nicp.core.params.get('cyclicvoltaSt')
-                            or nicp.core.params.get('cyclicvolta')
-                            or nicp.core.params.get('cyclic_volta')
+                            tcp.core.params.get('cyclicvoltaSt')
+                            or tcp.core.params.get('cyclicvolta')
+                            or tcp.core.params.get('cyclic_volta')
                         ) or {}
                     if isinstance(cv_state, str):
                         try:
@@ -466,7 +466,7 @@ class TransformerModel:
                     except Exception:
                         pass
                 marker = ''
-                if nicp.core.is_aif:
+                if tcp.core.is_aif:
                     first_x, last_x = xs[0], xs[len(xs)-1]
                     if first_x <= last_x:
                         filename = 'ADSORPTION'
@@ -478,9 +478,9 @@ class TransformerModel:
                 plotted_any = True
 
                 # PLOT label
-                core_label_x = nicp.core.label['x']
-                core_label_y = nicp.core.label['y']
-                if nicp.core.is_cyclic_volta:
+                core_label_x = tcp.core.label['x']
+                core_label_y = tcp.core.label['y']
+                if tcp.core.is_cyclic_volta:
                     x_peaks, y_peaks = self.__get_cyclic_volta_ref_peaks(curve_idx, extraParams)
                     if y_peaks and y_values is not ys:
                         y_peaks = [y * scale for y in y_peaks]
@@ -503,7 +503,7 @@ class TransformerModel:
                     if (idx == len(self.multiple_files) - 1):
                         xlabel = ', '.join(xlabel_set)
                         ylabel = ', '.join(ylabel_set)
-                elif (nicp.core.non_nmr == False):
+                elif (tcp.core.non_nmr == False):
                     xlabel = "Chemical shift ({})".format(core_label_x.lower())
                     ylabel = "Intensity ({})".format(core_label_y.lower())
                 else:

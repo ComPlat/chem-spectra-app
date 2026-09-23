@@ -238,6 +238,26 @@ class BaseComposer:
         tf.seek(0)
         return tf
 
+    def _technique(self):
+        """The core's spectrum-technique descriptor.
+
+        Converters not fed by data_type.json carry no `technique` but do set
+        `non_nmr` themselves: FID hardcodes typ='NMR' and NMRium sets
+        non_nmr=False. For those the fallback is the NMR descriptor, not the
+        generic curve -- that is the branch the old `non_nmr == False` chain
+        put them on. Falling back to UNKNOWN_TECHNIQUE instead stripped the
+        chemical-shift axis labels off every Bruker FID render.
+        """
+        from chem_spectra.lib.converter.jcamp.techniques import (
+            SPECTRUM_TECHNIQUES, UNKNOWN_TECHNIQUE,
+        )
+        technique = getattr(self.core, 'technique', None)
+        if technique is not None:
+            return technique
+        if getattr(self.core, 'non_nmr', True) is False:
+            return SPECTRUM_TECHNIQUES['NMR']
+        return UNKNOWN_TECHNIQUE
+
     def prepare_itg_mpy(self):
         if not hasattr(self.core, 'params'):
             return
@@ -252,7 +272,9 @@ class BaseComposer:
         # = = = = =
         itg_stack = filter_valid_integrations(core_itg.get('stack') or [])
         self.all_itgs = itg_stack
-        if getattr(self.core, 'non_nmr', True):
+        # pairing an integration with the multiplet covering the same extent
+        # is NMR-only bookkeeping
+        if not self._technique().nmr_integration:
             self.itgs = list(itg_stack)
             return
 
@@ -357,7 +379,7 @@ class BaseComposer:
         return ['{}\n'.format(ref_area)]
 
     def gen_mpy_integ_info(self):
-        if getattr(self.core, 'non_nmr', True):
+        if not self._technique().multiplicity:
             return []
         core_mpy = self.core.params.get('multiplicity') or {}
         if len(self.mpys) > 0:
@@ -373,7 +395,7 @@ class BaseComposer:
             return self.core.mpy_itg_table
 
     def gen_mpy_peaks_info(self):
-        if getattr(self.core, 'non_nmr', True):
+        if not self._technique().multiplicity:
             return []
         core_mpy = self.core.params.get('multiplicity') or {}
         if len(self.mpys) > 0:

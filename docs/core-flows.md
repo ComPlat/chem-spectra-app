@@ -136,7 +136,7 @@ JCAMP fallback details:
 1. Text content is written to a temp file.
 2. `JcampBaseConverter` parses it.
 3. If `jbcv.typ == 'MS'`, the flow uses `JcampMSConverter` and `MSComposer`.
-4. Otherwise, the flow decorates simulated NMR data when requested, then uses `JcampNIConverter` and `NIComposer`.
+4. Otherwise, the flow decorates simulated NMR data when requested, then uses `JcampTechniqueConverter` and `TechniqueComposer`.
 
 Fragile areas:
 
@@ -268,15 +268,15 @@ Bruker without processed data:
 
 - `FidBaseConverter`
 - optional `decorate_sim_property()`
-- `JcampNIConverter`
-- single `NIComposer`
+- `JcampTechniqueConverter`
+- single `TechniqueComposer`
 
 Bruker with processed data:
 
 - `FidHasBruckerProcessed`
 - loop over `fid_brucker.data`
 - optional `decorate_sim_property()` per converter
-- list of `NIComposer`
+- list of `TechniqueComposer`
 
 BagIt:
 
