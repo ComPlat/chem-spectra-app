@@ -81,9 +81,11 @@ class SpectrumTechnique:
     cyclic_voltammetry: bool = False
 
     # - - - signal polarity, three concerns that coincide for infrared - - -
-    # converter/jcamp/technique.py __read_ys: a transmittance trace stored the
-    # absorbance way up is inverted, judged by median against max.
-    transmittance: bool = False
+    # This technique is conventionally displayed as transmittance (infrared).
+    # Declarative only: it no longer gates any behaviour. What happens to a
+    # spectrum is decided by the client's `transmittance` and `invert`
+    # instructions, never inferred from the technique or the data.
+    conventionally_transmittance: bool = False
     # converter/jcamp/technique.py __exec_peak_picking_logic and
     # __run_auto_pick_peak: bands are troughs, so find_peaks runs on 1 - ys
     # and the auto table keeps the *lowest* hundred. composer/technique.py
@@ -97,15 +99,6 @@ class SpectrumTechnique:
     # bipolar and both lobes are real. Same effect, different reasons, so if
     # one of them ever changes this field is the wrong place to express it.
     negative_peaks: bool = True
-    # converter/jcamp/technique.py __set_label: a y-axis declaring absorbance
-    # is reported as absorbance rather than rewritten to TRANSMITTANCE.
-    # True only for UVVIS, which reproduces the pre-refactor `not is_uv_vis`
-    # guard exactly. NOTE: 'HPLC UVVIS' is a separate key and so does *not*
-    # get this, meaning an HPLC file declaring ##YUNITS=ABSORBANCE is
-    # relabelled TRANSMITTANCE -- the inverse quantity. Reachable, pinned by
-    # test_absorbance_label.py, and left as-is: it is a domain call, not the
-    # refactor's to make. See CHANGELOG.refactor-finish-flag-migration.md.
-    absorbance_label: bool = False
 
     # - - - the two UV/VIS concerns, which cover different sets - - -
     # composer/base.py _build_integration_lines and prepare_itg_mpy: the
@@ -149,7 +142,7 @@ SPECTRUM_TECHNIQUES = {
     'NMR': _nmr('NMR'),
 
     'INFRARED': SpectrumTechnique('INFRARED', x_reversed=True, threshold=0.93,
-                             em_wave=True, transmittance=True,
+                             em_wave=True, conventionally_transmittance=True,
                              peaks_inverted=True, negative_peaks=False),
     'RAMAN': SpectrumTechnique('RAMAN', x_reversed=True, threshold=0.07,
                           em_wave=True),
@@ -163,7 +156,7 @@ SPECTRUM_TECHNIQUES = {
     'HPLC UVVIS': SpectrumTechnique('HPLC UVVIS', x_reversed=False, threshold=0.05,
                                auc_column=True, visual_split=True),
     'UVVIS': SpectrumTechnique('UVVIS', x_reversed=False, threshold=0.05,
-                          absorbance_label=True, visual_split=True,
+                          visual_split=True,
                           em_wave=True),
 
     'THERMOGRAVIMETRIC ANALYSIS': SpectrumTechnique(

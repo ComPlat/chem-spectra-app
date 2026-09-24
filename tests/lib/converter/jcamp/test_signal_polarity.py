@@ -38,21 +38,20 @@ def _relabelled(source, datatype, tmp_path):
 
 # - - - transmittance - - -
 
-def test_transmittance_inverts_an_absorbance_shaped_trace(tmp_path):
-    """Infrared and Raman differ only in this field, so ys differ only by it.
+def test_infrared_is_the_only_conventionally_transmittance_technique():
+    """What used to drive an automatic flip is now declarative only.
 
-    Both are em-wave, so any orientation handling applies identically and
-    cannot account for the difference.
+    This field said "run the shape heuristic and mirror if it looks like
+    absorbance". Nothing is inferred any more -- conversion and inversion are
+    client instructions, covered by test_y_units.py -- so the field records a
+    display convention and gates no behaviour.
     """
-    infrared = _relabelled(ABSORBANCE_SHAPED, 'INFRARED SPECTRUM', tmp_path)
-    raman = _relabelled(ABSORBANCE_SHAPED, 'RAMAN SPECTRUM', tmp_path)
-
-    assert infrared.technique.transmittance is True
-    assert raman.technique.transmittance is False
-
-    raw = np.asarray(raman.ys, dtype=float)
-    assert np.median(raw) < 0.5 * np.max(raw), 'probe no longer meets the precondition'
-    assert np.allclose(np.asarray(infrared.ys, dtype=float), np.max(raw) - raw)
+    from chem_spectra.lib.converter.jcamp.techniques import SPECTRUM_TECHNIQUES
+    flagged = {
+        key for key, technique in SPECTRUM_TECHNIQUES.items()
+        if technique.conventionally_transmittance
+    }
+    assert flagged == {'INFRARED'}
 
 
 def test_transmittance_leaves_a_trace_that_is_already_transmittance(tmp_path):
