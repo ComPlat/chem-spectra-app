@@ -7,6 +7,7 @@ import os
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.shared.misc import shorten_label
 from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.converter.cdf.base import CdfBaseConverter
@@ -392,7 +393,7 @@ class TransformerModel:
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
-            filename = file.name
+            filename = shorten_label(file.name)
             if jbcv.typ == 'MS':
                 mscv = JcampMSConverter(jbcv)
                 mscp = MSComposer(mscv)

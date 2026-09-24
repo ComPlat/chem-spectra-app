@@ -5,6 +5,7 @@ import json
 import math
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.shared.misc import shorten_label
 from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
@@ -178,7 +179,7 @@ class BagItBaseConverter:
         for idx, composer in enumerate(list_composer):
             filename = str(idx)
             if (list_file_names is not None) and idx < len(list_file_names):
-                filename = list_file_names[idx]
+                filename = shorten_label(list_file_names[idx])
             
             xs, ys = composer.core.xs, composer.core.ys
             y_values = ys
