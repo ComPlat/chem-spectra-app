@@ -1,7 +1,16 @@
-"""Avantes `AvaSoft` exports are UV/VIS, not an unrecognised datatype.
+"""Avantes `AvaSoft` exports are handled as UV/VIS, not left unrecognised.
 
 Avantes spectrometer software writes `##DATA TYPE= AvaSoft` -- the product
 name rather than a measurement name -- so classification did not recognise it.
+
+**AvaSpec instruments cover UV/VIS/NIR**, and the file from issue #242 spans
+176-1100 nm, which reaches well past the visible range. `UVVIS` is therefore
+narrower than the instrument, and is chosen because the *handling* is the
+same: wavelength on x in nanometres running forward, intensity on y, and the
+same peak threshold. There is no NIR technique in `SPECTRUM_TECHNIQUES`, and
+inventing one would need axis conventions and a threshold nobody has decided.
+
+If NIR ever warrants distinct treatment, this alias is where it surfaces.
 
 Before #291 that raised. #291 stopped the crash by routing unrecognised
 datatypes to the generic curve, which is why the file renders today, but it
@@ -40,6 +49,17 @@ def _mapping():
 
 def test_avasoft_is_a_uv_vis_alias():
     assert 'AvaSoft' in _mapping()['UVVIS']
+
+
+def test_the_probe_spans_past_the_visible_range(avasoft_file):
+    """Recorded so the UV/VIS-vs-NIR judgement is visible, not assumed.
+
+    The real file runs 176-1100 nm. UVVIS is the closest technique that exists
+    and handles this identically; it is not a claim that the instrument is
+    visible-only.
+    """
+    base = JcampBaseConverter(avasoft_file)
+    assert base.dic['XUNITS'][0].strip().upper() == 'NANOMETERS'
 
 
 def test_avasoft_is_not_mapped_to_hplc():
