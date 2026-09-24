@@ -52,7 +52,7 @@ def test_unrecognised_datatype_is_not_treated_as_nmr(jcamp_with_datatype, dataty
     # non_nmr False would give it chemical-shift axes and multiplet analysis
     base = JcampBaseConverter(jcamp_with_datatype(datatype))
     assert base.typ == ''
-    assert base.non_nmr is True
+    assert base.technique.key != 'NMR'
 
 
 def test_unrecognised_datatype_is_logged(jcamp_with_datatype, caplog):
@@ -151,7 +151,7 @@ def test_user_mapping_recognises_its_own_datatypes(
     # and both the key and its alias must resolve to the key
     base = JcampBaseConverter(jcamp_with_datatype(datatype), user_mapping_params)
     assert base.typ == 'SQUID'
-    assert base.non_nmr is True
+    assert base.technique.key != 'NMR'
 
 
 def test_user_mapping_replaces_the_builtin_one(user_mapping_params):
@@ -160,7 +160,7 @@ def test_user_mapping_replaces_the_builtin_one(user_mapping_params):
     # used to raise UnboundLocalError from __index_target.
     base = JcampBaseConverter(source_hplc, user_mapping_params)
     assert base.typ == ''
-    assert base.non_nmr is True
+    assert base.technique.key != 'NMR'
     assert JcampTechniqueConverter(base).target_idx == 0
 
 
@@ -168,7 +168,7 @@ def test_user_mapping_still_classifies_nmr(user_mapping_params):
     base = JcampBaseConverter(source_nmr, user_mapping_params)
     converter = JcampTechniqueConverter(base)
     assert base.typ == 'NMR'
-    assert base.non_nmr is False
+    assert base.technique.key == 'NMR'
     assert converter.target_idx == 1
     assert converter.threshold == 0.005
 

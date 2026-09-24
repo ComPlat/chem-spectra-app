@@ -24,5 +24,5 @@ def test_is_non_nmr():
     file2 = target_dir + source_dir + '/xrd/Test_data_op_002_XRD.jdx'
     jbcv1 = JcampBaseConverter(file1)
     jbcv2 = JcampBaseConverter(file2)
-    assert jbcv1.non_nmr == True
-    assert jbcv2.non_nmr == True
+    assert jbcv1.technique.key != 'NMR'
+    assert jbcv2.technique.key != 'NMR'
