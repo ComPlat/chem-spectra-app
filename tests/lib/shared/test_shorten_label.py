@@ -86,3 +86,41 @@ def test_the_combined_image_actually_uses_it(tmp_path):
     assert drawn, 'nothing was plotted'
     assert all(len(label) <= LEGEND_LABEL_MAX for label in drawn)
     assert drawn[0].endswith('_13C.jdx')
+
+
+def test_the_bagit_combined_image_uses_names_not_indices():
+    """The BagIt legend read `0, 1, 2 ...` -- it never showed a filename.
+
+    `__combine_images` took a `list_file_names` parameter that its only caller
+    never passed, so the branch was dead. The name is now carried on the
+    composer instead of in an index-aligned list, because that method filters
+    LC/MS and MS composers out again and any parallel list would mislabel the
+    survivors.
+    """
+    import tempfile
+    import zipfile
+    import chem_spectra.lib.converter.bagit.base as bagit_module
+    from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
+
+    drawn = []
+    real_plot = bagit_module.plt.plot
+
+    def spy_plot(*args, **kwargs):
+        if 'label' in kwargs:
+            drawn.append(kwargs['label'])
+        return real_plot(*args, **kwargs)
+
+    bagit_module.plt.plot = spy_plot
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            archive = './tests/fixtures/source/bagit/cv/File053_BagIt.zip'
+            with zipfile.ZipFile(archive, 'r') as z:
+                z.extractall(td)
+            BagItBaseConverter(td).combined_image
+    finally:
+        bagit_module.plt.plot = real_plot
+
+    assert drawn, 'nothing was plotted'
+    assert not all(label.isdigit() for label in drawn), (
+        'legend fell back to indices; the filename is not reaching the plot')
+    assert all(len(label) <= LEGEND_LABEL_MAX for label in drawn)

@@ -100,6 +100,10 @@ class BagItBaseConverter:
                 except KeyError as err:
                     print(f"Skip empty JCAMP {file_name}: {err}")
                     continue
+                # Carried on the composer rather than in a parallel list:
+                # __combine_images filters LC/MS and MS composers out again, so
+                # any index-aligned list would silently mislabel the survivors.
+                tcp.source_filename = file_name
                 list_composer.append(tcp)
                 tf_jcamp = tcp.tf_jcamp()
                 list_files.append(tf_jcamp)
@@ -161,7 +165,7 @@ class BagItBaseConverter:
             return types.pop()
         return 'bagit'
 
-    def __combine_images(self, list_composer, list_file_names=None):
+    def __combine_images(self, list_composer):
         non_lcms_techniques = [
             c for c in list_composer
             if not isinstance(c, LCMSConverterAppComposer)
@@ -177,9 +181,10 @@ class BagItBaseConverter:
         cv_mode = False
         cv_abs_max = 0.0
         for idx, composer in enumerate(list_composer):
-            filename = str(idx)
-            if (list_file_names is not None) and idx < len(list_file_names):
-                filename = shorten_label(list_file_names[idx])
+            # `list_file_names` used to be a parameter here and was never
+            # passed, so every BagIt legend read 0, 1, 2 ...
+            filename = shorten_label(getattr(composer, 'source_filename', None)) \
+                or str(idx)
             
             xs, ys = composer.core.xs, composer.core.ys
             y_values = ys
