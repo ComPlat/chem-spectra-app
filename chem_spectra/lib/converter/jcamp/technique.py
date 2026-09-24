@@ -240,10 +240,24 @@ class JcampTechniqueConverter:
 
         The conversion is only meaningful for real absorbance, which runs
         roughly 0-3. Asked to convert anything else it would silently produce
-        a flat line labelled TRANSMITTANCE, which is worse than any of the
-        defects this change fixes.
+        a flat line, or infinities, labelled TRANSMITTANCE -- worse than any
+        of the defects this change fixes.
+
+        Every refusal is checked on the *input*, so the reason names what is
+        wrong with the data rather than what went wrong arithmetically. The
+        finiteness check on the result is a backstop for anything the input
+        checks do not anticipate.
         """
+        ys = np.asarray(ys, dtype=float)
+        if not np.isfinite(ys).all():
+            raise UnconvertibleSpectrum(
+                'the series contains non-finite values, so it cannot be '
+                'absorbance'
+            )
+
         y_max = float(np.max(ys))
+        y_min = float(np.min(ys))
+
         if float(np.median(ys)) >= 0.5 * y_max:
             raise UnconvertibleSpectrum(
                 'already appears to be transmittance (baseline near the '
@@ -254,8 +268,23 @@ class JcampTechniqueConverter:
                 'y values up to {:g} are not absorbance; transmittance would '
                 'underflow to zero'.format(y_max)
             )
+        # Absorbance dips slightly below zero from baseline drift, but not far:
+        # A = -10 already means T = 10**10, which is not a transmittance.
+        if y_min < -ABSORBANCE_CEILING:
+            raise UnconvertibleSpectrum(
+                'y values down to {:g} are not absorbance; transmittance '
+                'would overflow'.format(y_min)
+            )
+
+        transmittance = np.power(10.0, -ys)
+        if not np.isfinite(transmittance).all():
+            raise UnconvertibleSpectrum(
+                'the conversion produced non-finite values; the series is not '
+                'absorbance'
+            )
+
         self.converted_to_transmittance = True
-        return np.power(10.0, -ys)
+        return transmittance
 
     def __find_boundary(self):
         return {

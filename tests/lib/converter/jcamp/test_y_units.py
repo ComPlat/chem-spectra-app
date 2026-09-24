@@ -15,7 +15,7 @@ Both decisions now belong to the client, as explicit instructions, and
 nothing is inferred:
 
 - `transmittance` converts, `T = 10**(-A)`, and says so;
-- `invert` mirrors for display and says so.
+- `invert_y` mirrors for display and says so.
 
 With neither, `##YUNITS` is exactly what arrived.
 """
@@ -221,3 +221,49 @@ def test_endpoint_refuses_an_impossible_conversion(client, source, reason):
     response = _post(client, source, transmittance='true')
     assert response.status_code == 422
     assert reason in response.get_json()['error']
+
+
+# - - - the conversion must never emit non-finite values (#298 review) - - -
+
+def _synthetic(tmp_path, ys, yunits='ABSORBANCE'):
+    xs = [400.0 + i for i in range(len(ys))]
+    body = [
+        '##TITLE=synthetic\n', '##JCAMP-DX=5.00\n',
+        '##DATA TYPE=INFRARED SPECTRUM\n', '##DATA CLASS=XYPOINTS\n',
+        '##FIRSTX={}\n'.format(xs[0]), '##LASTX={}\n'.format(xs[-1]),
+        '##MINX={}\n'.format(min(xs)), '##MAXX={}\n'.format(max(xs)),
+        '##MINY={}\n'.format(min(ys)), '##MAXY={}\n'.format(max(ys)),
+        '##NPOINTS={}\n'.format(len(xs)), '##FIRSTY={}\n'.format(ys[0]),
+        '##XUNITS=1/CM\n', '##YUNITS={}\n'.format(yunits),
+        '##XYPOINTS=(XY..XY)\n',
+    ]
+    body += ['{:.6f}, {:.6f}\n'.format(x, y) for x, y in zip(xs, ys)]
+    body.append('##END=\n')
+    target = tmp_path / 'synthetic.jdx'
+    target.write_text(''.join(body))
+    return str(target)
+
+
+def test_large_negative_values_are_refused_not_turned_into_infinity(tmp_path):
+    """`10**(400)` overflows to inf, and inf passed both original guards.
+
+    A trace at -400 clears the median check (its median is not near its max)
+    and the ceiling check (its max is negative), so the request used to
+    succeed with non-finite data and bounds.
+    """
+    ys = [-400.0] * 100
+    ys[:5] = [-1.0] * 5
+    path = _synthetic(tmp_path, ys)
+    with pytest.raises(UnconvertibleSpectrum, match='overflow'):
+        JcampTechniqueConverter(
+            JcampBaseConverter(path, {'transmittance': True}))
+
+
+def test_slightly_negative_absorbance_still_converts(tmp_path):
+    """Baseline drift below zero is normal and must not be refused."""
+    ys = [-0.05] * 100
+    ys[20] = 1.5
+    converter = JcampTechniqueConverter(
+        JcampBaseConverter(_synthetic(tmp_path, ys), {'transmittance': True}))
+    assert converter.label['y'] == 'TRANSMITTANCE'
+    assert all(abs(float(v)) < 1e6 for v in converter.ys)
