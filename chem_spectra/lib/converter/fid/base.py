@@ -2,6 +2,7 @@ import nmrglue as ng
 import numpy as np  # noqa: F401
 
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
+from chem_spectra.lib.converter.jcamp.techniques import SPECTRUM_TECHNIQUES
 
 
 class FidBaseConverter:
@@ -64,6 +65,11 @@ class FidBaseConverter:
         self.data_format = None
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = 'NMR'
+        # A FID is NMR by construction, so the descriptor is known here
+        # without consulting data_type.json. It has to be set: this converter
+        # is handed to JcampTechniqueConverter (model/transformer.py:213),
+        # which reads the descriptor off whatever base it is given.
+        self.technique = SPECTRUM_TECHNIQUES['NMR']
         self.fname = '.'.join(self.params.get('fname').split('.')[:-1])
         self.is_em_wave = self.__is_em_wave()
         self.is_ir = self.__is_ir()

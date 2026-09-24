@@ -79,9 +79,13 @@ def test_em_wave_grouping_matches_the_old_predicate():
     assert grouped == {'INFRARED', 'RAMAN', 'UVVIS'}
 
 
-def test_cv_scaling_is_cyclic_voltammetry_only():
-    scaled = {k for k, technique in SPECTRUM_TECHNIQUES.items() if technique.cv_scaling}
-    assert scaled == {'CYCLIC VOLTAMMETRY'}
+def test_cyclic_voltammetry_flag_is_cyclic_voltammetry_only():
+    """Formerly cv_scaling, which nothing consumed. All 14 CV sites read it now."""
+    flagged = {
+        k for k, technique in SPECTRUM_TECHNIQUES.items()
+        if technique.cyclic_voltammetry
+    }
+    assert flagged == {'CYCLIC VOLTAMMETRY'}
 
 
 def test_techniques_are_immutable():
