@@ -346,8 +346,6 @@ class TechniqueComposer(BaseComposer):
 
     def __compose(self):
         meta = []
-        meta.extend(self.gen_headers_root())
-
         meta.extend(self.__gen_headers_spectrum_orig())
         if self.core.is_sec:
             meta.extend(self.__gen_header_sec())
@@ -394,7 +392,9 @@ class TechniqueComposer(BaseComposer):
         meta.extend(self.generate_original_metadata())
 
         meta.extend(self.gen_ending())
-        return meta
+        # the root header goes on last: it has to declare how many children
+        # the body turned out to have
+        return self.gen_headers_root(self.count_child_blocks(meta)) + meta
 
     def __plt_nbins(self):
         return 20
