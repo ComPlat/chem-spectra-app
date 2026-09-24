@@ -99,6 +99,9 @@ SPECTRUM_TECHNIQUES = {
     'MS': SpectrumTechnique('MS', x_reversed=False, threshold=0.05),
 
     'HPLC UVVIS': SpectrumTechnique('HPLC UVVIS', x_reversed=False, threshold=0.05),
+    # Also covers Avantes AvaSoft exports (data_type.json), whose instruments
+    # are UV/VIS/NIR -- wider than this name, but handled identically: nm on x
+    # running forward, same threshold. No NIR technique exists to route to.
     'UVVIS': SpectrumTechnique('UVVIS', x_reversed=False, threshold=0.05,
                           em_wave=True),
 
