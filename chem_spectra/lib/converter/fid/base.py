@@ -88,7 +88,6 @@ class FidBaseConverter:
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
         self.solv_peaks = []
-        self.is_dept = self.__is_dept()
         self.__read_solvent()
 
     def __is_em_wave(self):
@@ -147,15 +146,3 @@ class FidBaseConverter:
     def __read_solvent(self):
         parse_solvent(self)
 
-    def __is_dept(self):
-        if not self.ncl == '13C':
-            return False
-
-        try:  # TBD
-            for p in (self.dic.get('.PULSESEQUENCE', []) + self.dic.get('.PULSE SEQUENCE', [])):    # noqa: E501
-                if 'dept' in p:
-                    return True
-        except:  # noqa: E722
-            pass
-
-        return False
