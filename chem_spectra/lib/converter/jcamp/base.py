@@ -85,6 +85,25 @@ class JcampBaseConverter:
             for key, values in data_type_mappings.items():
                 if dt in [value.upper() for value in values]:
                     return dt_dict.get(key, key)
+        # Nothing matched. Keep the file's own ##DATA TYPE= rather than
+        # returning '', because the composer writes this value straight back
+        # out (composer/technique.py) and 'DATATYPE' is suppressed from the
+        # original-metadata dump (composer/base.py) -- so '' erased the only
+        # record of what the file said it was. The spectrum still renders as a
+        # generic curve either way; what is lost is the ability to reclassify
+        # it later, which is exactly what happens when an under-specified
+        # technique is added to data_type.json after the fact.
+        return self.__unrecognised_datatype()
+
+    # Blocks the composer emits itself, or that JCAMP uses structurally. None
+    # of them names the measurement, so none is worth preserving.
+    STRUCTURAL_DATATYPES = ('LINK', 'NMR FID')
+
+    def __unrecognised_datatype(self):
+        for dt in self.datatypes:
+            if dt in self.STRUCTURAL_DATATYPES or dt.endswith('PEAKTABLE'):
+                continue
+            return dt
         return ''
 
     def __typ(self):

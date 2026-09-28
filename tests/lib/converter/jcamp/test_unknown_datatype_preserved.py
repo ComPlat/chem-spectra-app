@@ -1,0 +1,114 @@
+"""An unrecognised ##DATA TYPE= must survive into the composed file.
+
+Since #291 a file whose `##DATA TYPE=` is not in `data_type.json` no longer
+crashes -- it takes the generic curve path. But `__set_datatype` returned `''`
+for it, the composer writes that value straight back out
+(`composer/technique.py`), and `DATATYPE` is on the suppression list for the
+original-metadata dump (`composer/base.py`). Between them, the only record of
+what the file said it was got erased at compose time.
+
+The spectrum rendered fine either way, so nothing failed. What was lost is the
+ability to reclassify the file later -- which is precisely what happens when an
+under-specified technique (SQUID, TENSIOMETRY, LSV ...) is added to
+`data_type.json` after the fact: every file already processed has forgotten
+what it was.
+
+`SQUID` is used here because it is a real `##DATA TYPE=` emitted by
+chemotion-converter-app that this app deliberately does not map yet.
+"""
+
+import re
+
+import pytest
+
+from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.composer.technique import TechniqueComposer
+
+RECOGNISED = './tests/fixtures/source/IR.dx'
+
+
+def write_with_datatype(tmp_path, datatype, name='probe.dx'):
+    """A real fixture with only its ##DATA TYPE= swapped.
+
+    Building the file from a real one rather than by hand keeps every other
+    LDR consistent, so a failure here means the datatype handling changed and
+    not that the fixture stopped parsing.
+    """
+    source = open(RECOGNISED).read()
+    swapped = re.sub(
+        r'##DATA TYPE=.*INFRARED SPECTRUM', f'##DATA TYPE={datatype}',
+        source, flags=re.IGNORECASE,
+    )
+    assert swapped != source, 'the fixture no longer has the header to swap'
+    target = tmp_path / name
+    target.write_text(swapped)
+    return str(target)
+
+
+def compose(path):
+    core = JcampBaseConverter(path)
+    composer = TechniqueComposer(JcampTechniqueConverter(core))
+    lines = composer.tf_jcamp()
+    body = lines.read() if hasattr(lines, 'read') else ''.join(lines)
+    return body.decode() if isinstance(body, bytes) else body
+
+
+def datatypes_in(text):
+    return [m.strip() for m in re.findall(r'##DATA TYPE=(.*)', text)]
+
+
+def test_an_unrecognised_datatype_is_kept_on_the_converter(tmp_path):
+    core = JcampBaseConverter(write_with_datatype(tmp_path, 'SQUID'))
+    assert core.datatype == 'SQUID'
+
+
+def test_it_is_still_not_a_known_technique(tmp_path):
+    """Preserving the label must not smuggle it past classification."""
+    core = JcampBaseConverter(write_with_datatype(tmp_path, 'SQUID'))
+    assert core.typ == ''
+
+
+def test_it_reaches_the_composed_file(tmp_path):
+    composed = compose(write_with_datatype(tmp_path, 'SQUID'))
+    assert 'SQUID' in datatypes_in(composed)
+
+
+def test_it_survives_a_round_trip(tmp_path):
+    """The case that matters: the stored file can still be reclassified."""
+    first = tmp_path / 'first.jdx'
+    first.write_text(compose(write_with_datatype(tmp_path, 'SQUID')))
+    assert JcampBaseConverter(str(first)).datatype == 'SQUID'
+    second = compose(str(first))
+    assert 'SQUID' in datatypes_in(second)
+
+
+def test_structural_blocks_are_never_mistaken_for_the_measurement(tmp_path):
+    """A composed file whose spectrum block lost its datatype (anything
+    written before this fix) holds only LINK and PEAKTABLE markers. None of
+    them names a technique, so the answer stays empty rather than 'LINK'."""
+    core = JcampBaseConverter(write_with_datatype(tmp_path, 'SQUID'))
+    assert core._JcampBaseConverter__unrecognised_datatype() == 'SQUID'
+    core.datatypes = ['LINK', 'PEAKTABLE', 'PEAKTABLE']
+    assert core._JcampBaseConverter__unrecognised_datatype() == ''
+    core.datatypes = ['LINK', 'NMR FID']
+    assert core._JcampBaseConverter__unrecognised_datatype() == ''
+
+
+@pytest.mark.parametrize('datatype,typ', [
+    ('X-RAY DIFFRACTION', 'X-RAY DIFFRACTION'),
+    ('RAMAN SPECTRUM', 'RAMAN'),
+    ('CYCLIC VOLTAMMETRY', 'CYCLIC VOLTAMMETRY'),
+])
+def test_recognised_files_still_classify(tmp_path, datatype, typ):
+    """The fallback must only ever run when nothing matched."""
+    core = JcampBaseConverter(write_with_datatype(tmp_path, datatype))
+    assert core.datatype == datatype
+    assert core.typ == typ
+
+
+def test_the_untouched_fixture_is_unaffected():
+    """The real IR fixture, with no swap at all."""
+    core = JcampBaseConverter(RECOGNISED)
+    assert core.datatype == 'INFRARED SPECTRUM'
+    assert core.typ == 'INFRARED'
