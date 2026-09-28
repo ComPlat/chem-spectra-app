@@ -10,8 +10,8 @@ def filter_valid_integrations(stack):
     return [itg for itg in (stack or []) if is_valid_integration_item(itg)]
 
 
-def integration_uses_auc_column(items, is_hplc_uv_vis=False):
-    if is_hplc_uv_vis:
+def integration_uses_auc_column(items, auc_column=False):
+    if auc_column:
         return True
     return any('absoluteArea' in itg for itg in items)
 
@@ -34,12 +34,12 @@ def build_integration_lines(items, ref_area_factor, ref_shift, use_auc_column):
     ]
 
 
-def serialize_integration_stack(itg_stack, ref_area_factor, ref_shift, is_hplc_uv_vis=False):
+def serialize_integration_stack(itg_stack, ref_area_factor, ref_shift, auc_column=False):
     if not itg_stack:
         return []
     if isinstance(itg_stack[0], str):
         return itg_stack
-    use_auc_column = integration_uses_auc_column(itg_stack, is_hplc_uv_vis)
+    use_auc_column = integration_uses_auc_column(itg_stack, auc_column)
     return build_integration_lines(itg_stack, ref_area_factor, ref_shift, use_auc_column)
 
 

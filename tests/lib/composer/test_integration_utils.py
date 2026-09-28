@@ -26,11 +26,11 @@ def test_filter_valid_integrations():
 
 def test_integration_uses_auc_column():
     items = [{'xL': 0, 'xU': 1, 'area': 1.0}]
-    assert integration_uses_auc_column(items, is_hplc_uv_vis=True)
-    assert not integration_uses_auc_column(items, is_hplc_uv_vis=False)
+    assert integration_uses_auc_column(items, auc_column=True)
+    assert not integration_uses_auc_column(items, auc_column=False)
     assert integration_uses_auc_column(
         [{'xL': 0, 'xU': 1, 'area': 1.0, 'absoluteArea': 10}],
-        is_hplc_uv_vis=False,
+        auc_column=False,
     )
 
 

@@ -98,6 +98,17 @@ class JcampBaseConverter:
                 return key
         return ''
 
+    # `non_nmr` is the one predicate that survives, and not as a shim.
+    # JcampMSConverter copies it (converter/jcamp/ms.py) and carries no
+    # descriptor, so BaseComposer._technique() reaches it through
+    # `getattr(self.core, 'non_nmr', True)` -- that fallback is the MS path's
+    # only route to a descriptor. It goes when MS is folded in as a
+    # technique; see DEFERRED.md item 1. The other fifteen predicates are
+    # gone: every decision they carried is a field on the descriptor.
+    @property
+    def non_nmr(self):
+        return self.technique.key != 'NMR'
+
     def __set_dataclass(self):
         data_class = self.dataclasses
         if 'XYPOINTS' in data_class:
@@ -105,78 +116,6 @@ class JcampBaseConverter:
         elif 'XYDATA' in data_class:
             return 'XYDATA_OLD'
         return ''
-
-    # - - - technique predicates, all derived from `kind` - - -
-    #
-    # These were sixteen booleans assigned in __init__, each re-deriving a
-    # fact `typ` already carries. They are properties now so nothing can set
-    # them out of step with the descriptor. Behaviour is unchanged: each is
-    # the key comparison the old private predicate made, and an unrecognised
-    # datatype gets UNKNOWN_TECHNIQUE whose key is '', so every one is False.
-
-    @property
-    def is_em_wave(self):
-        return self.technique.em_wave
-
-    @property
-    def non_nmr(self):
-        return self.technique.key != 'NMR'
-
-    @property
-    def is_ir(self):
-        return self.technique.key == 'INFRARED'
-
-    @property
-    def is_tga(self):
-        return self.technique.key == 'THERMOGRAVIMETRIC ANALYSIS'
-
-    @property
-    def is_gc(self):
-        return self.technique.key == 'GAS CHROMATOGRAPHY'
-
-    @property
-    def is_uv_vis(self):
-        return self.technique.key == 'UVVIS'
-
-    @property
-    def is_hplc_uv_vis(self):
-        return self.technique.key == 'HPLC UVVIS'
-
-    @property
-    def is_xrd(self):
-        return self.technique.key == 'X-RAY DIFFRACTION'
-
-    @property
-    def is_cyclic_volta(self):
-        return self.technique.key == 'CYCLIC VOLTAMMETRY'
-
-    @property
-    def is_sec(self):
-        return self.technique.key == 'SIZE EXCLUSION CHROMATOGRAPHY'
-
-    @property
-    def is_cds(self):
-        return self.technique.key == 'CIRCULAR DICHROISM SPECTROSCOPY'
-
-    @property
-    def is_aif(self):
-        return self.technique.key == 'SORPTION-DESORPTION MEASUREMENT'
-
-    @property
-    def is_emissions(self):
-        return self.technique.key == 'Emissions'
-
-    @property
-    def is_dls_acf(self):
-        return self.technique.key == 'DLS ACF'
-
-    @property
-    def is_dls_intensity(self):
-        return self.technique.key == 'DLS intensity'
-
-    @property
-    def is_dsc(self):
-        return self.technique.key == 'DIFFERENTIAL SCANNING CALORIMETRY'
 
     def __set_dataformat(self):
         try:
