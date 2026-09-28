@@ -5,10 +5,9 @@ from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
-
-
-class UnconvertibleSpectrum(ValueError):
-    """The client asked for a conversion this data cannot support."""
+# re-exported: the check that raises it moved to parse_params, but the
+# error handler and the tests import it from here
+from chem_spectra.lib.converter.share import UnconvertibleSpectrum  # noqa: F401
 
 
 # Real absorbance runs roughly 0-3; beyond this T = 10**(-A) underflows and
@@ -235,6 +234,36 @@ class JcampTechniqueConverter:
 
         return ys
 
+    def __declared_y_unit(self):
+        """The y unit the *file* declares, or None.
+
+        Mirrors how __set_label reads it -- ##YUNITS=, then the JCAMP 6
+        ##UNITS= triple which overrides it -- but deliberately ignores the
+        caller's `axesUnits`. That is a display preference; this guard is
+        about what the data already is.
+
+        Runs before __set_label, which is why it cannot just read self.label.
+        """
+        unit = None
+        try:
+            unit = self.dic['YUNITS'][self.target_idx]
+        except:  # noqa
+            try:
+                unit = self.dic['YUNITS'][0]
+            except:  # noqa
+                pass
+        # ##UNITS= is per block, so the record wanted is the target block's,
+        # not a fixed index. Four fixtures declare exactly one record and no
+        # ##YUNITS= at all; a hardcoded [1] returns nothing for them, so a file
+        # declaring transmittance only there would slip past this guard.
+        for idx in (self.target_idx, 0):
+            try:
+                _, y, _ = self.dic['UNITS'][idx].replace(' ', '').split(',')
+                return y
+            except:  # noqa
+                continue
+        return unit
+
     def __to_transmittance(self, ys):
         """T = 10**(-A). Refuses rather than returning a ruined spectrum.
 
@@ -248,6 +277,15 @@ class JcampTechniqueConverter:
         finiteness check on the result is a backstop for anything the input
         checks do not anticipate.
         """
+        declared = self.__declared_y_unit()
+        if declared and 'TRANSMITTANCE' in declared.upper():
+            # What the file says outranks what its shape suggests: this is a
+            # fact, where the median test below is an inference.
+            raise UnconvertibleSpectrum(
+                'the file already declares its y axis as {!r}; there is '
+                'nothing to convert'.format(declared)
+            )
+
         ys = np.asarray(ys, dtype=float)
         if not np.isfinite(ys).all():
             raise UnconvertibleSpectrum(
@@ -276,7 +314,12 @@ class JcampTechniqueConverter:
                 'would overflow'.format(y_min)
             )
 
-        transmittance = np.power(10.0, -ys)
+        # Percent, not the 0-1 ratio: every commercial IR/UV-Vis instrument
+        # stores %T, absorbance itself runs 0-2.5 so a 0-1 array is routinely
+        # misread as absorbance, and '% TRANSMITTANCE' is a unit JCAMP-DX can
+        # declare -- so external tools axis it correctly with no renderer
+        # knowing to multiply by 100.
+        transmittance = 100.0 * np.power(10.0, -ys)
         if not np.isfinite(transmittance).all():
             raise UnconvertibleSpectrum(
                 'the conversion produced non-finite values; the series is not '
@@ -333,7 +376,7 @@ class JcampTechniqueConverter:
         # thing a mirror changes -- `max - y` preserves the dimension, and is
         # not `1 / y`, so `^-1` would be wrong twice over.
         if self.converted_to_transmittance:
-            target['y'] = 'TRANSMITTANCE'
+            target['y'] = '% TRANSMITTANCE'
         if self.inverted_y:
             target['y'] = '{} - inverted'.format(target['y'])
 
