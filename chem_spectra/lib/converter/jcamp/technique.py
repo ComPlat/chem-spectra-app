@@ -223,6 +223,17 @@ class JcampTechniqueConverter:
         declared units -- so the two could, and did, disagree. Both decisions
         now belong to whoever supplies the file.
         """
+        if self.params.get('transmittance') and self.params.get('invert_y'):
+            # Checked before the data is read, because this is wrong about the
+            # request rather than about the file.
+            raise UnconvertibleSpectrum(
+                "'transmittance' and 'invert_y' cannot both be applied. "
+                "Converting to transmittance already turns absorbance peaks "
+                "downward; mirroring that gives 1 - T, which is fractional "
+                "absorptance -- not linear in concentration, and not a unit "
+                "JCAMP-DX can declare. Ask for one or the other."
+            )
+
         ys = self.data
         if ys is None:
             return ys
@@ -234,6 +245,31 @@ class JcampTechniqueConverter:
             self.inverted_y = True
 
         return ys
+
+    def __declared_y_unit(self):
+        """The y unit the *file* declares, or None.
+
+        Mirrors how __set_label reads it -- ##YUNITS=, then the JCAMP 6
+        ##UNITS= triple which overrides it -- but deliberately ignores the
+        caller's `axesUnits`. That is a display preference; this guard is
+        about what the data already is.
+
+        Runs before __set_label, which is why it cannot just read self.label.
+        """
+        unit = None
+        try:
+            unit = self.dic['YUNITS'][self.target_idx]
+        except:  # noqa
+            try:
+                unit = self.dic['YUNITS'][0]
+            except:  # noqa
+                pass
+        try:
+            _, y, _ = self.dic['UNITS'][1].replace(' ', '').split(',')
+            unit = y
+        except:  # noqa
+            pass
+        return unit
 
     def __to_transmittance(self, ys):
         """T = 10**(-A). Refuses rather than returning a ruined spectrum.
@@ -248,6 +284,15 @@ class JcampTechniqueConverter:
         finiteness check on the result is a backstop for anything the input
         checks do not anticipate.
         """
+        declared = self.__declared_y_unit()
+        if declared and 'TRANSMITTANCE' in declared.upper():
+            # What the file says outranks what its shape suggests: this is a
+            # fact, where the median test below is an inference.
+            raise UnconvertibleSpectrum(
+                'the file already declares its y axis as {!r}; there is '
+                'nothing to convert'.format(declared)
+            )
+
         ys = np.asarray(ys, dtype=float)
         if not np.isfinite(ys).all():
             raise UnconvertibleSpectrum(
@@ -276,7 +321,12 @@ class JcampTechniqueConverter:
                 'would overflow'.format(y_min)
             )
 
-        transmittance = np.power(10.0, -ys)
+        # Percent, not the 0-1 ratio: every commercial IR/UV-Vis instrument
+        # stores %T, absorbance itself runs 0-2.5 so a 0-1 array is routinely
+        # misread as absorbance, and '% TRANSMITTANCE' is a unit JCAMP-DX can
+        # declare -- so external tools axis it correctly with no renderer
+        # knowing to multiply by 100.
+        transmittance = 100.0 * np.power(10.0, -ys)
         if not np.isfinite(transmittance).all():
             raise UnconvertibleSpectrum(
                 'the conversion produced non-finite values; the series is not '
@@ -333,7 +383,7 @@ class JcampTechniqueConverter:
         # thing a mirror changes -- `max - y` preserves the dimension, and is
         # not `1 / y`, so `^-1` would be wrong twice over.
         if self.converted_to_transmittance:
-            target['y'] = 'TRANSMITTANCE'
+            target['y'] = '% TRANSMITTANCE'
         if self.inverted_y:
             target['y'] = '{} - inverted'.format(target['y'])
 

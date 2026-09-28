@@ -20,6 +20,7 @@ nothing is inferred:
 With neither, `##YUNITS` is exactly what arrived.
 """
 
+import json
 import re
 
 import numpy as np
@@ -138,53 +139,68 @@ def test_invert_is_not_gated_to_infrared(tmp_path):
 # - - - transmittance - - -
 
 def test_transmittance_converts_and_relabels(tmp_path):
-    converter = _absorbance_probe(tmp_path, params={'transmittance': True})
-    assert converter.label['y'] == 'TRANSMITTANCE'
-    # T = 10**(-A): the A = 2.0 band becomes 0.01, the 0.02 baseline ~0.955
-    assert min(converter.ys) == pytest.approx(0.01, abs=1e-6)
-    assert max(converter.ys) == pytest.approx(10 ** -0.02, abs=1e-6)
+    """Percent, not the 0-1 ratio.
 
-
-def test_both_instructions_compose(tmp_path):
-    """Convert first, then mirror -- the order the client's words imply.
-
-    Asked in review: does `invert_y` overwrite what `transmittance` just
-    computed, so the conversion is calculated and then thrown away? It does
-    not. `__read_ys` rebinds `ys`, so the mirror operates on the converted
-    series -- `max(T) - T`, not `max(A) - A`.
-
-    This asserts the values rather than the label alone. The label-only
-    version of this test passed under either reading, so nothing in the suite
-    would have failed had the review been right.
+    Instruments store %T; a 0-1 array is routinely misread as absorbance,
+    which itself runs 0-2.5. `% TRANSMITTANCE` is a unit JCAMP-DX declares, so
+    an external reader axes it correctly without knowing to multiply by 100.
     """
-    absorbance = np.asarray(_absorbance_probe(tmp_path).ys, dtype=float)
-    transmittance = np.asarray(
-        _absorbance_probe(tmp_path, params={'transmittance': True}).ys,
-        dtype=float)
-    inverted_only = np.asarray(
-        _absorbance_probe(tmp_path, params={'invert_y': True}).ys, dtype=float)
-
-    converter = _absorbance_probe(
-        tmp_path, params={'transmittance': True, 'invert_y': True})
-    both = np.asarray(converter.ys, dtype=float)
-
-    assert converter.label['y'] == 'TRANSMITTANCE - inverted'
-
-    # the mirror consumes the conversion
-    assert np.allclose(both, transmittance.max() - transmittance)
-
-    # and not either way of ignoring one of the two instructions
-    assert not np.allclose(both, absorbance.max() - absorbance)
-    assert not np.allclose(both, inverted_only)
-    assert not np.allclose(both, transmittance)
+    converter = _absorbance_probe(tmp_path, params={'transmittance': True})
+    assert converter.label['y'] == '% TRANSMITTANCE'
+    # T% = 100 * 10**(-A): the A = 2.0 band becomes 1.0, the 0.02 baseline ~95.5
+    assert min(converter.ys) == pytest.approx(1.0, abs=1e-4)
+    assert max(converter.ys) == pytest.approx(100 * 10 ** -0.02, abs=1e-4)
 
 
-def test_transmittance_refuses_data_that_already_looks_like_transmittance(tmp_path):
-    """The old heuristic, now a guard on an explicit request rather than a
-    silent decision. A wrong call is a visible refusal, not corrupt output."""
-    with pytest.raises(UnconvertibleSpectrum, match='already appears'):
+def test_the_two_instructions_are_mutually_exclusive(tmp_path):
+    """Asking for both is a contradiction, so it is refused.
+
+    Convert-then-mirror gives `max(T) - T`, which is approximately `1 - T`:
+    fractional absorptance. It is not linear in concentration (A = 1.0 -> 0.90,
+    A = 2.0 -> 0.99, A = 3.0 -> 0.999), so strong bands saturate and flat-top;
+    it is circular, since a caller wanting a zero baseline with peaks upward
+    already had that in the absorbance they sent; and JCAMP-DX has no unit for
+    it, so any label would be a mislabel.
+
+    The other order is worse, not better: `10**-(max(A) - A)` makes the sample
+    transparent at its absorption bands and opaque everywhere else.
+    """
+    with pytest.raises(UnconvertibleSpectrum, match='cannot both be applied'):
+        _absorbance_probe(
+            tmp_path, params={'transmittance': True, 'invert_y': True})
+
+
+def test_the_refusal_names_both_instructions(tmp_path):
+    """The caller has to know which two to choose between."""
+    with pytest.raises(UnconvertibleSpectrum) as excinfo:
+        _absorbance_probe(
+            tmp_path, params={'transmittance': True, 'invert_y': True})
+    assert 'transmittance' in str(excinfo.value)
+    assert 'invert_y' in str(excinfo.value)
+
+
+def test_transmittance_refuses_a_file_that_declares_transmittance(tmp_path):
+    """What the file says outranks what its shape suggests.
+
+    `IR.dx` declares `##YUNITS=TRANSMITTANCE`, so this is refused on a fact
+    rather than on the median heuristic below -- which matters because that
+    heuristic misfires on a heavily absorbing sample.
+    """
+    with pytest.raises(UnconvertibleSpectrum, match='already declares'):
         _probe(TRANSMITTANCE_SHAPED, 'INFRARED SPECTRUM', tmp_path,
                params={'transmittance': True})
+
+
+def test_the_shape_guard_still_catches_a_file_that_declares_nothing(tmp_path):
+    """The heuristic remains, as a second line for files that declare a unit
+    naming neither quantity. Transmittance-shaped: baseline near the maximum.
+    """
+    ys = [0.95] * 100
+    ys[20] = 0.01
+    with pytest.raises(UnconvertibleSpectrum, match='already appears'):
+        JcampTechniqueConverter(JcampBaseConverter(
+            _synthetic(tmp_path, ys, yunits='ARBITRARY'),
+            {'transmittance': True}))
 
 
 def test_transmittance_refuses_data_that_is_not_absorbance_scaled(tmp_path):
@@ -236,8 +252,25 @@ def test_endpoint_invert_succeeds(client):
     assert _post(client, TRANSMITTANCE_SHAPED, invert_y='true').status_code == 200
 
 
+def test_endpoint_refuses_both_instructions_together(client):
+    """422 with the reason, through the controller.
+
+    The converter-level test above would pass while the controller still
+    returned 500; that has happened twice in this repo.
+
+    `IR.dx` declares transmittance, so it would be refused for that reason on
+    `transmittance` alone. Getting the conflict message instead shows the
+    contradiction is caught first -- before the file is even looked at.
+    """
+    response = _post(client, TRANSMITTANCE_SHAPED,
+                     transmittance='true', invert_y='true')
+    assert response.status_code == 422
+    body = json.loads(response.data)
+    assert 'cannot both be applied' in body['error']
+
+
 @pytest.mark.parametrize('source, reason', [
-    (TRANSMITTANCE_SHAPED, 'already appears'),
+    (TRANSMITTANCE_SHAPED, 'already declares'),
     (ABSORBANCE_SHAPED, 'not absorbance'),
 ])
 def test_endpoint_refuses_an_impossible_conversion(client, source, reason):
@@ -293,5 +326,5 @@ def test_slightly_negative_absorbance_still_converts(tmp_path):
     ys[20] = 1.5
     converter = JcampTechniqueConverter(
         JcampBaseConverter(_synthetic(tmp_path, ys), {'transmittance': True}))
-    assert converter.label['y'] == 'TRANSMITTANCE'
+    assert converter.label['y'] == '% TRANSMITTANCE'
     assert all(abs(float(v)) < 1e6 for v in converter.ys)
