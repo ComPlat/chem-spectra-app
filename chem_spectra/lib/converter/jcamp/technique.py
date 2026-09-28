@@ -4,17 +4,10 @@ from scipy import signal
 from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
+from chem_spectra.lib.converter.jcamp.techniques import technique_for
 import json
 import os
 
-THRESHOLD_IR = 0.93
-THRESHOLD_RAMAN = 0.07
-THRESHOLD_NMR = 0.005
-THRESHOLD_MS = 0.05
-THRESHOLD_UVVIS = 0.05
-THRESHOLD_TGA = 1.05
-THRESHOLD_XRD = 1.00
-THRESHOLD_EMISSION = 0.5
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
 class JcampTechniqueConverter:
@@ -43,30 +36,13 @@ class JcampTechniqueConverter:
         # the descriptor travels with the flags it backs; without it the
         # composer falls back to UNKNOWN_TECHNIQUE and draws every technique
         # with the generic-curve defaults
-        self.technique = getattr(base, 'technique', None)
-        self.is_em_wave = base.is_em_wave
-        self.is_ir = base.is_ir
-        self.is_tga = base.is_tga
-        self.is_gc = base.is_gc
-        self.is_xrd = base.is_xrd
-        self.is_uv_vis = base.is_uv_vis
-        self.is_hplc_uv_vis = base.is_hplc_uv_vis
-        self.is_cyclic_volta = base.is_cyclic_volta
-        self.is_sec = base.is_sec if hasattr(base, 'is_sec') else False
-        self.is_cds = base.is_cds if hasattr(base, 'is_cds') else False
-        self.is_aif = base.is_aif if hasattr(base, 'is_aif') else False
-        self.is_emissions = base.is_emissions if hasattr(base, 'is_emissions') else False
-        self.is_dls_acf = base.is_dls_acf if hasattr(base, 'is_dls_acf') else False
-        self.is_dls_intensity = base.is_dls_intensity if hasattr(base, 'is_dls_intensity') else False
-        self.is_dsc = base.is_dsc if hasattr(base, 'is_dsc') else False
-        self.non_nmr = base.non_nmr
+        self.technique = getattr(base, 'technique', None) or technique_for(self.typ)
         self.ncl = base.ncl
-        self.is_dept = base.is_dept
         self.solv_peaks = base.solv_peaks
         # - - - - - - - - - - -
         self.fname = base.fname
         self.block_count = self.__count_block()
-        self.threshold = self.__thres()
+        self.threshold = self.technique.threshold
         self.obs_freq = self.__set_obs_freq()
         self.x_unit = self.__set_x_unit()
         self.ys = self.__read_ys()
@@ -97,37 +73,6 @@ class JcampTechniqueConverter:
             return ''
         else:
             return json.loads(user_dt_mapping)['datatypes']
-
-    def __thres(self):
-        dt = self.datatype
-        threshold_values = {
-            "NMR": THRESHOLD_NMR,
-            "INFRARED": THRESHOLD_IR,
-            "RAMAN": THRESHOLD_RAMAN,
-            "MS": THRESHOLD_MS,
-            "HPLC UVVIS": THRESHOLD_UVVIS,
-            "UVVIS": THRESHOLD_UVVIS,
-            "THERMOGRAVIMETRIC ANALYSIS": THRESHOLD_TGA,
-            "DLS ACF": THRESHOLD_TGA,
-            "X-RAY DIFFRACTION": THRESHOLD_XRD,
-            "CIRCULAR DICHROISM SPECTROSCOPY": THRESHOLD_XRD,
-            "CYCLIC VOLTAMMETRY": THRESHOLD_XRD,
-            "SORPTION-DESORPTION MEASUREMENT": THRESHOLD_XRD,
-            "DLS intensity": THRESHOLD_XRD,
-            "Emissions": THRESHOLD_EMISSION,
-            "DIFFERENTIAL SCANNING CALORIMETRY": THRESHOLD_TGA,
-        }
-
-        if self.params.get('user_data_type_mapping'):
-            data_type_mappings = self.__read_user_data_type_mapping()
-        else:
-            with open(data_type_json, 'r') as mapping_file:
-                data_type_mappings = json.load(mapping_file)["datatypes"]
-
-        key = next((k for k, v in data_type_mappings.items() if dt in v), None)
-
-        return threshold_values.get(key, 0.5)
-    
 
     def __index_target(self):
         """Index of the block holding the primary measurement.
@@ -237,7 +182,7 @@ class JcampTechniqueConverter:
             except:  # noqa
                 pass
 
-        if self.is_em_wave and beg_pt < end_pt:
+        if self.technique.em_wave and beg_pt < end_pt:
             buf = beg_pt
             beg_pt = end_pt
             end_pt = buf
@@ -260,7 +205,7 @@ class JcampTechniqueConverter:
     def __read_ys(self):
         ys = self.data
         # transmission only # IR ABS vs TRANS
-        if self.is_ir:
+        if self.technique.transmittance:
             y_median = np.median(ys)
             y_max = np.max(ys)
             if y_median < 0.5 * y_max:
@@ -299,9 +244,9 @@ class JcampTechniqueConverter:
         except:  # noqa
             pass
 
-        if 'absorb' in target['y'].lower() and not(self.is_uv_vis):  # IR ABS vs TRANS
+        if 'absorb' in target['y'].lower() and not self.technique.absorbance_label:
             target['y'] = 'TRANSMITTANCE'
-        if (self.is_xrd):
+        if self.technique.x_axis == 'xrd':
             target['x'] = '2Theta'
             
         if 'axesUnits' in self.params and self.params['axesUnits'] is not None:
@@ -477,14 +422,14 @@ class JcampTechniqueConverter:
 
         corr_data_ys = self.ys
         corr_height = height
-        if self.is_ir:
+        if self.technique.peaks_inverted:
             corr_data_ys = 1 - self.ys
             corr_height = 1 - height
 
         peak_idxs = signal.find_peaks(corr_data_ys, height=corr_height)[0]
 
         min_y = np.min(self.ys)
-        if not (self.is_ir or self.is_cds) and (max_y * 0.4 < -min_y):
+        if self.technique.negative_peaks and (max_y * 0.4 < -min_y):
             dept_corr_data_ys = 1 - self.ys
             dept_corr_height = height
             dept_peak_idxs = signal.find_peaks(dept_corr_data_ys, height=dept_corr_height)[0]
@@ -496,7 +441,7 @@ class JcampTechniqueConverter:
         auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx]} for idx in peak_idxs]
         auto_peaks.sort(key=lambda d: d['y'], reverse=True)
 
-        if self.is_ir:
+        if self.technique.peaks_inverted:
             auto_peaks = auto_peaks[-100:]
         elif self.ncl == '13C':
             simu_length = len(self.simu_peaks)
@@ -626,7 +571,7 @@ class JcampTechniqueConverter:
             self.mpy_pks_table = target2
             self.mpy_pks_table.append('\n')
 
-    #     if self.ncl == '13C' and not self.is_dept and len(self.mpy_itg_table) == 0 and len(self.mpy_pks_table) == 0:
+    #     if self.ncl == '13C' and len(self.mpy_itg_table) == 0 and len(self.mpy_pks_table) == 0:
     #         self.__add_13C_mpy_programmatically()
 
     # def __add_13C_mpy_programmatically(self):
@@ -705,7 +650,7 @@ class JcampTechniqueConverter:
         self.last_x = self.xs[-1]
 
     def __check_cylic_volta_shifted_info(self):
-        if self.is_cyclic_volta == False:
+        if not self.technique.cyclic_voltammetry:
             return
         
         cyclicvolta_data = self.params['cyclicvolta']

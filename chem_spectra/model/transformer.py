@@ -414,7 +414,7 @@ class TransformerModel:
                 tcp = TechniqueComposer(tcv)
                 xs, ys = tcp.core.xs, tcp.core.ys
                 y_values = ys
-                if tcp.core.is_cyclic_volta:
+                if tcp._technique().cyclic_voltammetry:
                     cv_state = {}
                     if extraParams:
                         try:
@@ -466,7 +466,7 @@ class TransformerModel:
                     except Exception:
                         pass
                 marker = ''
-                if tcp.core.is_aif:
+                if tcp._technique().sorption_branches:
                     first_x, last_x = xs[0], xs[len(xs)-1]
                     if first_x <= last_x:
                         filename = 'ADSORPTION'
@@ -480,7 +480,7 @@ class TransformerModel:
                 # PLOT label
                 core_label_x = tcp.core.label['x']
                 core_label_y = tcp.core.label['y']
-                if tcp.core.is_cyclic_volta:
+                if tcp._technique().cyclic_voltammetry:
                     x_peaks, y_peaks = self.__get_cyclic_volta_ref_peaks(curve_idx, extraParams)
                     if y_peaks and y_values is not ys:
                         y_peaks = [y * scale for y in y_peaks]
@@ -503,7 +503,7 @@ class TransformerModel:
                     if (idx == len(self.multiple_files) - 1):
                         xlabel = ', '.join(xlabel_set)
                         ylabel = ', '.join(ylabel_set)
-                elif (tcp.core.non_nmr == False):
+                elif tcp._technique().x_axis == 'chemical_shift':
                     xlabel = "Chemical shift ({})".format(core_label_x.lower())
                     ylabel = "Intensity ({})".format(core_label_y.lower())
                 else:

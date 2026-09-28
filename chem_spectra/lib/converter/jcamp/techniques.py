@@ -18,17 +18,19 @@ execution, not by reading, and are pinned by
 
 The four NMR gates are consumed by `BaseComposer` and `TechniqueComposer`,
 and their behaviour is covered by `tests/lib/composer/test_non_nmr_gates.py`
--- flipping any of them to the wrong value fails the suite. Two fields are
-**not** yet read and so are pinned only by table-to-table parity in
-`tests/lib/converter/jcamp/test_techniques.py`:
+-- flipping any of them to the wrong value fails the suite.
 
-- `cv_scaling`, which nothing consumes at all;
-  (`x_axis='xrd'` was in this state too until the composer's hardcoded
-  `is_xrd` branch was migrated to read it -- see review of #293);
-- `threshold`, because `converter/jcamp/technique.py` still carries its own
-  threshold table.
+`threshold` is read by `converter/jcamp/technique.py`, which used to carry a
+duplicate table keyed on the raw datatype string. Flipping NMR's value fails
+13 tests outside the parity file, so it is load-bearing on the peak-detection
+path, not just pinned by parity.
 
-Both need render-level assertions when they are wired up.
+`x_axis` was in the parity-only state too for `'xrd'`, until the composer's
+hardcoded `is_xrd` branch was migrated to read it -- see the review of #293.
+
+`cyclic_voltammetry` (formerly `cv_scaling`, which nothing consumed) is now
+read by all fourteen CV sites. Every field in this dataclass is read by
+something.
 
 Note on the NMR gates: `non_nmr` gated four unrelated concerns --
 integration pairing, multiplicity output, axis-label style and peak
@@ -70,8 +72,67 @@ class SpectrumTechnique:
     # - - - groupings and per-technique extras - - -
     # IR / Raman / UV-Vis share a header shape (the old `is_em_wave`)
     em_wave: bool = False
-    # cyclic voltammetry y-scaling and the shared 10^n axis label
-    cv_scaling: bool = False
+    # this technique is cyclic voltammetry. Fourteen sites across the
+    # converter, both composers, the bagit writer and the transformer ask
+    # exactly that question -- the shift offset, the display info, the data
+    # table, the y-scaling and the axis label. It was named `cv_scaling` for
+    # only the last of those and went unconsumed; the name now matches what
+    # it is asked.
+    cyclic_voltammetry: bool = False
+
+    # - - - signal polarity, three concerns that coincide for infrared - - -
+    # converter/jcamp/technique.py __read_ys: a transmittance trace stored the
+    # absorbance way up is inverted, judged by median against max.
+    transmittance: bool = False
+    # converter/jcamp/technique.py __exec_peak_picking_logic and
+    # __run_auto_pick_peak: bands are troughs, so find_peaks runs on 1 - ys
+    # and the auto table keeps the *lowest* hundred. composer/technique.py
+    # also takes less headroom above the trace when drawing peak labels,
+    # because for a trough spectrum the labels hang below the baseline.
+    peaks_inverted: bool = False
+    # converter/jcamp/technique.py __exec_peak_picking_logic: fold in peaks
+    # found on the inverted series when the trace dips well below zero -- the
+    # DEPT case. Infrared opts out because peaks_inverted already did that
+    # work; circular dichroism opts out because its signal is genuinely
+    # bipolar and both lobes are real. Same effect, different reasons, so if
+    # one of them ever changes this field is the wrong place to express it.
+    negative_peaks: bool = True
+    # converter/jcamp/technique.py __set_label: a y-axis declaring absorbance
+    # is reported as absorbance rather than rewritten to TRANSMITTANCE.
+    # True only for UVVIS, which reproduces the pre-refactor `not is_uv_vis`
+    # guard exactly. NOTE: 'HPLC UVVIS' is a separate key and so does *not*
+    # get this, meaning an HPLC file declaring ##YUNITS=ABSORBANCE is
+    # relabelled TRANSMITTANCE -- the inverse quantity. Reachable, pinned by
+    # test_absorbance_label.py, and left as-is: it is a domain call, not the
+    # refactor's to make. See CHANGELOG.refactor-finish-flag-migration.md.
+    absorbance_label: bool = False
+
+    # - - - the two UV/VIS concerns, which cover different sets - - -
+    # composer/base.py _build_integration_lines and prepare_itg_mpy: the
+    # integration table gains an AUC column. HPLC UV/VIS only.
+    auc_column: bool = False
+    # composer/base.py _supports_visual_split and composer/technique.py
+    # __uses_auc_drawing: visual integration splits, and integrations drawn
+    # as areas. HPLC UV/VIS *and* plain UV/VIS -- a wider set than
+    # auc_column, which is why these are two fields.
+    visual_split: bool = False
+
+    # - - - size exclusion chromatography and differential scanning - - -
+    # composer/technique.py __generate_info_box: which annotation box is
+    # drawn on the plot. '' draws none; 'sec' lists MN/MW/MP/D, 'dsc' lists
+    # the melting point and Tg. A discriminator rather than two booleans,
+    # because the box has exactly one variant per technique.
+    info_box: str = ''
+    # composer/technique.py __gen_header_sec: the SEC header block
+    sec_headers: bool = False
+    # composer/technique.py __gen_header_user_input_meta_data: melting point
+    # and Tg written into the JCAMP, from params or from the file's own LDRs
+    dsc_metadata: bool = False
+
+    # model/transformer.py tf_combine and converter/bagit/base.py: the trace
+    # is one branch of a sorption isotherm, labelled ADSORPTION or
+    # DESORPTION and marked '^' or 'v' depending on which way x runs.
+    sorption_branches: bool = False
 
 
 def _nmr(key):
@@ -88,7 +149,8 @@ SPECTRUM_TECHNIQUES = {
     'NMR': _nmr('NMR'),
 
     'INFRARED': SpectrumTechnique('INFRARED', x_reversed=True, threshold=0.93,
-                             em_wave=True),
+                             em_wave=True, transmittance=True,
+                             peaks_inverted=True, negative_peaks=False),
     'RAMAN': SpectrumTechnique('RAMAN', x_reversed=True, threshold=0.07,
                           em_wave=True),
     # MS is not routed through TechniqueComposer yet: every production
@@ -98,8 +160,10 @@ SPECTRUM_TECHNIQUES = {
     # x_reversed=False is what it must be when the MS fold makes it live.
     'MS': SpectrumTechnique('MS', x_reversed=False, threshold=0.05),
 
-    'HPLC UVVIS': SpectrumTechnique('HPLC UVVIS', x_reversed=False, threshold=0.05),
+    'HPLC UVVIS': SpectrumTechnique('HPLC UVVIS', x_reversed=False, threshold=0.05,
+                               auc_column=True, visual_split=True),
     'UVVIS': SpectrumTechnique('UVVIS', x_reversed=False, threshold=0.05,
+                          absorbance_label=True, visual_split=True,
                           em_wave=True),
 
     'THERMOGRAVIMETRIC ANALYSIS': SpectrumTechnique(
@@ -108,13 +172,16 @@ SPECTRUM_TECHNIQUES = {
         'X-RAY DIFFRACTION', x_axis='xrd', x_reversed=False, threshold=1.00),
     'CYCLIC VOLTAMMETRY': SpectrumTechnique(
         'CYCLIC VOLTAMMETRY', x_axis='raw', y_axis='raw',
-        x_reversed=False, threshold=1.00, cv_scaling=True),
+        x_reversed=False, threshold=1.00, cyclic_voltammetry=True),
     'SIZE EXCLUSION CHROMATOGRAPHY': SpectrumTechnique(
-        'SIZE EXCLUSION CHROMATOGRAPHY', x_reversed=False, threshold=0.5),
+        'SIZE EXCLUSION CHROMATOGRAPHY', x_reversed=False, threshold=0.5,
+        info_box='sec', sec_headers=True),
     'CIRCULAR DICHROISM SPECTROSCOPY': SpectrumTechnique(
-        'CIRCULAR DICHROISM SPECTROSCOPY', x_reversed=False, threshold=1.00),
+        'CIRCULAR DICHROISM SPECTROSCOPY', x_reversed=False, threshold=1.00,
+        negative_peaks=False),
     'SORPTION-DESORPTION MEASUREMENT': SpectrumTechnique(
-        'SORPTION-DESORPTION MEASUREMENT', x_reversed=False, threshold=1.00),
+        'SORPTION-DESORPTION MEASUREMENT', x_reversed=False, threshold=1.00,
+        sorption_branches=True),
     'Emissions': SpectrumTechnique('Emissions', x_reversed=False, threshold=0.5),
     'DLS ACF': SpectrumTechnique('DLS ACF', x_reversed=False, threshold=1.05),
     'DLS intensity': SpectrumTechnique('DLS intensity', x_reversed=False,
@@ -123,7 +190,8 @@ SPECTRUM_TECHNIQUES = {
     # Forward, like TGA. It was reversed until #292, because `is_dsc` was
     # never added to the hand-maintained orientation chain in tf_img.
     'DIFFERENTIAL SCANNING CALORIMETRY': SpectrumTechnique(
-        'DIFFERENTIAL SCANNING CALORIMETRY', x_reversed=False, threshold=1.05),
+        'DIFFERENTIAL SCANNING CALORIMETRY', x_reversed=False, threshold=1.05,
+        info_box='dsc', dsc_metadata=True),
 
     'GAS CHROMATOGRAPHY': SpectrumTechnique('GAS CHROMATOGRAPHY', x_reversed=False,
                                        threshold=0.5),

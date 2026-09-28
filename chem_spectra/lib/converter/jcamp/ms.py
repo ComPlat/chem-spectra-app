@@ -15,8 +15,6 @@ class JcampMSConverter:  # nmr & IR
         self.dic = base.dic
         self.data = make_ms_data_xsys(base)
         self.title = base.title
-        self.is_em_wave = base.is_em_wave
-        self.is_ir = base.is_ir
         self.non_nmr = base.non_nmr
         # - - - - - - - - - - -
         self.exact_mz, self.edit_scan, self.thres = self.__set_params(base.params)  # noqa

@@ -55,10 +55,17 @@ def _render_labels(composer):
     return drawn
 
 
-def test_fid_core_carries_no_technique_but_reports_nmr(fid_composer):
-    """The case the fallback exists for: no descriptor, but non_nmr False."""
-    assert getattr(fid_composer.core, 'technique', None) is None
-    assert fid_composer.core.non_nmr is False
+def test_fid_core_carries_the_nmr_descriptor(fid_composer):
+    """FidBaseConverter sets the descriptor itself; typ is 'NMR' by construction.
+
+    This used to assert the opposite -- that the core carried no descriptor
+    at all -- which pinned an accidental absence rather than behaviour. The
+    composer's fallback covered it, but any consumer reading a field off the
+    descriptor would have raised on the FID path. The fallback is still
+    exercised, directly, by test_technique_fallback_resolves_a_descriptorless_core.
+    """
+    assert fid_composer.core.technique is not None
+    assert fid_composer.core.technique.key == 'NMR'
 
 
 def test_fid_renders_with_nmr_axis_labels(fid_composer):
@@ -77,3 +84,23 @@ def test_technique_fallback_honours_a_cores_own_non_nmr(fid_composer):
     assert fid_composer._technique().key == 'NMR'
     assert fid_composer._technique().x_axis == 'chemical_shift'
     assert fid_composer._technique().y_axis == 'intensity'
+
+
+def test_technique_fallback_resolves_a_descriptorless_core(fid_composer):
+    """_technique() still honours a core that reports NMR but has no descriptor.
+
+    `NMRiumDataConverter` is exactly that case and is still live:
+    `tf_nmrium` (model/transformer.py) hands it straight to TechniqueComposer,
+    and it sets `non_nmr` itself rather than carrying a descriptor. So the
+    fallback is load-bearing, not merely defensive.
+
+    A stub drives it rather than that converter because nothing in the suite
+    can construct one -- no fixture declares NMRium data, and `tf_nmrium` has
+    no test at all. That gap is worth closing on its own.
+    """
+    class DescriptorlessNmrCore:
+        non_nmr = False
+
+    composer = object.__new__(type(fid_composer))
+    composer.core = DescriptorlessNmrCore()
+    assert composer._technique().key == 'NMR'

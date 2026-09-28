@@ -1,14 +1,18 @@
-"""The `non_nmr` gates, pinned before the dispatch refactor.
+"""The four gates that `non_nmr` used to control, each pinned on its own.
 
-`non_nmr` is a single boolean that gates four unrelated concerns:
-integration pairing, multiplicity output, axis-label style and peak
-annotation. The refactor must not collapse them into one registry field, so
-each gate is asserted on its own here, both branches.
+`non_nmr` was a single boolean gating four unrelated concerns: integration
+pairing, multiplicity output, axis-label style and peak annotation. The
+refactor must not collapse them into one registry field, so each gate is
+asserted separately here, both branches.
 
-`composer/base.py` reads it as `getattr(self.core, 'non_nmr', True)` — the
-default matters, because converters that are not fed by data_type.json
-(FID, NMRium) set the attribute themselves and a future kind-based core may
-not set it at all.
+The gates now read the descriptor. `JcampTechniqueConverter` no longer
+copies `non_nmr` across at all, so these assert `_technique().key` instead.
+
+`composer/base.py` still reads `getattr(self.core, 'non_nmr', True)` as its
+fallback, and that default still matters: converters not fed by
+data_type.json set the attribute themselves, and `NMRiumDataConverter` --
+which `tf_nmrium` hands straight to `TechniqueComposer` -- carries no
+descriptor, so the fallback is the only thing that resolves it to NMR.
 """
 
 import pytest
@@ -45,7 +49,7 @@ def _repair(composer):
 
 def test_nmr_moves_matching_integration_into_the_multiplet():
     composer = _repair(_composer(source_nmr))
-    assert composer.core.non_nmr is False
+    assert composer._technique().key == 'NMR'
     assert composer.itgs == []
     assert len(composer.mpys) == 1
     # the integration's area is transferred onto the multiplet
@@ -54,7 +58,7 @@ def test_nmr_moves_matching_integration_into_the_multiplet():
 
 def test_non_nmr_keeps_every_integration_and_pairs_nothing():
     composer = _repair(_composer(source_ir))
-    assert composer.core.non_nmr is True
+    assert composer._technique().key != 'NMR'
     assert composer.itgs == [ITG]
     assert composer.mpys == []
 
