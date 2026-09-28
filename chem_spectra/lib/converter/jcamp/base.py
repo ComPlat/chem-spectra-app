@@ -95,13 +95,30 @@ class JcampBaseConverter:
         # technique is added to data_type.json after the fact.
         return self.__unrecognised_datatype()
 
-    # Blocks the composer emits itself, or that JCAMP uses structurally. None
-    # of them names the measurement, so none is worth preserving.
-    STRUCTURAL_DATATYPES = ('LINK', 'NMR FID')
+    # Blocks that JCAMP uses structurally, or that carry a derived table
+    # rather than a measurement. None of them names the technique.
+    #
+    # Compared with spaces removed, because the same block is spelled both
+    # ways in the wild: this app composes `NMRPEAKTABLE`, while
+    # chemotion-converter-app emits `NMR PEAK TABLE`. The suffix rules cover
+    # every per-technique variant of those two -- `INFRARED PEAK TABLE`,
+    # `NMP PEAK ASSIGNMENTS` (its misspelling) and so on.
+    #
+    # `tests/lib/converter/jcamp/test_jcamp_datatype_classification.py
+    # ::test_auxiliary_blocks_stay_unmapped` holds the authoritative list of
+    # spellings, and pins that none of them is in data_type.json.
+    AUXILIARY_DATATYPES = ('LINK', 'NMRFID', 'INFRAREDINTERFEROGRAM')
+    AUXILIARY_SUFFIXES = ('PEAKTABLE', 'PEAKASSIGNMENTS')
+
+    @classmethod
+    def _is_auxiliary_datatype(cls, datatype):
+        squashed = datatype.replace(' ', '')
+        return (squashed in cls.AUXILIARY_DATATYPES
+                or squashed.endswith(cls.AUXILIARY_SUFFIXES))
 
     def __unrecognised_datatype(self):
         for dt in self.datatypes:
-            if dt in self.STRUCTURAL_DATATYPES or dt.endswith('PEAKTABLE'):
+            if self._is_auxiliary_datatype(dt):
                 continue
             return dt
         return ''

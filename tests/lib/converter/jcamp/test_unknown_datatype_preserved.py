@@ -95,6 +95,48 @@ def test_structural_blocks_are_never_mistaken_for_the_measurement(tmp_path):
     assert core._JcampBaseConverter__unrecognised_datatype() == ''
 
 
+# The spellings `test_auxiliary_blocks_stay_unmapped` pins as non-measurements.
+# Kept in step with that test deliberately: it guarantees none of these is in
+# data_type.json, which is what sends a file carrying one down this fallback in
+# the first place.
+AUXILIARY_SPELLINGS = [
+    'PEAK ASSIGNMENTS', 'NMR FID', 'NMRPEAKTABLE', 'NMR PEAK ASSIGNMENTS',
+    'NMR PEAK TABLE', 'NMP PEAK ASSIGNMENTS', 'INFRARED PEAK TABLE',
+    'INFRARED INTERFEROGRAM',
+]
+
+
+@pytest.mark.parametrize('auxiliary', AUXILIARY_SPELLINGS)
+def test_an_auxiliary_block_never_wins_over_the_measurement(tmp_path, auxiliary):
+    """The fallback takes the *first* non-structural datatype, so a derived
+    block sitting ahead of the real one would be preserved in its place.
+
+    The first version of this only skipped `LINK`, `NMR FID` and anything
+    ending in `PEAKTABLE` -- which is how this app composes the block, but not
+    how chemotion-converter-app emits it (`NMR PEAK TABLE`, with spaces). Six
+    of these eight spellings slipped through and were returned as though they
+    named the measurement.
+    """
+    core = JcampBaseConverter(write_with_datatype(tmp_path, 'SQUID'))
+    core.datatypes = ['LINK', auxiliary, 'SQUID']
+    assert core._JcampBaseConverter__unrecognised_datatype() == 'SQUID'
+
+
+@pytest.mark.parametrize('auxiliary', AUXILIARY_SPELLINGS)
+def test_every_auxiliary_spelling_is_recognised_as_one(auxiliary):
+    assert JcampBaseConverter._is_auxiliary_datatype(auxiliary)
+
+
+@pytest.mark.parametrize('measurement', [
+    'SQUID', 'TENSIOMETRY', 'LINEAR SWEEP VOLTAMMETRY',
+    'SINGLE CRYSTAL X-RAY DIFFRACTION', 'INFRARED TRANSFERED SPECTRUM',
+])
+def test_no_real_measurement_is_mistaken_for_auxiliary(measurement):
+    """The exclusion must not grow teeth. Every unmapped entry in the
+    converter app's dropdown that names a real measurement stays preserved."""
+    assert not JcampBaseConverter._is_auxiliary_datatype(measurement)
+
+
 @pytest.mark.parametrize('datatype,typ', [
     ('X-RAY DIFFRACTION', 'X-RAY DIFFRACTION'),
     ('RAMAN SPECTRUM', 'RAMAN'),
