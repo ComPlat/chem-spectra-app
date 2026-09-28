@@ -89,8 +89,14 @@ def test_technique_fallback_honours_a_cores_own_non_nmr(fid_composer):
 def test_technique_fallback_resolves_a_descriptorless_core(fid_composer):
     """_technique() still honours a core that reports NMR but has no descriptor.
 
-    No production converter is in that state any more, so this drives it with
-    a stub. The fallback stays defensive for converters added later.
+    `NMRiumDataConverter` is exactly that case and is still live:
+    `tf_nmrium` (model/transformer.py) hands it straight to TechniqueComposer,
+    and it sets `non_nmr` itself rather than carrying a descriptor. So the
+    fallback is load-bearing, not merely defensive.
+
+    A stub drives it rather than that converter because nothing in the suite
+    can construct one -- no fixture declares NMRium data, and `tf_nmrium` has
+    no test at all. That gap is worth closing on its own.
     """
     class DescriptorlessNmrCore:
         non_nmr = False
