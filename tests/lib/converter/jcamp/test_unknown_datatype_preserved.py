@@ -112,3 +112,37 @@ def test_the_untouched_fixture_is_unaffected():
     core = JcampBaseConverter(RECOGNISED)
     assert core.datatype == 'INFRARED SPECTRUM'
     assert core.typ == 'INFRARED'
+
+
+def test_single_crystal_xrd_is_the_one_cross_repo_hazard(tmp_path):
+    """Preserving the real string removes an accidental shield. Read this
+    before shipping.
+
+    react-spectra-editor's `readLayout` matches `##DATA TYPE=` by *substring*;
+    this backend matches exactly. `SINGLE CRYSTAL X-RAY DIFFRACTION` contains
+    `X-RAY DIFFRACTION`, so the editor draws it with powder conventions while
+    we correctly call it unknown.
+
+    While this app emitted an empty `##DATA TYPE=`, the editor's own
+    `if (dataType)` guard sent it to PLAIN and the collision never fired.
+    Preserving the string is right -- see the module docstring -- but it makes
+    that collision live, and a single-crystal dataset is a reflection list, not
+    a 1D diffractogram, so a powder rendering of it is meaningless rather than
+    merely imprecise.
+
+    The editor needs an entry ordered *ahead* of its `X-RAY DIFFRACTION` check
+    before this ships. All 34 values of the converter app's dropdown
+    (`converter_app/options.py`) were checked; this is the only collision.
+
+    The assertion is deliberately about what we emit, since the editor's
+    behaviour cannot be asserted from this repo.
+    """
+    core = JcampBaseConverter(
+        write_with_datatype(tmp_path, 'SINGLE CRYSTAL X-RAY DIFFRACTION')
+    )
+    assert core.typ == '', 'we must not claim this is a known technique'
+    assert core.datatype == 'SINGLE CRYSTAL X-RAY DIFFRACTION'
+    assert 'X-RAY DIFFRACTION' in core.datatype, (
+        'the substring the editor keys on; if this ever stops being true the '
+        'cross-repo hazard is gone and this test can go with it'
+    )
