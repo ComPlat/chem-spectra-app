@@ -5,10 +5,9 @@ from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
-
-
-class UnconvertibleSpectrum(ValueError):
-    """The client asked for a conversion this data cannot support."""
+# re-exported: the check that raises it moved to parse_params, but the
+# error handler and the tests import it from here
+from chem_spectra.lib.converter.share import UnconvertibleSpectrum  # noqa: F401
 
 
 # Real absorbance runs roughly 0-3; beyond this T = 10**(-A) underflows and
@@ -223,17 +222,6 @@ class JcampTechniqueConverter:
         declared units -- so the two could, and did, disagree. Both decisions
         now belong to whoever supplies the file.
         """
-        if self.params.get('transmittance') and self.params.get('invert_y'):
-            # Checked before the data is read, because this is wrong about the
-            # request rather than about the file.
-            raise UnconvertibleSpectrum(
-                "'transmittance' and 'invert_y' cannot both be applied. "
-                "Converting to transmittance already turns absorbance peaks "
-                "downward; mirroring that gives 1 - T, which is fractional "
-                "absorptance -- not linear in concentration, and not a unit "
-                "JCAMP-DX can declare. Ask for one or the other."
-            )
-
         ys = self.data
         if ys is None:
             return ys
@@ -264,11 +252,16 @@ class JcampTechniqueConverter:
                 unit = self.dic['YUNITS'][0]
             except:  # noqa
                 pass
-        try:
-            _, y, _ = self.dic['UNITS'][1].replace(' ', '').split(',')
-            unit = y
-        except:  # noqa
-            pass
+        # ##UNITS= is per block, so the record wanted is the target block's,
+        # not a fixed index. Four fixtures declare exactly one record and no
+        # ##YUNITS= at all; a hardcoded [1] returns nothing for them, so a file
+        # declaring transmittance only there would slip past this guard.
+        for idx in (self.target_idx, 0):
+            try:
+                _, y, _ = self.dic['UNITS'][idx].replace(' ', '').split(',')
+                return y
+            except:  # noqa
+                continue
         return unit
 
     def __to_transmittance(self, ys):

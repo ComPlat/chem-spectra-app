@@ -155,9 +155,10 @@ def test_transmittance_converts_and_relabels(tmp_path):
 def test_the_two_instructions_are_mutually_exclusive(tmp_path):
     """Asking for both is a contradiction, so it is refused.
 
-    Convert-then-mirror gives `max(T) - T`, which is approximately `1 - T`:
-    fractional absorptance. It is not linear in concentration (A = 1.0 -> 0.90,
-    A = 2.0 -> 0.99, A = 3.0 -> 0.999), so strong bands saturate and flat-top;
+    Convert-then-mirror gives `max(%T) - %T`, which is approximately
+    `100 - %T`: fractional absorptance on a percent scale. It is not linear in
+    concentration (A = 1.0 -> 90%, A = 2.0 -> 99%, A = 3.0 -> 99.9%), so strong
+    bands saturate and flat-top;
     it is circular, since a caller wanting a zero baseline with peaks upward
     already had that in the absorbance they sent; and JCAMP-DX has no unit for
     it, so any label would be a mislabel.
@@ -189,6 +190,39 @@ def test_transmittance_refuses_a_file_that_declares_transmittance(tmp_path):
     with pytest.raises(UnconvertibleSpectrum, match='already declares'):
         _probe(TRANSMITTANCE_SHAPED, 'INFRARED SPECTRUM', tmp_path,
                params={'transmittance': True})
+
+
+def test_a_single_units_record_is_read_for_the_declared_unit(tmp_path):
+    """JCAMP 6 declares x, y and z in one `##UNITS=` record per block.
+
+    Review caught this: the guard read `UNITS[1]`, copied from `__set_label`,
+    where index 1 is the spectrum block of an NMR LINK file. Four fixtures
+    (the MNOVA and MS v6 files) declare exactly one record and no `##YUNITS=`
+    at all, so a hardcoded 1 found nothing and a file declaring transmittance
+    only there was converted a second time. The target block's index is the
+    right one, and for a single-block file that is 0.
+    """
+    xs = [400.0 + i for i in range(60)]
+    ys = [95.0] * 60
+    ys[20] = 2.0
+    body = [
+        '##TITLE=single units record\n', '##JCAMP-DX=6.00\n',
+        '##DATA TYPE=INFRARED SPECTRUM\n', '##DATA CLASS=XYPOINTS\n',
+        '##UNITS=1/CM, % TRANSMITTANCE, ARBITRARY\n',
+        '##FIRSTX={}\n'.format(xs[0]), '##LASTX={}\n'.format(xs[-1]),
+        '##MINX={}\n'.format(min(xs)), '##MAXX={}\n'.format(max(xs)),
+        '##MINY={}\n'.format(min(ys)), '##MAXY={}\n'.format(max(ys)),
+        '##NPOINTS={}\n'.format(len(xs)), '##FIRSTY={}\n'.format(ys[0]),
+        '##XYPOINTS=(XY..XY)\n',
+    ]
+    body += ['{:.6f}, {:.6f}\n'.format(x, y) for x, y in zip(xs, ys)]
+    body.append('##END=\n')
+    target = tmp_path / 'single_units.jdx'
+    target.write_text(''.join(body))
+
+    with pytest.raises(UnconvertibleSpectrum, match='already declares'):
+        JcampTechniqueConverter(
+            JcampBaseConverter(str(target), {'transmittance': True}))
 
 
 def test_the_shape_guard_still_catches_a_file_that_declares_nothing(tmp_path):
@@ -260,13 +294,28 @@ def test_endpoint_refuses_both_instructions_together(client):
 
     `IR.dx` declares transmittance, so it would be refused for that reason on
     `transmittance` alone. Getting the conflict message instead shows the
-    contradiction is caught first -- before the file is even looked at.
+    contradiction outranks the declared-unit guard.
     """
     response = _post(client, TRANSMITTANCE_SHAPED,
                      transmittance='true', invert_y='true')
     assert response.status_code == 422
     body = json.loads(response.data)
     assert 'cannot both be applied' in body['error']
+
+
+def test_the_conflict_is_caught_before_the_file_is_read(client):
+    """The check lives in parse_params, not in the converter.
+
+    Review caught this: while it sat in `__read_ys`, the file had already been
+    parsed by `JcampBaseConverter.__init__`, so an unparsable upload with both
+    flags returned the parse failure -- 403 with an HTML body -- and said
+    nothing about the contradiction that caused it. `MS.dx` is the fixture
+    pinned elsewhere as unparsable.
+    """
+    response = _post(client, './tests/fixtures/source/MS.dx',
+                     transmittance='true', invert_y='true')
+    assert response.status_code == 422
+    assert 'cannot both be applied' in json.loads(response.data)['error']
 
 
 @pytest.mark.parametrize('source, reason', [

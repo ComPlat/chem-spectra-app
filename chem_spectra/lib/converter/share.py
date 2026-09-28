@@ -1,6 +1,11 @@
 import json
 
 
+class UnconvertibleSpectrum(ValueError):
+    """The client asked for a conversion this data, or this request, cannot
+    support. Mapped to 422 with a JSON body naming the reason."""
+
+
 def _as_bool(value):
     """Multipart form values arrive as strings, JSON payloads as booleans."""
     if isinstance(value, str):
@@ -90,6 +95,19 @@ def parse_params(params):
     # nothing is converted, inverted or relabelled unless explicitly asked for.
     transmittance = _as_bool(params.get('transmittance'))
     invert_y = _as_bool(params.get('invert_y'))
+    if transmittance and invert_y:
+        # Raised here rather than in the converter so it really does precede
+        # reading the file: parse_params is the first statement of every
+        # converter's __init__. Asked for both on an unparsable upload, the
+        # converter-level check returned the parse failure instead, which said
+        # nothing about the contradiction that caused it.
+        raise UnconvertibleSpectrum(
+            "'transmittance' and 'invert_y' cannot both be applied. "
+            "Converting to transmittance already turns absorbance peaks "
+            "downward; mirroring that gives 1 - T, which is fractional "
+            "absorptance -- not linear in concentration, and not a unit "
+            "JCAMP-DX can declare. Ask for one or the other."
+        )
     if (cyclicvolta is not None):
         # The ELN does not guarantee these keys: ViewSpectra.js reads
         # `spectraList?.[curveIdx]` and bails when it is missing. Subscripting
