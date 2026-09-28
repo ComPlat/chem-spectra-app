@@ -22,6 +22,7 @@ With neither, `##YUNITS` is exactly what arrived.
 
 import re
 
+import numpy as np
 import pytest
 
 from chem_spectra.lib.composer.technique import TechniqueComposer
@@ -145,10 +146,37 @@ def test_transmittance_converts_and_relabels(tmp_path):
 
 
 def test_both_instructions_compose(tmp_path):
-    """Convert first, then mirror -- the order the client's words imply."""
+    """Convert first, then mirror -- the order the client's words imply.
+
+    Asked in review: does `invert_y` overwrite what `transmittance` just
+    computed, so the conversion is calculated and then thrown away? It does
+    not. `__read_ys` rebinds `ys`, so the mirror operates on the converted
+    series -- `max(T) - T`, not `max(A) - A`.
+
+    This asserts the values rather than the label alone. The label-only
+    version of this test passed under either reading, so nothing in the suite
+    would have failed had the review been right.
+    """
+    absorbance = np.asarray(_absorbance_probe(tmp_path).ys, dtype=float)
+    transmittance = np.asarray(
+        _absorbance_probe(tmp_path, params={'transmittance': True}).ys,
+        dtype=float)
+    inverted_only = np.asarray(
+        _absorbance_probe(tmp_path, params={'invert_y': True}).ys, dtype=float)
+
     converter = _absorbance_probe(
         tmp_path, params={'transmittance': True, 'invert_y': True})
+    both = np.asarray(converter.ys, dtype=float)
+
     assert converter.label['y'] == 'TRANSMITTANCE - inverted'
+
+    # the mirror consumes the conversion
+    assert np.allclose(both, transmittance.max() - transmittance)
+
+    # and not either way of ignoring one of the two instructions
+    assert not np.allclose(both, absorbance.max() - absorbance)
+    assert not np.allclose(both, inverted_only)
+    assert not np.allclose(both, transmittance)
 
 
 def test_transmittance_refuses_data_that_already_looks_like_transmittance(tmp_path):
