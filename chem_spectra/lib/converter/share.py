@@ -1,6 +1,13 @@
 import json
 
 
+def _as_bool(value):
+    """Multipart form values arrive as strings, JSON payloads as booleans."""
+    if isinstance(value, str):
+        return value.strip().lower() in ('true', '1', 'yes')
+    return bool(value)
+
+
 def parse_params(params):
     default_itg = {'stack': [], 'refArea': 1, 'refFactor': 1, 'shift': 0}
     default_mpy = {'stack': [], 'smExtext': False, 'shift': 0}
@@ -29,6 +36,8 @@ def parse_params(params):
             'lcms_uvvis_wavelength': None,
             'lcms_mz_page': None,
             'lcms_mz_page_data': None,
+            'transmittance': False,
+            'invert_y': False,
         }
 
     select_x = params.get('select_x', None)
@@ -77,6 +86,10 @@ def parse_params(params):
     lcms_uvvis_wavelength = params.get('lcms_uvvis_wavelength')
     lcms_mz_page = params.get('lcms_mz_page')
     lcms_mz_page_data = params.get('lcms_mz_page_data')
+    # Client instructions, not descriptions of the file. Absent means absent:
+    # nothing is converted, inverted or relabelled unless explicitly asked for.
+    transmittance = _as_bool(params.get('transmittance'))
+    invert_y = _as_bool(params.get('invert_y'))
     if (cyclicvolta is not None):
         # The ELN does not guarantee these keys: ViewSpectra.js reads
         # `spectraList?.[curveIdx]` and bails when it is missing. Subscripting
@@ -118,6 +131,8 @@ def parse_params(params):
         'lcms_uvvis_wavelength': lcms_uvvis_wavelength,
         'lcms_mz_page': lcms_mz_page,
         'lcms_mz_page_data': lcms_mz_page_data,
+        'transmittance': transmittance,
+        'invert_y': invert_y,
     }
 
 

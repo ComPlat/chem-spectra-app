@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, jsonify
 
 import logging
 
@@ -55,5 +55,14 @@ def create_app(test_config=None):
     # spectra layout api
     from chem_spectra.controller.spectra_layout_api import spectra_layout_api
     app.register_blueprint(spectra_layout_api)
+
+    # A conversion the client asked for that this data cannot support is a bad
+    # request, not a server fault, and the reason is worth returning -- the
+    # alternative is silently producing a ruined spectrum.
+    from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
+
+    @app.errorhandler(UnconvertibleSpectrum)
+    def _unconvertible_spectrum(err):
+        return jsonify(error=str(err)), 422
 
     return app

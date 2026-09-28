@@ -163,7 +163,20 @@ class TechniqueComposer(BaseComposer):
             '##MAXY={}\n'.format(self.core.boundary['y']['max']),
             '##MINX={}\n'.format(self.core.boundary['x']['min']),
             '##MINY={}\n'.format(self.core.boundary['y']['min'])
-        ]
+        ] + self.__header_processing()
+
+    def __header_processing(self):
+        """What the client asked us to do to the signal, if anything.
+
+        Emitted only when asked for: absence means the instruction was not
+        given, which is different from being given as false.
+        """
+        lines = []
+        if getattr(self.core, 'converted_to_transmittance', False):
+            lines.append('##$CSTRANSMITTANCE=true\n')
+        if getattr(self.core, 'inverted_y', False):
+            lines.append('##$CSINVERTY=true\n')
+        return lines
 
     def __gen_headers_spectrum_orig(self):
         if self._technique().em_wave or not self._technique().nmr_headers:

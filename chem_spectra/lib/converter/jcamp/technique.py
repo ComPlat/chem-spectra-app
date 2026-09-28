@@ -5,6 +5,15 @@ from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
+
+
+class UnconvertibleSpectrum(ValueError):
+    """The client asked for a conversion this data cannot support."""
+
+
+# Real absorbance runs roughly 0-3; beyond this T = 10**(-A) underflows and
+# the spectrum becomes a flat line.
+ABSORBANCE_CEILING = 10.0
 import json
 import os
 
@@ -41,6 +50,9 @@ class JcampTechniqueConverter:
         self.solv_peaks = base.solv_peaks
         # - - - - - - - - - - -
         self.fname = base.fname
+        # set by __read_ys / __to_transmittance, read by __set_label
+        self.converted_to_transmittance = False
+        self.inverted_y = False
         self.block_count = self.__count_block()
         self.threshold = self.technique.threshold
         self.obs_freq = self.__set_obs_freq()
@@ -203,15 +215,76 @@ class JcampTechniqueConverter:
         return x
 
     def __read_ys(self):
+        """Apply the client's processing instructions, and nothing else.
+
+        Nothing here is inferred. Until #296's predecessor this method guessed
+        from the data's shape whether an infrared spectrum was absorbance and
+        mirrored it silently, while the label was decided separately from the
+        declared units -- so the two could, and did, disagree. Both decisions
+        now belong to whoever supplies the file.
+        """
         ys = self.data
-        # transmission only # IR ABS vs TRANS
-        if self.technique.transmittance:
-            y_median = np.median(ys)
-            y_max = np.max(ys)
-            if y_median < 0.5 * y_max:
-                ys = y_max - ys
+        if ys is None:
+            return ys
+
+        if self.params.get('transmittance'):
+            ys = self.__to_transmittance(ys)
+        if self.params.get('invert_y'):
+            ys = np.max(ys) - ys
+            self.inverted_y = True
 
         return ys
+
+    def __to_transmittance(self, ys):
+        """T = 10**(-A). Refuses rather than returning a ruined spectrum.
+
+        The conversion is only meaningful for real absorbance, which runs
+        roughly 0-3. Asked to convert anything else it would silently produce
+        a flat line, or infinities, labelled TRANSMITTANCE -- worse than any
+        of the defects this change fixes.
+
+        Every refusal is checked on the *input*, so the reason names what is
+        wrong with the data rather than what went wrong arithmetically. The
+        finiteness check on the result is a backstop for anything the input
+        checks do not anticipate.
+        """
+        ys = np.asarray(ys, dtype=float)
+        if not np.isfinite(ys).all():
+            raise UnconvertibleSpectrum(
+                'the series contains non-finite values, so it cannot be '
+                'absorbance'
+            )
+
+        y_max = float(np.max(ys))
+        y_min = float(np.min(ys))
+
+        if float(np.median(ys)) >= 0.5 * y_max:
+            raise UnconvertibleSpectrum(
+                'already appears to be transmittance (baseline near the '
+                'maximum); there is nothing to convert'
+            )
+        if y_max > ABSORBANCE_CEILING:
+            raise UnconvertibleSpectrum(
+                'y values up to {:g} are not absorbance; transmittance would '
+                'underflow to zero'.format(y_max)
+            )
+        # Absorbance dips slightly below zero from baseline drift, but not far:
+        # A = -10 already means T = 10**10, which is not a transmittance.
+        if y_min < -ABSORBANCE_CEILING:
+            raise UnconvertibleSpectrum(
+                'y values down to {:g} are not absorbance; transmittance '
+                'would overflow'.format(y_min)
+            )
+
+        transmittance = np.power(10.0, -ys)
+        if not np.isfinite(transmittance).all():
+            raise UnconvertibleSpectrum(
+                'the conversion produced non-finite values; the series is not '
+                'absorbance'
+            )
+
+        self.converted_to_transmittance = True
+        return transmittance
 
     def __find_boundary(self):
         return {
@@ -244,8 +317,6 @@ class JcampTechniqueConverter:
         except:  # noqa
             pass
 
-        if 'absorb' in target['y'].lower() and not self.technique.absorbance_label:
-            target['y'] = 'TRANSMITTANCE'
         if self.technique.x_axis == 'xrd':
             target['x'] = '2Theta'
             
@@ -256,6 +327,15 @@ class JcampTechniqueConverter:
             target['x'] = xUnit
           if yUnit != '':
             target['y'] = yUnit
+
+        # A conversion we performed is a fact, so it outranks axesUnits, which
+        # is a preference. The inversion suffix records direction, the only
+        # thing a mirror changes -- `max - y` preserves the dimension, and is
+        # not `1 / y`, so `^-1` would be wrong twice over.
+        if self.converted_to_transmittance:
+            target['y'] = 'TRANSMITTANCE'
+        if self.inverted_y:
+            target['y'] = '{} - inverted'.format(target['y'])
 
         return target
 
