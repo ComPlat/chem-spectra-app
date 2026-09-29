@@ -38,7 +38,7 @@
     "\n"
   ],
   "target": {
-    "dataclass": "XYDATA_OLD",
+    "dataclass": "XYDATA",
     "datatype": "NMR SPECTRUM"
   },
   "threshold": 0.005,

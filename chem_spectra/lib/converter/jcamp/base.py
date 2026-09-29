@@ -180,18 +180,27 @@ class JcampBaseConverter:
         return self.technique.key != 'NMR'
 
     def __set_dataclass(self):
-        data_class = self.dataclasses
-        if 'XYPOINTS' in data_class:
-            return 'XYPOINTS'
-        elif 'XYDATA' in data_class:
-            return 'XYDATA_OLD'
-        return ''
+        """The target block's own ##DATA CLASS=.
+
+        This used to scan every block's dataclass and answer `XYDATA_OLD` for
+        any file containing an XYDATA block -- a key that existed only on the
+        old pin, holding the raw table text the app re-parsed itself. nmrglue
+        now parses those tables, so the name has nothing behind it.
+        """
+        return self.target.dataclass if self.target else ''
 
     def __set_dataformat(self):
-        try:
-            return self.dic[self.dataclass][0].split('\n')[0]
-        except: # noqa
-            pass
+        """The format line of the block's own data LDR, e.g. `(XY..XY)`.
+
+        Read from the block rather than from the merged dict, so a file whose
+        blocks differ in format no longer answers with whichever one the merge
+        happened to put first.
+        """
+        if self.target:
+            for key in ('XYPOINTS', 'XYDATA', 'PEAKTABLE', 'DATATABLE'):
+                value = self.target.ldr(key)
+                if value:
+                    return value.split('\n')[0].strip()
         return '(X++(Y..Y))'
 
     def __ncl(self):

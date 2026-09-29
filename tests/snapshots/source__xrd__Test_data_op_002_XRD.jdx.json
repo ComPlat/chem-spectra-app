@@ -16,12 +16,12 @@
   "edit_peaks": null,
   "factor": {
     "x": 1.0,
-    "y": 1.22141e-05
+    "y": 1.0
   },
   "itg_table": [],
   "jcamp": {
-    "len": 13135,
-    "sha1": "bd573eb77f401a2247e92480ef2f3271d03107c8"
+    "len": 30379,
+    "sha1": "ddac71aa477dacfd3576af3794192b5ef98774bc"
   },
   "label": {
     "x": "2Theta",
@@ -29,7 +29,7 @@
   },
   "mpy_itg_table": [],
   "target": {
-    "dataclass": "",
+    "dataclass": "NTUPLES",
     "datatype": "X-RAY DIFFRACTION"
   },
   "threshold": 1.0,

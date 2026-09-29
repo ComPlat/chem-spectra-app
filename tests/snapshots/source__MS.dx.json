@@ -16,12 +16,12 @@
   "edit_peaks": null,
   "factor": {
     "x": 1.0,
-    "y": 194.13992
+    "y": 1.0
   },
   "itg_table": [],
   "jcamp": {
-    "len": 22726,
-    "sha1": "ebc87239d7a9edf9f82a14706570556083deb929"
+    "len": 64309,
+    "sha1": "26532fb6a1e25f367857a51c6e117f016db28ebc"
   },
   "label": {
     "x": "PPM",
