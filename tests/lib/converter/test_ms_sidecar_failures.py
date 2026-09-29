@@ -212,3 +212,44 @@ def test_an_mzml_upload_is_unaffected():
     assert converter.typ == 'MS'
     assert converter.spectra is not None
     assert len(converter.datatables) > 0
+
+
+# - - - the refusal convention - - -
+
+def test_a_converter_outage_is_delivered_as_json_not_html(monkeypatch):
+    """Whatever the status, the body has to be JSON.
+
+    The ELN's `Jcamp::Create.spectrum` falls back from the
+    `x-extra-info-json` header to `JSON.parse(rsp.body)` and raises
+    `json_rsp['error']`. It says "Chemspectra response missing metadata
+    header" only when the body is *not* JSON — which is what an unhandled
+    exception produced, so every msconvert failure reached the user as that
+    one sentence.
+    """
+    from chem_spectra import create_app
+
+    monkeypatch.setattr(sbp, 'run', _fake_run(returncode=1, stderr='ConnectionError'))
+    client = create_app({'IP_WHITE_LIST': ''}).test_client()
+
+    with open(RAW, 'rb') as handle:
+        response = client.post(
+            '/zip_jcamp_n_img',
+            data={'file': (handle, 'MS_ESI.RAW'), 'mass': '230.07'},
+            content_type='multipart/form-data',
+        )
+
+    body = response.get_data(as_text=True)
+    assert body.lstrip().startswith('{'), 'not JSON: ' + body[:120]
+    assert 'msconvert' in response.get_json()['error']
+
+
+def test_an_outage_and_an_unusable_file_are_told_apart():
+    """422 says the upload cannot be processed; 502 says the converter is not
+    answering. Telling a chemist their file is unprocessable when the service
+    is down sends them to look in the wrong place."""
+    from chem_spectra.lib.converter.ms import MSConverterUnavailable
+
+    assert MSConversionFailed.status == 422
+    assert MSConverterUnavailable.status == 502
+    assert issubclass(MSConverterUnavailable, MSConversionFailed), (
+        'one handler must cover both')

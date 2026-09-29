@@ -36,12 +36,31 @@ MZML_WAIT = 120.0
 
 
 class MSConversionFailed(RuntimeError):
-    """msconvert produced no mzML for this upload.
+    """msconvert produced no usable mzML for this upload.
 
     Raised instead of letting the failure surface further down as
     `TypeError: 'NoneType' object is not iterable`, which said nothing about
     the cause and only appeared after the full MZML_WAIT.
+
+    `status` is what the request answers with. 422 is the refusal convention:
+    the upload was understood and cannot be processed. A converter that is not
+    answering is a different thing and says so below -- telling a chemist their
+    file is unprocessable when the service is down sends them to look in the
+    wrong place.
     """
+
+    status = 422
+
+
+class MSConverterUnavailable(MSConversionFailed):
+    """The msconvert sidecar could not be reached, or did not answer in time.
+
+    Nothing is wrong with the upload, so this is ours rather than the
+    caller's. It is still delivered as JSON, because that is the only way the
+    ELN shows a reason at all.
+    """
+
+    status = 502
 
 
 class MSConverter:
@@ -159,13 +178,13 @@ class MSConverter:
                 text=True,
             )
         except sbp.TimeoutExpired:
-            raise MSConversionFailed(
+            raise MSConverterUnavailable(
                 'the msconvert service did not answer within '
                 '{}s'.format(SIDECAR_TIMEOUT))
 
         if result.returncode != 0:
             detail = (result.stderr or result.stdout or '').strip()
-            raise MSConversionFailed(
+            raise MSConverterUnavailable(
                 'the msconvert service could not be reached, or refused the '
                 'command{}'.format(': ' + detail if detail else ''))
 
