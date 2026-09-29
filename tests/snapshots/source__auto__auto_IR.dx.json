@@ -1,0 +1,50 @@
+{
+  "auto_peaks": {
+    "n": 40,
+    "sha1": "3c0f2125a5f58f03"
+  },
+  "boundary": {
+    "x": {
+      "max": 3997.453,
+      "min": 373.96442
+    },
+    "y": {
+      "max": 1.0055419192587316,
+      "min": 0.2787140606224312
+    }
+  },
+  "edit_peaks": null,
+  "factor": {
+    "x": 1.0,
+    "y": 9.3648389e-10
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 28959,
+    "sha1": "7cff0299e6613c46df72371e682c6adc5fe3c482"
+  },
+  "label": {
+    "x": "1/CM",
+    "y": "TRANSMITTANCE"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "",
+    "datatype": "INFRARED SPECTRUM"
+  },
+  "threshold": 0.93,
+  "title": "PH-771",
+  "typ": "INFRARED",
+  "xs": {
+    "first": 3997.453,
+    "last": 373.96442,
+    "len": 2559,
+    "sha1": "c91dad9fd890ad40e6386f3076201103eb2a084b"
+  },
+  "ys": {
+    "first": 0.92837757,
+    "last": 0.89397728,
+    "len": 2559,
+    "sha1": "1cf3a02f61477db6c96fa3b739e0d88d64c828c0"
+  }
+}

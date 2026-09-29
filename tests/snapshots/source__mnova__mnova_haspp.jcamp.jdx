@@ -1,0 +1,1319 @@
+##TITLE=
+##JCAMP-DX=5.0
+##DATA TYPE=LINK
+##BLOCKS=3
+
+
+$$ === CHEMSPECTRA SPECTRUM ORIG ===
+##TITLE=
+##JCAMP-DX=5.00
+##DATA TYPE=NMR SPECTRUM
+##DATA CLASS=XYDATA
+##$CSCATEGORY=SPECTRUM
+##ORIGIN=Bruker BioSpin GmbH
+##OWNER=nmr
+##.OBSERVE FREQUENCY=100.62383593053799302
+##.OBSERVE NUCLEUS=^13C
+##.SOLVENT NAME=Acetone
+##.PULSE SEQUENCE=zgpg30
+##XUNITS=PPM
+##YUNITS=ARBITRARY UNITS
+##XFACTOR=1.0
+##YFACTOR=1.0
+##FIRSTX=2.340079138333426
+##LASTX=-0.1539208591257598
+##MAXX=2.340079138333426
+##MAXY=6368.043457031251
+##MINX=-0.1539208591257598
+##MINY=-45.53151071777344
+##NPOINTS=65536
+##XYDATA= (X++(Y..Y))
+65536ca@@@@@cbADDC@cdc@@@AAA@@CDDDEDA@@ababdaBDDDA@aa@@ABA@@aa@A@@@@bcc
+65470dcb@ACBababbaA@@@BCCDFC@cdba@CCAABCCDDDC@@AABA@@@ABBB@@@ACBA@aa@B
+65405CDDEDAabbcdbaaabdccb@CA@@ADC@@A@@@@@@BCAacdccccddc@DEDCBBDFDA@@@
+65341BCCCCCEFCA@@bdedb@aaA@bdceedc@CCABB@@@cfa0hebcfghihffgd@@@@ABBBB
+65278CCDFEB@A@@A@@BBACEEC@abaaa@@@CCCCB@@dfggfddefhhfbaaaacca@CFHGCCD
+65214DCB@abba@BB@@acddddcc@abaa@@@BB@a@bedaAA@@AB@baBDA@A@dda@A@@@@cd
+65150a@@DBAA@@a@@@ADFGGHGDCCAcghhia0a1a0a0ihebcaCDDDEDDECABC@cda@abcd
+65090eeca@@@CGECCDAbedabcaAA@aa@@@@@A@dfdb@@@@@a@A@cccca@A@@aaaa@ac@@
+65026@aabee@@bec@@cfec@@a@a@A@@@@CDCA@@A@bceeddbcfhf@Aaacfha0gfc@ADEG
+64963HHFDCBBDEDCB@@@@BBCC@ccba@@adehhdcefggd@@@@@beedefbACFDABBBBDEBc
+64899fedceha0iedb@@@@@ACB@abbbeea@aa@ACGFEBacfia2a2gcbadebdhhcCHHEB@b
+64838cbbcefdcddb@@@cdgdbaba@ABDEFDAadgheegheccbabdedcccaCHGEDAc@BCCB@
+64774aba@CCAacaABCFEEECAADEA@AABDGEDAa@@BEBbccb@@ABCCBBCCBAbfa0a2gc@D
+64712GHEAAAABA@b@BAbedbbbced@CD@bdb@@@cgifdedbee@@@@@@BDDAba@@@cefggh
+64648efhfega0a2a0dbacbcdgeaaaa@@a@@Aaggdbbdghfa@aa@@@debBC@aabdhhfcaa
+64587abcedcb@AA@dfggia0a1iebabegffc@ccAFFAcfhhgeaACBbgeaBAceedcbba@A@
+64525@aa@A@cb@ceefhfbbacca@@@@aedabddb@BCCCB@accbdcADDEBdgeeeebacfgd
+64462bAFD@@CAbca@@begcAB@@aba@AA@@adeebA@@@@@ABBCCABCDDDBADAa@@@aABA
+64399BA@aa@AA@aa@A@abccbbcdbb@A@befd@addAFA0A0D@ccddddeddehiia0a0a0g
+64341aBA@a@AbfhhcBFFB@@aehebbdfea@dha3a7a5a2a3a5a6a3hc@A@ba@BBCB@bei
+64286fb@bbBDCB@dhheca@DDB@eeAHA1A0HD@fiigcBC@a@@@abddhid@@@@@aacc@@a
+64225bcdb@@@@@@@abdegihghfb@@cddeeedb@aa@ACFGEAadddcbc@A@BBad@@cee@@
+64162@ABDFFEB@@ABCBFHGGFDA@AABAa@a@@@cdeggfeefha1a0g@BAB@dfdbaabccaa
+64101@BCBCA@bbbba@aca@@A@@DEB@ccBC@bcgfbbegfdbfia0gdca@A@A@abdia0gba
+64040abfhgedc@A@egfeec@@b@A@@A@bb@ceddgffia0fbbeia0gdeffgga1a3a0fia0
+63983gfgia0a0igghfccegfbacfgecbdcca@@cffggcAEGF@ga1fa@@ba@abacbegda@
+63923bedbfa2a0fffdeebbedca@@@ab@bfhhgb@@a@BAa@@a@@@@aaaabdeha1a0ihdb
+63864bccb@BCCagiigefec@abcfgdb@@@BCDD@deaA@AA@@bb@@@aceebaaAEGFEDBCE
+63801EC@bffb@AABBA@ACCCBAAA@ADD@ba@@@ABC@ba@BB@AA@aadeceha0iecaaabdf
+63739dabcbaa@@@@AA@ACDB@abcb@A@cbabaadfggghgc@BB@cggeefbADCAA@@dgfc@
+63676A@bggebcdceheca@@cca@CA@ceec@CDEEBA@ababc@AAC@b@BCB@bccaADDCCDB
+63613aca@ab@@@@@aBEDAaccABCDBABB@b@BCEHA0GEDB@cfghggfedbbcfia2a1hhhh
+63553hgfefc@AA@befcaa@A@abeeedcb@DCabbccfecddfgd@FF@aab@CA@adghhiieb
+63490cdcaabc@B@bb@afhecbca@@BAA@a@bghgaAABCEFHGGFAdfc@AAbeedfihfdbcc
+63427ddeeedfhhfebbdia1a0hghgdba@BBCFFCabbaabdeghda@@befgffb@acbba@ae
+63366ggfhhedcdcbaa@cfa0a1a1a1gecdda@cggebfa0a0fcc@DDA@cdefea@A@@@@ac
+63309bADCB@caAA@@eieabccaabcb@CBbefgfddaAA@ccdffga0a0hdcb@@@ab@B@ga2
+63249ifbba@DE@ec@@@Aab@@@@@CEFDEBcb@acffdcdd@AACGIFB@@@@bca@CECbegff
+63186ddecfecdcbbdgebccbefcBBCDDDD@cc@@@BCFEDE@cgggfeeddfhia0e@A@fa0a0
+63125a0ihfcAEGFC@cfa0a4a2gbabbbace@EFGHGGIHC@cdcb@BB@A@@@@abdaCA@ccd
+63066b@bccbddb@@@C@ga1hedb@DED@@@aaceecabbcda@@acb@@cdefebcdaACDA@Ba
+63004ha0hefeeedaabbaACBABA@@acaac@ABA@ehdCGECCC@aacdaBCB@@EFFGFCC@AE
+62942EBaceffcb@@@b@CECAACDDBBFFDEFCCB@aegc@CDAcdaegdcfa0hdceecaacfgf
+62880c@AEHE@a@@@BEGEAAAbeha0igegecbbdcacbaaaa@@aaaa@@abea0iddb@@dedg
+62819hghhgfcba@@@acdda@@@AA@abaehgddga0a3a4a1gcbaba@BCAabdddeeffffec
+62760b@@ABCC@a@BAAA@AA@dggeccb@@@ABDD@bbdhecdbCIIFD@dfgihdcbBBAAac@C
+62697BAA@@@@@bcdeedcfa0a1ie@@@@@@@@@caabda@@DDBAACDBBFA0A1HFD@bcbbee
+62638dd@Badb@@@cffdcefgfeed@B@@@AGGDCCCADFEEDB@eia0hda@@BAcc@A@@ba@a
+62576ddadcADC@dhhgebcdaBCBacdeeha3a3ifdeeed@AAadddcb@A@dfdcdddcaa@AA
+62515@a@@AA@bghhfeedcabgifcegffec@A@@DEA@cfe@@@A@@bdeddbACCB@a@A@acc
+62452ec@ABABEGIIGD@@@@a@@beeb@Aabbdda@@CDEFEB@abaaabcc@@BBCDEFED@bce
+62389faDFBcgfggecbdffbbeffecbcdfhhfaBB@effc@@ceda@@aa@@ab@CCCDDCBAba0
+62326a0hegiebacdc@BCAACCB@bea0a2a0gegigeecbcbAAaba@AA@aadea@abdegfeg
+62267ebbfa0igfcbaa@@@@a@DHHCdgda@@CEEC@@@aba@ceegfdca@@da0a4a0ia2a5a3
+62210hfeeeecbeeb@AAAA@ABA@bbbdggc@AAAA@AB@cfgebABbfedghha0ihd@BABCEE
+62148DA@BEFFEB@@@a@@ACCBababbadia3a4a1ecfgfdcc@DDCDCCBbcaAEHIGEEGGFD
+62088DEC@c@BCEFGFFFD@@a@adebaccaadgfc@AA@@@abaacaadcdeeca@eiea@aeeee
+62025hhgecffebaa@acbbcccbcbcghd@@ddcffdehigdfgeabebA@ba@a@a@adehifaB
+61962BDAbbabegc@Aacedcbcfebaachgca@aacdbcdedcddegdbcdbabc@A@dc@@@acb
+61899@aa@@ec@@@Abcbbacedddefe@@@@@aha1a2a2ic@@@abeeedADBBBDDCA@@aeec
+61839ceb@bddeghea@@AaehhdbcaAC@@@ceccga0a1a0iia0hha1a2a2hfggdceig@DC
+61783CCA@cdccccdgheaa@BCAbdeca@BB@@dffcbc@C@ceeb@aa@ADGHFEGFBdedffeg
+61720geccfgecaACB@@@@A@ceebcfgedffdbaabb@@@abaacbaehfcegghiiigdAGHEA
+61657@BBCCAABBBAbeecbabABdf@DBabABCC@a@@ea0a1a0d@AAA@aACB@a@@@AEHFB@
+61597bggc@AA@@cgifb@a@A@cga1a1ieba@@@@@@@@ADDB@adedfgia1a0hea@a@A@dd
+61538a@B@bfiia1a4a5a1hffeedggb@BEEA@@abfiiede@BBCCA@aaa@acc@@ACDBAac
+61479eebbbcefd@a@@aaBCCCCCC@ab@EHGDCDCABAadfecccehebceeecbaaabb@BDEF
+61416DBCDDCA@@@cca@@adaaacec@AA@@a@Bbfhigdeec@ADCCCBA@@@BEFD@behie@C
+61353B@@eihgghihfedfgccfgfa1a4a1dabbcha2a2a0hgd@@@@BEFDDDEEDB@@AEGEA
+61296@@bdfeddfifdaA@aaAB@@ccbba@@@ACBA@abbacffgiifefddffgedda@@acfga0
+61233a0igfdecchifeba@A@@@@@CCA@@acaACB@ccbbbbaeiecbaa@Aadfdcaaaa@aeg
+61171hfbbbb@@abacha0a0gha0faa@@@BAcff@BA@@a@EDA@@A@@@ACCBBCDFFEAcha2
+61112a5a2fa@BB@@bcbDHEB@da0a3a5a4a2gfia1hgfggghifdha1a0iigcbbADC@cbc
+61059db@@@@cfhiihggia0a0a2a3a0d@A@@agigggc@a@a@@dfgfddhieccdeega0igc
+61002ea0a0efia3a6a6a3igfia1a1a1gccdefdbba@a@CDB@acegigddcdc@AA@@fia0
+60949a3a0fbAACFHHE@cfigcaABB@ceia0a1a2a3a3a1fcdfec@CB@ca@aaa@CBBBBAa
+60894bdggddca@ABDFEDA@aeggecbaaddb@BCCEHHC@@@@@bb@@@bedbbabcefcaa@@a
+60831@@bbaacfeb@@@fa1a2a3a3a1haBA@@@b@BBbha3a2gddeffddc@@A@aabcddbac
+60775fhc@@babcdbacccec@@bccdb@AA@bdehihfb@bbba@Aahia0if@@@bceeccddb@
+60713@aachhb@@bfeffc@DGGFECA@DFECA@@@@ABB@@@ACBabbbbbaBEGHC@aACACDDE
+60650D@ACB@eeb@BCB@@@@@@bccbBEDCCDCA@cdaACCB@@CEEECACDDCBBA@@bcbADFE
+60587GGC@ba@BB@cc@Babcdb@AAAA@@AAbedcccbbdfggffe@acabddfhgfgebcdcaaa
+60524cefgiga@cedcb@@dfcbaacdecccdedbdededb@A@aaacdfhfcccb@@bbeaCBDDA
+60461bdaBCB@adccdb@ADFDDAAHHEBa@EEEC@ab@@BGFBAFHGEFGFCABCCBdfghgdcba
+60398a@A@egaA@a@@CAed@@accc@DEEB@@@@aAADEGGD@@@@abeea@B@da@b@BBCFGDB
+60335@@beghfca@A@@acb@@aaCD@bbcdcdcdddedcehhfga0a2a3idegfedfeddbcc@C
+60275EDCCB@abbaceb@AAac@A@acgfffffdccddddcbcb@@@adgd@aa@A@dfcbcdffda
+60212@@cfggfggcACAbddb@aeia0hfc@BAacbbaaa@A@acfd@@@@bdc@@ccdgihghhfe
+60150ccbA@dgia1a3a0eaaaAA@@@cdaBDBbffedfgha3a2gefgggge@@@@@acdeha0ig
+60093db@b@A@ba@@ddaaabb@bdeedcec@acfgdbdfedddca@abccdgda@@@@aACDEFC@
+60030ddb@BBCDFD@egd@BCBACB@dedeedaaaAaebAFFFGEC@bfiieaaddcbcfffcbbbb
+59967dgc@@aaBDCA@efeggcaacdfgffgiggihcaaaaadeeggdbbbbdfgfdaaaAEFEBA@
+59904beec@ACFE@hhdcbbA@bb@CB@abdcdccedAGA0HDABEFFFDB@befc@adecggda@c
+59842eeeebACAACB@bb@@a@@AC@a@CDA@cd@AchgdcbbaADB@A@@@AB@@cdbBDBAaccg
+59779a2a3gccc@BBA@baACADGEA@AAbha1haA@@BCCBDD@cb@abcccaBCC@aACA@BCCD
+59719CCAA@ba@aehhedfgd@@@@@@@A@bfgega2a3a1igebehgf@BA@@@CGF@bbddc@@a
+59659cfia0geccddge@DF@fe@AFFECCDCAaaAAaa@@bfecaABADDBabbfda@@BDDA@@b
+59597fhfceecaa@@@@AC@accdeeeccbcbadec@adca@dgia2a3hfddcaAEDCBCCBBBDD
+59536BA@@baba@A@accb@@a@@b@BAA@a@adgeAEEEC@bcca@ABC@ccbabaA@ba@@bbbb
+59473bdeccdbA@dffb@B@cceecaacha1a2gc@CDBAABBA@Aab@EGGFBaea0a2fACBAB@
+59414acbceghgdefgfcdfeb@@addd@FHFBAACEBaa@BD@@@chighhfdcehhfdca@BDBA
+59351@CFB@CEDA@@ACFEDCCDCA@babdda@@@ddb@aeda@BAddbdda@bdbAEFC@BAcdcc
+59288deec@A@cdb@BDBAAbdddaaa@BA@adbA@cdddaacgf@@bccbbccdccddca@@beeg
+59225a0a2hcaaacc@AEFCBaa@@ABDE@eggeecacceha1a1a0a1a0f@A@aa@@@@@baabd
+59169eddb@@CEECDECCDA@@aa@dggcaeedeia0hhd@dfdha0a0ia0hcaabed@BEDAACG
+59110IGDA@@ABA@ccba@@@AAAAA@@AAAbga0a0a1a0gdfhgia0ieefgebA@cbBFGEC@c
+59052@FA0HB@cccb@accbaACCDC@b@CB@A@@@AABAafga@@AEHIHGGGDaefdaa@@bcde
+58990hia0a2a1iheaBA@egcBFGCA@dccb@aeiihf@@@@baadbAAbeeffc@AABCDFGCBc
+58930fdga0a0gfea@bb@BDD@bcdcaAB@@@ACDGIA0HEBaa@@@@aaab@ABA@baADB@@EH
+58870GC@bga0hcbdcdgiihfdccbbaccccfa1a3a5a2fdegifddeefghgda@acca@CC@b
+58812a@dhffgedegia0a0hfcAEEFGDDB@@@cdefhgc@@bdefdaAAAacdbbbacgha1a4a3
+58753a0a0a1a2hdcccdgia2a2a1iefebADED@dda@@@a@CBaegggebcdcbACBBB@a@CB
+58697BC@bbb@adfcA@@@BDDC@@@bdbcga0hc@@baaadfeaCFB@@AB@ba@a@AABDFCA@@
+58635@@a@@abdccdcehihf@@@aba@A@@@CCAADFGHHFFF@dc@CHHGCadcaabdfhfdb@@
+58572bcefddgfddegfdb@@aefefhebaaa@addcabcfhgddghhgeca@da0iihgefgd@BB
+58510AAB@@CED@ddb@@aaacaACB@bdedd@AADGFCBCC@c@ADHA1A2ICaga1a2a0fdegg
+58452ggecccehgcbcba@AB@baaabec@CD@efea@aceefifghfeghggia1gc@Aaeefghi
+58390fff@DB@@dddfhgc@@cghcBCCAa@aaaabeeaACC@bc@EEAcb@Aaeghe@@a@CEBbc
+58327aa@@@ab@B@BAbcb@cdeaABBA@b@acdeddfebdfihecdcbehiifddfffgebbega1
+58265a5a2gccda@@AEE@cga7b0a6a2hgfeeffhhecb@acfdddccfgfiigcddeheb@@ab
+58208b@DGGIA0HDBac@@@ADHIBga0d@BGCceffc@A@BCA@aehgea@ACBDGEA@ABA@@BF
+58147E@efb@ABCAadccdffcaa@BDCB@@BEEDAa@@dghffdcbaacdfe@BDBCEFDEFDBaa
+58084cedaBFFDDDA@ba@@@AAA@ACDGGHGCA@DFDBBBCDDEEBabb@@aa@A@bfhc@abdea
+58021ABFGE@cdb@AADGF@cfgd@bcb@adgfc@CFHFC@ccceebbcb@bdcbegia0heaACGG
+57959C@@ABAA@@CC@baA@aeheaAB@bcbbaBDCAABBA@a@@cdcbaabbbcbbdeeefececA
+57896Aadddcaab@@cc@DFDAabcccbcc@CFA0A3IDBAAA@@@ADFGHFDB@@AB@acabbbb@
+57835BEDA@ADHIHGEECBDDDCCDB@AEEFFFHHGGHHECA@bb@CGECDDEECAaa@acaBB@BE
+57772FC@@AADFFEFGHA0A3A5A6A4A2A1A3A4A3A5A6A6A7A6A6A4A5A4A2A5A9B2B4B5
+57734B6B4B4B7C5D2E2E9F6G0G8H7I1I5I2I2I2I0H9H0G1F4F1E8F1F0E6E0D9D8D8D7
+57702D8E3E8F2F7F9G4H1I1A01A14A27A42A58A78B00B37B90C63D65F21H31A112A513
+57678A944B565C143C841D572E083E815E993F368F278F043E777E074D607C807C195
+57662B567B002A575A183I13G01E54D44C62C01B49B13A75A49A23A06I1H1G3F7E5E0
+57640D7D2C2B7B4B9C0B7B0A8B0B6B7B9C3D0D7E4F1F7G5H5H2H1G4G2F6F2E3D2C3B7
+57608B2A6A1A3A2A3A3A3A1HB@@@bdbbba@A@aded@@cecccaA@a@@edaABA@cgeaA@@
+57554A@fgdbcbeeeddee@DFEAbcaCEEEDCAbbbcegfcaa@acb@@@@BA@@b@A@cffffee
+57491cced@Aaabcea0a1gefhigd@B@AB@caabbaa@ECACEB@@@ABCCA@bfeaa@@add@B
+57430@cgedca@bdcADEED@aa@aaBFHCAA@a@AB@aABA@bfhhifecb@DDDEE@cdeedAFH
+57367A0GDCAceb@@aacdcaa@BC@fa0a0ghigec@@bb@AB@ba@ACDEFEBAAAA@abdeccd
+57307eefeaaecabddbACEFECaed@@bdfffecbdfga0a3a0iihecaacedcdc@acca@ACA
+57247dfghgdceha0a0a0a0hda@ABEFEEECBaefeda@@@@BGGEDAcdaBCAdcbdfecACC@
+57188cddb@BC@dfha1hefhhededceeb@@@abADCCCCDAaaab@@@ADDA@@@@baCC@cfhi
+57126hdcaEHHFFECBCB@bb@@@cebADEEA@@beecegigeega1a1ifaADFDAabAAehe@FF
+57065Abccaaabfhffc@A@ceba@bfha0gacccbaa@aabbcccc@CC@b@CC@baDA0A2A0EC
+57006BDCaegcACABCB@@bbcfggdbdgea@@@A@@AA@A@dggeaBDED@eedcdecec@DD@@@
+56943bdfgegia0hfiihgffcdgiheba@a@abehigfgfdba@@@acfge@CA@bhfaabbcb@@
+56881cfe@DHF@@A@@@AAAB@cfedb@@bfecdefghgeecabbaacbceedffbdec@AAbdefc
+56818b@@@AB@@@ba@@@aa@abdec@@@@afa1iedga0heghfia2a2hdbcffcee@BCDEFDB
+56759CA@@AAaeeffhgcddbbccbb@CDB@bfa1a1gdefgihghgdcbddfhf@acachgcb@BA
+56698A@@@@ehhebceia0hec@GGDBbedb@A@bddeebaaadcaA@dgecegc@B@ee@@@ABCD
+56636B@dggddghe@@cc@ABBCED@cbbehfa@AB@@CDBCAAA@abeeca@@@adiifeeeeed@
+56573DFHEDDFHHFFDA@AA@bbcbaabbcffffcaaa@BC@cfeaA@bceffcb@@CCAA@b@BCC
+56510CAaa@BDFE@dfgdbabcaaffcdcbabaCHHCaeb@AFFHA0EDECCCDB@baaa@CB@BBC
+56448ECAB@c@BDGFCB@@baacefea@@BBA@@b@CDEGFFFCCC@ga1a1ifaAEGFFFCB@aaa
+56387@@@@@bddaADFGHFA@ccaabba@@@baBBdfdbbb@BEBABB@egha2a3hb@CGGGA0A0
+56328IGBbdca@ba@A@aBC@b@CFCcddga0a2hbdegha0a2a0ebbbaBCCDC@ddcccdbbdf
+56270effefefha1a1gbdffc@abdcbbcee@DD@a@CGGCB@a@aabb@dgeaAaddca@@bc@B
+56209ACEGFECEFCA@dfecdha2a2ifcAB@bbaabcecaaAAABEFB@BEBcedffbABBA@BAa
+56148dga0iedfgeeda@DGIHGFB@bdc@Aaffege@Aacba@@@@ABA@@@@CBBA@DGFDEC@@
+56086AABA@aaa@@bbcecaAB@bbacghhihha0a0hfdacega0haCBAB@aa@ab@CC@cdecd
+56026eeba@@addecbbaBBBA@abbb@B@@@ADDCBBCDDBAadccb@BCC@a@@@@b@aebDCac
+55963dccddddbbeia1a2a0hebBGHFDDFGCBB@BFEB@bedbcdcaCBACEDCBbdbBBBB@bc
+55903dca@@becabdfhgdccbbADDEB@ACDCCB@b@@befgihfed@BBAbegedfecded@CA@
+55840@a@@@@bbccdaACCCBA@a@DA1A4A2IE@deca@ABBAabdecdca@b@AA@@acfhhdce
+55780fefhieccbca@DDAadeggd@B@abdb@adegfa@acb@BCDFGCcffdc@ABBBC@b@@@b
+55717dda@@dfd@@@cdfaDDAchhc@@@ba@@@cfeaAA@dcbbb@@aaAA@bcdda@@@@ddcce
+55654a0a3a2idcggdb@@aacfedeeeb@A@ACDEEAba@aADDECBAbgfaAEEB@bbbbacdef
+55594fcBD@aa@Bbca@@aa@@@@@bb@@ACFEEAdgfee@CCBB@@BDBDFEDCCBBA@@BDFGED
+55531EEDCAA@bcca@fhecdha2a5a3a2hfefgbDECAbddbb@@ab@EGDDFFGFCDGGE@ba
+55473@@@a@@@AabaACDCadcdeefdbaa@ADECCCCA@@bfgecdfeaA@BB@cggddffbABB
+55411A@dfd@@@@@aba@@@DDEEA@@a@AA@efcBEB@abaaacddfhhihda@BDCDDA@bdha1
+55349a0ecaA@a@BCA@@adddaDEA@bd@EFBc@CCDCBB@a@@ba@@@@cdaA@deggggia0g
+55289ccffcbaAB@adhhgeehhdceedfgd@Aagifedeefe@ABaaBFHEC@@CDCBBA@@ba0
+55228a3a0a0icb@AA@cefdddcceggfd@AAaaBBbeggfgfega1igfgfcegghecccbbda
+55170abd@A@@@@bdha0ga@baADEEGEAabbba@@@@cdcbbdgfa@@adeedbcee@@@@A@a
+55109aABB@@CBAafa0a2a1hdaa@CC@cdca@@acfhfefedccfd@BCEDCB@acdffdaacc
+55050bdgeedcddb@@@BDB@acceigeea0a1iiifc@Abeeec@@BFFDAdefgfha1a4a2hd
+54993@DEC@aAAcgd@ahieabfigaCDDAab@AA@ab@beeb@@aeefecec@@A@a@acb@ABA
+54931BEGGHHE@acfe@A@cdcba@@a@AaeeebBEFGEDDBCCAadggedegiieeedbbaBBbc
+54869caa@@BBDDBABBAA@@@A@fhgdddcacga0a0ghiiieefffega0a0hdBGECFIG@eg
+54811da@@@BDAbegfd@A@@ABBBA@@BDB@@aba@beddfeefggdcdeba@DFHGGEDB@@@a
+54749@DB@BA@aabdaa@BCA@@befha1a0a0a5a7ieecBD@efdbaa@@DDAabbdc@@@@A@
+54692@@@B@cefeedbccdffed@CEDCafhebcdc@ABAAA@@CHA0HA0A1A0HDacbdfcAC@
+54634adigcceffhhdACBAABFHIFCDDFE@ddcaAB@aa@@ABA@@adc@@ab@Abghebbegd
+54572a@B@cfgdaga4a5a4a1iia1a1hc@ca@A@cecb@@ddcbbbADDCA@aaaa@@bcdcab
+54516baa@ea0a3a3hdcdcddcbbeaDEGFEBaha2a1hdaab@@cdb@adggedddb@@@bccb
+54459baaccaaabdc@abbaaaBGDA@dedacefecAA@aa@@@AABbfecceeccdc@ACB@ced
+54397aBBABacaA@aca0a3a3a4a1gecdggggggffb@bcb@A@AC@@ADEBAB@AA@acfgfd
+54340@A@b@AAbfa0a1igifccaABCC@@bdcbcefda@@@BDA@@BFFBCA@bcddghgfedcb
+54280cegeaa@@ACB@AAABAacaABagidbcaAEDAaa@@bbbb@bca@@a@AEFGFEFGFGECB
+54218B@cfgb@CEEGIFC@@@abbaBA@@@bbcc@ACFFDBBCC@@AB@@@ccabehiffebbbde
+54156babdbadfgddd@BDGHCdia0igeefdddcccdia0eABAAbffega1a2igggfdedacc
+54098@@bdfhd@@@@@@deaACBCCDDA@@DGIA1HB@abbcaBA@bbcfd@@@CB@@@@AABDEE
+54037DB@aAHA0A0A2A0D@A@cbacefdabffdb@AA@@@@dddbbbbABbgggd@@@@AABFFC
+53979FFFEEDDFHHFDB@@B@@@a@DGGGGD@aBC@deaCDA@ACDCDBDIIEB@bccdc@@aab@
+53917@ACCEGA0F@cfec@BBCDEEGA1A0GC@@adfha0ihfda@@aa@BCEGGB@@@@acccbB
+53859EC@bbaabddddcbaa@@dge@A@@CEDCCCECaddcb@@@ACAAAABFGD@@@accbb@@a
+53797eeeha0hfddffdbaaaBFHA1A1A0IDaefffebacbbcdcb@CEEBACDB@@@ABDFGGG
+53739CA@CEBbdeefdbaeha0a0hgcb@@@aa@@aabdffeabefcBEECA@aa@@abd@A@@@B
+53679EGGHGDDEDDBA@cfedcdfgdaeeghd@BCB@deffaba@@@dfedcaA@aba@@bbaaa@
+53617AC@adffdbabcdfhhffdegfcdhhccc@CB@@@dgfeeecbcdcbeigdbBEFEBA@a@B
+53555BDEAcea@@@ACDBbccdceiihfha0a2a3a0eabcc@@@aceed@@cggfdb@@@addaa
+53497bccbbcb@cga1a1gbfa0a0heabfdacfggfedaAEFEEB@AEFFHIFEEFD@fif@CDB
+53439@dddecdfb@aadeb@cecabcga1a2hffefha0a0ecceedddeca@adfgeaBDDBaaA
+53381CBbehhc@bcehgd@A@aaABADDCDFECAacaaaacga0igga1a4a2hddfc@Abfghhg
+53323dccdcaabehfghghgeeecdggea@abdcabdfggdaabcefdb@BCBBBAABCCBB@@cd
+53261@DEFFFDDCBFHHCbca@abcgfaBEDDEGGDBCDEDBB@acbdfgdcdaBCAaa@@chheb
+53199BBeihhgeba@@@@bcfggggeba@BA@@dfdcdfhheb@BAbbbaABAacdffdabdc@CF
+53137HE@cb@BDCAdge@DA@aa@DED@@@ceca@@@@aa@@GA1HB@ABB@ehia3a5a1gfgdd
+53079eda@b@B@abc@@ccdcccehiigca@ceggca@@@@@ea0a0ia0a0a0ie@DCagiia1a2
+53023id@ACBCEECBBbc@Ab@AaefhgfaC@adfdbbdia0hfecACAabcb@bfea@@@@aaBE
+52962Babddfggefhihfedcegfaa@CDA@dgea@@FGB@@bcefedeffd@BCCad@@ADDEHE
+52900afgaBBaba@BAbbdggeca@aabcfecbbfdbdfedcb@@afhfca@BCBABCCBAcfffe
+52838dcdec@abbcbdgfeaaacb@AAEGFGFEDBBA@adga0a2ifaacccaacefebcbcefge
+52778db@@acfha0iebdeeeffeffdeba@@ca0a1gcABadcccca@@@@bgihiihffggfgh
+52719gdaabcb@CC@@@AA@aa@@@ACAddeec@a@BBAA@aACC@@A@cffeaAA@b@CBbdeee
+52657eehiihe@CC@@AA@afhe@AA@bdeha1a0a1a3a0eb@@@@@@@@acbbbaDGEAAAB@a
+52600@@B@aAC@bbegghgggeghga1a5a4a1hfea@@DFDA@abdedfhfddda@bcabeedbe
+52542ffefdBGCaabca@bdcaabbcd@B@bceddddccd@DFDB@bfhdBCA@A@ADA@CHIHF@
+52480ddaABA@@A@bc@EGHA0A2HFECB@baa@@@@bbacfhfehg@Aceca@@b@C@ddcd@@A
+52420C@cca@acdbADECC@cgdaba@@@@@aeca@da0a2ifcfhfdccb@CCCFGFDA@aabfg
+52360ebcc@@bccaA@fihda@@@bcbcddaAAADHIFGEAAAAA@acb@BBDEEDagedccd@EI
+52298A1IHHFFFDDA0A1GDEFHGB@@@@bd@CBadffcbceb@@begfca@bcddcbcba@acdc
+52239aaACCA@A@cc@DDCDD@aADCBAADDCEDBCCC@acfgfdcbdfhgfeceghhfa@@adcd
+52177efd@@cefhf@ABABEECCda3a6a1fcaefcccddddb@ABBAADHA0HEGHGECA@CEFB
+52119@@bda@adeccfha0ia0a1igddfea@BAB@cceia0a0ha1a1gdcaad@FHEA@ABDDB
+52064CB@@ABAabaa@@@bdia1iebaac@BA@cha1a0e@CDDC@b@@@@ADFGCBBDGFCDFFB
+52005@@cfia0heghgghhdADFE@fhdcccaaaBCEFBbbaaacdccaacaBEBaaAFIIGEA@@
+51944@ceeec@acc@@@a@@@BB@aacaA@@@@@aaa@@baaefedddbbeiihhfga1a0igecc
+51884ghhdaABBA@@@@dhggfbACB@bcca@@aeeaA@@bdfd@@abcga0ifcccbbbfgc@@b
+51823cbehhffggggfd@@dffdcdggfeaAB@@@cc@DCa@@bbbdebACBACCABDGECGGCDD
+51761B@@DFEB@cfa1a1g@FA0A0A0A0GBAABCAa@bcccddcbabcccefaA@b@B@@@@AEG
+51705CA@cfaCDCBBBadcbdgggddddb@DDDFCacdecAB@ACCD@cdffc@BEDaceifcdeb
+51643cb@@@@@a@cha0hfffc@@CEFFDCAade@BB@@CDCCA@@ADFFBbbaa@BB@AA@AAA@
+51582abcbbcffdcdia3a1eec@EAefddggaBCFECBCAbba@@AA@AC@bbaab@CEEBCEEE
+51522FEDHHEEIA0HCAAACFGHGEDEEDEDEBbc@CBceeea@A@aaa@AA@ab@A@@a@@AA@d
+51461edacedbABA@BCDBadecbcfhecc@BB@@bcb@bghhedefggfddffca@BB@ccaAB@
+51399@bdeeaB@aaab@@A@@@@A@bddb@bb@B@a@acb@A@bdcaAA@@AAb@B@cga1ic@AA
+51338BBaeghiihedgia1a0gghfdba@@aaba@DEDHFAababdded@AbdbA@ccb@BCCA@@
+51278DC@@aeghf@EEBacddeaaa@@a@aa@acbaAEEDCACABBABCCB@ba@behhia0a0fc
+51218aBCCEFECC@a@BA@ABACEDAcfggfedbaccfhgefhhhd@adcbb@@@AAbbaaaBEFG
+51156FBcfc@@@bba@bdb@@A@a@@AABab@FIIA0HGECCB@@bcaADBABDEGGC@aabaa@B
+51095AAEIA2A1ECAA@@BEHFDB@@CFCacb@@bdcaabdaCEBdifcbfifdehie@BBA@@@d
+51035fc@@@cffeeca@ab@@CDEIA2A0GEC@acccdcaA@@BCCABB@@@@a@@@a@CAabaAB
+50975Aa@DHIA0GBDEB@bccbdcaAAADECA@BEDDCBA@acdehe@AACA@BEED@a@cdfggg
+50914daAA@ceeeddggeefedc@@@a@CCBB@cbabbbbddca@aaeha0gbdia0ifc@@BCA@
+50854aa@ABA@@BB@@B@@DFA@acffdcdaCDCA@@CCB@adge@@@BCBAac@ADGGDBAaccg
+50792hdCEB@cha2a1ifceeb@dd@A@bghffebba@@CCDGEEIA0IA1IHGFCABDA@abcb@
+50734DC@abceebacedbaADA@ACC@b@@@@bccaAABCB@cdc@AFIEB@@@B@abba@BCBaf
+50672gdbcabb@@A@ACAAB@aedadhgdbbaABA@abcb@@@@AABDCBCAa@BE@ec@ACCBAA
+50610@bdccb@DCACEEEBBAACFFBBC@cfea@@abaddbbbdca@A@@BEGEDDEDDBcda@@@
+50548bbaA@ba@@@@AAACB@@@b@@dda@AB@a@bdecced@@abdga2a5a4hcddaABBCHHF
+50489Aeia0geebceghgghfbcdc@B@AA@bdc@DHHB@@@ABBA@adAIA2A2A3A1A0Eacdb
+50433@CECDFC@@CCGGE@a@@A@a@@cddeeddgigeegeaABCEBaba@ACFDCAb@@@@bfii
+50371hhia0fcefeeha2a2hd@A@@CDBcfha0ieccb@acba@@aba@@@A@ACA@cb@@aADC
+50313@@cfd@A@abbbecba@BCDCDIA0FD@db@ACA@aa@@a@CEFAcha1hggd@AABAbcdb
+50253cffcBEDDDAAB@@abdfdaBEHF@ccba@AA@@BCBA@a@BEFDED@@ACDA@ababa@CD
+50191B@@@baABBDDAdhfc@CEDBDCAaaADGIHFBAAABAabb@@abcdccdeha0gfb@acbb
+50130a@@bfheaafheaDEEEFFDDHGEB@@@ccbacdecabcba@@BABCDB@ADC@@@@ba@@@
+50068cfhiidbba@@bddccccc@BCDEBAA@@ABB@ee@@abedeeefb@aa@BAcdccdb@CC@
+50006@a@@@AbffbADDCBDEFEA@A@ADFD@ecA@AA@A@eia2a2a2a2ihia1a4a6a5a1fc
+49953cbbaabdcb@BAAABDD@dc@BDFGGFEEFDDDA@bb@DFDAab@BCCDBABCBacca@@ab
+49891a@FIA0GCA@cdca@ABC@ABEFFB@BB@@aacdcdefhihfaEDA@cffdb@@@a@bhid@
+49830aghcadefgeaA@@@aea0a0iihebbeeddc@@cbAA@@@@ABBCBCEHEEHFA@AAacdd
+49770cbaA@decdec@AAA@cffdefgffdbdfgiiggfc@A@abca@A@@@@addb@aabdaA@b
+49708@@a@A@aa@@bc@@bfdbcbdeeeefha0ie@@baBEGHGFB@@CDD@bbeecaaabb@@@A
+49647@addffa@@@@bcccc@BABCEEFC@@ABDFEDA@@@@@CFCBAEIE@cefda@@bdcbccc
+49585cdc@DA@@@@@ab@EGB@ABCAab@ACCBBDEEB@@BC@AFIHIA1A0A0A1FCEBcdbccc
+49527babeec@A@dgfeba@cha0iea@@@AA@AEFBB@dhihhigfdbbbcb@@ABCCB@aaABC
+49466A@abb@@AA@AFFBBBA@BB@@dgdbcaACaffhggfdcbabcdecdge@ACEDAACBAAB@
+49404bbcdc@@@ac@BA@@@ABB@BDDD@cbb@@bADA@@cffeaBCCDA@BCBaefhihfca@AB
+49342@bddeggb@ceii@ECDFC@begeddc@bccbAEHD@@@A@egfdbaAB@ADECAAAafcCB
+49280@BB@a@@ADDB@@@EFFEBba@befdeggfdbeeb@ababb@ABAa@@a@accbbceggffb
+49218@@aceda@AAA@BCB@@A@@@bcffcaceeedcfha0ihdbcbb@@@beeb@aaaabb@bdc
+49157bccffcbaaabfgec@A@aaadc@aefghhhfcbehgca@BAab@BA@CEGIGFC@@@@cb@
+49095BB@a@aegggdca@dfdbbbced@CC@@@DIA0HDA@aaaehecb@@@bded@CBA@@@bb@
+49034AAAAbdccceedda@@@@@befeb@bee@A@aab@abba@B@bdccbbcfigfdaaa@@ABD
+48972CBbdabcc@@BFA0A3A5A2A0A0HGIFDBBB@@@accabedAC@beecb@B@a@@BA@acd
+48916caBD@bcfffgfdcbbeia1hefddehgcb@BAACB@ab@DFFDB@db@@bdc@A@dcbcee
+48855@BFGFA@CHA0IGD@@DHHGGEDCCEDACCBA@@bc@DDBABA@bbbabed@@abedabbba
+48794bddaacghfggda@CCBABAaccb@AA@@Aaffb@FGEDBBBBCCCA@Aaeefffeaaa@BC
+48732BAA@CFDAA@@cdcec@BDB@@@@bbbdbdd@AAC@bcddca@a@cgd@BB@bdd@@@A@cf
+48670feddcaA@@AA@bffffefffdbAA@aaaaaaaccb@AABDEC@baACCA@AB@aacihebC
+48608B@ACBBEEFDB@bedaA@@@aaaba@DEBAaa@bca@@@@A@@BCEIHD@@BBEFCbebCC@
+48546aabccacccedegfca@AA@bff@DDAaccADEE@gfedaACBB@bdc@A@acehhigedga0
+48484ihgda@aa@@A@BCB@@@b@CEDDGA0A1FAbdcaaa@CEC@aaacfgiifdga0a0ha1a3
+48428a1hc@BCCB@@@a@ABaddeceda@bbcdcacfegghiheddbcdcabcga1a1igeddaab
+48369ADDAabha1a2a0bBCBBBA@b@BA@ACBCB@@@cggc@dggfebBEFHHECCBEHFFFFDA
+48310CFHFCBCBA@adddeecb@BAacd@A@abaBBBCCBA@bdeb@@@A@@AabcebBEDafha0
+48249a1a0gea@adeaccdfdaacdb@@@acfhigaBA@@aceiheegdabccb@ABBDGIIA1II
+48190G@eebcbdfeddfhhgfedcaAEDadeegia0gec@@@@acbceghgffddcba@A@@ABCB
+48129ac@@bb@@cfcAAagia0a0ebbceeddca@@@@cghhfegfcabeihfc@CB@@aACA@dg
+48069ea@AAA@bcaaccdeeggcbaB@cffeeec@@@@baaa@ab@abc@@bcdfgfeeda@ABCE
+48007HIIGFDDEDEDBCGE@a@aeffebABBA@@dhgcabcbabeda@accdccccdccb@ADFDA
+47945@aaA@A@cbbcba@@ACCBabbfhfaA@@DHIA0A0HC@adgghfa@A@aacca@@ab@Bae
+47885gecaa@CDBACBACEDHA1A0EA@CDDECAadddcbbbbaaba@@@BCDB@@@BFDCCCDCB
+47825CDEFGA0IEDEEAACDDC@ced@CB@@aAFEDDFFBABHA0IHHA0HHA0A0A1A3A3A4A7
+47773A8A4A3A6A8B1B6C1C7D0D2D4D3D1D1D2D1D2C8B9B0A6A6A5A4A4A2A3A5A7A6
+47742A4A2GDDGA0A1A2A5A6A6A7A0EDC@aa@@cdedb@@BCAAABDEIA0E@bdcACDFFD@
+47691ffcaabefbabccdgedbbcchigecbCGECCABA@cbbcaacaA@@beeaBEC@cddbcdb
+47629@CGFCABAadedeccb@bdceha1a4a4a3g@CEFGA0IEBED@aA@cdbcfgfcccaCFCB
+47572A@@A@bba@@@@@bffc@Bacaaa@@abfa0a0d@A@aABCCABCBDFB@A@@behe@Aadf
+47512c@@@@A@@a@Bacfggebdfedc@BDAbeeedecBDDB@cbba@CEEDAaefda@BCA@ACD
+47450CAabcedbfhecb@C@ddbaADEBacggc@A@@ABDC@dffefc@AABFIFA@Aadbab@@B
+47388CB@ACGHD@@@cefc@CDAACB@@BBCA@abbfgcACBca0igfcaADCBCCaeha0a0iec
+47329a@@@AFGEDFDA@@@bbcddba@a@DHFC@@@CDCB@aAB@@@@AACDECafhhhifbceec
+47267a@@@BAa@DHC@A@ceca@aAAA@cccaabecBB@@BEEDGIE@cb@@bcba@abbaA@cdb
+47205@@A@@BCA@baACCBBFGGEAAA@@@aABCDFA@@@@a@ABA@@@@@@AA@dbcb@BC@@aa
+47143a@aeeaacegeeiigecaAAchihhihfdd@BCFGEBCA@@a@CFFC@@BEGEC@@bfcBEG
+47081HC@@BA@@@DDBBA@bdc@BBCEDEDDEECabcege@Aaaa@BBBCCB@acddccda@@A@c
+47019dcccb@ABAAAaa@@@@@BBCDEFB@a@@EHGEDB@cc@Acbbfgiiia2a2a1a1gffggg
+46961hhhia0ihedbba@@aaba@@@@CCbeb@adga0iecfia0hggd@DABAbeeefedb@ab@
+46902@@bdeedefc@bfhfc@CCDA@BAdfdAB@BDFFGFEBaddfebadgecddccdbcegeegg
+46840eeedcACCC@begea@ABDEDDDEDBB@cabccbcdeeegebbba@@AAB@b@A@A@@bbbc
+46778cbADHGEA@@@@BB@aehgdcega1a4a1iha0a2a3gddbADGA0A1IECC@bc@BC@bb@
+46724CDDCB@b@A@@ccbecbaBFHGD@a@@@@abcbdig@@aa@@aBDED@@@@CD@cec@@aAE
+46662FDB@cbbaaccccecbdfffgeega2a1hgec@BDFEEHGCbebBC@bcdfgcaaaaaaabb
+46602cdgia0ifbBB@aaa@@@@CCBB@ACA@@A@ba@A@@BC@bccbabccbghe@Bab@A@@BD
+46541CC@@abaBEGHAaa@ADECBDFDadegebaa@aa@@abbcccha1igfdb@BA@abaaaefb
+46480ADGCCFHFDC@deddfhgggeced@A@ACBA@AABDCBA@b@ABCBABBbegfdbbbced@@
+46418c@afhdabefca@Abcb@AFEC@cgigccaACB@@@aba@@a@AB@@CCC@bba@AB@bfhf
+46356cadhgfbACBACAbbb@AACEDB@cffa@@@aa@@@@BCDEDBAEHGFDCAa@@@bcccccc
+46294ecbdiib@Baefhgd@ACCDGGA1A2Fbggfdc@DDCEEB@bbbcfedecAEEB@@bcccfg
+46234ffefgfefha1a3a0d@BAA@@@@@@cc@@@a@DGCaAEDBCCDBaeiic@cfgf@B@cgih
+46175ca@@c@@@@@B@cbAAA@cb@ab@@@CCCB@@acb@B@ced@@dfbbeb@chghgcbcdegc
+46113bfha1i@CB@@@abc@aehigfda@a@DFC@decca@@acffbA@abba@a@CGGFB@@CBb
+46052ddededc@@A@bhidBDBBAB@ca0a0gb@CDDFEFIICcfha0iiihe@@bcccbcha1hc
+45994aacbA@aacdc@@@@cha1ic@ab@BCBC@abdefcb@DD@bdccddcdb@aa@@bffddca
+45933bdedb@CFHA0A1HDA@@@aefccfie@BAA@@ABDEFGEDB@a@BCC@ehigbBB@ccbAD
+45873CACDB@AB@@@CGFC@ca@a@ABCA@@b@AAaeghihefgedaaa@CFEBADDDFIHFB@ce
+45811eccb@@cedbb@cffeaaccccd@CAciihfedcb@@aa@acdb@@adbbccga1a4a4a3a2
+45753a1a1a1ifcabccabbbaa@bffcaa@@bb@@aabdfhge@CGHDAAAACBabadhhbABA@
+45694fa2a0d@@bceecbaA@aaaBEEFHGECA@@baACDFGDBACEDDB@BEDB@@AA@BBaa@@
+45634@DGEACB@@adecdfeaCHFA@BFEBACEFDDCBBEGEBBAB@bbc@DED@@AAacca@@AD
+45572DBA@@@A@ABadaADFFB@CC@bddc@abbbaADAceha2a2a1a3a4a2gcga2hdfe@CC
+45517bfhfdbAC@@ABB@bdeec@AAa@AA@bea0a1a1a2gdc@DDCDGHGECDDEGFDDA@adb
+45459BEFCBCAa@BDA@@@@CFIHDCA@@AACEDBBDGGEFFCAAB@bdcdecbacefc@@@BDC@
+45397b@@cghfcaAA@adbCHE@cda@BCA@aa@CCEDCDDEAddba@AadaACCA@ba@ab@B@@
+45335@aaacdeecb@AABABDEEAA@eed@B@deda@DHHHFAba@@bdfghhecegdA@bb@cfe
+45273dccbAEDBCCDDFED@aabddfgfcacegha0hecbbca@@CEEEAa@BDA@A@@@cbA@@A
+45212A@a@dgcaa@@bcb@@bbaaBEHFBcgca@@BFIHC@adfffccbaceffebbdddbaaace
+45150daBEECAAB@@a@@@CECAabaac@EFFDCCB@bcb@@@BCDGGCBDB@@BACDDBAACCC@
+45088dea@BFGGIHBac@CC@@@cfihedbbcda@abb@A@bceeedbba@@@BBBA@@AAb@EED
+45026BB@cdba@a@@bca@becaa@A@dedffdccbcbabcceeddccdfebab@@bdd@@@AA@c
+44964ca@abcaaccbAC@ea0a2a0fd@@@ABFHGCCBbdc@BEGFFFFEAa@ACCA@@bbdeb@@
+44905ACEECAaabb@DDCACEEA@aabdfga0a1a0f@EGGEC@dccedbaaACDHIFBABEFGFD
+44846CB@@@A@bdefdegiia1a1f@CCBCA@CC@@A@CEEA@CHA2A1HFGFCACFDABEC@dgh
+44788e@acca@@bfhgia0hda@@bdefdeeedcbccgigddca@a@@a@@@@@BCAABA@bdedb
+44727@A@bcdefecccb@Abaabc@ABB@ca@acbabaABBCCAADEDAacccdddecaaaa@@a@
+44665@@C@c@BAABBBDEFDB@@BDEFHHFCB@ccb@ACEC@@@@@ACAegfcaceffeeedbABA
+44603ACDCBA@@@@dcAA@ABBA@@BEEBDFIEA@cfge@BBEDCDCACC@ccacceebbdfhfb@
+44541@a@A@A@BB@@ACA@aaAB@b@@@@AA@aBCAAAA@efdaA@aADEFDCEEB@BEAa@A@@b
+44479dfgfc@@ABAcaDEEFEC@aaaa@@@@@@@Baffedcaaa@@@ABAABCABEFD@aBFGD@a
+44417cehgedc@@abccc@@@@@cee@CDEEC@aa@CDCABCA@@@@A@da0a2a1heaBDDCCCB
+44358@a@BDB@ccb@CEGEDB@AAAA@AC@aABBBB@@AB@@AAAADFGC@aaadefghgdehfeb
+44296@aed@@@@CD@cgihhifcdfffeb@Aaga2a6a2gdcbbcfa1a0geb@@BCbhhcaba@B
+44239BBACCCCEGHFBcigc@ADCACC@@@CC@bcbaaa@AA@CB@b@@b@ADDBA@ba@@AA@@B
+44177ECadeddcaaabcabcba@ABECbgfaBAACFECA@b@afig@CAadhheaBCABBCCC@a@
+44115@@B@ccacegfebAEHE@BCADCbghghie@acca@a@@AA@@acbcfeaAAACC@abdb@A
+44053AA@@ccabcb@@@@bdec@BBB@a@DGGFDB@dge@B@bceffeed@Aabcha0a0a0hghe
+43994aABDGDCEFDCEBbfga0iea@bda@@ccaaa@@ceea@a@EEBacca@@@@BED@@@@bgg
+43933fcccbceea@a@DBbggia1hfeb@@@@DHHGGGDA@aa@@BDDDBAAbb@BA@cdbACAaa
+43872@@bbccbbadc@@a@A@@@bdebBBabccddbACDGA0HFB@a@ADEAaa@@aaab@@AEDA
+43811@@BCDFFCB@cdaagia0ifeb@abacfhiifbBEBcfgfghd@add@ABAacaabbcc@ab
+43750aabeeddeddbBBbcb@@aba@bdefcbedb@@@@ac@DGIHHHFHIIECCBAaeecabffc
+43688cb@@@@B@@ab@FFFFGEA@a@cfeaBD@a@@abbAEFBbeghigcbdedbca@@cggcBEE
+43626DABCBEEB@@acedd@B@bbbddcc@@acAEFEAbc@EDaaABafgha1hb@bdec@DEBAC
+43565DBABA@ab@EGEFA0HCBDBafaDC@cb@@@a@@AA@cgigcadfddda@CCAaddbADCCE
+43504D@cha2a0gebACAA@bga2a0gcAFIA0GEBadga0a1a0hffeda@BDEEFHIIFBACBA
+43450@aa@BBBBAAAaaa@A@@ab@bega0a1gdaba@@a@BDFFGFECBBFHD@ccefgha0a0a0
+43392a0gedc@B@bbdge@CDEGGEA@@bfa1a5a2hiif@DCDHHGEBbeb@acbADEDBDHIFB
+43334BA@b@AAaha4a3gcdaDFDA@A@@BB@@BDCBDECCC@decdia1gcb@CDDFHHGIA0GG
+43276GFEBbdabbaADDAABB@@befgiiifaACBABBadddb@BB@AA@bca@CDA@@adfgc@E
+43214GBbcbbbadfeddffaCB@ADFGG@@@aaaceffeefeffeda@b@CBbdaACAA@b@BEED
+43152A@ACAbda@@aa@@BCBDFFFEFGHGAa@bccca@@CFDCCEFHEA@@ACEDDDAcb@CAab
+43090aACAcfd@@@CDDEDEHEEGIHC@@BFEAaeeccehhd@@A@dca@@aaaaeggca@bdcb@
+43028@@@@@A@aa@A@BGFB@CCBCC@cc@ECaccaABBDEFEB@@adccbcgfb@@@@cdcccb@
+42966@A@effecddcdha1a3a4a1ggeeaCCabbfhgc@@b@DGFEDA@a@affcddffefdeih
+42908gffhia0hfeeggdefdaabehfffaBBaa@ABBDDCCCDCAbddcAB@bb@Aaa@AAA@@B
+42847CB@ef@FFC@ba@DGFEDCbfebBDCDGIHA1A0FEDECAA@AC@@@ABACEBbga0hc@AB
+42788@debacfeaCA@BDEDCA@acefeb@@aefeb@CGFAafgedddhfba@@ADDEDB@acdb@
+42726ABaga0gd@CBB@@BEEEGGGCbba@CB@egb@@@ABA@ADDDGFDBCC@@@@@A@bcdeeb
+42665CGHGFDECBCCAaaA@dggbBB@aa@@AA@bdddccdbAEGFEDA@befedbadha1a0gfc
+42605@BBafigaCECA@abb@bfiiia0gc@@ABaehfeghfa@@BEHHFECCFC@@a@adec@DF
+42544B@a@A@a@A@@@@@ab@aa@@BC@dca@AAC@ceedb@DFEDBafggeb@@@aab@@@BDFE
+42482GIFCA@ACB@eggfddb@BCBDGA1A1A1HBbfgfdba@BA@@@@bdcdghigccedabcab
+42423dedb@@@afeccb@ACAaa@@@BAbegffia5a9a4eAABA@@@ACEC@cededb@BB@bdf
+42364ddd@@b@@@A@bcbacfa1a0hggha2a5a5a2hgedeggfffebbegeaaaAB@acfebb@
+42308CFBAAABBAcdeia3a2gcAC@aa@BEEBA@b@adedaaaa@BECACAaaAA@adb@@BCEF
+42248AbcCGEBAACA@dggcaccab@DGFAbcca@@@BB@a@@abbb@CDEAbcabbdfhedfggf
+42186ehhgeddega1a0iieabcbeha0hdcbacb@DFCAA@A@acbab@ABCB@cedga0a3a5a3
+42130fcc@CDCaga2a1igia2a2a0d@@abaACA@@@ab@@@bcaA@@@abbacfeb@@@BFIA0
+42074IFCCB@bdcaba@@bcccbaABCCBCCFIFB@@a@aaADFHHIIFBabcbbdccdc@@@adf
+42012e@EBcfc@ABDBbbaaa@acccdb@CC@dedbaaaa@BDGDbfecAEFGHHHEEFFB@ccBC
+41950ACC@cfgeeeaCBA@@@adgfb@@dc@@a@@CEECCB@@@@ced@A@cefebacdc@Abgig
+41888gg@DB@@baBB@dggdb@DC@@@bfigfedcabccccegcdfdha1a0hfefgfeddbbdde
+41828ea@CDEECBCEC@a@@bcbACBEIIGDACEDEB@@A@bcb@bdbBDEFHFDB@ABCC@cd@C
+41766CAbdd@B@ehdaAAafhfd@DGA0GA@@@@ABDDGGDB@ddabehe@@@abb@@baBECBBB
+41705CDAaa@BA@@cia0gaA@@@@@A@@@BCB@@BFFCBCCACEB@cbcca@@BFECCCDDAbdc
+41644ddbaa@BA@CE@a@@@a@@@AC@@@ACC@deecAA@CDDDBA@b@ABCB@@@abcdaadec@
+41582@b@@AFCbdbA@aABA@bcccbbaaaabcga2a2a1a1a0eBEB@ACA@ABDGHIHGGEAdg
+41525hiihgdb@@BAbbbaAEDDDBCIA1FC@bb@A@bccbabfihfcBDC@cdcdca@@@BAade
+41464ha1a2gccfha0gdehiha0hfhhd@BCadbBFHHGFFF@ed@@edaCFFDAcfhia2a0ea
+41408BDDDDA@@@AA@AEEBFHFEB@@ab@A@bba@@cfeddc@@ab@acecabeec@@a@AEEA@
+41346EA1HBB@baaehia0a0a1igebbbabdcb@@@cec@@daACDFD@bcddffeefdcecaAA
+41288@cdb@@@da0a3a5a5a3hhihhgfcabeffebacbACBAabaaabdeefeca@@A@cdcbf
+41231ia0hefedcceia0gdedbaABCBaeedc@@ADFFC@@abdcCC@bcaCFEBA@@@a@BBBB
+41171CDAbdfec@DFGDDFHHGDAaaAAa@ABDGIGCA@@Aaca@ABB@bccbacc@CIA0HFBac
+41110dghda@ADHIHGEGA0A1A3A8B2B4B7B8C1D0E4G7A02A31A53A49A29A01G4E4D1
+41075C3B9B6B5B2A6A4A5A7A3A0A0A1A2A2A0GFCa@@bdbcdbBED@bcdb@@adec@EFD
+41029DDB@@@BC@effgfaBCFA2A5A5A2IFHHE@@@a@DFHHFB@@A@abcb@aaa@DFEAaab
+40971a@@@@ceedeedaCDBCAaADEDbcbccbaaaa@@@abaab@@@AABBDEB@abaBECBBBD
+40909DEFFCABEEBacefha1a0gd@A@bb@ABBAABA@accba@B@aa@@@@@b@AA@CFDbcaC
+40849FFGA0A6B3C1D0D7F2I3A37A65A56A19H3F0D2C1B5B1A7A3IDA@dgcCGEBA@@@
+40811@@@@@@@cfghfc@A@@@@A@a@@BDHA0D@@@BDCCA@ba@@a@Aaccb@A@BBBDC@cca
+40750@A@CGGHE@bcdghdba@@A@ACB@@DEEDA@@bddcbcffeb@AEIA1A2HEB@c@@cedc
+40690aadccebBCDDEEAbaAahgeacd@A@@BEE@bdbacfcbdc@Aac@ACFFECBBAEFDDBA
+40628@abccba@@A@baBCBCCAabaAGDACCBEEDEFFFFGFB@@cefebadfd@@bfgedfged
+40566dddedcba@@BB@bada0iecb@bfgfdaacdefha0a1hdabdcbddbaba@DD@@@@B@c
+40507cca@@ehgeeeb@acdcaa@@@aADDBAABAABBCCDCACC@ADCA@ACDA@CD@@EIIFBA
+40445@adca@bfgfdbaaAB@@@ABCED@acdedc@@@@DD@dd@CDDDDBEFEFEEECCFEB@@@
+40383aeggd@BBCA@@ACEFF@bbb@@BC@aeda@@AFA1A0EAACBadbdecaaaAEHFEDCDAA
+40323A@begd@ACBB@@@A@caADEAcefeccbacefbCEC@cfghgeccAEC@AA@bdfgc@BBA
+40261CD@a@@bcdcaaabfda@B@@BCEDCB@bia2gcbcefdced@@@bcADBBBAbeccb@@@@
+40200@@AABA@@@@deeghd@Aaccdfia0hgheaAA@@EEBAADEDDBA@aa@@dea@ddbcehi
+40139gebbaa@Aadccedddb@@aceeda@CGA0IFC@@CCCCC@aabcccbdeb@@acdaadfba
+40078decbACBCCDIA0HHFCA@AAaccaACCDAaa@CEB@AADEGHGEB@dfdADCDFEGIFDEE
+40017ABDCB@cdcc@@bcaAEDBAA@cbABAADBcgd@@aca@@ADEA0A0Aegfca@EHIGFBab
+39957b@BBBCBaehgfc@aeiifddcb@BDEFEDD@@CIA1IFAbea1a4a5a4a2gec@aaa@CC
+39901EHHHA0ICaeeaCB@A@@bfgdccaA@@@bddedb@BC@ba@CFC@@BCAAABBCEFCA@@E
+39840IHFDchfccegebbbb@@@BEEEGGCa@EDchgfdb@a@@@AA@ba@dhgdb@bccfgffhf
+39778efecaa@BDDDDBEHC@A@accacbACAdfeaABBCAbbdgfbcc@@cd@BCB@aa@@cb@b
+39716@@ABDAdffcBEDIA0GGGCdd@ACEFD@dehighfdddaBBadb@@@@@dhd@A@bbAFFC
+39655ADCAACDDA@@AFIGEadbbbb@DDC@@A@bfhhhecbdghhf@@@acccaCEAcbaaAEHG
+39593HHCabbb@@bffedbBC@@BCCB@aacfgc@@A@@BC@fia1a1fffceecaaa@@aec@A@
+39533@BAcha0g@AB@@@@@AA@acddfgghggfebaa@@aAB@beeda@@@@@A@@BCEDBAADG
+39472GE@@Aacba@AC@a@@@BDEDACDDCDHA0IFCAAAAADGGB@AAA@dedcca@@a@@ACBB
+39411CDFGDaecaca@A@@@@a@B@@@bccbaddbc@AACDA@adedaCDAbaABCDB@@A@@@ba
+39349BDB@@aa@caADCBBA@aefb@cffcBFD@abcbaBDA@@B@aACBDFAbc@CCCBDD@bee
+39287baacgheb@@cc@acha1a1a0hiiecbddddb@@cebAEC@@cddc@@@@ABDEA@@acaa
+39228a@acb@ba@ACEDDDCBEDCFGGEDCBBABCA@@ADCAAadhggfc@addbCIA0IHGCAaa
+39167BDA@@bbbBEGGHHHA0A1FAAABFIA0IGB@bbADCBBCBBAA@baab@BCA@AEEFGGA0
+39109A3GBCEEB@BEFDDFGEDCAbACBBFHIA2A7B1C0E2H6A33B13B44A73A08G0D7C1B2
+39067A7A5A4A2HC@@aa@AAAEHFAcccfgca@AAEFFFDACEDCEGA1A3A0FCDGDA@@@CFG
+39012FCCIA2A2IA4B3C7E8I6A58B52B73A84A08F5D5C5B7A9A3A0IIGBacda@DFFED
+38974GA2A4A1FDDCC@bccaBEFD@@AA@@@A@ba@ACCEFCBCEEFEDFE@@@@bba@adfgdd
+38915dbbc@CDAdgfeb@EFGGD@bCHIFEGA1A3A2A1A0A0FC@@@abdeb@CFHGEEECABA@
+38859@adddccbceec@A@fa1a0feea@@@@cca@A@@@@@acggb@bcha0a1a2idbbaa@@a
+38802b@EEACB@BA@abbcdb@BCBBEB@becbbca@bdc@AABBaceia1a1gdcdbDFEC@chi
+38742gfcbef@B@baa@@ADGIFEBbebAAaehiigdbbb@@a@adha1a1hffhheeia1gbbab
+38683@@cfhhgffia1hffd@A@deccegdabca@aa@@@bccaAA@acbbbbb@CA@ceeccba@
+38622AA@@CEFEC@aa@@bccddeeggfhfd@A@dcBFHA0A1HAaceeeedcabdfiheefha0i
+38563ia0ihfcbdbc@EGD@@aadfcABCEE@cdc@CDDA@@a@@AAACB@dgghfed@BC@dcAB
+38502DFEGHEEFFGGGFEAb@@aceggdba@@b@@ACBAABBBEC@@@bcddc@aaBEGHECA@@a
+38440edbACAbeha0eabffcACEB@ACEDBchffggd@@a@@@a@@@AEHA0IGCABaghfa1a6
+38382a6a5a3a0ecbbaBGIGDBAagigdcdcA@eifedb@A@DGFEABEDDDEGGFEFDDCA@@a
+38324cfa0iihcaacedegdADAACEDCADEB@a@aedbddca@ABCC@a@a@CCBAAEFAaddaA
+38263@bb@CDEEEDCBAadcdc@BBEECBABBCDFDDAabddbADEBaec@@@@a@AEGECFHHA0
+38202E@b@CFIIIA0IGECBCEEDFFEEFA1A4A3A6A9A9A8A8B4B7C0C2C3C6D3E2F3G7I2
+38159A09A33A61A96B34B63B72B60B33A99A64A34A08H5F9E9E4E0E0E1D9D4D0C6D1
+38134E9I6A79B82B33A28G7E0D0C0B3B0A9A1FEFIA1A3A2A0A1A1A0A1A3A1A0HHC@
+38101@@AC@@CA@CDDDGHGEEEDCCCEGD@@AEIFB@@CDCFIFDEHA0IGGHGD@@@@ACDAba
+38040ba@aa@DA0A0HGCCBAA@@Aadfc@BDCBB@@@@A@cb@aa@@@CEEFHIHA0EAABBAAA
+37981C@cccdbBDEFGC@@BDC@a@acdcb@abcdcbaBCA@BB@@b@@EIA0BedaADFCBBACD
+37920BBCB@a@CBCCCCB@cb@AA@ceeabdaADEBcdeigccfigd@BDGIGB@BDDCDEBBAaa
+37858@@@@A@bbdd@DEEFDA@Abd@EGEDDFGC@ACFIHE@db@AA@@a@Aa@A@ADFGGA0A1G
+37798C@@@ADFE@aabca@CC@@ABA@BDFFA@aaabcd@@adcaacbBDFA0A2A1GBcffhhef
+37739eca@aa@bccAEGIA0GC@a@BDDAabcefghhfia5b1b1a5igdca@bdccdc@BBDGFE
+37682HA0A0IEDCCDCA@bcbbeecaa@A@A@a@@B@aacfgeabb@DGEFE@a@@ddffgecb@D
+37622Cbe@BEEDEEFIA1A2A0EDEGIIE@abbccbcdgghgcabdedcb@BEFA1A3A0EGA0A2
+37568A5A8B1B1A9B2B4B8C7E2G3A04A49B28C66E79F63D90C03A91A29I2F9E2D2C5
+37542C1B5A8A3A3A6A8A6A1A1A2A0A1A1HIA3A5A4HBAABCDDBABCEIA2IHIHGA0A0I
+37500IHAcehifa@@@@A@cba@@CFFFIGba2a3a2iedcb@BBAca0a2a0geaA@ehf@BCCD
+37444B@dgge@EDb@BCEHG@b@@A@ADD@bceiiga0a0e@ab@CCCCCABFA0IHFEEGA1A0E
+37387@ADDA@acbceeefeaCFFFDA@CDEFHHHFFFHGBACBAECA@b@@AEGDBAabccbABDD
+37325CAA@dc@B@BDCBCEFEB@AA@A@cgiggecca@@@A@bb@Abfgec@@a@@ddaACDDEED
+37263DEGECCBcghggigfeb@EGGHGDCCFHFFA0A1HEEFDEFHHGC@aCHHFGHHIEBEDCAc
+37203fia0fa@BFA1A6B0B0B2B4B5C2D0E1F6H5A19A70B59D05E57E55D07B70A81A27
+37173I4G4E9E2D5C9C3B5A7A4IHGFIA0HDCB@dc@@ABCCCDFDGA1A1HFEGGFEEEDECB
+37124BBDEGEEHA0A2A7A9A8A4A3A1A1A3B0B2B5B9C3D1E6G4A08A64B71D53F77F53
+37092D18B53A62A14H0E8D4C8C1B7B3B1A7A7A6A4A3A3HGIA1FC@CHA3A4A3A2A0FG
+37058IIA1A3IFEFGA1A6A7A6A9B0A9A7A8A9B0B4B8C0C6D9F4H6A24A92C14E08F34
+37026E18C35B11A40A04H1F5E3D5C7C0B6B3A8A0HGGEDFIGDGIIHDCDGIIFGGEDEDB
+36984@aAAaaCHA5B1A8A3A3A1GFHA0IECDEDEDEHA2A3A0GCBA@AFIHHHFCGA0A0III
+36934A3A9B2B8C3C8D1D3D9F1H0A06A45B11C21D70E63D87C36B23A54A15I0G1F0E6
+36908D7C8C0B3B1B0A7A5A8B0A7A5A3A1A0A1FCBCDCAEHA0A3A8A9A9B2B7B6C0C4D0
+36872D5E6G3A00A43B26C82F16F81D83B93A84A25I2G2E8D4C2B3B0A8A2HGFDHA0H
+36843ECEEAABCEGA0IEFIA0GFGDBBBEFD@bccAEEFE@babaABAADGIA2IE@bccbabbA
+36784DAaaec@adehigea@a@EFFEA@aabgheaCEEFEDCBCGIEAaa@cdcccbbcgia0a1i
+36724fcbdeaCDEDAa@DGHFEHHEB@a@ACFIA0FABDFFFFFCBB@dgdBEGHHHA0IHEBCEG
+36664FEHA2A4A7B2C0C9D7E4F2G7A00A37A98B99D42E36D73C36B29A60A17I0G1E7
+36637D7D0C5B9B1A6A3A3A5A6A6A5A3A0HHIHC@CCBDDCGIA0A0HD@AB@@CEFEEB@A@
+36591acaBFA0A0A1H@bbbaBDDA@AAceceeaABBFGGEDCAaa@@A@cdbaa@@@aabfebcc
+36532@@@CCbebabcbcghgia2a0d@@AFFBBAa@BCDFIHD@abcdcaBCB@ACEFFDAadb@@
+36472a@abc@@BEHA2A3ICCB@@AB@cbcdeebadefhihhgecchihdBCaggfigb@@DGFDD
+36412@@ab@A@aegfc@DFFDEAaAEFDB@a@accc@Acgcbdd@BEFDCCDAabb@egebbeedc
+36350bccee@C@AEAabccbcd@DEDA@@BBADEAdaBA@@@bb@@aa@@ccfgddha3a2gfgff
+36290d@BCEECAAEFEDFDBBCC@CFDagheaADDDEGFAacbab@A@a@a@A@bbdcachgfggh
+36228gha0hc@CDHIC@@@@@bbbc@@ACEGGBced@FGBbca@AA@@BCA@@DEEDDBADAehfb
+36167AEFDA@BB@@AA@a@BEDB@BEHA0A2A0HCACDEFDGA3A6A8A7A5A7B4B7B7B5B6B8
+36120C2C3C6C8D2D5D8D9E3E5E7E9F2F8G4G9H3H7I3I6I8I9I7I5I6I7I5H9H6G9G2
+36089F4E8E6E7E3D4C9C9C8C7C5B9B3B0A9B0B7B9B7B6B6B5B3A7A3A2A1IDCGA1A4
+36056A4A0HIIIGGGFEGGEC@AGA1HB@AGA1GDGA0A3A5A2A1A1A0HEFHA0A0A2A2A1A2
+36011A1A1A0HIGDAbffecbaefcbdc@@cdaBCDCBA@AABCAa@BCDB@@ADFECEDA@CDCC
+35952CCCDBABCDEDacaab@@adefeccba@@bdebBC@aa@A@@acdeeehgda@ACCAacdcb
+35890cedb@@bdeeb@bfhfccefedbbefffeeecaacbaacdfgfed@adha0a0a0iia1a1h
+35833edfa0a1f@BCDEFEB@BD@ceb@CA@chig@DEDDDCEDCCCDDAABBB@aabca@@eifc
+35773b@acfdaAC@cefedeiigb@eiihfdaBDCB@a@A@@@CBA@@BB@caaba@BFHGD@ccd
+35711dffdbbbaa@@bdbADBacdeaA@@@@dffcbacdcbcbbdcdbADCCAacdgggeb@@@ab
+35649ccaA@ab@EC@bbddb@DFEC@cedegfgd@AaecbefecbADCbbBEA1A4A0FDCEEFGB
+35590bbaec@CEEDCBCDCC@@@@CDEGECBDEFFFEAacb@acfiia0gccdddbadgfb@bc@b
+35529bA@@CDBAA@dhhebb@DFGHECBCEEBBDBacaadga0a0feha0a3a3a1a1a2a0iihg
+35476eca@CAcedcefa0a2a2a2hdca@B@bb@ADDAAABBBC@@aAEGHHCBBBFHHGHIHGIA0
+35418IE@baacghgdcffeha2a0a0ifaBBA@@CGHHIIGDCCAAaa@DCbefggfcbdceebAa
+35359fgggfeecbaAEGHHFECEA2B0B8C0B9C2C9D7E6G2I2A25A81B70C97E10D95C71
+35322B54A72A19H4F2E1D2C3B9B4A9A4A1GEFGHFFIHIA2A2A3A7A8A6A2A1A1A0FBB
+35286CDGGEEDECBCDD@@DDAb@CD@cb@A@aBCDCAbfecbb@@@@A@bbbbcbAB@cdfec@C
+35224DCAACD@cc@AaegfebAAAA@ABFDBBCC@abdfghgbAEDCBCEECCDEAaba@bhihdb
+35162bccaa@BCCA@@beebacegdBDDC@ab@AA@@@@@EEDEAbdddcdfeea0a0a0a0ia0h
+35105d@@A@ABAadbCEAa@@@@bggeb@@AACDA@@ADDCDEDBaefedc@CGGC@aAD@cb@DH
+35043E@ccfffecdddecACCDCCCDEDCB@bc@BBCEDCBCFEDGHHFCAAacbaaba@BDE@CC
+34981@@CAcb@ACDDBA@BCB@accdfc@BAaeghebAB@aa@ABAbcaABagecdeeeffge@@c
+34919bAC@egfcabbacc@@@DFHGEA@@@aaa@bb@abbcfebabdecbaA@cefc@@@ab@AA@
+34857aba@acehfeca@BECA@de@@a@@b@CCBA@@accbdb@BAA@acbBCBCAbcb@abdbbc
+34795eefhhf@B@@@@A@@CCAacdga0a1a1ie@ABDDAcaBAbeca@@addbAEHFC@bdb@a@
+34736ab@BCDE@b@A@ABAACFGBbcbbdaA@@cdb@ab@BCEGDBCC@ACAcecb@BB@@@@BEF
+34674E@dfcAEHGDCCFECCD@dhiia0gca@@A@dggedd@BA@a@CDDBbfea@@@aBIA2A0F
+34615FECFGHA2A6A9B3C0D0E5G3I3A04A04I2G2E7D4C3B4A5A1A0IFDFGD@eia1a2a1
+34577gdd@CB@@@@@@@aefeffd@@@ABEE@cccbecAacdigdegheaABCDIFB@@Aab@@@@
+34515DEFHA0A0GAdfeda@bb@CCABAaaAA@@abddbabccbdca@@CDEEBbcbb@@@@@@BD
+34455CB@cffedc@abbdefffggdb@A@b@@adec@FGGHIEABCEEFCaegeca@AA@bba@@@
+34393BBBCCBBCB@@DFB@bdec@@dia1iedbAEGFDCAABEFEC@BBACEEEFDCB@@@@aehg
+34332gdbabcbbba@@@@A@deb@@addccbba@BECBCFA0A4A6A2HAbafgc@aa@@@@@@CC
+34274CDC@ba@BDFFC@bfeba@abaEIA0HGD@dfec@CA@b@CEB@bfhigdaCCBCbia1a2a2
+34215iddca@@bdc@ABECCDEC@@EHA0A0GEAa@ADHA0IFbia0igiiigcbga1a1idbcb@
+34159EDA@@A@@A@dfdb@@@@@@AA@bacc@@AAabbc@@CEFCAFA2A0GFCA@ACCADGGGHG
+34099EBA@ADFA0HC@aa@DFFAegeeedcbabfgdb@@cefedeghgggc@@B@deaA@afe@@@
+34038@dfia0ggfeba@AEFGA0GA@BDCadddc@ca0a3a2gfgigbAA@@egfgecbebbbA@d
+33981aAACCADGHIFB@@aABAACFEB@acccdc@CC@bbbcceia1a1ibB@aabcb@@@A@@aa
+33921CGFAbb@@@AAabbca@ab@AAAcebacfd@BA@@BEGEEEC@@@BBaefc@aeihbBFFBB
+33859CCB@bBFFEBDGHA0A1IFGFAbba@cha0hccb@aa@@a@FA0FCA@@a@@@AA@@BCEHG
+33801FEAaa@BEDBCDFGHCdcaadd@CFBbc@ABCBBBA@CDCB@A@b@aca@ADDA@bba@BEH
+33739GDCBB@dffca@@@@DGFB@abbbegdabdfgfeeebBEGGFCCFFBadaCEBa@a@CDAB@
+33677@DA0A1GCDGHFEFEDCAAaggha0igdaababdcdeeeecceeaBEDBbea@@@bbbegfb
+33618@ACECBBCBAbc@aefghgaCC@ba@b@@@bdbabfeca@A@befbacbaacdeggecbAAc
+33556fdb@BAABCEDCCD@bcbAB@@aceecca@@@EHFDCEDBDFGGHIA3A4IFCCAbeg@FGF
+33496DAbcbcedc@CCBBCEEFDbffedcbcb@B@cdbaACAbddfhgeddddecbbccdcddga0
+33435a0gfbBDFEFHEAABCA@@a@CA@@@a@@@ehd@@@bbbdccaABAaceghededcgfcbce
+33374ea@AB@@cghfdc@BAAEGHECCCAbccbbdebBFEBACCBBBC@cdcb@Aacdfia1gaBD
+33313EDHA1A3A4A2GDFDAB@ACCadedcbaab@BDECafha2a2gfebabbdffc@CBABCEEC
+33257CCC@add@DFD@cdc@EA0A3GA@@cdbb@B@eiiihda@bbb@@@@AA@@@AAcghddd@A
+33197B@bbb@CCBBAAB@ddeebAA@@AA@accc@CBCGIGCDBaaAA@bffaAACD@@BCB@aa@
+33135a@AaaA@ddcdcAFFGHGIA0IEBAEGC@cdba@@cgfhhda@BEEBab@adcfa1a0e@DD
+33076@bbc@@deeaAAabb@AA@bcbbbaACC@dfefgfecccba@ADGF@@BDDCBACGIHHHGF
+33014BACC@@DCBABCFGIA2A1GD@dfhfda@dgfaADDBBCEEB@@@bdca@@@ACEFEBA@@@
+32954a@@AA@bhhecbcca@@@@@adcbdeeddeffeedccdda@a@@bbaacb@@@@a@BAaccc
+32892baa@BCDB@AABBAabaa@CAb@DA@@BCC@aABFHA0HGGB@@BCBABEIA0GEB@BDFFC
+32832@bb@@@@BCB@@BAACABEIA2A0GFDBCEGGGFA0A4A4A6B0B4B5B7B7B6C1C9D8E8
+32786G4I5A26A82B89D82F79F16D04B61A76A31A02I2H6I0I4A02C9c8d5c9c2b7a9
+32761a7a5a3a0a1a2a0fefhgefeegia0hf@@beeecba@@@BDABEDAadedcbcha1id@A
+32708DDCDB@@@B@a@BCCCCCBA@@baA@acdc@BA@deha3a4a2geecaAAabceecb@acb@
+32649BEHHFFGEDEIA0GEFECGA0GCABDEFECAAABACBCDEHFAbegfbaab@EEBbdccdgh
+32589igcba@bb@cga0ifddeggedb@a@ab@@abca@bdcca@cb@ADBbaAEGHEA@@ABA@d
+32528feca@@ccbdfdefge@BB@b@@@@CEFFDA@aaabba@BBABCDDEFEDBAEFB@bfd@@a
+32466ccba@@@BA@@adgea@ADDA@@@BEB@aacggc@@degigdbAA@@CEGIGCB@bcb@@@A
+32404B@b@@a@@aca@acc@EFBabdhihgda@AGIHEAA@beefha2ica@A@aA@dfffdaABA
+32343AACDBcdddfgda@@ccda@@AA@aaa@@b@BCA@AGGD@b@@@@@@bc@CDDCBBBBA@ce
+32281ffdfdacaACBACDCABFIA0Fbec@AAA@bcffba@bcb@CCbgeacec@@a@aaAA@@@a
+32220AABACFCaa@BDFHHBbfhgeb@@a@@bcedee@EA0A0HDB@@@a@BDDBadbb@@@@cgh
+32160dabaCFGFEAABABBCB@@chiighhdddca@@@a@bbbbaegeggghifd@A@@AEEBACD
+32098BA@dia0a0a2a1c@@bddcbcecbcaaaBCBAB@b@BBaa@AC@ha2a2a0gc@BAdggfe
+32043eed@@aBDC@cghgfedb@AB@@@@@@abbddbcaa@ABBFGFC@chhaA@ddaacffdbba
+31981@BDDB@@@@@BCA@@@@@BDB@bba@Abfdaaa@@AABBB@cdccccccbbaaaAC@bbbbf
+31919feeghia0ia0a0e@A@deccca@bfgc@BBC@dfffcba@bdeb@a@aegdeeeeffdcbc
+31860d@CBAADGFDA@BEFCaa@a@A@@AAA@@@@@@@BC@@BA@cfda@@aefha1a0fcdcced
+31800bbc@BDDCDEGE@a@AB@c@CDC@ehiihfggfc@@@abed@@@@@AB@@@BAAEFGHEaeg
+31738cBDFHF@@@@@@@A@bc@@bdcdgfaAac@A@degdaccdc@AAAA@A@ca@aegfghffef
+31676dACBGHEBcea@acbdefgfeeggd@@@@@@ADEAaa@BDDA@@@ACAbcdfeaA@@a@agi
+31614ifgihffeaADEFBBAabbceaAA@BDAaehieca@aegffdb@@@B@@ACBB@bbdha1a3
+31554a2gaAEFC@b@BEDBABBBDEDC@degecdfeb@@AA@@BFEB@acefefdba@abaceddc
+31493dgf@DD@@@@@@acfhgfdbcacaBEDBac@bbBDEECCCCCBBbgga0a0dAAAaca@acc
+31433baACCCDD@daDGBaa@A@@A@bcaDHFEFHECA@CFGGFDA@CGECBB@adgghhgbADEB
+31371@acec@BBCEFEB@aaaaaACDIA0HEDDCaha3a2gea@@@bfc@DC@a@@cbbbbehfbb
+31312b@aa@ACCEA0GEEFFC@aACB@@BDCEECBA@@baAEEAbcc@aha1gdb@@@BCDAbdec
+31252@@abaaacbbccccabfhffgfffbabee@A@CFDA@@a@@@@EA0HDA@a@@aaA@efgeb
+31191@BCBb@BDFIHC@ACCDFGHHHGGGFDbiifefc@BDAbb@Aa@AEGDBCCB@ceeeec@BF
+31129IGECAaaBFGDFFDCA@eiihiffia0f@B@bcdcaAEFGECBAa@@cdaA@b@A@behhgi
+31068ifdc@B@bccefdcdcbaaefeddfgfdb@CDDB@BCEIGDB@bceaBDC@bcca@@AAACD
+31006FFC@@CCA@@@becbea0a0fb@@@BDAdha0a0hfedc@@aab@@@dfddb@a@CDBacb@
+30948@a@A@cb@@AB@@abBEDCCABB@becaaacaBB@addaa@@cfe@@@beghhedeha0ia0
+30888a0f@A@@@@bb@da0a3a6a6idb@adgeb@cffcabc@A@ba@AEC@@@@ACEEBABDCDB
+30831cdbbabb@@@dea@@cb@CCBBEGHIHA0IA0IC@@@abb@EHE@@CDCGHAbbacbccaAB
+30771CBA@bga0gcabcbCFDBBCC@ega0a0gcbcdd@BBEFGGGDA@@BCBBA@BDDC@dfcba
+30712a@@ceeeb@AC@AAaa@@@ba@@AAabd@FIGGBceedccaA@bccaBHA0GAbca@@CDBC
+30651A@aba@aa@BBCDB@cca@ab@@@A@dcca@aaBFGGFCDFIHECB@bcbceeha1a0feff
+30591dc@@CGGFFFB@@a@@bcaACDDEAbd@CCCCAA@ACBcedc@@@@ceedccaccaABAABD
+30529GGBbedaAA@a@A@@cbAC@@@B@@BCCAA@bcbbee@ABCCAAB@ab@BCBDFGFAbff@A
+30467BEGGGDAaaDIFBCDCCDBBDDCCB@@abcced@@bdhfcbb@@ACBADBbcca@@a@@ABB
+30405BCEGFFHA0A1IDbfe@BBBB@bbacb@@@@AFA0A3A3A1HEB@AA@@AACHGEFA0A1D@
+30351cdb@BCBB@cbBBBCDEEBCCABAda0a2a0ffghdbabbbdcaBC@ea0hfc@@ADDAAA@
+30293bdeecefcabb@acedbADBaffhia0gbAC@ddcbbaedb@BCGFBABA@@@cc@affede
+30232ffgha0a1ffeddb@ab@AAABAA@aabca@ACB@bccbcceihaCCAacdd@C@ccih@EE
+30172@baADDBac@BBDECBBBA@A@adffeefddea@ABCDCbdca@BB@bcdbADDBAA@abce
+30110c@AA@dhhffddbabcaABDDDEFGIA0A0HBbbaaa@@@AB@@@BCABB@@CBBA@cdebb
+30050deha0a0f@B@da0a1hdccbceggbBEEBafiia0a1iia0ihha0a0eaA@@A@@A@abe
+29997gia0a0ihfcdgcBGIIHDbc@AB@@A@ACBABA@@a@BDDDBaaa@ABDDGEAABBBDFE@
+29937cecbabbacedcabbbehhddfc@@@@@bb@CDA@@bdabeaAAABA@A@@BFFDB@b@CDD
+29875A@abeegd@@@bcbbaBEHA0A1A0FCAADGIIA1A2A3A3A1IIHA1A1HECA@b@@bbAD
+29823EDA@@@@b@Abbbdea@@b@FFB@@@ACB@chgaCDCDAcc@A@a@ABDBCDCA@@aacghh
+29761a1id@@AAA@cc@A@bbbb@@ACCBB@cecbBDAaaADDEECBCFCDGDA@@acdcbbdhif
+29700ebadfe@DCDFGGFCAAAa@ACAbgf@C@acbAB@ea3a4a0eAGHHE@a@CB@ab@@BCED
+29641BA@cca@@ba@@abaaa@@@BEDBCCCCBDHA0FAaa@bdfcBECda0a0ha0a1a0gaDHI
+29585FDACDCCBBCFHA0A1A1A2A1C@@AAAA@addbbcba@ACDEEGEB@aacb@AA@A@A@a@
+29528cfda@BECA@@@@AA@dbB@bbdca@@@@AEHA1A1A0IA0A2A2A0GA0A0E@@aacehfd
+29475bbcdggefgfed@BC@cefeb@BCFEADFD@bccca@@BEBcgfegffggc@@aAEDBB@bb
+29413@@@bdfddeghfdedbbfgd@BA@bdca@FGDCAAAadgihgfbACDDDBAbeedc@DCACB
+29351@BECBac@DFECBDIA1IGDCFFBaaea0a0fedaadeegeabdb@@@@a@DDA@ccdedb@
+29292@CBa@BABEFD@ddaA@cfa0igb@bdfig@BCC@aBDDB@@a@CEGGCbc@CA@@@aaACC
+29231aded@BCEFC@b@AaaBCAabbcedefc@baCCAAAacdcbbbddeefeccecACA@@@@@B
+29169@dc@ABCCAabbbfgha0a2a0hhhgc@@@@@@becb@A@@CED@ed@BAabaBCCCA@BCA
+29110cfaEEDGFDBBA@@@cfgccefffc@@Aac@BGGDCFA0A1A0Dabehgda@adggefia3a5
+29052a4a2ggihega0a0a0a0gccdfdcefghgec@bha1a1igia0gdedefcba@acddc@CE
+28999Bbdb@@@bcccdcdfede@FFFD@bbcccdcbefdca@acffeddegheccfhgc@BAcghh
+28937edaBBCDCCEFD@abceaDD@ddbcfggebcdb@ab@BAbb@@bdc@ADCAAAACEHHFCBC
+28875Acfigb@abaa@AB@bdefgedbbbbcddbCFFGGFIIGEEFEEDFEB@@@@bcdedefd@C
+28813B@@BBaeggffcBBA@adha0hggf@FD@@A@bfefgdc@BFGEBA@@CCABDHHCbaCC@@
+28752CDDCDCACHIIHC@@CCBACCB@aaabca@@@@@A@acb@@@@ABACCEFHHGDCCCEFFIG
+28690GIA0HFGGFEDBCEDBCCDDFFGHGHHFCC@AB@aa@ACA@BECAaa@a@@beecccced@@
+28629@a@EGEEEFIFC@a@@@acdecadhgddddedaCGIFDEFGHGB@A@a@ACBBB@@@bbaa@
+28567a@@AAAaehigegeaacffia1hggfgihfcaa@aecbabbcd@@CD@a@@BBCDFC@@a@B
+28506FFDC@dhigedacdaCD@@@@@AEFB@aADEDC@@ABCCB@ABC@@@BEGB@@ACC@@BBAA
+28444@dia2a3ga@ABA@BDDCBA@abdfdaabcffedffbBDFC@@@BGHHA0IGIA1A0IGE@d
+28387ia1a0gaBAA@c@B@@@aaAA@a@BDGGFEEC@@AAaaba@@BDDCC@@CCC@@@@@abehe
+28327ddaB@@ACC@@@CFEAabehgecADEAACBAB@aADFGFFCCCDEEB@dfecdbADC@@cda
+28265@@@@adfeaCCA@aceffga0igfcaABA@@A@ddb@CDB@a@A@@CE@efb@cccb@AB@b
+28204fd@CHA0Ebdegeb@BAaaaabc@@aABEGE@@A@@@@CFDBBHIFGFCEDAAB@deb@ABA
+28143@cbACEDAbfgigfffia3a5a5a1a0a0igdAFD@eghfdcb@bca@aabdeca@@AAA@b
+28087fhffcBFFFEA@@CEEGEDDEFIIGEDCDDDFDA@@aaba@@egd@@BGHECA@ab@GIDCC
+28025Abfggdccbacecacddega0a1gba@BBA@@@A@fgeddcaadfb@BCABDCA@@@@bcef
+27965eb@A@cb@ACCB@@@EGA0IGHFBbfgbAB@a@A@@@@@abcdbdeffca@A@bb@@ab@@B
+27904FFEECBA@@CCB@CCBB@@@BA@AA@ceia0gc@@@A@@@@acdfgghec@FDBAbecAac@
+27843ACCA@@bebACBBDBaefha0gcaacc@a@@AA@@@@acddccbaa@ABBCDFGEB@@@CCB
+27782@adbabecABA@@ccbaaDHCac@@acfedbbbAB@aaaabba@ABBCBC@egd@AA@ADDE
+27720EBACDCBAEHFCDFGEDB@beeebaaa@chihfdcdedb@bcbaaaBBABFHHEBaddcb@A
+27658DDCB@@A@@ACEEBABAAEGFGGC@@@@aabca@bcedbdb@A@@dgeb@BA@@CHA2A5A3
+27599FBDEafggeeegfc@a@@abddfcAafhgdaadefedee@@cia3a1gc@A@ABAA@aacb@
+27539aeeeggeb@@beggia0a1a2a1iie@BCA@@adb@BCB@@@@@BCB@@@ABBDDAa@@@AE
+27481FCbcAED@cffca@ADECABDDA@@adhihfcaBFD@@@ABB@@@bb@DEC@aa@DEB@@@e
+27419d@@AB@bb@CAacbcefbCFDCC@aBIIEDBAAA@@@aeebea0a1gddgiea@ACEIA1A2
+27361A0ECBBACEFCAA@@@@DDBA@A@AAdhhhiffffdb@ACEB@acb@aa@CEFFGGEDEEED
+27300B@AB@aba@@abbbc@BC@eccccdbcb@@dgdcbccaBDEGE@@BEIIEBcebaaacbaA@
+27238ACBA@aa@@a@@aaAEDCDDA@@BAACDED@@AAaeebaccaaddcbddeghgd@acccaab
+27176ba@adgfcbdfehifbccbbaAC@bedbbcbbcbAEE@aa@ABCCEFC@@@Aaccddb@CD@
+27114fd@BBCDEFIGB@a@@ABCCDDB@@aehedb@BCAcfa@@cedc@AA@AAB@bcaache@AD
+27052Dadfffdb@abefeegiffa1a5a7a9a8a5hc@@CCA@cfgfa@AFGC@@bbdda@a@@@b
+26996eefcABagha0a5a3hdaADCBA@cbaa@@BDEEB@@abeia1idbeggd@@aBDDCBCEFE
+26938CFHFECA@baa@CCBCDDCAABAB@beggc@@BGFDDAac@BCEBCDBBDEFFFFFC@aAEE
+26876CCFIIGCDEDDAabdfffefefa0idabdfecbdfeecbbfgffeeeb@cgihfeeia0a0h
+26817fcbcecbcb@AbcebBAaa@ACEGIHEEEGA0A2IHHHA0A0IHHGEDFIIEBBadefdca@
+26759BB@a@bcaceefdabgia2hc@BBAAa@CGEB@A@cfa1a1iedbaedcfffdccb@@@bba
+26700@ABBAaha4a3hfc@AABDFDCA@@@BDA@acc@AACEHHFDCAACCbggdcadgggc@AAB
+26640BAA@aa@@DHGB@@@@AAab@A@a@AC@dia0hd@DCBABEGA0A1A1A1A1A0HFEDDHFD
+26585EEC@@BDDDFHHFDBaegffghfdbbdddb@CFFFFDDECbffc@ADDCDBCECAACCB@BB
+26523@a@@a@DAa@bcaA@@@bdfebfa1a1geghe@DEBAAABDB@bdcegfeeb@@ba@@@acd
+26463b@BDEFIA0IHIA1A0HEA@dgec@@AAAABBAA@deddbc@@cfeb@BCDDBB@bc@BABB
+26404ADFDBCBaeedfgfggfgfd@DC@cba@@@@@@aa@@ccabdca@BAcffc@@@AA@adeee
+26342ega0a1f@@bdc@Aa@A@@cgheecaaabcegfecaabbba@@bdgiiggghfb@@AABab@
+26282a@@aBC@bdcacedeedc@FA0IFDD@acaDHGAcha1ha@aa@CC@bbbbcaabdfedbbc
+26222dcdcbcb@CCACC@aa@CCAacbAEEECAA@abbcebDBcghca@EDEB@a@CHA1GDEHII
+26161FDB@egfefifcedcfd@CBAAA@BEFECAA@dfga1a2heeedbbaaAB@ceeaBBA@aad
+26101gc@@b@B@gigega1a3a3a3a5a3a0heeggda@BAceedaaaAD@cbaaaba@@ceebc@
+26046@@@aa@@dgia0ihhhhhdABafdbceda@@@BAadbaeeca@ABCBaaA@bddaacdbbfg
+25985c@ACCA@cia0hhgfdcca@AB@bcaaADEDCBBCCDGGEFE@ceegefhga1a4a3a1ged
+25928b@AA@@bdebBDFD@bdabb@@bbfgfdda@abdeda@AFHEBA@@adcb@@@aba@bga0h
+25867fgga@@@DIFBAAAA@AA@BEEB@@addcaceba@@@@aeda@CDCCA@@bba@B@ba@ACC
+25805AaffaDFFC@cc@cfhb@A@ba@@aABDCBA@cga0hhiie@@AA@dbAAACCBBEFB@bdd
+25744b@bdb@@a@A@@C@ab@A@@abba@A@ehhiieddffc@CECCEDFF@eec@BBBA@bbAAB
+25682DEEC@@Aadga0a1gb@B@bbabca@@adeefghhhgc@aababdbaceeAHHGGDCCBAA@
+25622cccbaccbcfeefedcaa@AAAAA@a@CEDA@a@adffefgfggfeffdaBFHFFDAaba@D
+25560EHGCBbffaCCA@@adee@B@eda@baBCAB@aaaDGEDDA@@aa@@@dc@ABaecAFE@bb
+25498b@DEC@BDBAbcccddfed@@CDHE@@@@A@ABCD@@@@@@@@aa@@beddccaABCCCDDC
+25436CCBAbdccbBDC@@aa@adeddbbbbdga1a1hbBDGIHDBBEECAABCABAab@@accb@C
+25376FHHFCBGFBBDGGEDBA@CECADFEDGEAbb@CEAbcabeefcabdddaCB@@CDCAacb@A
+25314a@@bddbcdca@DFDC@cega0a2a0gdbddaCFE@bda@a@cecb@AAAA@A@@@bbCFD@
+25255ddcbaaADB@@@@@@aaADA@AEDaedeeiifedcb@aabbabb@a@ACDBabcdbbb@AAa
+25193cefgfbbdffbc@DA0A4A0C@abcb@ACAbdgihd@bdcAGHEDBea0a0hd@@aacfhif
+25136ccda@@@@aceggfccffdccdcccabcccdega1a2id@A@a@@@bb@CCCECACECAAAC
+25076BAacbaacggb@@BAa@CDIA0IIGB@aaBFGFDDBABBA@cbBCA@@@@@@AACHA0IHHF
+25016C@bc@CCC@beecdfa0a3a2fa@bdfedbaAFGFECAAEHA0A1A0Dacddba@@@aacb@
+24960C@ceia2a1fcaccb@AcfffebABCAcdaa@DDCDDAabbdia2a1a1a1hea@cfiieaA
+24904DEEB@a@DAcdaabc@DHGECABBEGGFFEFGA0A1A3A5A6A3A2A0HFGECA@BB@bb@A
+24850A@@@@CDA@ADC@ed@@aceia1a1a0gedefbBFFB@@@@@@aaa@accbbabbbcegdcc
+24791@AEFAdeecdcacba@a@ABB@dhgeba@BBAchgdca@BBA@ABCBAAABFGFFHA0IGGD
+24730@bcc@ACBAab@CDA@a@@@@@bdc@@@AA@bbccb@BA@@adefgcA@a@BCDAAABED@b
+24668da@@@bdffedca@bbaABbdc@aghebaa@AabAC@bcaCCA@@DIA0A0IGE@a@CDA@A
+24608CCAcccegffhgfdcdcdedcdcb@A@@@@CB@a@AA@@AA@@BDAbeha0a4a6a1hda@@
+24550beigfghhhhgbA@@ADED@a@ACDBAaeeca@abdba@@CGFC@@AAACEFD@eefded@A
+24488CDDEGHHDAcd@@A@ea0iaDGDEGHIIDcfeb@BA@cbBBACCB@acdcbacdbbcefghf
+24427ddeia0a0ie@A@@da1a4a4a3a3a1idacedfggiigecaaa@@@cdbbbcaADEEGIIH
+24373GDac@A@@AACCA@@acaCC@b@A@@a@@@ABC@@@ADDAbddcbfha0gca@A@aa@bdii
+24312ggfggffeaBA@A@BA@@aceccdc@@@@@bbcia5a5a6a7a1gdacd@CDEBa@@bcdcb
+24255bbfhhfc@@begffgha0a0ihefdaceghfehg@A@begd@@ABEE@bbb@B@@ADCcggd
+24195b@ACBA@ACB@b@ccbca@AB@aa@aaba@ehhgga0a1hd@AACCBacdefgfdca@@@@@
+24135efcbbeefa0a2a1gd@CEDC@@A@ABBBCAacc@BBA@BDB@abeia1a2a0e@@@@aeeb
+24079@@@aacc@@abbbdcc@EFAeiigdefc@@B@@@@ab@ac@@@ABBAacdbcb@@ABA@BC@
+24017acffdbacega1ifaaegfd@@AA@aca@@a@CEC@acedefebADED@eia1id@A@@a@A
+23957AA@a@Bacha3a2igdcfgdbdffffffgfcabddeda@BAABA@dha0eba@@AEDCBAAC
+23898ECbggddca@@@abdc@BBbefhiecdd@BA@CFFEBBCEE@adgfb@beecaaa@ab@@@@
+23836ADHIGC@@ABEB@@@BCBaba@aceha0gcddee@A@@@@@BCCA@bdfgeeefa0a1gbaa
+23777b@EGEDDCBBA@@BCAaddcegia1a0ieba@ACED@fiiddffdbbcbbc@B@@BDB@ADG
+23717EB@bcdaBA@cddceggfeedc@@CFFDEFEDCEBacea@@BFC@cb@a@abcfhgdga4a9
+23657b0a9a6a3ifeedaa@BBABBDEEBA@aDHF@aaegd@@caefaDDBabb@@aa@CFFEAbe
+23599fd@adedbAAcffha0ifaAABCB@aec@A@@A@bba@CCB@@@@@@bccedehgc@@ABAa
+23538dcdcca@@CGD@abeiidcb@@cec@A@bfgga1a1a0ifdba@BBBCECBDEC@CFCabba
+23479BFIIFCCC@@CDA@AA@@@bc@DFDCCAacb@@@B@eedb@AA@caCCAaaceccffb@beg
+23417fhfc@ABBCCBBDFGD@adfffgihebbcc@A@@adhie@EFEBAacdca@@@@@@BCAAA@
+23355ba@acaBCAcbaa@@@CB@b@abeeccfgdb@ADHGD@bca@bgia0a2hca@@bdbbdfec
+23295ea0a0gecdff@@BCC@aAA@@@ceaCDA@@bdefffea@A@@ABBB@dgfaABBB@caADG
+23235DA@BCBaddcbcb@abdb@BBBCB@bcb@aa@a@AAacaBDFDAaedcffaA@@a@DDA@eg
+23173fhiifcaADEFGC@cfhhe@@@@@@ceeb@A@bddecAABGGIA2A1FCBAAACFFAdeedc
+23113ehiigfa@cdabbddb@@@dfc@@AEIICbfgfhigdbbcc@aedb@@cdfigga1a3a3a2
+23055a1hgeehhfeaABbehihfcb@@@@@accb@C@deegffeccc@A@@@acdc@@@ba@ABCD
+22994EDEC@bcca@ccacc@@@ab@AA@aaAAbffffcbdffffeecAFFEDAacfha1igha0he
+22934cddb@@@befhhe@@abaBBA@@B@deba@BA@CC@@a@@bbaBEGFC@BCB@acfgd@@CB
+22872BB@acdd@accca@@@BBAbca@@@@@acaabddccbba@ea0iffeccfgbABaebbb@BE
+22811HDafhhecdb@@bcbedBFEEECBBBB@aaabccdca@dda@@aaa@@@@ABCDEEDABDEE
+22749Dab@AAAAACBB@aaaa@@@ACDFDBAab@@cggia1hd@CBACC@@@@@BCB@BDC@debB
+22688GIHFD@a@ABCAbca@aADCABCDC@@BA@abbefcAC@@AEHA0A0GFCCCAaaab@AABB
+22628@@@cfgfeedghedcdec@@bbaa@@cbAC@@CECADEEDAAAACCA@cfhhdbbddceedc
+22566aeeAB@@acffdc@BCC@abdeddeec@@@a@cc@CCA@@bec@@b@@bddbabcaaea1a3
+22506a2ifhhe@ACAcd@ABCBCC@aCHA0A0A0IGEGFDB@cedBEGEDCCCCAcha1hd@DDFC
+22449@@A@bfhggia0hdcddegggeb@@bcba@@AA@@a@ADBaa@DCA@@AAACEEEBaaa@@a
+22388ab@BA@dhgecaa@DECCGGC@@CDFHHC@aaccccdcba@bba@A@baACDEFGGFD@aAA
+22326@@afebba@@AB@@bc@BDEC@decaacccaCGHECCB@cb@@acdccc@@@acbegfffeg
+22264ighgbEFB@@aaabedca@a@CB@cggd@@adge@CCFFEDB@ABDDAA@@@ACB@a@@@aa
+22202ceegiia1a3a1a0ia0a0a2a3a4a2a0hecb@B@a@a@AA@acb@BDCA@AABB@bbb@a
+22151efecba@aefggaCDC@eeddefc@AA@BA@AA@a@a@@@@ABBACBAA@@ACEDCDEHA2A1
+22090GDA@bb@BCCAaaaBGA0A3A7A4A2A1IEA@abbcb@a@BB@a@@@BFA0E@aba@cb@AC
+22035EBA@b@BC@a@AACDCABGHIA0IIFBa@Cab@@a@B@babceccdda@accbcb@AAbd@@
+21974@@@@@aaBEFDAACFECAAafdbcbbbc@BB@bb@CCEEDC@BC@@@@ABB@eigddfga0g
+21913bacc@FDABBB@@@bceefgbBA@aaBFDA@aACEFFFDC@ABABBchd@@@@CC@cdga0i
+21852geb@addb@ABCCEFDaeddfeb@@@A@a@CBAa@@@cdcdbac@CCBA@@@Aaeedca@BB
+21790BA@bbcaBAAA@beecceddcabc@@aa@@b@CDDB@a@DGIGFHA0FEGFED@a@A@@ADG
+21729GDBAbbb@aaBCA@ACC@aACABFIA0GFCBBA@DBA@bbaabaabbcaaa@CEFBbdeeed
+21668ddaAAacb@BB@a@@@a@CDFEDDFGFBbdc@@@A@@CDCBBAAAA@A@@@@accbdda@bb
+21606AECACCBBCC@ca@CGFBBB@accdebBDDC@bbbbfhhgedeeec@@@CC@behheba@B@
+21544adgfbbcaacddehigfedffffec@CEEACAccbefedaAHA2HCBGHFDDDEC@adhhcA
+21483BAabcb@@ACBA@@CDB@@@AAacdcaaa@AB@cee@FGB@@bddceghihc@BCA@aa@A@
+21421@@begie@Aabba@@a@bfea@ba@CECB@dgebbaacdc@@ABAAacbccbbb@@@A@baA
+21359@@accca@bb@B@ba@@AB@fheaAA@dea@@de@C@@@@affa@@@ab@aabccaABBA@a
+21297bbcffed@FCa@@bedcffc@BBBCEC@b@AdhheBEDCCCEHIHFBab@@@cha0a0heb@
+21237@BCCEGGHHGEB@@CB@eecaaba@A@ADB@aa@@bbbcbcbAFA0A0HGFBAAaff@CEAc
+21177b@ACDECACEDDCFGFEDDAbefeca@B@aAA@@afhecefdcdgecdca@@cffebabegg
+21115fffdbde@DCafa0hfeefbBC@eedc@ABDEDCAA@cfeca@Bacfa0a3a2a1gb@acb@
+21058@@@@acb@@@a@@@Aaeeca@AAbd@@cfd@@@@abACA@befcaBGFCbec@@adia1hc@
+20997A@a@@@@BFC@A@CDED@@a@BDCDFGHFC@ca@bfghfbAAbcbc@DCaeggfgha0a0a2
+20938a3a2hgdaba@A@ehfbaabccdba@BBCCA@@CCB@cggfeaACB@cgghe@CEDBBB@@@
+20878CFGDBDGIIGFEA@@cceha0a3a0igbdedc@CEC@bb@baA@@CEDadba@CCafgdec@
+20819bdfea@cehgdddeeffeb@@@bbAA@@BCCCCDCAcdACA@@aa@aa@A@ba@ABA@ab@C
+20757FGBcghcCDEGGFFGHGDAaaaaa@ABCCA@aaBEDB@baaadfba@@BEFFDaha1a0hd@
+20697@a@@cdaAAAFFBaaaa@CHA1A3A2GDCDBaga0f@CDDB@acccda@abdeaAA@@AABD
+20639GHFCbebaBFEAA@@A@aabdeddc@FA0A2A2A0HD@bbdfhifbfgggebaa@@cd@B@@
+20581BBcia1a0hhhfffhggecedbbaAAB@ffeec@@bca@@@DGECB@@abfiifddcddbbd
+20521aDGGD@ed@BCCA@a@@@@A@adfdaccdb@@@BC@ga2a3a0a0a1a0ia0a0ihhfaA@a
+20467@CDBBaefcAEB@@BHIFDCDB@cbadfebb@ACEEAbcc@@@acdddgfd@DHFEDDCBbe
+20405ghgfaCFGBbcbAEECafigdcaadd@@@bdcba@addcbaa@acdddaABABA@AA@acda
+20343ADDC@dgd@A@a@@@@acedaCC@@EFAaabaBCacbdhifaBBbeeeecaadeaCEGGGEC
+20281C@aabaBDCEDCCA@A@@@BaecadedaBDA@@BFHHECC@a@@acfe@DB@bacb@@aded
+20219@DFFCA@@@aega@cfiheeecaacbAAACCB@edcbdeedcedeia0a0a1igggcaa@@@
+20160ACEEC@cieAEFBABDCBDAabcc@AAABC@aa@begd@DGD@@bedbceb@adedecbbcc
+20098a@BCDFC@@BCBaca@ACCFFC@ADFEAACA@@@cdega0a1a1hfccbbdedddcfe@CEC
+20039A@aaeedcab@@cb@ADD@ACEDB@bddfggihigeedb@cc@@ba@@A@@@@@@@@de@CB
+19977bedc@A@@aa@@@ABBABBAacaBCCBCGFC@abdca@@BDDBab@Aaeigdb@acddda@a
+19915@@@adfc@@DGE@@AFHFFGEEFC@dededb@bcbaa@@eia0he@BAadfea@AA@@@acb
+19854cfhgfdbcbdcb@CDCB@aabcdfffdcbdfefecc@bbCFFEB@eha2a6a5a0hfb@DHI
+19796IEEDB@aea0hefha0hfdegfghfaCB@acc@BCDB@beedeghhdabehia0iia0hbCF
+19738FHA0GEA@@@EGGIIGFD@cb@BABB@acdbaaACB@@@@@CFFHGFDBBB@aAEFEab@@c
+19677efgghgcbbdfffhgeddb@CGIDA@ba@a@CDA@aeha1gccaCEGA0IDDHGD@@B@aab
+19617@@@@@@BCadeffeca@AA@dgifha2a1a0hhigeeda@@bdbBEDGIA1A3A0FBbefdb
+19561a@aeggc@@@cdca@acffhha1a1f@CDEFFFCBCAa@@@cdccdea@@A@@a@@@@@AEE
+19501DBA@acddc@A@egfb@acb@@@ADEDB@a@@@@abcbdffc@BCA@@@AB@ggaDGECCCC
+19439DEDDEDA@@@b@DDBAbc@AAA@bb@aa@A@ea0a0a0idabc@ACDCC@@@AB@abee@be
+19380caa@bgigggeccccaAAAA@@@B@@CCDDDCDDCBCCCGA0A0IIA0E@abb@BDAbbbce
+19321gcaaa@@AC@@@DGHCccABabaABBCEDBA@@@aaAB@abbba@@ABFIA0IEBCGIIA0I
+19261GC@aeefedccaBFFCCEFC@@@a@CA@dhihfedcabdc@EFBaga1fca@achhgiigc@
+19200AA@@a@CBAAAbhigedeebabcfhggeccb@B@@A@@ceaABBA@aa@aaBA@dgeb@@@a
+19138efcaA@@AAcgga0a1hdba@BCB@a@@adccfie@BCDBCCAAA@aaA@cccca@@cdbac
+19078c@ACC@aacdb@bcbceeeggeeedbCFA@ga3a4a7a7a4a2a1a1a1hhiia1a0fa@aa
+19027ceghigc@@befedcc@AA@baaAEFB@@aeefha1a1hfecb@AB@cffdc@CEBbcaace
+18967fhgfefgihededeecb@@@A@ab@afa1a2hdaaa@Aadc@C@abbbbaa@@CDEFHHE@@
+18907CC@@@CDB@@ADGGHGHIA0HDAADEDBBED@defecc@CCAaa@@@bedc@A@AECCB@@B
+18846DGGGIFCCEEDDB@beha0fdccdeeeffghfefdbaaBB@@@@acfghgcbddb@@dfeaB
+18785DBAA@aa@@@BCBab@BEB@ccacefhgeaaaegeACCEGHFEDDBA@@@ABDEC@cdeb@d
+18723ffd@@aacefc@@abca@acfd@A@babba@abdeddbbed@cebBED@@@@abaADCCDDA
+18661@@BB@ca@A@A@beec@@beecefedggedddaB@b@@abcdda@@ADDCGIA0GEGA0A0G
+18602B@CDBaa@@@CBda1a3a2a3a4a2gbaceege@BAA@cfbABBBBA@a@BBBDEDB@@a@A
+18546DCad@@bdaaeebcaAAaa@AA@dc@@B@@DEC@addffdccddccc@CFBa@abbc@BCCE
+18484HD@aBFIIFD@ddghgaBA@AA@bbbbccbbbegffha0a0ia0hd@EGE@cbACAbbbcca
+18425cedba@@@CFGGIHC@CA0A2IFGGCAbdcc@B@cb@CCCBCEEBBadb@@@baaghffefi
+18365heca@@@BEGFFDAaaABA@b@DIHC@@CHGC@a@cgeaA@dcaCEDDC@aacghcacfede
+18303hihha1a1hffiebcdbaab@aa@@CB@BC@abbABBFIHHEB@@CDCBAbcaccb@ABCDF
+18243HHGEDEEDA@@CFD@@@bbb@C@bcdd@BAACBCAcc@EA@BBbffc@CEEECAA@@aga0f
+18182ba@@beefccfha0hgfdehhhhia4a3hbBDBcha0gccbbaACDECBEFFEC@@a@cded
+18124ha2a5a8a5a1fca@dgc@CEC@bcbbga1a1g@@a@@DEA@a@bgedccdb@ab@A@@aaA
+18069C@a@AABFHCAA@ee@DEBbcc@EHGEAccdec@BFHFEEDEDABDB@@adggeeb@@@@@D
+18007FCBBAcdcabb@Aaa@afiheha1hegeaadgfea@bbbc@CB@ee@bcaBFIHD@abbcb@
+17946ab@@@@@ccbbbdcced@A@@@a@fa1a0ia0gb@@BBDFD@dc@@addbADCBCED@egdb
+17887aABAa@@@bdccbACA@bdcaadcbbdeb@@@a@@@CC@aceeeffdehhdacefgha0a1a0
+17827gcbbacedcfia0hb@@cfeecccceecccaAB@dfea@AaaA@ba@ABEFHFAccdcdd@B
+17766@dhiihcbga0f@CBCDFA0GD@eea@@ceeefededb@A@aaa@@aaBEGFFIA0HFaha1
+17708a1heb@ab@@@DEaefecAEFEED@aced@A@@ADDB@cbaadb@@@@@@dfedehhd@@@c
+17647cbcec@B@bceeb@@behfd@@@@@CGHDCED@adgia0a0hffha0gcbaacebAEGFGHG
+17588EB@cc@ADDCBCEDGIHFDDB@@@@eia1hge@FECA@ACEEFGIA0GB@cecc@EFDBafi
+17528gdbcbAAbfghffhgdehia0a1a0ebaahhfeba@AB@ea0a2igbBCB@fiihb@BAcb@
+17471A@BCCDBA@deaabbefeehgcaa@@@adcEA3A2IC@@@@AAaddbcda@A@bcgeb@aab
+17411ga0gdaaacb@@bca@@A@aba@@bca@bcb@@@ACBacacfia3a0gfecedabbcfeca@
+17352bdc@DAacbcb@ABBA@@aa@bcbbaEHIA0GB@bedcdha1gghfeggcbbcab@DDDCCA
+17292a@ABCA@@@A@@BGGDCB@dhg@@BCCCFCbdaBEGG@deebeia1hfb@@aa@Abghffgf
+17231eefgdbdddccccaBEFFFFC@@da0a0eaCECA@@BEDDEBAaehhfaA@decababdcdf
+17171hgfedbcfhihea@AAbecba@@A@a@cedga0heaA@caB@cdaBEEC@@@BCBAAABCB@
+17110@CCBDGGGFECA@A@BDB@acba@acaBC@@@@@B@caab@@egfeffedaCB@acc@AB@c
+17048eeefcBBacb@acdcbeeeeeaAA@bdffdc@DBbggaB@beggfedb@@@@adedfffhii
+16986hgfbbdfbCDDB@@aceecACACHIBceeccedaBCEIIEAba@@@@bc@CDB@bbaAFGCE
+16924GFCA@acffcaacffaB@dfhf@BCCDDGA0A1FCBB@CECCEGE@affeegia0dbc@A@@
+16865BCEFAa@CDCCBAaefgfcddcaCDBbefcceded@CCDB@bgf@@figcbabbcda@@DGG
+16803HGEDBA@adb@CDAb@BAaBDAbeeedcaACDAbggefa0a3a1a0hia0igccefebaa@@
+16746@A@ccegiiggggecb@AABBbaA@aACDFEBA@bcbcfeddfebb@AAaddeeaBEFFFCA
+16684@BFGEEGGEDA@AABCFEagg@A@acb@@BCEEEGFEFEC@c@ADDBCDFECDD@bbbab@@
+16622ed@BB@a@adcabfa1a2hdcbceeb@CAabbbba@@defaBAA@adggghd@AA@DA0A2A0
+16564Ba@@adb@@@BED@@aaccadfga0a1a3a0febCFFEBbeha0hfc@bffa@cfgeefdbc
+16507dddb@AA@a@CDCBB@bghgfbadca@BDDBACFGFBAbc@a@@begha0gcaBB@A@ha1a1
+16447a2a1heabedb@@cfgfghcAB@bca@bcbfia0ihecc@DEHHD@ccfiifddeefhihgg
+16388fc@@A@bdecdfgb@AEEEEAcba@@add@BDHHFEDDDA@DIA0HFEEECDEFD@@a@aff
+16327bac@@ddegfggcbdiheha0feffggfaABA@@ACBABBA@becdegebca@@@@@@@A@@
+16266AC@cddddbaCIGAbaA@@acdcca@B@AA@@ACCBCFEGGHIHIIECDECA@@DEGGCBBB
+16204@ba@@dcabeggigeeedbaba@DEHIGFDECBA@@@acc@HA0EA@@@A@@aaABAabcdi
+16143a2hedb@@BCAaccdedbBCCDA@@@bbdfggedcdeghdba@@bbdgfb@CEDBFHC@@AE
+16082EDDDEHIGFCafgdcebA@bcaABBCEFDA@BCCBABBbfebbbaaABBB@abcfgdbdeff
+16020ddc@BAaddd@A@cga0a2a1gcaBFGGHE@eedaBBBDGA1A2A2A1IFC@cca@bcc@CE
+15965DBCAcecabeeb@ADDAABAa@@cddfhhbBA@@BA@cbaa@CDDB@bfd@BEEEE@aa@@@
+15903eggdccefeb@aceha1a1hccbcfdaADDC@b@@@@abbaBC@b@DHFEEA@abdgfc@A@
+15843bceeaBDaa0ibCFAddcbcddedba@A@babea0a2a1ihia0iffga0a2a3a2a3a2fb
+15792bfihhhhhhgdefdaab@@@@@bcfhihfdb@@@aa@BCDCCBaaA@ADEFDcfd@A@aege
+15730eda@bba@@cbA@cefha0hf@A@abbcfhfdc@@@@aed@DDAbea1a2fcdbdia0a1a1
+15674a0fea1a2heb@BAA@ccb@bdgebbacb@@A@aAFGGDDFIEBDCBA@ceaDFDBCGHEA@
+15615aaa@baB@@aeed@@@BBAbbaAEECEHGHA0A3A0EBCFECBBCC@dddb@CFDB@aaBFD
+15556@accc@DC@bgf@A@@aaBEEEFC@ABEA0HGIHHGGDCEEDCCDD@cec@@aADBADEAab
+15495aabABA@bec@@@cdeefc@ACBABBAa@@bbea0hcBDC@a@AACB@abbdeggggihhhf
+15434gihffedca@@@bdebBCDCBCAbdbaabecACB@@cgffeedehheeeccc@@@@AAaegd
+15372aa@CEGBcda@becdhgedga0a1geffc@CFE@eiieAFFHFAab@DDDAcgebaACDCA@
+15312@c@BB@bed@BAacd@C@cfdBD@efedb@bbccaCB@a@aedcegec@BDC@bbbbcbA@@
+15250ADCADBBBA@AB@a@ABAaaabbb@@dga0a0fb@@@a@DGEDDB@@a@cddcbdfd@@bdg
+15190feihga1hcbb@@dga2a4h@@@cghia0a1a1a2a4a2gbaddefaAaghdb@@ea1a2a0
+15140fgiiha0a2a0bBC@CEDBCAcefefda@@A@ghcbddegc@aADA@DGGHIGA@AA@Aaca
+15081@DGFC@@@abddcdedaaaAA@@@abbefcba@@@@@bca@@@CCDBbeggfe@@caCA0A4
+15021ICA@@bAEFCbca@bdc@CGGEAAB@BCDFFEEGHDaedbceea@dfcAB@AABDD@acdcc
+14959cca@aACB@ceda@@@BCBCEDEEEB@@a@@AaaABBCBDHE@@@aa@cedbaceia2igea
+14898ea0a1gcdcaacdcba@CGHDbcdddfecbb@EGFDCBCEGDB@aaaa@@cfhgdbbcege@
+14838Bbfgc@ACDGHEDEGID@cb@@@ACDFC@addba@@babfhifgfeghdceeccga0ighif
+14777b@@@bffeeeb@@bacedda@b@@adfha0a1a2a1gaCC@baAAceeffcbabeia0ia0a2
+14721a3a3a1e@BA@ABBB@@ABGID@b@@@@A@ehhea@@acdbaefec@@ACB@@AAA@@@abA
+14662EFECCEDC@bb@aa@C@@ABCFA0A5A3FA@aaA@@@A@@A@aaa@@@a@DGFB@afha0ic
+14604@CEC@adfddfhhgha1a2a1hgecdha1gefecc@BBBCECAB@abbbbbdhgha1a3a0c
+14549@@@@bdcbba@B@@BBab@@aacffc@@@aaBEDBABA@@aa@effeaBA@a@AB@ACAABE
+14487DCB@@@BAACEDCBBAaacedba@a@BCCDEEC@bcdcc@Abfgd@@@@@DB@a@@@@beed
+14425aAB@b@AAC@@A@ADCBBA@@BBCHHGC@a@C@@BD@dffc@A@ACEBafgebbddcb@BEI
+14363IFBcdcbdcbccedbddbb@A@@@BDB@@@@@CHHEBCDGIGC@@@BACBAadb@@@B@a@@
+14301@a@AABAACFFDDDEC@a@AacbDIID@aaA@a@adbaaacggedcaACCBA@beggfdeea
+14239CEBabccbddcbbddcha2a0ebabb@@@ABCAAEGGDA@@@@@cfea@@bcddddda@ced
+14179@AABEEAbcffecbegdbcbACBCDGIHD@edcefddecaaBECBBadc@AB@da0iebaaA
+14118DB@@@@ABCFDBBB@accdeb@A@ABBBB@cceeca@CHA2A2IGEB@ABDDAba@@AA@bb
+14058@DECABDBaggdbcegeaaba@A@cdb@@@@@@@adeeffbBCBA@bdcd@A@@@@ACA@ad
+13996fedcb@AFA0A0IA0HFEB@CEDA@aaaa@@BDDB@@addcaBGA2A4A2Ebeeda@aeghd
+13940@Ada0a0a2a3iihddcaAB@c@EFA@ABDDEFE@@@@babdfa0a0hgfeccb@cggggeb
+13884b@A@@BCDGFB@@BB@aaADDDCA@accbaA@a@@bcccbdcAFA0HE@ddfea@@@@CDB@
+13823a@@@@@@@@ga3a1ebbdcaAACDDFHGIIA0IEDC@dfc@@@@@b@BCCEDA@aaadc@A@
+13764BEEC@AAaccbbcb@@bega0a0ia0gdggfa@@BBbgebbbaBA@@BCCDFCBABCDCCab
+13705@@AAAAaeiifb@CIID@addcgiie@CFFEFFC@ca@@a@CEAbha0iifacdeeeedca@
+13644BBAbbbcBHA0GC@befcb@@@aADCA@cggefha0a0a0igda@@aaAEDBABDDDBaabd
+13586ggeb@accbcb@@@@@A@@@a@EFGC@@BDDFGEB@aabba@@ceea@beda@cdcdda@@B
+13524CEFFDA@@ACDCCDCAAAadfc@@ABBACCBFHA0HC@ACCCCBABA@@ehhhfc@BBBEGE
+13463CB@cdededdcbbdccc@ADEC@@@@accffgihda@aa@A@cb@@@@BBABECDCAAAAAC
+13401FIIDAAC@@@@acdffdcABCB@@bcehgcaBB@cffcaBCAD@cdefdbacfedccdc@@@
+13339AB@@afa2a3hc@A@aadgiigeaB@bdc@@CBB@bBEFFDCEEBBAacdc@@bdfd@ACDF
+13279FB@@acc@acb@@@afa3a7a3fecdfdcb@@@BDA@aceigb@acdeghhccffefedc@@
+13220@cehihgeeecabb@BBBCDEEEF@a@@AAA@accccbbdccdcbfa2a2da@@baba@BDC
+13160A@dffbbbdha2a4a5a5a5a0efghfcbdfecca@CEGC@dfgdcefffebachhcCE@bf
+13104hea@cffecbcha0fbcddcba@B@bdcdedb@acbbceca@A@@AAadcaBEGFAaaAGA2
+13044A1IECDDBACDDCAbfhecaCFGCaegfc@@acggb@@@@fiihefia0a0ia0a1a2a2a0
+12990giigia2a4a2a1a2a0gcabfhfbBD@ccbdca@@bfdceffb@adgggeabegda@@BDG
+12934FDCBA@adgffdb@BCFFDDA@@BAcebceddggc@bcbba@@bdbbc@A@efffbA@@@ac
+12872ccAA@aeeb@CEGIHEDEEAabcfeddefecccb@a@CD@a@@CIID@ehcafa0hfdabef
+12811ffggbBEDC@dhecbbeffedda@A@acb@aaba@ACDEB@aehd@@cd@BB@cefddeega1
+12749hcddddcdcaa@CAceffc@@aabcfa2a3a0a0a0hdADFEBBA@bb@ABEE@@BCAbbab
+12692ec@@cda@aab@A@@@addbdehiebbcc@BBB@bbba@@ABEFDB@BCDFHHIGGD@a@aa
+12630dbaaBDCB@ca@abaceefhggigeddfgcacffecbbAAbedb@Abbbcb@BbfdbcedbA
+12568DEFCBABCHHAdedeeccdc@A@acddc@ABAcfhggfec@A@aaBECBC@dca@acea0a1
+12508ecbcffcabb@DCB@aACBCFGDC@beia0a2a3a3a1igc@@@@dgfefc@BDBAA@CGC@
+12451bfffdbeiigea@@@cgihffc@B@cdaBEHIHE@@A@decdia0eADBBCEDbia1hfedd
+12391edfgcacc@A@ab@@ABA@A@cfha0gfhfcd@B@cfgghgfgfeb@AC@ddcec@BBbddc
+12330a@@ca0a1a0cAAA@b@A@chfeghhia0a3a5a1iia4a5a2a0eaaabccabcd@EEBad
+12279d@Acfffha0a0a0a1a0hggccb@BDB@baADBBDB@aceeddbbddbceedbbcccccbb
+12222bb@@@aa@BBAB@bdeedfhebbccdggeb@@bdddcdgia3a4a0edghecb@BC@cb@bd
+12163ea@A@adebcefcbbcbaaaaacfgaBDDABC@cbega@ceebabfa1a1gfffeb@@@bdc
+12103eigga0igeedaabdccdcdeghfaacbAB@@@@AAaca@@ABFDBED@acbbded@@bdha2
+12042a2a1a3a1gfda@ABDFFB@@B@bfhghea@abc@@a@@bffeedcdege@@aab@@@@Aad
+11984eb@Aabccdb@@@bgihgebacfeeb@@@ABC@cd@@cb@BDEBegeddefghffeed@abb
+11922aAC@deb@Aadefdca@A@CEEGFB@BBAAafhgfga0ihgeca@bcdc@@abcfdAEC@bb
+11861bddaacbADDDDBaccecb@bggbacefge@A@@@ABDAdgebbAC@dggc@EIHGHGDB@c
+11799ecCGIHGGHA0A1A0HIIHA0A3A7B0B3B8C7D4C9B9B3A9B5C3C7D6F0H2A23A99C52
+11762F06H27H04E84C71B32A52A05G7E8D4C6C1B6B2B2B1B2B2B1B0B2B5B5B8C0B9
+11735B8C1C1C2C4C7D4E3G0I1I9H7G5F8F9H1A01A26A67B33C39E35I30A637B397B521
+11709A919A219G65E12C63B66A98A56A34A14I6H7G9F9F1E4E2E1E1E3E2E0E0E3E3
+11684E2E2E3E8F3G3I0A16A52A81A77A56A46A52A73B05B51C20D32F21I57A623B888
+11661D503E147D182B711A670A088G58E54D19C29B67B23A88A60A40A25A11A01I5
+11642I0H7H2G7G4F9F6F4F8G4G4G4G5G8H6A03A32A63A77A72A68A76A96B30B78C49
+11616D63F51I91A652B949D843F019E279C553B187A407I70G03E29D09C23B57B10
+11598A77A53A39A29A16A03I6H6G4F9F7F5F1E9F2F7G1G3G3G5H1I2A08A26A40A47
+11572A50A55A68A93B30B84C73E20G74A255B211C763E047D797C394B105A335I09
+11554F53D84C68B89B35A97A71A46A24A09I9I1G9F9F4F0E8E8E8E8E7E1D7D5D3D7
+11528E1E4E5E9F0F2G1G9H8A01A19A43A82B48C57E62I73A690B426B499A870A173
+11506G36E02C63B66B00A56A25A03H5G1E9D9D4C9C7C8C7C4C4C3C1C0B9B7B6B3B1
+11479A9B1B6B8B8B8B9B9B9C3C9D6E5F6H5A17A74B88E04G67H57F91D52B84A92A42
+11453A08H2F3D9D2C6B9B5A9A5A7A6A3A2A3A3A2A0IEBGA2A2A2A1HGA3A5A0EA@BE
+11417FEACEFECCGIA0A3A5A1EA@AEFFHA0A0IGEFIA1A0HFCBCDFC@ACDDEB@aaBGII
+11363EAADIA0HHA2A2HDEFGFEDA@@@BFEA@@DIIGGEDEGGEDCDFEAAB@beeb@ADEGHH
+11304IIA2A2GDCBCEHGCAaa@BDEGFIIHGEFGFGGEEFEDCEHHGGEC@deecb@A@@a@ABA
+11244@AAabcdaBGA0A1HEDECADDABC@defedcbCIHDDDDDFGFDDECBDHA1A0IGDB@AE
+11186DBBB@@afigbA@@@@aaACEDA@@@ACAcgecb@A@aBCA@@BDEBAA@@@BA@@ab@EGG
+11124HHIHHEBBCA@DIGECA@@@@aaa@CCB@@BCDDA@@A@bdfea@@@CGFCAAACAab@@@c
+11062ggddfggfd@DEBabb@CEFCccAA@@@@@baBC@aADFAcfggfda@cddbbceghd@DDA
+11000abcbAafc@@@adddcdgfdbaaa@@beeb@aaA@bbda0a2a2a2hhhgdbb@BB@effd@
+10942B@bcccb@@acba@CEGHECCBCCCEA1A0HHFEFGB@AA@bcdb@@BDCBB@AABDHFBB@
+10882cega1a4a1gdb@BAbabeeecABDBBCED@adecAHHECBBABGIFEECAceb@DHHDCEF
+10823CBAAB@@@@B@acba@bdaA@AAABAcd@BDBbga0a0gfb@ACCCAA@ABA@@abaBEFDb
+10763edc@CAabb@@BCDCB@@BCB@@aa@dheegd@CAAB@@@@@BB@AA@acaCFC@@acddcb
+10701@BFGFEDDBCGA0GCBABDC@deffcBHA1A0F@cedeggdaaa@baadeddddcbab@AA@
+10642A@@AA@ceiidaAB@eeaB@acba@@BCA@@aha2a2a2a1iiihffia1iha1a2a2a2ie
+10589b@acdccehiggfeghgbBFB@@BEGECEGEDFHHA0A0FDEEFE@dha0a0gcBGGECDHI
+10531EDEEDAbeeeeeb@AB@@DGEBB@acddedADDECA@@@aacdabehggfeeghedgffihf
+10469b@Aaaaabbaa@bfhgffeaaab@BBAAAadefffga1a1f@@eha0a1a1ihgfcbcgiig
+10412bbdfggfdccfgedccfhhfffe@@@DC@ACB@a@aaCCbeaAB@@@@@BB@@@BDD@efda
+10350@@A@@BCB@abcdcbceedaACDEBcc@CCB@a@ADBdggebcdecdgfefddc@EIIGBdf
+10288ccaA@ba@ADEAbcccaCD@@A@@@@AAAAAA@@BDC@AB@ceebBFIIEBBCCDDB@@a@@
+10226aaAAba@A@acba@AABaecca@@AB@@dfefgeb@Aa@BCGA1A2F@cca@acda@@AB@b
+10166ceecaacc@DFDB@a@@AACBAAC@cbdffehgeeffc@ABEGGHIHIGDA@bdc@BFHHFB
+10104@@@@ABCBA@AEEACDB@@adfeb@@@ADECAaceefca@aabaA@cddc@ABABAdd@@@@
+10042acbcbceedca@@@a@CFIFCDEDDFECCCab@@BC@ccefeabcb@aaadfeb@@cefgfe
+9980ddeeb@a@@@@befdcdedbcfgha2a4a4a2a2a4a4a0ecdffca@@CGGGHGD@@@BAA
+9926FHGE@dec@@BFA1ID@a@@@BEDEEBAAA@bba@@acefhiiefihffecccb@DDFFDCA
+9865@acccaAB@aceeaBC@begeeffdab@CA@aceca@@bba@@@@@@@aba@@@adbacddc
+9803cba@DFD@cgggcADGDBCFECAac@@@@a@DCaehecbceha0a0a0a1a1ghhha0hebb
+9747@@acccefd@CCCACDC@ACA@cggda@@cdefdcd@DEC@adgd@@behfbccfgddffca
+9685@Bbd@Acdcdea@AA@dieaA@ABaddeefc@@a@A@@CBDDBA@@@cbadghghhda@@@a
+9623bcdcbabfd@ADFGIA0A2A2HBa@@cc@AA@bha1a3a1gdaabehfefggba@aeha0a0
+9569a1gb@cffbbdega0a0hiffdceedcba@@ABadbbdca@cghcA@a@DCAACAbdddcaa
+9510baacff@DEDB@ab@ABBACFBdeb@aecbcbAFGGFCAA@BA@a@AA@bbccc@DA0HDA@
+9449@@@aaa@aa@cefgifcb@@@cceebc@BEFC@@@@@@Aabcca@CHA0HFCCBAA@@ADC@
+9388@BCC@acddeedbaba@CBA@aacia1iedced@AEA0IGAdffiheba@@A@AFIIEDCDD
+9328BCFDDFEB@@aceda@@bbb@AA@behgdccdaa@adcAGGHGAabeiigfeddddcbdfgg
+9266feba@@BHA5A7A0B@cebBAaca@@cca@@aa@@A@accccegheha2a0gc@cha0hedc
+9210cbacdb@A@@ab@a@ACB@b@@bca@AAABA@b@@@@@@@CB@ccdfgdBEDCBAB@adb@B
+9148CA@AC@aAEIGDAab@ADEEC@ceedca@ada@dcaBC@AB@a@@cgfdaadfgb@CBaecb
+9086cbcfiheca@@@cdddaaddb@@abfa2a2gb@@BCCAbfdbdecaa@accccddb@cggia1
+9026hfeca@A@ABB@a@aACBCCDCAaddc@A@ea1a2a0gdacfeb@A@aa@aehfcbaaBCBC
+8967DA@adbaba@@AGGC@bAEFBADFGCACAacbACDCAaceghgfb@@@aacefeddeefffc
+8905a@AababefcaAEGDCFE@@AA@ADDCCDDAcbabefc@B@ca@cdca@CEDDCA@@CB@@A
+8843@@@@cedaACGFCBCDB@cdcefecbcdcb@adeeda@@@EFCA@BA@@a@aceffeec@BB
+8781DAabbd@CDCBBaa@ac@@@@accbceeaAA@@@@@@beeaBA@accdec@@@@ceb@baac
+8719debbbaabeccababb@@beedbaaafa2a2a0a0hddedbbdcdgia0hhebdeaAA@@@@
+8662ACEGHFEDC@A@abcceha0a2h@B@ccabbaa@BCA@acba@@baaa@@@DGGFDA@@@@@
+8602@@FHIIFD@deebbcfedca@CEECBAadccba@CBca3a7a1dcfhhecaACAaabcb@BA
+8543@ehhfdgifdeggb@@AB@ccb@@@bba@@bddeeedcc@DFB@@@bdddaEHEBcfdbdea
+8481BFA0FBC@@bb@@@abacfgffc@BDEAcdbBFFFCACFC@@@@CCafdbbbb@A@a@@cec
+8420@FEBAEGDAADDDEC@bdc@CC@dfeefeca@@adfgfc@EGGGGFBa@A@@@befeeeege
+8358aadd@BHA0FBa@A@aacdcca@@@cccbcccaAA@bca@@aa@@@@@begiihgfecccde
+8297c@A@beee@BBEHIFDEEEDBCCCEGFFGHHIHGHA0HGEA@@Aaca@@@BABDDDCBCC@b
+8236abb@CEEC@@@ADFDAdfcADCDEDDC@cedccb@AA@@acdeec@abccba@aa@AA@cdd
+8174ggaBA@abaaddbaa@@@cdcbBACFFBbdca@@@@BHA1A2HGIIHCaccecABbffgged
+8114dddeeed@AA@@AB@@AABBA@@@cbaabbacfihgigeeghgeeeebA@de@A@@@BCCCC
+8052@@a@cfega1a3a1ifed@EDcggd@bdee@DEBA@@ACDB@@BDB@@DDBCCA@b@Aaefg
+7993fec@@adeffc@@aceedegebaAEGGBaacc@@cdbbabfigeccbAEECB@A@bcaACCE
+7931EDD@egeceffhgd@ACCCECA@bceeddcbcca@@aaaAFGFCA@@@@@acbceb@cgihf
+7869fhga0a1ged@@bceddedca@adfe@BCCAacdghhihffgfddbcaACHHD@@@@bggdA
+7809A@@bc@FHDaddedaceca@abaa@BA@@DFBAbffAEDDBACHGAbfgecbacghgdb@aa
+7747@bbdghdaACDEDB@b@DEB@BCDCEFEABBceccfga0iedededdeda@bhie@@ccabe
+7686fgfba@B@eha0ia0a0ggia0geffbbcca@AAceefhia0hbCEBCGGBbdb@bdha1a2
+7631a0hecbdga0a0hihfdbcddbaa@@BEIA4B5C2B7A7ICaca@@AB@bebEHD@dd@CDD
+7577C@bcdga0a0hdbcdebCFFEBDC@aABBadfgfdca@bbabccabcegdaa@ACDCca1a4
+7519a3a0fecbaBFFDAbeffeebacd@@a@AAadcccaa@@cc@b@BDEHA1A1A1A2A2A0EC
+7465EFFEBAACD@@@AB@b@CFCBA@@aa@@@BCCCAAAada@@BB@bgihda@@@@B@ceca@A
+7403BB@aabdgheeefiihfdeaACFGDAABBAAAB@a@adbbceeedba@a@BB@bca@adda@
+7341a@DCbcbabaafhgaCFEA@ceedeeb@@@@@@ABCBB@cebb@@dc@acdb@B@aba@aee
+7279aABBCEC@cdeegggfaABDC@@AA@bcfgebABA@cga0a0igc@BEFCA@a@adcccaac
+7219aBCC@bdec@@A@ACAbffaCEEEDC@a@aefeb@accdcaBDDFFB@ACEEECBBDEB@@@
+7157@BEFEGIA1A0GFFCABA@cfda@aabcffega0a0hfffca@@BAba@aacfiiiggiifc
+7099bb@@@CDA@BFD@@AA@DDFGFC@AB@dedccea2a3eaacddebacccccddfe@CDC@aB
+7039FGFB@A@@aab@A@dffha0ifbaba@a@@db@acccdecaADEECCDDBAB@beia2h@ED
+6979accbbfecbdha2a0cABEGFFDDDB@egd@abacegfc@@BDB@BA@bb@DGEAdga0a1e
+6921@BDEFGD@@aga1a3a4a5a3a0hdaa@ADB@@ACBAEGC@beggiigb@aefigeeeega0
+6866a2hebAAaca@@ABA@cghfaAAaceffbDGFGFFECBBCA@@@aaaccca@@cha1gcacf
+6806ihia0a0fb@ABA@@@a@BCAcffd@@@@cecdfhie@@abfhgfeceeddceddbaBCB@a
+6746bADDDBBAcfhhhhebcfdefefhhd@BA@@BC@@BCACBBB@@CDFHA0A0D@adfffe@@
+6686bga0a0a1a3a1hdea1a2a0gedb@a@@ABBBB@acgigcA@cbadffcchiie@DDBBCB
+6632aeeccfhfefia0iiihdaacc@ab@CDAacedbdcfa1a1hdcghec@CC@bbfeADA@BE
+6573CA@Aaefdachhf@BA@aababdeggecbdefeffea@dgfaAA@ceefeefec@@@bccb@
+6511ABCGHEA@CHGEC@@bdffee@GA0GD@bdaBA@abdffdcdfia0gddha2a0ggeba@@c
+6453db@ACCCEDCB@caAFGCbdcbACCCBBBBBAADEEDCCCDE@cc@AafgeffdfgaDHHGD
+6391BBB@a@A@cccddffccdddddaA@baAA@@@AAbdffdbcba@@aABBCCB@baaba@@@@
+6329@B@bdfa1a1hfdddehhec@CAACA@@@acfgecfiggfcABCC@@cdcdaAABBA@ccAE
+6269GGEA@@CDECbfecc@CFB@@@cfa0a1hfgihgda@@ccabb@EFEC@bdffc@BEC@ba@
+6209@aBDBcfedgigha1a2hbbeeggia2a4a3iea@ehhhfeb@@@addcbb@BA@@ABCEEC
+6152DGFFFB@@@BBaeeedbcega1a1edbaeihfgd@BBBA@@dcCB@ccaBEE@cb@CGHGFB
+6092@cda@adga0ifeceigaBAa@@aa@@bffeefffghhgc@C@aba@@bbbeb@A@bca@BC
+6031B@bccea1a4a3a2a0gaA@@@ceebceebabdccfgd@@@@ceccdfd@A@cgfdedcefg
+5974a0gb@a@a@@@abefbcdccefcBC@@@@BBcd@C@@CFC@CEDB@bbb@ACECBC@fhhfb
+5913acdd@CDEGIEadb@A@accdcdc@CCadaCEBAAbc@@@CGFBbfa0a2hcaacea0iefa0
+5854a2a1a0gdb@A@@@acfffedeffc@bcca@cffbABB@deda@@bfiid@addcbddabef
+5795gcBDCCDA@@@abbcc@A@aeihefhgb@@abdedcca@aaabacda@@@@ab@AB@bACB@
+5733efffd@@beia2a2a2a0ghgeee@CCAAabcbab@B@eca@@@@AA@ccaa@aehedgha0
+5676a1a0hedeed@DDDCB@accBECaca@bega0ifeb@@AACAbb@bgigeecaaddaac@DE
+5617CCCDCFHFB@@bgea@bded@DAb@CB@baabcba@@AAAaa@BCDB@@@@@befffba@BD
+5555A@bca@ACEGHIHD@@adfd@DED@cbbddcb@A@bdbaa@@BDDEHHD@bdcdd@HA1GB@
+5494abcfdcdc@DEB@dgia1a3a2a0a2a1ge@B@accaabaefffed@BCA@@@BA@@@@@CE
+5438FHGFDAABB@bchigbACBA@a@BDCABCCCFIHD@@@bed@BGFbgaEECBACA@cecbdi
+5376a0ida@bcbbdecbabcfghiihgeffc@B@bcfheccfifcaa@aaacffdbaaADDAadd
+5315bCD@ghfdddcehgeba@@AEGGIA1GEEEFFAdgiihia0a2a0ea@@@accaaa@@@cdf
+5257hhhgccededa@@fa3a4a2ebbchihfaa@ACCCA@ca@@cdddbAEGGFCCCAAB@bbAD
+5198CCFFEEBBAcc@CEEDBabdb@abdegfecb@BDBAA@@a@@@@@@a@BDABEA1A3A1A2A0
+5140FFHHECAAEHIFBBGFBcgdAB@db@@aceggheaaAAda2a3hcdffecaa@ccadecba@
+5080@deceia2a1iggigaadaAABBDDAcdcfgefgd@aehihia1a0geda@bcABAA@@ABA
+5022a@BBAcdeeca@@@@@ada@@AAAcgcDECB@a@bdfa1a2a1ihgca@CEAAEECB@@BED
+4963@defhihfedaACDB@@BDEB@bcdfeb@AA@bbcddaBEDAabdccea@@@bcbcdcb@@A
+4901C@bdcaABaa@a@@b@@bc@ABACDFEDDBAB@CEBBBabaDGHA0ICccaBFFAAFEAdhg
+4840dbabb@BDEED@abccdfhggifefcabdecccb@B@bdfeaBA@BDAcc@B@b@@ceccb@
+4778aa@CEEFGFDA@ccdcccb@CB@@aadeecbdgigfgdaa@@DFEC@@ab@a@@ACBB@aac
+4716cbbdebdc@@@bfe@BB@deedeffefa0a2g@ACEHGB@abca@@@aa@A@@@baA@ab@a
+4656aabbb@CDDCBCB@@bbcdeb@ba@ADBbdeda@a@DEC@cddga0a4a4a4a5a3a0ghia0
+4601hfedcccde@CDDB@a@ABB@aba@chihe@ACDAadfecedeggffefcab@@BCDDEFED
+4539B@@CBA@bbdecddccdca@B@CFD@ecadeeefeb@@cddb@@@a@adffbBHA0FBbcba
+4478@@A@@AACDBchhgcAFEBAAACCED@@@a@@A@AEEBacccbb@cgha0a0gaDECbed@D
+4418@bdgfeaAB@aacdddcb@BCBBB@bbb@@@@AAacb@@B@beeeaAcefdca@abaafggd
+4356@ACDB@@bedaBDGGaga0a4a3a0gfgedddcdha2a1ihfha1a2a1ihd@ade@ABDCA
+4303@dfecbccbAECabcceffia0feffeaDFC@efcbdcb@AA@@bbbabaabccghia0ecg
+4243ifca@@@dgdda@@bfha0a3a4a1heghgge@aaCGFABEEB@acaAEGGC@cfgc@BC@b
+4185baAD@deffeggcbcdha1a2hfghggggdaa@CEDBABDCA@baa@@@bdfggcbcbeiid
+4125AAbcb@B@cb@@bb@@@@BCBA@@BCBBBA@bb@A@a@CDAbggddecabb@BA@BCDDCA@
+4063ca@a@BCBA@@@@aehgccfbCEDEFECB@aa@@bdedaAA@b@@@A@@cha0ifcA@BB@A
+4002CCAda1a4a3a0gd@@adcaa@@accdehgfha0a3a3a1a0hgfefghgefaBDDA@baBB
+3949@@@aeha1a2hggdca@ACGGFCA@abbbcecaAacbAECBBACDA@aaAFEDHGEA@AAad
+3889b@acgfdc@@acddbbbcbeha0a0faadddfecceggd@bddc@@a@B@aa@@@AEHIFBa
+3829a@BCA@aceia4a4a1ecb@cha1a3a2a1a1a0gfc@AB@cecb@@bba@@cegeb@@aei
+3776gcbbega0a2a0fb@@dedceda@a@@aBEA0A1FCA@@@accfgdc@BEFCFA1A2Faeff
+3721ffed@A@begeea1a2a1a3a0fdd@@acb@@afhgfda@ba@bbceecbaaabceddca@B
+3664@acfifeffddccefgebbcegeca@@@@bb@baAAA@@acfa0ic@A@ACEDDECB@acda
+3603@@beededb@A@@EFBcdfa0a3a5a5a2iiiighgdbbba@@bdha0a2a3a3a1ie@BA@
+3551cfia2a1heb@ADEBA@acc@bb@@A@cha2a0hia0a2g@ACGIEAACEA0A0FB@@BB@a
+3497@ABCA@abb@@a@@abbdha1hda@abedddcaaceeegga0a2a0igecbdefecdfeffc
+3439@BAcea@@baCEA@ABBBAaa@BCC@baACEEEDDCAAAaaAB@CFEB@dfecaACAaaace
+3377eb@@B@ea0hededfgfc@@A@eigccca@AAABDB@bbaBECA@@CFCchgd@CDFEadeh
+3316a3a5a5a5iea@a@@@a@CDB@@@aba@adfhgeefc@@aaACCBB@c@DGFC@a@BA@ga1
+3259a0igefgedb@@@adb@@AD@c@@bc@A@decehhfhigffecb@@b@A@bdd@B@abggcc
+3198ha1a1hddefec@@cdgffga@bbadggfdbegega1a2a0fCHGFC@@bb@CCDEEAehig
+3141hhfa@@a@BBAadegiia0a1a1gbcddegfeda@acfggeb@A@@ccbdeefggfbadeba
+3082bdb@@@BCEEBacbdghhihhgfedccdd@BBBA@ccb@DB@db@bba@cfha0hhggedeh
+3021ea@BBBAB@@@a@@DFBcc@EA0A1GCCCBBAacggfa0a3hd@BEGHFFGEAadca@acdf
+2963a1a3hbaaa@@AAACDCDCA@BEEEEAACCDDDC@cbccadeb@@@aeha0hgdff@FEBA@
+2904abbca@abbdghggghgddc@@@bbaabbehfcaACAbb@addcca@bc@FIA0IGFA0A1G
+2845EDDDEGGFDCBafhfdbea0a5a4a0gfc@@@ACDDBaa@DGFDDECaaAACEBadfeefgc
+2787@@aa@@ccc@CDEEB@@Abdcbbcefecca@aa@acbb@AB@aaeebaa@ACCBAbed@@aa
+2725BFIHCBDEGIHDCCBAAB@cbAB@efdfigfffeeec@ABC@bba@@A@dia0hfb@a@BA@
+2664cd@CECAADIGCaa@bdeggcadga0a2a0fca@cgdbdiigdAFHFDBBA@cga0a0gfbB
+2607C@dfgfdccacedccc@@bbACB@acca@@cdcdfhe@B@@B@ccdcegeegebaABDBac@
+2545@@@ab@CB@befhggfffghhhfcadfaACFBceccb@@@@@acdcba@@b@CA@A@bacfa0
+2483a0hfddghhffedcca@EDB@bdha0a1a2a1edcdebba@ABBA@@ABCAbebBCBDGFDB
+2426A@cededcdec@C@@@@@@ADDDEDEE@ba@AAACB@abdeec@CC@acgffhec@BAA@aa
+2364@BCB@cfgedceggha1a0e@@bca@befgihfbadia4a2d@AA@bceda@BBaeebbcba
+2306a@A@@aa@beeedga4a5a3a1a1a2a1a2a1fdddcefbb@@@@A@@ACA@@BEECADFEB
+2253cfcbb@@@BDBAaba@@cc@CDCAADFGGECBCEECBAab@@@@ac@@cec@cffca@ACEE
+2191A@cfebaeec@BDCCFD@cgebcfgigfghfdgfcba@AAB@ga1a1hgfghhfccfigdbc
+2131ca@@ADFDA@ba@@bcccb@@bggd@@@@@BFGEB@@cddccaadfha1a1a0geeda@abf
+2072ecceebabbcdeffefggea@@@@@@@CBadf@FHGGGGF@cdddha1a0igeggdcdb@aa
+2012adia2a0edgd@@BEBaccehiiggiebb@@@bcfhfdcaacb@BBCGA0A1A1HCAbgfba
+1955aaAB@abcbbegc@AA@bc@@@ababccbcb@BBAbcdebAEECBAACFFC@adgeeefc@@
+1893BCCBEGFEEFDCCD@bcbaADAacdcdbbdea@aaaegffeaCFFED@bcaabca@cfeaDF
+1831B@@b@@cda@@@dfdegfdcbdega0a1a0a0igeb@@@@aa@@@@EFFFAcbBCCDBABA@
+1773aeeeeecb@CDAaabdghgda@beeaB@bdb@@CBBCaeeddfgffebbceghedccbbddc
+1711ddded@CCBCB@@@@@aba@DHHCaa@@bdfecaBBea2a3a1hfcbcbbba@BDGHGGGFB
+1652@@AA@@@bc@afhhihfd@accdfhedghfeghhgffb@aa@@AEEC@@ab@BCA@@@@Aac
+1590@@AA@ABB@cga1hebdia3a3a4a5a5a5a3a1gfd@A@@@@@dhhha1a4a5a8a7a0ca
+1543befdeeccgihgbBFHHCba@bdb@@beeaACC@abecCCBBB@egega0a1a1a0ggihdc
+1485aaACCA@@aa@@cceffd@@@acca@@ccdc@BEECBBCEC@A@b@@acgfdaAAA@baABB
+1423EBADCBCCABBBCDCaccefggaEIA0HGHEA@cdcehhhfca@acccadga0igeb@A@@a
+1363aAFGGEA@A@cdccaa@@@@cbbdc@ACC@aaBDDC@bdecaBFEB@ACCBB@ddddcdd@a
+1301dga0hdbefeccbdea0idbbcga1a0hia0a0igbCFABEFGGDDGGDCBA@@EHE@@aa@
+1245cc@A@acdedeed@DBbedbbdeiia0a2a1fa@@dghhc@@@aaaaabfifaBBBAA@@ac
+1186cb@afhfbbaAB@ACBa@@begeca@bcaCDDDCBBFGEDBAAAAaee@AA@bcbba@abcf
+1124feffa@@@A@abbabbcga0a0e@Bahigecegeedccefgeba@@@@bebAA@abaBBBB@
+1064behgdabegfeccb@@@@BGIHDBAA@@@ceha0a0hdcdabegihda@@@aa@@BC@ddb@
+1004ACAbcefddc@HA0FBEHGEEEA@@@@@@ACAcfgedeeedaAAbefd@AA@CEBa@@@@ab
+943bdeb@A@AAaeihhieb@aeeffc@B@AC@cbcdcb@a@CB@AB@bb@ABBA@@@@AA@a@@
+881aaacffdaADDAcc@@egfb@@@cedb@DDEBcfgggha1a4a3a1hfecehga0a2a0hcA
+826B@@BDHA0ID@cb@cfebcdc@AAAA@@AAa@BCCBAADEDA@ceefa0a1hdbcb@ABA@B
+767B@aacha1idcaba@ACBAaddfecegebaciifddb@ED@@@@@@A@acccca@@bcbbcc
+706fedga0gca@ACEFGGDBaccdaABCDFIIGCB@bdca@AAacbb@@@@aefcdd@CCC@@a
+645dfha0hhhihfefa0iebefdcdcba@baBEDCCCCAA@dda@AACEEDEGEDEGIHDCCCC
+585Badghhigeeffcca@a@ABCFGFDCA@a@bceeegfcaadeedcb@DCA@@acdeedcbbc
+523cdeb@AABDCAcffgfdeec@A@@@@@ceda@acdedba@A@@CDEDDCAacaAA@bdcdef
+461igfdcbbca@BAaaAAA@ac@@@Aaba@A@ACAbddcb@BA@CCCEEAcdcccdggea@a@A
+399ABCB@@@abaaaBDA@@ACAABA@@dia0fbbdfhhebcb@cdba@@@@AA@AB@@@aaaaa
+338baa@AACEDAaba@B@@ABBCCBBC@cba@ACDDCA@@CB@ABA@aacdcb@BCDGA0A0A0
+279IHCA@a@@a@acca@BAAA@beha1iedb@abcfhhifbabcdbcddeddda@abb@A@BB@
+218a@@BB@@@@@ACCEC@bccbaAEGFEB@@BEE@cbba@A@abdfeba@@aba@DDBBA@aaa
+156acb@@ACCBCBAACECDCB@cfeecbba@@acdeca@BB@@@@@@@BFEBBAA@A@@@@@A@
+94@@@@a@@ccbaa@abbbccccdb@@BCDEFECAB@aa@@@aa@BCDDEFEAaa@BAA@cb@@
+32@AB@@@@abcc@CBACAa@BEFGEBAaa@abc
+$$ === CHEMSPECTRA INTEGRALS AND MULTIPLETS ===
+##$OBSERVEDMULTIPLETS=
+##$OBSERVEDMULTIPLETSPEAKS=
+$$ === CHEMSPECTRA SIMULATION ===
+##$CSSIMULATIONPEAKS=
+##END=
+
+
+$$ === CHEMSPECTRA PEAK TABLE EDIT ===
+##TITLE=
+##JCAMP-DX=5.00
+##DATA TYPE=NMRPEAKTABLE
+##DATA CLASS=PEAKTABLE
+##$CSCATEGORY=EDIT_PEAK
+##$CSTHRESHOLD=0.005
+##MAXX=2.340079138333426
+##MAXY=6368.043457031251
+##MINX=-0.1539208591257598
+##MINY=-45.53151071777344
+##$CSSOLVENTNAME=Acetone-d6 (sep)
+##$CSSOLVENTVALUE=29.640
+##$CSSOLVENTX=0
+##NPOINTS=46
+##PEAKTABLE= (XY..XY)
+2.040730637837295, 6368.043457031251
+0.28787125150983484, 6019.393077758789
+0.2897740515384142, 5147.687529034424
+0.28596845148125516, 5047.550045672608
+0.29167685156699386, 2521.984010614014
+0.28402759545210404, 2499.8550596008304
+0.28212479542352464, 857.9346547485352
+0.293617707596145, 827.8456494140626
+1.2489374899447823, 681.1418482727051
+1.0935167836104063, 679.5498374084473
+1.257690370076248, 677.9578265441895
+1.2751200183380365, 663.7889298522949
+1.2551406180379514, 634.1775277770996
+1.250992513975648, 563.4922454040528
+1.2609251301248332, 557.2834030334473
+1.2406412818201755, 536.9852645141602
+1.1903693050651043, 510.6374847106934
+1.2971544426689876, 282.3431267761231
+1.3301489951645564, 273.5074664794922
+1.2979916746815623, 272.4726594177246
+1.3330412512079972, 244.6124692932129
+0.29034489154698817, 181.8872412414551
+0.28840403551783705, 177.11120864868167
+1.4001339802157116, 165.88753205566408
+1.409457700355751, 153.07184459838868
+1.1627406486501295, 104.99311649780275
+1.093098167604119, 102.44589911499024
+1.2198246495075153, 99.73948064575197
+0.29224769157556757, 99.5006790161133
+1.2196724255052291, 97.7494670654297
+2.042671493866446, 95.36145076904297
+2.042557325864731, 92.73463284301758
+2.038789781808144, 85.25218178100586
+0.2887465395229814, 74.58570899047852
+2.0422528778601583, 61.13321718750001
+0.2850170514669656, 58.98400252075196
+1.2193299215000848, 57.869594915771486
+0.290725451552704, 53.332363952636726
+0.29091573155556194, 53.173162866210944
+1.2974969466741315, 51.50155145874024
+0.2941885476047187, 44.97430691528321
+1.663671784173976, 44.01910039672852
+1.6635195601716897, 42.34748898925782
+1.6634434481705462, 42.34748898925782
+0.2833425874418156, 38.84506508789063
+0.13538085721947155, 32.15861945800781
+##END=
+
+
+$$ === CHEMSPECTRA PEAK TABLE AUTO ===
+##TITLE=
+##JCAMP-DX=5.00
+##DATA TYPE=NMRPEAKTABLE
+##DATA CLASS=PEAKTABLE
+##$CSCATEGORY=AUTO_PEAK
+##$CSTHRESHOLD=0.005
+##MAXX=2.340079138333426
+##MAXY=6368.043457031251
+##MINX=-0.1539208591257598
+##MINY=-45.53151071777344
+##NPOINTS=46
+##PEAKTABLE= (XY..XY)
+2.040730637837295, 6368.043457031251
+0.28787125150983484, 6019.393077758789
+0.2897740515384142, 5147.687529034424
+0.28596845148125516, 5047.550045672608
+0.29167685156699386, 2521.984010614014
+0.28402759545210404, 2499.8550596008304
+0.28212479542352464, 857.9346547485352
+0.293617707596145, 827.8456494140626
+1.2489374899447823, 681.1418482727051
+1.0935167836104063, 679.5498374084473
+1.257690370076248, 677.9578265441895
+1.2751200183380365, 663.7889298522949
+1.2551406180379514, 634.1775277770996
+1.250992513975648, 563.4922454040528
+1.2609251301248332, 557.2834030334473
+1.2406412818201755, 536.9852645141602
+1.1903693050651043, 510.6374847106934
+1.2971544426689876, 282.3431267761231
+1.3301489951645564, 273.5074664794922
+1.2979916746815623, 272.4726594177246
+1.3330412512079972, 244.6124692932129
+0.29034489154698817, 181.8872412414551
+0.28840403551783705, 177.11120864868167
+1.4001339802157116, 165.88753205566408
+1.409457700355751, 153.07184459838868
+1.1627406486501295, 104.99311649780275
+1.093098167604119, 102.44589911499024
+1.2198246495075153, 99.73948064575197
+0.29224769157556757, 99.5006790161133
+1.2196724255052291, 97.7494670654297
+2.042671493866446, 95.36145076904297
+2.042557325864731, 92.73463284301758
+2.038789781808144, 85.25218178100586
+0.2887465395229814, 74.58570899047852
+2.0422528778601583, 61.13321718750001
+0.2850170514669656, 58.98400252075196
+1.2193299215000848, 57.869594915771486
+0.290725451552704, 53.332363952636726
+0.29091573155556194, 53.173162866210944
+1.2974969466741315, 51.50155145874024
+0.2941885476047187, 44.97430691528321
+1.663671784173976, 44.01910039672852
+1.6635195601716897, 42.34748898925782
+1.6634434481705462, 42.34748898925782
+0.2833425874418156, 38.84506508789063
+0.13538085721947155, 32.15861945800781
+##END=
+
+
+$$ === CHEMSPECTRA ORIGINAL METADATA ===
+###TITLE= SVS-592 F3.11.fid, SVS-592 F3.11.fid, SVS-592 F3.11.fid
+###JCAMPDX= 6.0, 6.0, 6.0
+###BLOCKS= 2
+###ORIGIN= Bruker BioSpin GmbH, Bruker BioSpin GmbH
+###OWNER= nmr, nmr
+###BLOCKID= 1, 2
+###NUMDIM= 1
+###.OBSERVEFREQUENCY= 100.62383593053799302, 100.62383593053799302
+###.OBSERVENUCLEUS= ^13C, ^13C
+###.SOLVENTNAME= Acetone
+###.PULSESEQUENCE= zgpg30
+###LONGDATE= 2017/08/31 19:27:19.000
+###.ACQUISITIONMODE= SIMULTANEOUS (DQD)
+###$ORIGINALFORMAT= Bruker XWIN-NMR
+###$PARAMETERFILE= (acqus, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/acqus, 0), (audita.txt, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/audita.txt, 0), (auditp.txt, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/pdata/1/auditp.txt, 0), (cpdprg2, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/cpdprg2, 0), (datafile, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/fid, 0), (format.temp, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/format.temp, 0), (intrng, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/pdata/1/intrng, 0), (parm.txt, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/pdata/1/parm.txt, 0), (procs, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/pdata/1/procs, 0), (pulseprogram, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/pulseprogram, 0), (title, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/pdata/1/title, 0), (uxnmr.par, ASCII, C:/Users/sx4535/AppData/Local/Temp/y3NWra6QQ-2OE9WQvTVv-A/SVS-592%20F3/11/uxnmr.par, 0)
+###$DECIM= 792
+###$DSPFVS= 20
+###VARNAME= FREQUENCY,	SPECTRUM/REAL,	SPECTRUM/IMAG,	PAGE NUMBER
+###SYMBOL= X,	R,	I,	N
+###VARTYPE= INDEPENDENT,	DEPENDENT,	DEPENDENT,	PAGE
+###VARFORM= AFFN,	ASDF,	ASDF,	AFFN
+###VARDIM= 65536,	65536,	65536,	2
+###UNITS= HZ,	ARBITRARY UNITS,	ARBITRARY UNITS,
+###MIN= -1558.4727653099362215,	-45.55329132080078125,	-3798.93359375,	1
+###MAX= 23693.667164259240963,	6368.04345703125,	3750.03515625,	1
+###FACTOR= -0.3853229561237381251,	0.079600543212890631506,	0.047486669921875002132,	1
+###PAGE= N=1, N=2
+###NPOINTS= 34
+###LASTX= 205.54173483369058317
+###XUNITS= PPM
+###YUNITS= ARBITRARY UNITS
+###$CSSOLVENTNAME= Acetone-d6 (sep)
+###$CSSOLVENTVALUE= 29.640
+###$CSSOLVENTX= 0
+
+
+##END=
+

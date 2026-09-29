@@ -1,0 +1,50 @@
+{
+  "auto_peaks": {
+    "n": 33,
+    "sha1": "1efe7b09e70ee4b3"
+  },
+  "boundary": {
+    "x": {
+      "max": 235.4936,
+      "min": -15.458417214338084
+    },
+    "y": {
+      "max": 266635237.0,
+      "min": -283555411.0
+    }
+  },
+  "edit_peaks": null,
+  "factor": {
+    "x": 3.95999999999999e-05,
+    "y": 1.0
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 253456,
+    "sha1": "cc27749e8b8cc36e4419c83fcd485bb5fafa9203"
+  },
+  "label": {
+    "x": "PPM",
+    "y": "ARBITRARY"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "",
+    "datatype": "NMR SPECTRUM"
+  },
+  "threshold": 0.005,
+  "title": "dept135p DMSO /opt/topspin3.5pl6/data/complat/nmr PH 44",
+  "typ": "NMR",
+  "xs": {
+    "first": 235.4936,
+    "last": -15.45841721,
+    "len": 32768,
+    "sha1": "2fa8129ed71e9b88e556a647a5e7daac5fc837c9"
+  },
+  "ys": {
+    "first": -982636.0,
+    "last": -119439.0,
+    "len": 32768,
+    "sha1": "907e958050b32c6283883ffb1520e11e3ad75868"
+  }
+}

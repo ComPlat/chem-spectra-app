@@ -1,0 +1,53 @@
+{
+  "auto_peaks": {
+    "n": 100,
+    "sha1": "7d3a561b657b3954"
+  },
+  "boundary": {
+    "x": {
+      "max": 16.00945939662455,
+      "min": -4.00945939662455
+    },
+    "y": {
+      "max": 140335594.00948527,
+      "min": -5987491.823323823
+    }
+  },
+  "edit_peaks": {
+    "n": 100,
+    "sha1": "7d3a561b657b3954"
+  },
+  "factor": {
+    "x": 1.0,
+    "y": 140.33559400948528
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 77151,
+    "sha1": "a01ab8edcfbf23b54c122cc0033e595654db2839"
+  },
+  "label": {
+    "x": "PPM",
+    "y": "ARBITRARY"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": null,
+    "datatype": "NMR SPECTRUM"
+  },
+  "threshold": 0.005,
+  "title": "FID /home/harivyasi/work/projects/chem-spectra-app/tests/fixtures/source/bruker/1H",
+  "typ": "NMR",
+  "xs": {
+    "first": 16.0094594,
+    "last": -4.0094594,
+    "len": 12032,
+    "sha1": "79fe0ebe1f70f1b727f43a3c6837327cf115d0cb"
+  },
+  "ys": {
+    "first": 5139504.43918433,
+    "last": 3604335.70541032,
+    "len": 12032,
+    "sha1": "5c14b548b4ca2352b4b87ff10abc92bf1b880c0b"
+  }
+}
