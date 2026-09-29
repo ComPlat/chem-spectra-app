@@ -5,13 +5,20 @@ on: [push]
 jobs:
   run-unit-tests:
     runs-on: ubuntu-latest
+    # Both ends of the supported range. 3.14 is what the production image runs
+    # (Dockerfile.p2d); 3.12 is the floor `requires-python` still promises, and
+    # a matrix is the only thing that keeps that promise honest.
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
     steps:
     - uses: actions/checkout@v5
     - uses: actions/setup-python@v6
       with:
         check-latest: true
         cache: "pip"
-        python-version: "3.12"
+        python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
         pip install --upgrade pip

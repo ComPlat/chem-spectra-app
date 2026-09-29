@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS base
+FROM python:3.14-slim AS base
 
 # Install any additional OS packages you want in addition to sudo, git and nano
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=apt-cache \
