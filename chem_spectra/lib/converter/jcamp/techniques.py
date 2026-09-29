@@ -137,7 +137,19 @@ SPECTRUM_TECHNIQUES = {
 
 # What an unrecognised datatype gets: the generic curve path established by
 # b87ea91. Its key is '' so that `typ` and `technique.key` stay in step.
-UNKNOWN_TECHNIQUE = SpectrumTechnique('')
+#
+# x_reversed is passed explicitly, like every entry above, rather than
+# inheriting the dataclass default. Reversal is the ppm / wavenumber
+# convention; a file whose x quantity we could not identify has nothing to
+# justify it, and the generic curve path already declines every other
+# NMR-specific assumption. The reversal here was inherited, never chosen.
+#
+# It also has to be False for the editor to agree. react-spectra-editor#336
+# draws the PLAIN layout ascending (`Format.isNonReversedXLayout`), and its
+# comment there states the intent outright -- keep in step with this field,
+# which draws the preview image. Left True, one spectrum would be drawn as
+# two mirror images.
+UNKNOWN_TECHNIQUE = SpectrumTechnique('', x_reversed=False)
 
 
 def technique_for(typ):
