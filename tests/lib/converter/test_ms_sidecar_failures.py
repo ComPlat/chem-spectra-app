@@ -18,6 +18,7 @@ service at all, and that is the failure these cover.
 
 import os
 import subprocess as sbp
+import time
 
 import pytest
 from werkzeug.datastructures import FileStorage
@@ -120,6 +121,51 @@ def test_a_missing_mzml_is_reported_rather_than_iterated(monkeypatch):
     finally:
         handle.close()
     assert 'mzML' in str(caught.value)
+
+
+# - - - the file arrived but cannot be read - - -
+
+def test_an_unparsable_mzml_says_so_rather_than_blaming_the_converter(tmp_path):
+    """Two different failures, two different people to go and see.
+
+    A file that never arrived is the converter's problem; a file that arrived
+    and will not parse is the data's. Reporting both as "no mzML appeared"
+    pointed at the wrong one — and for an mzML upload, where nothing is
+    converted at all, it blamed a converter that never ran.
+    """
+    broken = tmp_path / 'corrupt.mzML'
+    broken.write_text('<mzML>truncated and inval')
+
+    with open(broken, 'rb') as handle:
+        upload = FileContainer(FileStorage(handle, filename='corrupt.mzML'))
+        with pytest.raises(MSConversionFailed) as caught:
+            MSConverter(upload, PARAMS)
+
+    message = str(caught.value)
+    assert 'could not be read as mzML' in message
+    assert 'ParseError' in message, 'the parser\'s own reason must survive'
+    assert 'never appeared' not in message
+    assert 'msconvert' not in message, 'nothing was converted; do not name it'
+
+
+def test_an_mzml_upload_is_not_waited_for(tmp_path, monkeypatch):
+    """mzML and mzXML are written synchronously by __get_mzml, so there is no
+    conversion to wait for. Polling them for MZML_WAIT only delayed the
+    answer by two minutes and made a data problem look like a converter one."""
+    monkeypatch.setattr('chem_spectra.lib.converter.ms.MZML_WAIT', 60.0)
+    broken = tmp_path / 'corrupt.mzML'
+    broken.write_text('<mzML>truncated and inval')
+
+    started = time.monotonic()
+    with open(broken, 'rb') as handle:
+        upload = FileContainer(FileStorage(handle, filename='corrupt.mzML'))
+        with pytest.raises(MSConversionFailed):
+            MSConverter(upload, PARAMS)
+    elapsed = time.monotonic() - started
+
+    assert elapsed < 5.0, (
+        'an mzML upload waited {:.1f}s on a 60s MZML_WAIT; it should not be '
+        'polled at all'.format(elapsed))
 
 
 # - - - cleanup - - -

@@ -330,9 +330,16 @@ class MSConverter:
         mzml_path = self.__get_mzml_path()
         mzml_file = mzml_path.absolute().as_posix()
 
+        # Only the RAW path has a conversion to wait for. mzML and mzXML are
+        # written synchronously by __get_mzml, so a file that will not parse
+        # will not parse in two minutes either; waiting only delays the answer
+        # and makes it look like a converter problem.
+        wait_for = MZML_WAIT if self.ext == 'raw' else 0.0
+
         runs, spectra, auto_scan = None, None, 0
         elapsed = 0.0
         decoded_count = 1
+        unparsable = None
         while True:
             if mzml_path.exists():
                 try:
@@ -341,18 +348,34 @@ class MSConverter:
                     runs = pymzml.run.Reader(mzml_file, build_index_from_scratch=True)
                     spectra, auto_scan = self.__decode(runs, decoded_count)
                     break
-                except:  # noqa
+                except Exception as err:  # noqa
                     decoded_count += 1
-                    pass
+                    unparsable = err
             else:
                 elapsed += 0.1
                 time.sleep(0.1)
-            if elapsed > MZML_WAIT:
-                raise MSConversionFailed(
-                    'no mzML appeared for {} within {:.0f}s of the converter '
-                    'reporting success'.format(mzml_path.name, MZML_WAIT))
+            if elapsed > wait_for:
+                raise self.__no_spectra(mzml_path, unparsable)
 
         return runs, spectra, auto_scan
+
+    def __no_spectra(self, mzml_path, unparsable):
+        """Say which of the two failures this is.
+
+        They are different problems for whoever has to act on them: a file
+        that never arrived is the converter's, a file that arrived and will
+        not parse is the data's. Reporting both as "no mzML appeared" sent the
+        reader after the wrong one -- and for an mzML upload, where nothing is
+        converted at all, it blamed a converter that never ran.
+        """
+        if unparsable is not None:
+            return MSConversionFailed(
+                '{} could not be read as mzML: {}: {}'.format(
+                    mzml_path.name, type(unparsable).__name__, unparsable))
+        return MSConversionFailed(
+            'no mzML was produced for this upload: {} never appeared, '
+            '{:.0f}s after msconvert reported success'.format(
+                mzml_path.name, MZML_WAIT))
 
     def __set_datatables(self):
         dts = []
