@@ -94,20 +94,11 @@ def parse_params(params):
     # Client instructions, not descriptions of the file. Absent means absent:
     # nothing is converted, inverted or relabelled unless explicitly asked for.
     transmittance = _as_bool(params.get('transmittance'))
+    # `invert_y` asks for the axis to be drawn the other way up. It does not
+    # touch the data, so it does not conflict with `transmittance`, which
+    # does: converting to %T already puts absorbance bands downward, and a
+    # caller wanting them up is asking about the picture, not the numbers.
     invert_y = _as_bool(params.get('invert_y'))
-    if transmittance and invert_y:
-        # Raised here rather than in the converter so it really does precede
-        # reading the file: parse_params is the first statement of every
-        # converter's __init__. Asked for both on an unparsable upload, the
-        # converter-level check returned the parse failure instead, which said
-        # nothing about the contradiction that caused it.
-        raise UnconvertibleSpectrum(
-            "'transmittance' and 'invert_y' cannot both be applied. "
-            "Converting to transmittance already turns absorbance peaks "
-            "downward; mirroring that gives 1 - T, which is fractional "
-            "absorptance -- not linear in concentration, and not a unit "
-            "JCAMP-DX can declare. Ask for one or the other."
-        )
     if (cyclicvolta is not None):
         # The ELN does not guarantee these keys: ViewSpectra.js reads
         # `spectraList?.[curveIdx]` and bails when it is missing. Subscripting

@@ -49,9 +49,14 @@ class JcampTechniqueConverter:
         self.solv_peaks = base.solv_peaks
         # - - - - - - - - - - -
         self.fname = base.fname
-        # set by __read_ys / __to_transmittance, read by __set_label
+        # set by __to_transmittance, read by __set_label and the composer
         self.converted_to_transmittance = False
-        self.inverted_y = False
+        # a drawing instruction, carried to the composer and written into the
+        # composed file as ##$CSINVERTY. It never reaches self.ys: inversion
+        # is a viewport concern, and `max(y) - y` on the stored array destroys
+        # the baseline, skews the area-under-curve integration and travels
+        # into every downstream consumer of the exported JCAMP.
+        self.draw_y_inverted = bool(base.params.get('invert_y'))
         self.block_count = self.__count_block()
         self.threshold = self.technique.threshold
         self.obs_freq = self.__set_obs_freq()
@@ -228,9 +233,6 @@ class JcampTechniqueConverter:
 
         if self.params.get('transmittance'):
             ys = self.__to_transmittance(ys)
-        if self.params.get('invert_y'):
-            ys = np.max(ys) - ys
-            self.inverted_y = True
 
         return ys
 
@@ -372,13 +374,9 @@ class JcampTechniqueConverter:
             target['y'] = yUnit
 
         # A conversion we performed is a fact, so it outranks axesUnits, which
-        # is a preference. The inversion suffix records direction, the only
-        # thing a mirror changes -- `max - y` preserves the dimension, and is
-        # not `1 / y`, so `^-1` would be wrong twice over.
+        # is a preference.
         if self.converted_to_transmittance:
             target['y'] = '% TRANSMITTANCE'
-        if self.inverted_y:
-            target['y'] = '{} - inverted'.format(target['y'])
 
         return target
 

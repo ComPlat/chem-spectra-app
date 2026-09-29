@@ -83,8 +83,8 @@ class SpectrumTechnique:
     # - - - signal polarity, three concerns that coincide for infrared - - -
     # This technique is conventionally displayed as transmittance (infrared).
     # Declarative only: it no longer gates any behaviour. What happens to a
-    # spectrum is decided by the client's `transmittance` and `invert_y`
-    # instructions, never inferred from the technique or the data.
+    # spectrum is decided by the client's `transmittance` instruction, never
+    # inferred from the technique or the data.
     conventionally_transmittance: bool = False
     # converter/jcamp/technique.py __exec_peak_picking_logic and
     # __run_auto_pick_peak: bands are troughs, so find_peaks runs on 1 - ys
