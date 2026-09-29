@@ -4,12 +4,13 @@ None of these were covered. Every one was measured on the previous code before
 being fixed, and the measurement is recorded in the test that pins it.
 """
 
+import contextlib
 import logging
 import os
 
 import pytest
 
-from chem_spectra import create_app, DEFAULT_LOG_FILE
+from chem_spectra import create_app, DEFAULT_LOG_NAME
 
 
 @pytest.fixture
@@ -144,10 +145,58 @@ def test_the_instance_directory_is_created_and_errors_are_not_swallowed(monkeypa
         create_app({'IP_WHITE_LIST': ''})
 
 
-def test_the_default_log_file_matches_the_instance_directory():
-    """The default is CWD-relative while instance_path is absolute; in the
-    image WORKDIR is /app and instance_path is /app/instance, so they agree.
-    They have to, or the handler writes somewhere the factory never created."""
-    app = create_app({'IP_WHITE_LIST': ''})
-    assert os.path.abspath(DEFAULT_LOG_FILE) == os.path.join(
-        app.instance_path, 'logging.log')
+def _installed(logger):
+    return [h for h in logger.handlers
+            if getattr(h, '_chem_spectra_file_handler', False)]
+
+
+@contextlib.contextmanager
+def _handlers_restored():
+    """Build apps without leaving handlers on the package logger."""
+    logger = logging.getLogger('chem_spectra')
+    before = list(logger.handlers)
+    try:
+        yield logger
+    finally:
+        for handler in list(logger.handlers):
+            if handler not in before:
+                logger.removeHandler(handler)
+                handler.close()
+        for handler in before:
+            if handler not in logger.handlers:
+                logger.addHandler(handler)
+
+
+def test_the_log_file_follows_the_instance_directory_not_the_cwd(monkeypatch,
+                                                                 tmp_path):
+    """The default used to be the CWD-relative './instance/logging.log', which
+    worked only because the image's WORKDIR is the package's parent. Started
+    from anywhere else the factory raised
+
+        FileNotFoundError: '<cwd>/instance/logging.log'
+
+    out of `FileHandler` -- *after* `os.makedirs(app.instance_path)` had
+    created the real directory. Measured before the fix.
+
+    The previous test asserted that the CWD-relative default and
+    `instance_path` resolved to the same place, which pinned that coincidence
+    rather than the property that matters.
+    """
+    monkeypatch.chdir(tmp_path)
+    with _handlers_restored() as logger:
+        app = create_app({'IP_WHITE_LIST': ''})
+        installed = _installed(logger)
+        assert installed, 'no handler was installed'
+        assert installed[0].baseFilename == os.path.join(
+            app.instance_path, DEFAULT_LOG_NAME)
+        assert str(tmp_path) not in installed[0].baseFilename, \
+            'the log path still follows the working directory'
+
+
+def test_an_explicit_logs_file_still_wins(tmp_path):
+    """`LOGS_FILE` is what production sets (`/shared/logging.log`), so the
+    instance-relative default must not displace it."""
+    target = tmp_path / 'custom.log'
+    with _handlers_restored() as logger:
+        create_app({'IP_WHITE_LIST': '', 'LOGS_FILE': str(target)})
+        assert _installed(logger)[0].baseFilename == str(target)

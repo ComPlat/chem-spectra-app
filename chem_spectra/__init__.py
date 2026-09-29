@@ -7,7 +7,12 @@ from flask import Flask, jsonify
 # instead of stacking another one beside it. See _configure_logging.
 _OURS = '_chem_spectra_file_handler'
 
-DEFAULT_LOG_FILE = './instance/logging.log'
+# Joined to app.instance_path, not to the process working directory.
+# As a CWD-relative path this crashed the factory whenever the two
+# differed: os.makedirs(app.instance_path) created the right directory
+# and FileHandler then opened <cwd>/instance/logging.log, which need not
+# exist.
+DEFAULT_LOG_NAME = 'logging.log'
 
 
 def _configure_logging(app):
@@ -35,7 +40,9 @@ def _configure_logging(app):
         logger.removeHandler(stale)
         stale.close()
 
-    handler = logging.FileHandler(app.config.get('LOGS_FILE') or DEFAULT_LOG_FILE)
+    log_file = (app.config.get('LOGS_FILE')
+                or os.path.join(app.instance_path, DEFAULT_LOG_NAME))
+    handler = logging.FileHandler(log_file)
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
