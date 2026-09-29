@@ -130,6 +130,24 @@ class JcampTechniqueConverter:
             return pairs[1]
         return data
 
+    # Which block the surviving `self.dic[...][0]` reads come from, since the
+    # merged dict no longer says:
+    #
+    #   BLOCKS            the LINK wrapper -- it is the only block that has one
+    #   XFACTOR/YFACTOR   the FIRST block declaring them. For an NMR LINK file
+    #   FACTOR            that is the FID, which is deliberate: factor.x for
+    #                     1H.dx is 0.0001248, the FID's, and the output
+    #                     encoding has always used it. Reading the target
+    #                     block's own factor here would change every NMR
+    #                     output, which is a separate decision from this
+    #                     migration.
+    #   $SFO1             a fallback for .OBSERVEFREQUENCY, file-wide
+    #   $CSSOLVENT*       written by this app, never read from a second block
+    #
+    # Everything that describes the measurement -- FIRST, LAST, FIRSTX, LASTX,
+    # XUNITS, YUNITS, UNITS, .OBSERVEFREQUENCY, $OFFSET -- now comes from
+    # self.target instead.
+
     def __count_block(self):
         count = 1
         try:
@@ -456,6 +474,24 @@ class JcampTechniqueConverter:
 
         return x_unit
 
+    def __peak_table(self, key, position):
+        """The `position`-th block carrying `key`, in file order.
+
+        The composer writes the edit table before the auto one, so the two are
+        told apart by block order. That was previously an index into the merged
+        LDR list, which gave the same answer only because the flat read
+        happened to preserve file order -- the coincidence this migration
+        removes. `test_peak_table_convention.py` pins the result against the
+        `##$CSCATEGORY=` each block declares.
+        """
+        jcamp = getattr(self.base, 'jcamp', None)
+        if jcamp is None:
+            return None
+        blocks = jcamp.blocks_carrying(key)
+        if position >= len(blocks):
+            return None
+        return blocks[position].ldr(key)
+
     def __read_auto_peaks(self):
         if self.params['clear'] or self.clear:
             return
@@ -463,7 +499,7 @@ class JcampTechniqueConverter:
         try:  # legacy
             auto_x = []
             auto_y = []
-            pas = self.dic['PEAKASSIGNMENTS'][0].split('\n')[1:]
+            pas = self.__peak_table('PEAKASSIGNMENTS', 0).split('\n')[1:]
             for pa in pas:
                 info = pa.replace('(', '').replace(')', '') \
                             .replace(' ', '').split(',')
@@ -479,9 +515,7 @@ class JcampTechniqueConverter:
             if self.auto_peaks is None:
                 auto_x = []
                 auto_y = []
-                if len(self.dic['PEAKTABLE']) == 0:
-                    return
-                pas = self.dic['PEAKTABLE'][1].split('\n')[1:]
+                pas = self.__peak_table('PEAKTABLE', 1).split('\n')[1:]
                 for pa in pas:
                     info = pa.replace(' ', '').split(',')
                     auto_x.append(float(info[0]))
@@ -499,7 +533,7 @@ class JcampTechniqueConverter:
         try:  # legacy
             edit_x = []
             edit_y = []
-            pas = self.dic['PEAKASSIGNMENTS'][1].split('\n')[1:]
+            pas = self.__peak_table('PEAKASSIGNMENTS', 1).split('\n')[1:]
             for pa in pas:
                 info = pa.replace('(', '').replace(')', '') \
                             .replace(' ', '').split(',')
@@ -515,7 +549,7 @@ class JcampTechniqueConverter:
             if self.edit_peaks is None:
                 edit_x = []
                 edit_y = []
-                pas = self.dic['PEAKTABLE'][0].split('\n')[1:]
+                pas = self.__peak_table('PEAKTABLE', 0).split('\n')[1:]
                 for pa in pas:
                     info = pa.replace(' ', '').split(',')
                     edit_x.append(float(info[0]))

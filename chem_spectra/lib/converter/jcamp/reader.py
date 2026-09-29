@@ -112,6 +112,15 @@ class JcampFile:
     def blocks_with_datatype(self, predicate):
         return [b for b in self.blocks if predicate(b.datatype)]
 
+    def blocks_carrying(self, key):
+        """Every block declaring `key`, in file order.
+
+        For the peak tables this is the whole convention: the composer writes
+        edit before auto, so which table is which is a question about block
+        order, not about a position in a merged list.
+        """
+        return [b for b in self.blocks if b.has(key)]
+
     def flat_ldrs(self):
         """Every LDR of every block, concatenated in file order.
 
