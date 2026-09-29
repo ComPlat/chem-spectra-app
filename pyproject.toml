@@ -15,15 +15,22 @@ classifiers = [
     "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "flask==2.*",
-  "gunicorn==22.*",
+  "flask==3.*",
+  "gunicorn==26.*",
   "matplotlib==3.*",
   "netCDF4==1.*",
-  "numpy>=2.0,<2.4",
+  # The 2018 fork we pin below writes `np.dtype('a8')` in fileio/tecmag.py.
+  # numpy removed that alias in 2.5, so `import nmrglue` raises TypeError and
+  # every test errors at collection. Measured: fails on 2.5.3, imports on
+  # 2.4.0. The ceiling is the pin's, not ours -- it lifts when the pin does.
+  "numpy>=2.0,<2.5",
+  # Imported directly by lib/external/chemotion_converter_lcms.py. It was
+  # never declared and arrived only as a pyopenms transitive dependency, so a
+  # pyopenms release that drops it would have broken us with an ImportError.
+  "pandas>=2.3,<4",
   "pymzml==2.*",
   "requests==2.*",
-  "rdkit==2025.*",
-  "setuptools>=80,<84",
+  "rdkit==2026.*",
   "werkzeug==3.*",
   "scipy==1.*",
   "pyopenms==3.*",
