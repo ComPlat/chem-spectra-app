@@ -17,6 +17,32 @@ MARGIN = 1
 
 tmp_dir = Path('./chem_spectra/tmp')  # TBD
 
+# How long to wait for the msconvert sidecar to answer. It must exceed the
+# ceiling the sidecar imposes on itself -- `mscrunner.py` runs the conversion
+# under `timeout=10` -- so that its own reply arrives instead of being cut off
+# here. When this was also 10s the two raced, and ours usually won, which threw
+# away the sidecar's account of what went wrong.
+SIDECAR_TIMEOUT = 30
+
+# How long to wait for the .mzML to appear after the sidecar has answered.
+#
+# In the deployed topology this should be ~0: the shim blocks on its HTTP
+# request and `mscrunner` runs msconvert synchronously, so the file exists by
+# the time __run_cmd returns. It stays generous because INSTALL.md documents a
+# different local setup -- a real `docker exec -d` against the plain
+# ProteoWizard image -- where `-d` genuinely detaches and the poll is the only
+# thing waiting for the conversion.
+MZML_WAIT = 120.0
+
+
+class MSConversionFailed(RuntimeError):
+    """msconvert produced no mzML for this upload.
+
+    Raised instead of letting the failure surface further down as
+    `TypeError: 'NoneType' object is not iterable`, which said nothing about
+    the cause and only appeared after the full MZML_WAIT.
+    """
+
 
 class MSConverter:
     def __init__(self, file, params=False):
@@ -33,10 +59,15 @@ class MSConverter:
         self.fname = fn[0]
         self.ext = param_ext or fn[-1].lower()
         self.target_dir, self.hash_str = self.__mk_dir()
-        self.__get_mzml(file)
-        self.runs, self.spectra, self.auto_scan = self.__read_mz_ml()
-        self.datatables = self.__set_datatables()
-        self.__clean()
+        # __clean in a finally: it used to be the last statement here, so any
+        # failure above left the uploaded file and its hashed directory on the
+        # shared volume for good.
+        try:
+            self.__get_mzml(file)
+            self.runs, self.spectra, self.auto_scan = self.__read_mz_ml()
+            self.datatables = self.__set_datatables()
+        finally:
+            self.__clean()
 
     def __set_params(self, params):
         exact_mz = params.get('mass', 0) if params else 0
@@ -106,7 +137,37 @@ class MSConverter:
         return cmd_msconvert
 
     def __run_cmd(self):
-        sbp.run(self.cmd_msconvert, timeout=10)
+        """Hand the command to the sidecar, and keep what it says.
+
+        The result used to be discarded entirely -- return code, stdout and
+        stderr. It is worth keeping, because `/bin/docker` in the deployed
+        image is not Docker: it is a shim that POSTs this command to the
+        msconvert service, and its `requests.post` sits outside its own
+        try/except, so it exits non-zero when the service cannot be reached.
+        That is precisely the failure that used to appear two minutes later as
+        an unexplained `TypeError`.
+
+        The `-d` in the command is inert -- there is no daemon, and the shim
+        blocks on its HTTP request -- but it must stay: with MSC_VALIDATE set,
+        which the deployed images do, the shim asserts on it.
+        """
+        try:
+            result = sbp.run(
+                self.cmd_msconvert,
+                timeout=SIDECAR_TIMEOUT,
+                capture_output=True,
+                text=True,
+            )
+        except sbp.TimeoutExpired:
+            raise MSConversionFailed(
+                'the msconvert service did not answer within '
+                '{}s'.format(SIDECAR_TIMEOUT))
+
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout or '').strip()
+            raise MSConversionFailed(
+                'the msconvert service could not be reached, or refused the '
+                'command{}'.format(': ' + detail if detail else ''))
 
     def __get_mzml_path(self):
         fname = ''.join(self.tf.name.split('/')[-1])
@@ -286,8 +347,10 @@ class MSConverter:
             else:
                 elapsed += 0.1
                 time.sleep(0.1)
-            if elapsed > 120.0:
-                break
+            if elapsed > MZML_WAIT:
+                raise MSConversionFailed(
+                    'no mzML appeared for {} within {:.0f}s of the converter '
+                    'reporting success'.format(mzml_path.name, MZML_WAIT))
 
         return runs, spectra, auto_scan
 
@@ -314,5 +377,13 @@ class MSConverter:
         return dts
 
     def __clean(self):
-        self.tf.close()
-        shutil.rmtree(self.target_dir.absolute().as_posix())
+        """Tolerant on purpose: this now runs in a finally.
+
+        `self.tf` is only set for the extensions __get_mzml knows, and the
+        directory may be half-built, so a strict cleanup would replace the real
+        exception with its own.
+        """
+        handle = getattr(self, 'tf', None)
+        if handle is not None:
+            handle.close()
+        shutil.rmtree(self.target_dir.absolute().as_posix(), ignore_errors=True)
