@@ -199,7 +199,7 @@ class TransformerModel:
                 # NMR data
                 if (has_processed_files):
                     return self.zip2cv_with_processed_file(target_dir, self.params, self.file.name)
-                fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
+                fbcv = FidBaseConverter.from_directory(target_dir, self.params, self.file.name)
                 if not fbcv:
                     return False, False, False
 
