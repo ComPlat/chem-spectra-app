@@ -49,7 +49,12 @@ def is_metadata_to_be_ignored(keyword, is_ntuples=False):
         # a stray leftover LDR that duplicates the NTUPLES data table, so
         # it should be suppressed like XYDATA/XYDATA_OLD already are.
         return is_ntuples
-    return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE']
+    # DATATABLE is the NTUPLES data table's own LDR. The flat read never
+    # surfaced it, so it was never listed; reading per block does, and without
+    # this the whole encoded spectrum lands in the original-metadata dump.
+    # XYDATA_OLD is kept in the list although nothing produces it any more:
+    # removing it would silently change any file still carrying one.
+    return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', 'DATATABLE', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE']
 
 
 TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'
@@ -131,14 +136,32 @@ class BaseComposer:
             TEXT_ORIGINAL_METADATA,
         ]
 
-    def gen_headers_root(self):
+    def gen_headers_root(self, block_count=1):
+        """The LINK block header. `##BLOCKS` must state how many children follow.
+
+        It was hardcoded to 1 while a 1H file carries three, so every file this
+        app produced misdeclared its own structure. The count is not knowable
+        when this runs -- the children are generated afterwards -- so callers
+        compose the body first and pass the total in; `count_child_blocks`
+        derives it.
+        """
         return [
             '##TITLE={}\n'.format(self.title),
             '##JCAMP-DX=5.0\n',
             '##DATA TYPE=LINK\n',
-            '##BLOCKS=1\n',  # TBD
+            '##BLOCKS={}\n'.format(block_count),
             '\n'
         ]
+
+    @staticmethod
+    def count_child_blocks(body):
+        """Children are the `##END=` lines, less the one closing the LINK itself.
+
+        Counted from the composed text rather than tracked as the body is
+        built, so a branch added later cannot forget to increment it.
+        """
+        endings = sum(1 for line in body if line.startswith('##END='))
+        return max(endings - 1, 1)
 
     def generate_original_metadata(self):
         content = self.__header_original_metadata()

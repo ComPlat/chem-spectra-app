@@ -65,12 +65,17 @@ def test_base_composer_generate_original_metadata_ignores_xypoints_for_ntuples(j
     # MASS SPECTRUM / LC-MS) duplicates the real NTUPLES data table and must
     # not leak into the CHEMSPECTRA ORIGINAL METADATA dump, same as
     # XYDATA/XYDATA_OLD already don't.
+    #
+    # DATATABLE is here for the same reason and is the one the block-aware
+    # read newly exposes: the flat read never surfaced it, so without it the
+    # whole encoded spectrum landed in the dump.
     base_converter = JcampBaseConverter(jcamp_file_1h)
     metadata = {
         "DATACLASS": ["NTUPLES"],
         ".AVERAGES": "16",
         "XYPOINTS": ["(XY..XY)\n999, 999;\n888, 888;"],
         "XYDATA_OLD": ["(XY..XY)\n999, 999;\n888, 888;"],
+        "DATATABLE": ["(X++(Y..Y))\n777, 777;\n666, 666;"],
     }
     base_converter.dic = metadata
     composer = BaseComposer(core=base_converter)

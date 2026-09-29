@@ -1,0 +1,53 @@
+{
+  "auto_peaks": {
+    "n": 40,
+    "sha1": "14d00a66331a8804"
+  },
+  "boundary": {
+    "x": {
+      "max": 235.46773928013738,
+      "min": -15.488107274957907
+    },
+    "y": {
+      "max": 2894.583251953125,
+      "min": -14.364369387817383
+    }
+  },
+  "edit_peaks": {
+    "n": 29,
+    "sha1": "0597d86c9611c7cb"
+  },
+  "factor": {
+    "x": -0.3853229561237381,
+    "y": 0.03618229064941406
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 167938,
+    "sha1": "26a32426711b4dcdb7241656914b134613935aed"
+  },
+  "label": {
+    "x": "PPM",
+    "y": "ARBITRARY"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "NTUPLES",
+    "datatype": "NMR SPECTRUM"
+  },
+  "threshold": 0.005,
+  "title": "SVS-701A3.11.fid",
+  "typ": "NMR",
+  "xs": {
+    "first": 235.46773928,
+    "last": -15.48810727,
+    "len": 65536,
+    "sha1": "1e0f2fc93399315e5837340ef0756e6af1d5bec7"
+  },
+  "ys": {
+    "first": 0.32564062,
+    "last": 0.36182291,
+    "len": 65536,
+    "sha1": "89bd1454eb85af76196d8775d08e9b63216e7d29"
+  }
+}

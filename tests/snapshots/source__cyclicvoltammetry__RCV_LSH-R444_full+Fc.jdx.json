@@ -1,0 +1,50 @@
+{
+  "auto_peaks": {
+    "n": 10,
+    "sha1": "dc7999496ed00c3a"
+  },
+  "boundary": {
+    "x": {
+      "max": 1.50049,
+      "min": -1.9005
+    },
+    "y": {
+      "max": 5.34724e-06,
+      "min": -3.07144e-06
+    }
+  },
+  "edit_peaks": null,
+  "factor": {
+    "x": 1.0,
+    "y": 1.0
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 32219,
+    "sha1": "0084b0f6dfb4a11936e6baa51fded72fddd28f9f"
+  },
+  "label": {
+    "x": "V vs Ref",
+    "y": "A"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "XYPOINTS",
+    "datatype": "CYCLIC VOLTAMMETRY"
+  },
+  "threshold": 1.0,
+  "title": "Spectrum",
+  "typ": "CYCLIC VOLTAMMETRY",
+  "xs": {
+    "first": 1.49048,
+    "last": 1.50049,
+    "len": 680,
+    "sha1": "0f27b9049a66fe4f88daa36a6248ce697da91f5a"
+  },
+  "ys": {
+    "first": 5.35e-06,
+    "last": 5.29e-06,
+    "len": 680,
+    "sha1": "8a3ea1db9ddd9b63e88bc8c49b812cc0b567e484"
+  }
+}
