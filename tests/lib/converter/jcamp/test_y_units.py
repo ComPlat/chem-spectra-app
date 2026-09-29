@@ -11,13 +11,23 @@ left alone, and an HPLC UV/VIS file declaring `ABSORBANCE` came back saying
 `TRANSMITTANCE` -- the inverse quantity -- with the untouched original still
 visible as `###YUNITS`. The file contradicted itself.
 
-Both decisions now belong to the client, as explicit instructions, and
-nothing is inferred:
+Both decisions now belong to the client, as an explicit instruction, and
+nothing is inferred: `transmittance` converts, `T = 100 * 10**(-A)`, and says
+so. Without it, `##YUNITS` is exactly what arrived.
 
-- `transmittance` converts, `T = 10**(-A)`, and says so;
-- `invert_y` mirrors for display and says so.
+`invert_y` is the second such instruction, and it is a **drawing** one. It
+used to mirror the stored array with `max(y) - y` -- a display concern
+implemented as a data mutation, which destroys the baseline, skews the
+area-under-curve integration, travels into the exported JCAMP, and had to be
+labelled `X - inverted`, a unit JCAMP-DX does not define. It now moves the
+viewport instead: `plt.ylim` is drawn the other way up, the numbers are
+untouched, and the request is recorded as `##$CSINVERTY` for renderers
+downstream.
 
-With neither, `##YUNITS` is exactly what arrived.
+The need is regional rather than exotic -- DSC's exo-up against exo-down,
+cyclic voltammetry's IUPAC against Texas sign convention, and indirect
+photometric HPLC, where the analyte is a dip. Instrument software offers the
+same toggle. What none of them do is rewrite the stored trace.
 """
 
 import json
@@ -26,6 +36,7 @@ import re
 import numpy as np
 import pytest
 
+import chem_spectra.lib.composer.technique as technique_module
 from chem_spectra.lib.composer.technique import TechniqueComposer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.technique import (
@@ -120,20 +131,77 @@ def test_composed_units_agree_with_the_preserved_original(tmp_path):
     assert ours == original == 'ABSORBANCE'
 
 
-# - - - invert - - -
+# - - - invert: the viewport, never the array - - -
 
-def test_invert_mirrors_and_says_so(tmp_path):
-    converter = _probe(ABSORBANCE_SHAPED, 'INFRARED SPECTRUM', tmp_path,
-                       yunits='ABSORBANCE', params={'invert_y': True})
-    assert list(converter.ys) == [max(converter.data) - y for y in converter.data]
-    assert converter.label['y'] == 'ABSORBANCE - inverted'
+def _rendered_ylim(converter):
+    """The axis limits as drawn. They have to be read during `savefig`:
+    `tf_img` clears the figure straight after, which is why
+    `test_ms_orientation.py` spies in the same place."""
+    captured = {}
+    real_savefig = technique_module.plt.savefig
+
+    def spy(*args, **kwargs):
+        captured['ylim'] = technique_module.plt.gca().get_ylim()
+        return real_savefig(*args, **kwargs)
+
+    technique_module.plt.savefig = spy
+    try:
+        TechniqueComposer(converter).tf_img().close()
+    finally:
+        technique_module.plt.savefig = real_savefig
+    return captured['ylim']
 
 
-def test_invert_is_not_gated_to_infrared(tmp_path):
-    """It is an instruction; refusing it for other techniques would be silent."""
-    converter = _probe(ABSORBANCE_SHAPED, 'HPLC UV/VIS SPECTRUM', tmp_path,
-                       yunits='mAU', params={'invert_y': True})
-    assert converter.label['y'] == 'mAU - inverted'
+def test_invert_leaves_the_numbers_alone(tmp_path):
+    """The whole point. Same array, same units."""
+    plain = _absorbance_probe(tmp_path)
+    inverted = _absorbance_probe(tmp_path, params={'invert_y': True})
+    assert list(inverted.ys) == list(plain.ys)
+    assert inverted.label['y'] == plain.label['y']
+
+
+def test_invert_does_not_invent_a_unit(tmp_path):
+    """`ABSORBANCE - inverted` was a label JCAMP-DX cannot parse."""
+    inverted = _absorbance_probe(tmp_path, params={'invert_y': True})
+    assert 'inverted' not in inverted.label['y']
+
+
+def test_the_mutation_is_gone_from_the_source():
+    """Not merely unreachable from the API."""
+    source = open('chem_spectra/lib/converter/jcamp/technique.py').read()
+    assert 'np.max(ys) - ys' not in source
+    assert '- inverted' not in source
+
+
+def test_invert_draws_the_axis_the_other_way_up(tmp_path):
+    """Measured from the render rather than asserted off the flag."""
+    low, high = _rendered_ylim(_absorbance_probe(tmp_path))
+    assert low < high, 'the plain render should ascend'
+
+    top, bottom = _rendered_ylim(
+        _absorbance_probe(tmp_path, params={'invert_y': True}))
+    assert top > bottom, 'the inverted render should descend'
+    assert (top, bottom) == pytest.approx((high, low)), (
+        'only the direction should change, not the bounds')
+
+
+def test_invert_is_recorded_for_renderers_downstream(tmp_path):
+    """`##$CSINVERTY` is a viewing preference now, not a claim about the
+    data -- which is what makes it safe to write."""
+    composed = TechniqueComposer(
+        _absorbance_probe(tmp_path, params={'invert_y': True}))
+    assert '##$CSINVERTY=true' in ''.join(composed.meta)
+
+
+def test_invert_and_transmittance_are_no_longer_exclusive(tmp_path):
+    """They were, while inversion meant `max(%T) - %T` -- fractional
+    absorptance, not linear in concentration and unlabellable. Nothing
+    computes that any more: one converts the numbers, the other turns the
+    picture over, so asking for both is coherent."""
+    converter = _absorbance_probe(
+        tmp_path, params={'transmittance': True, 'invert_y': True})
+    assert converter.label['y'] == '% TRANSMITTANCE'
+    assert min(converter.ys) == pytest.approx(1.0, abs=1e-4)
 
 
 # - - - transmittance - - -
@@ -150,34 +218,6 @@ def test_transmittance_converts_and_relabels(tmp_path):
     # T% = 100 * 10**(-A): the A = 2.0 band becomes 1.0, the 0.02 baseline ~95.5
     assert min(converter.ys) == pytest.approx(1.0, abs=1e-4)
     assert max(converter.ys) == pytest.approx(100 * 10 ** -0.02, abs=1e-4)
-
-
-def test_the_two_instructions_are_mutually_exclusive(tmp_path):
-    """Asking for both is a contradiction, so it is refused.
-
-    Convert-then-mirror gives `max(%T) - %T`, which is approximately
-    `100 - %T`: fractional absorptance on a percent scale. It is not linear in
-    concentration (A = 1.0 -> 90%, A = 2.0 -> 99%, A = 3.0 -> 99.9%), so strong
-    bands saturate and flat-top;
-    it is circular, since a caller wanting a zero baseline with peaks upward
-    already had that in the absorbance they sent; and JCAMP-DX has no unit for
-    it, so any label would be a mislabel.
-
-    The other order is worse, not better: `10**-(max(A) - A)` makes the sample
-    transparent at its absorption bands and opaque everywhere else.
-    """
-    with pytest.raises(UnconvertibleSpectrum, match='cannot both be applied'):
-        _absorbance_probe(
-            tmp_path, params={'transmittance': True, 'invert_y': True})
-
-
-def test_the_refusal_names_both_instructions(tmp_path):
-    """The caller has to know which two to choose between."""
-    with pytest.raises(UnconvertibleSpectrum) as excinfo:
-        _absorbance_probe(
-            tmp_path, params={'transmittance': True, 'invert_y': True})
-    assert 'transmittance' in str(excinfo.value)
-    assert 'invert_y' in str(excinfo.value)
 
 
 def test_transmittance_refuses_a_file_that_declares_transmittance(tmp_path):
@@ -249,16 +289,14 @@ def test_transmittance_refuses_data_that_is_not_absorbance_scaled(tmp_path):
 
 # - - - provenance - - -
 
-def test_flags_are_emitted_only_when_acted_on(tmp_path):
-    plain = TechniqueComposer(_probe(
-        ABSORBANCE_SHAPED, 'INFRARED SPECTRUM', tmp_path, yunits='ABSORBANCE'))
-    assert '##$CSINVERTY' not in ''.join(plain.meta)
+def test_the_flags_are_emitted_only_when_asked_for(tmp_path):
+    plain = TechniqueComposer(_absorbance_probe(tmp_path))
     assert '##$CSTRANSMITTANCE' not in ''.join(plain.meta)
+    assert '##$CSINVERTY' not in ''.join(plain.meta)
 
-    inverted = TechniqueComposer(_probe(
-        ABSORBANCE_SHAPED, 'INFRARED SPECTRUM', tmp_path, yunits='ABSORBANCE',
-        params={'invert_y': True}))
-    assert '##$CSINVERTY=true' in ''.join(inverted.meta)
+    converted = TechniqueComposer(
+        _absorbance_probe(tmp_path, params={'transmittance': True}))
+    assert '##$CSTRANSMITTANCE=true' in ''.join(converted.meta)
 
 
 def test_nothing_infers_from_the_data_shape():
@@ -283,39 +321,19 @@ def test_endpoint_without_flags_succeeds(client):
 
 
 def test_endpoint_invert_succeeds(client):
+    """Through the controller, because a converter-level test would pass
+    while the controller still returned 500; that has happened twice here."""
     assert _post(client, TRANSMITTANCE_SHAPED, invert_y='true').status_code == 200
 
 
-def test_endpoint_refuses_both_instructions_together(client):
-    """422 with the reason, through the controller.
-
-    The converter-level test above would pass while the controller still
-    returned 500; that has happened twice in this repo.
-
-    `IR.dx` declares transmittance, so it would be refused for that reason on
-    `transmittance` alone. Getting the conflict message instead shows the
-    contradiction outranks the declared-unit guard.
-    """
+def test_endpoint_accepts_both_instructions_together(client):
+    """`IR.dx` declares transmittance, so `transmittance` is still refused on
+    that fact. The reason names the declared unit rather than a conflict
+    between the two instructions, because there is no longer a conflict."""
     response = _post(client, TRANSMITTANCE_SHAPED,
                      transmittance='true', invert_y='true')
     assert response.status_code == 422
-    body = json.loads(response.data)
-    assert 'cannot both be applied' in body['error']
-
-
-def test_the_conflict_is_caught_before_the_file_is_read(client):
-    """The check lives in parse_params, not in the converter.
-
-    Review caught this: while it sat in `__read_ys`, the file had already been
-    parsed by `JcampBaseConverter.__init__`, so an unparsable upload with both
-    flags returned the parse failure -- 403 with an HTML body -- and said
-    nothing about the contradiction that caused it. `MS.dx` is the fixture
-    pinned elsewhere as unparsable.
-    """
-    response = _post(client, './tests/fixtures/source/MS.dx',
-                     transmittance='true', invert_y='true')
-    assert response.status_code == 422
-    assert 'cannot both be applied' in json.loads(response.data)['error']
+    assert 'already declares' in json.loads(response.data)['error']
 
 
 @pytest.mark.parametrize('source, reason', [

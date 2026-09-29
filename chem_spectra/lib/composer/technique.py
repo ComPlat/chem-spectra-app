@@ -174,7 +174,7 @@ class TechniqueComposer(BaseComposer):
         lines = []
         if getattr(self.core, 'converted_to_transmittance', False):
             lines.append('##$CSTRANSMITTANCE=true\n')
-        if getattr(self.core, 'inverted_y', False):
+        if getattr(self.core, 'draw_y_inverted', False):
             lines.append('##$CSINVERTY=true\n')
         return lines
 
@@ -676,10 +676,16 @@ class TechniqueComposer(BaseComposer):
         y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max * (1.1 if self._technique().peaks_inverted else 1.5))
 
 
-        plt.ylim(
-            y_boundary_min,
-            y_boundary_max,
-        )
+        # Drawn the other way up when asked. The data is untouched, so the
+        # axis ticks and the peak table still read in the units the file
+        # declares -- this only changes which end of the plot is at the top.
+        # Standard practice where the convention is regional or the signal is
+        # a dip: DSC exo-up against exo-down, cyclic voltammetry's IUPAC
+        # against Texas sign, indirect photometric HPLC.
+        if getattr(self.core, 'draw_y_inverted', False):
+            plt.ylim(y_boundary_max, y_boundary_min)
+        else:
+            plt.ylim(y_boundary_min, y_boundary_max)
 
         ax = plt.gca()
         if self._technique().cyclic_voltammetry:
