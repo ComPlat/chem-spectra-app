@@ -1,12 +1,12 @@
 {
   "auto_peaks": {
     "n": 46,
-    "sha1": "a57bc5d59834bb0b"
+    "sha1": "b4ba45244c6d4bcf"
   },
   "boundary": {
     "x": {
-      "max": 2.340079138333426,
-      "min": -0.1539208591257598
+      "max": 235.46773928013738,
+      "min": -15.488107274957907
     },
     "y": {
       "max": 6368.043457031251,
@@ -14,8 +14,8 @@
     }
   },
   "edit_peaks": {
-    "n": 46,
-    "sha1": "a57bc5d59834bb0b"
+    "n": 25,
+    "sha1": "9e5c8932cb05e4c7"
   },
   "factor": {
     "x": 1.0,
@@ -23,12 +23,12 @@
   },
   "itg_table": [],
   "jcamp": {
-    "len": 83340,
-    "sha1": "c73f62c5e7227cbf51eb97eab810241a5e6906f1"
+    "len": 82522,
+    "sha1": "29086c59e8f53807c8df37f528e16ec16a9f3d77"
   },
   "label": {
     "x": "PPM",
-    "y": "ARBITRARY UNITS"
+    "y": "ARBITRARY"
   },
   "mpy_itg_table": [],
   "target": {
@@ -39,10 +39,10 @@
   "title": "SVS-592 F3.11.fid",
   "typ": "NMR",
   "xs": {
-    "first": 2.34007914,
-    "last": -0.15392086,
+    "first": 235.46773928,
+    "last": -15.48810727,
     "len": 65536,
-    "sha1": "e402184a64fbd1a7304b0cdf23494d94eddec5ab"
+    "sha1": "1e0f2fc93399315e5837340ef0756e6af1d5bec7"
   },
   "ys": {
     "first": -3.18402173,

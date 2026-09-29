@@ -1,3 +1,50 @@
 {
-  "error": "no converter"
+  "auto_peaks": {
+    "n": 9,
+    "sha1": "961d16d806695160"
+  },
+  "boundary": {
+    "x": {
+      "max": 599.25,
+      "min": 199.9
+    },
+    "y": {
+      "max": 194139920.0,
+      "min": 151554.0
+    }
+  },
+  "edit_peaks": null,
+  "factor": {
+    "x": 1.0,
+    "y": 194.13992
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 22726,
+    "sha1": "ebc87239d7a9edf9f82a14706570556083deb929"
+  },
+  "label": {
+    "x": "PPM",
+    "y": "ARBITRARY"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "",
+    "datatype": ""
+  },
+  "threshold": 0.5,
+  "title": "",
+  "typ": "",
+  "xs": {
+    "first": 199.9,
+    "last": 599.25,
+    "len": 3347,
+    "sha1": "ff658c97346dad21cf1a773499caae4a4f2f5cdd"
+  },
+  "ys": {
+    "first": 1097735.0,
+    "last": 501026.0,
+    "len": 3347,
+    "sha1": "4b1f5c88f7db9f5a44982caf2ef60dfa43222cf0"
+  }
 }

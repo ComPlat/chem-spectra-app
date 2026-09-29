@@ -1,3 +1,50 @@
 {
-  "error": "TypeError: only length-1 arrays can be converted to Python scalars"
+  "auto_peaks": {
+    "n": 1,
+    "sha1": "d5953ec40e184fd5"
+  },
+  "boundary": {
+    "x": {
+      "max": 46.9892,
+      "min": 7.0
+    },
+    "y": {
+      "max": 12.2141,
+      "min": 0.9047
+    }
+  },
+  "edit_peaks": null,
+  "factor": {
+    "x": 1.0,
+    "y": 1.22141e-05
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 13135,
+    "sha1": "bd573eb77f401a2247e92480ef2f3271d03107c8"
+  },
+  "label": {
+    "x": "2Theta",
+    "y": "COUNTS"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "",
+    "datatype": "X-RAY DIFFRACTION"
+  },
+  "threshold": 1.0,
+  "title": "Spectrum",
+  "typ": "X-RAY DIFFRACTION",
+  "xs": {
+    "first": 7.0,
+    "last": 46.9892,
+    "len": 1844,
+    "sha1": "9d5bf63cd5b2d19619aba245c4b858d2b027ee3a"
+  },
+  "ys": {
+    "first": 1.1905,
+    "last": 8.3332,
+    "len": 1844,
+    "sha1": "1c5b8a04fbfa799eb350b6015075f569dbb7a768"
+  }
 }

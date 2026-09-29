@@ -5,6 +5,7 @@ from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (  # noqa: E402
     calc_mpy_center, get_curve_endpoint, cal_area_multiplicity
 )
+from chem_spectra.lib.converter.jcamp.reader import block_from_headers
 
 def coupling_string(js):
     if len(js) == 0:
@@ -15,6 +16,8 @@ class NMRiumDataConverter:
     def __init__(self, file=None):
         self.datatypes = ['NMR SPECTRUM']
         self.datatype = 'NMR SPECTRUM'
+        # Not a JCAMP file; it carries no LDRs at all.
+        self.target = block_from_headers()
         self.params = {'integration':{}, 'multiplicity':{}, 'ref_name':'', 'ref_value':'', 'select_x':0}
         self.file = file
         self.fname = ''

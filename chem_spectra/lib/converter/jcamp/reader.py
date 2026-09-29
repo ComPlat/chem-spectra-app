@@ -132,6 +132,29 @@ class JcampFile:
         return flat
 
 
+def block_from_headers(headers=None):
+    """A single block standing for a core that is not a JCAMP file.
+
+    `FidBaseConverter`, `NMRiumDataConverter` and `CdfMSConverter` build their
+    data themselves and set the headers they need -- `FIRSTX`, `$OFFSET`,
+    `.OBSERVEFREQUENCY` -- into a dict of their own. They still reach
+    `JcampTechniqueConverter`, which asks the target block for LDRs, so they
+    carry one of these: for them that dict *is* the only block.
+
+    Scalars are wrapped so `.ldr()` reads them the same way as a parsed LDR;
+    keys nmrglue's Bruker reader nests as sub-dicts are skipped, since they are
+    not LDRs.
+    """
+    raw = {}
+    for key, value in (headers or {}).items():
+        if isinstance(value, dict):
+            continue
+        raw[key] = value if isinstance(value, list) else [value]
+    block = Block(raw, 0)
+    block._data_read = True
+    return block
+
+
 def read_jcamp(path, read_err='ignore'):
     return JcampFile([
         Block(raw, index)

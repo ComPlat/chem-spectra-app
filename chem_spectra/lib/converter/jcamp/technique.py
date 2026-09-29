@@ -3,7 +3,7 @@ from scipy import signal
 
 from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
-from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
+from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
 # re-exported: the check that raises it moved to parse_params, but the
 # error handler and the tests import it from here
@@ -37,9 +37,20 @@ class JcampTechniqueConverter:
         self.dataclass = base.dataclass
         self.data_format = base.data_format
         self.typ = base.typ
-        self.target_idx = self.__index_target()
+        # The block holding the measurement, chosen in JcampBaseConverter by
+        # file order. Everything that used to index a merged list by
+        # `target_idx` now asks this block directly.
+        self.target = base.target
         self.dic = base.dic
-        self.data = make_ni_data_ys(base, self.target_idx)
+        self.data = self.__block_ys(base.data)
+        if self.data is None:
+            # nmrglue read the file but found no data array. Raising something
+            # named lets jcamp2cvp turn it into the same "could not convert"
+            # result any other unusable file produces, rather than an
+            # AttributeError out of the request.
+            raise UnparsableJcampData(
+                'no data array could be parsed from this JCAMP file'
+            )
         self.title = base.title
         # the descriptor travels with the flags it backs; without it the
         # composer falls back to UNKNOWN_TECHNIQUE and draws every technique
@@ -85,49 +96,39 @@ class JcampTechniqueConverter:
         else:
             return json.loads(user_dt_mapping)['datatypes']
 
-    def __index_target(self):
-        """Index of the block holding the primary measurement.
+    @staticmethod
+    def __block_pairs(data):
+        """(x, y) columns if the block holds coordinate pairs, else None.
 
-        Only PRIMARY datatypes belong in data_type.json. Auxiliary blocks that
-        sit alongside a primary one in the same file -- NMR FID, NMR PEAK
-        TABLE, NMP PEAK ASSIGNMENTS, INFRARED PEAK TABLE, INFRARED
-        INTERFEROGRAM -- are deliberately absent from it, because this picks
-        the first RECOGNISED block and would otherwise read the auxiliary one
-        instead of the spectrum. test_auxiliary_blocks_stay_unmapped enforces
-        this. A datatype missing from the map is not an error: the file takes
-        the generic curve path and JcampBaseConverter logs it.
+        `(XY..XY)`, XYPOINTS and PEAKTABLE all come back as `(1, N, 2)`. The
+        app used to discard nmrglue's parse of these and re-read the raw text
+        itself via `XYDATA_OLD`; nmrglue's own parse is byte-identical on the
+        XRD fixtures and handles indented and signed lines the app's did not.
         """
-        if self.params.get('user_data_type_mapping'):
-            data_type_mappings = self.__read_user_data_type_mapping()
-            target = data_type_mappings.values()
-            target_topics = [value.upper() for values in target for value in values]
-        else:
-            with open(data_type_json, 'r') as mapping_file:
-                target = json.load(mapping_file).get("datatypes").values()
-                target_topics = [value.upper() for values in target for value in values]
+        if isinstance(data, dict) or data is None:
+            return None
+        if data.ndim == 3 and data.shape[0] == 1 and data.shape[2] == 2:
+            return data[0].T
+        if data.ndim == 2 and data.shape[1] == 2:
+            return data.T
+        return None
 
-        # Take the first recognised block in the file's own order. The old
-        # loop had no break, so the LAST entry of the flattened mapping won
-        # instead -- an order nobody chose, and one that could disagree with
-        # the classification in JcampBaseConverter.__set_datatype.
-        idx = None
-        for pos, dt in enumerate(self.datatypes):
-            if dt in target_topics:
-                idx = pos
-                break
+    @classmethod
+    def __block_ys(cls, data):
+        """The target block's own y series.
 
-        if idx is None:
-            # Nothing in this file is a recognised datatype. Fall back to the
-            # first block and skip the LINK offset below: it would drive the
-            # index negative and silently read the last block instead. The
-            # unrecognised datatype is logged by JcampBaseConverter.
-            return 0
-
-        if 'LINK' in self.datatypes:
-            count_link = self.datatypes.count('LINK')
-            idx -= count_link
-
-        return max(idx, 0)
+        `getdataarray` gives NTUPLES as {'real': [page, ...]}. Read per block
+        those are this block's pages, so the first is the one wanted -- where
+        the flat read returned every block's pages in one list and `target_idx`
+        had to pick among them.
+        """
+        if isinstance(data, dict):
+            pages = data.get('real') or []
+            return pages[0] if len(pages) else None
+        pairs = cls.__block_pairs(data)
+        if pairs is not None:
+            return pairs[1]
+        return data
 
     def __count_block(self):
         count = 1
@@ -139,59 +140,59 @@ class JcampTechniqueConverter:
         return count
 
     def __read_xs(self, base):  # TBD
-        if (base.data_format == '(XY..XY)'):
-            xs = make_ni_data_xs(base)
-            return xs
+        pairs = self.__block_pairs(base.data)
+        if pairs is not None:
+            return pairs[0]
 
         beg_pt = None
         end_pt = None
-        idx = self.target_idx
+        # Trap A. FIRST/LAST are in Hz and are divided by the observe frequency
+        # here; FIRSTX/LASTX are already in the axis unit and are not. Whether
+        # the Hz->ppm conversion has happened is therefore a property of which
+        # branch ran, and the final division below must not repeat it.
+        #
+        # This used to be arranged by accident: `__set_x_unit` read UNITS[0],
+        # the FID block's SECONDS, so `x_unit == 'HZ'` was false and the second
+        # division was skipped. Reading the target block gives the honest HZ,
+        # so the rule is now explicit.
+        already_in_axis_units = False
 
         if beg_pt is None:
             try:
                 obs_freq = self.obs_freq
-                shift = float(self.dic['$OFFSET'][idx])
+                shift = float(self.target.ldr('$OFFSET'))
                 beg_pt = float(
-                    self.dic['FIRST'][idx].replace(' ', '').split(',')[0]
+                    self.target.ldr('FIRST').replace(' ', '').split(',')[0]
                 ) / obs_freq
                 end_pt = float(
-                    self.dic['LAST'][idx].replace(' ', '').split(',')[0]
+                    self.target.ldr('LAST').replace(' ', '').split(',')[0]
                 ) / obs_freq
                 shift = beg_pt - shift
                 beg_pt = beg_pt - shift
                 end_pt = end_pt - shift
+                already_in_axis_units = True
             except:  # noqa
-                pass
+                beg_pt = None
 
         if beg_pt is None:  # MNova
             try:
                 obs_freq = self.obs_freq
                 beg_pt = float(
-                    self.dic['FIRST'][idx].replace(' ', '').split(',')[0]
+                    self.target.ldr('FIRST').replace(' ', '').split(',')[0]
                 ) / obs_freq
                 end_pt = float(
-                    self.dic['LAST'][idx].replace(' ', '').split(',')[0]
+                    self.target.ldr('LAST').replace(' ', '').split(',')[0]
                 ) / obs_freq
+                already_in_axis_units = True
             except:  # noqa
-                pass
+                beg_pt = None
 
         if beg_pt is None:
             try:
-                beg_pt = to_float(self.dic['FIRSTX'][idx])
-                end_pt = to_float(self.dic['LASTX'][idx])
+                beg_pt = to_float(self.target.ldr('FIRSTX'))
+                end_pt = to_float(self.target.ldr('LASTX'))
             except:  # noqa
-                pass
-            
-        if beg_pt is None:
-            try:
-                while len(self.dic['FIRSTX']) <= idx:
-                    self.dic['FIRSTX'].insert(0, '')
-                while len(self.dic['LASTX']) <= idx:
-                    self.dic['LASTX'].insert(0, '')
-                beg_pt = to_float(self.dic['FIRSTX'][idx])
-                end_pt = to_float(self.dic['LASTX'][idx])
-            except:  # noqa
-                pass
+                beg_pt = None
 
         if self.technique.em_wave and beg_pt < end_pt:
             buf = beg_pt
@@ -208,9 +209,9 @@ class JcampTechniqueConverter:
             endpoint=True
         )
 
-        if self.x_unit == 'HZ':
+        if self.x_unit == 'HZ' and not already_in_axis_units:
             x = x / self.obs_freq
-        
+
         return x
 
     def __read_ys(self):
@@ -246,22 +247,18 @@ class JcampTechniqueConverter:
         """
         unit = None
         try:
-            unit = self.dic['YUNITS'][self.target_idx]
+            unit = self.target.ldr('YUNITS')
         except:  # noqa
-            try:
-                unit = self.dic['YUNITS'][0]
-            except:  # noqa
-                pass
+            pass
         # ##UNITS= is per block, so the record wanted is the target block's,
         # not a fixed index. Four fixtures declare exactly one record and no
         # ##YUNITS= at all; a hardcoded [1] returns nothing for them, so a file
         # declaring transmittance only there would slip past this guard.
-        for idx in (self.target_idx, 0):
-            try:
-                _, y, _ = self.dic['UNITS'][idx].replace(' ', '').split(',')
-                return y
-            except:  # noqa
-                continue
+        try:
+            _, y, _ = self.target.ldr('UNITS').replace(' ', '').split(',')
+            return y
+        except:  # noqa
+            pass
         return unit
 
     def __to_transmittance(self, ys):
@@ -344,8 +341,8 @@ class JcampTechniqueConverter:
     def __set_label(self):
         target = {'x': 'PPM', 'y': 'ARBITRARY'}
         try:
-            x = self.dic['XUNITS'][self.target_idx]
-            y = self.dic['YUNITS'][self.target_idx]
+            x = self.target.ldr('XUNITS')
+            y = self.target.ldr('YUNITS')
             x = 'PPM' if x.upper() == 'HZ' else x
             y = 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y
             target = {'x': x, 'y': y}
@@ -353,7 +350,7 @@ class JcampTechniqueConverter:
             pass
 
         try:
-            x, y, _ = self.dic['UNITS'][1].replace(' ', '').split(',')
+            x, y, _ = self.target.ldr('UNITS').replace(' ', '').split(',')
             x = 'PPM' if x.upper() == 'HZ' else x
             y = 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y
             target = {'x': x, 'y': y}
@@ -385,7 +382,7 @@ class JcampTechniqueConverter:
     def __set_obs_freq(self):
         obs_freq = None
         try:
-            obs_freq = float(self.dic['.OBSERVEFREQUENCY'][self.target_idx])
+            obs_freq = float(self.target.ldr('.OBSERVEFREQUENCY'))
         except:  # noqa
             try:
                  obs_freq = float(self.dic['.OBSERVEFREQUENCY'][0])
@@ -439,20 +436,23 @@ class JcampTechniqueConverter:
             return xUnit
 
         try: # jcamp version 6
-            units = self.dic['UNITS']
-            array_unit = units[0].split(',')
+            # Trap A: this used to read UNITS[0], which for an NMR LINK file is
+            # the *FID* block's SECONDS. That wrong answer happened to be load
+            # bearing -- it stopped the Hz->ppm division below from running a
+            # second time after FIRST/LAST were already divided by the observe
+            # frequency. Reading the target block gives the honest HZ, so the
+            # single-conversion rule is now enforced by __read_xs tracking
+            # whether it has already converted, rather than by this being wrong.
+            array_unit = self.target.ldr('UNITS').split(',')
             x_unit = (array_unit[0].upper()).strip()
         except: # noqa
             pass
 
         if (x_unit is None):
             try:
-                x_unit = self.dic['XUNITS'][self.target_idx].upper()
+                x_unit = self.target.ldr('XUNITS').upper()
             except:  # noqa
-                try:
-                     x_unit = self.dic['XUNITS'][0].upper()
-                except:
-                    pass
+                pass
 
         return x_unit
 

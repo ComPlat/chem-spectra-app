@@ -309,10 +309,10 @@ def test_the_conflict_is_caught_before_the_file_is_read(client):
     Review caught this: while it sat in `__read_ys`, the file had already been
     parsed by `JcampBaseConverter.__init__`, so an unparsable upload with both
     flags returned the parse failure -- 403 with an HTML body -- and said
-    nothing about the contradiction that caused it. `MS.dx` is the fixture
-    pinned elsewhere as unparsable.
+    nothing about the contradiction that caused it. `no_data_table.jdx` is the
+    fixture pinned elsewhere as unparsable.
     """
-    response = _post(client, './tests/fixtures/source/MS.dx',
+    response = _post(client, './tests/fixtures/source/no_data_table.jdx',
                      transmittance='true', invert_y='true')
     assert response.status_code == 422
     assert 'cannot both be applied' in json.loads(response.data)['error']

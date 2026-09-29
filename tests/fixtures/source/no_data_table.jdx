@@ -1,0 +1,14 @@
+$$ A well-formed JCAMP header block that declares no data table at all.
+$$ nmrglue reads it without error and returns data=None, which is the case
+$$ UnparsableJcampData exists for. MS.dx used to serve this purpose; it parses
+$$ on ComPlat/nmrglue@b0802a0, so a file that is unambiguously empty replaced
+$$ it rather than another file that merely happens to fail today.
+##TITLE=headers only, no data table
+##JCAMP-DX=5.00
+##DATA TYPE=INFRARED SPECTRUM
+##XUNITS=1/CM
+##YUNITS=TRANSMITTANCE
+##FIRSTX=400
+##LASTX=4000
+##NPOINTS=0
+##END=
