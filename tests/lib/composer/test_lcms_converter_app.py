@@ -264,3 +264,63 @@ def test_init_does_not_touch_triple_hash_xypoints_metadata_echo():
         tf.close()
         if os.path.exists(tf.name):
             os.unlink(tf.name)
+
+
+# - - - a cleared peak list is an edit - - -
+#
+# `_has_lcms_edits` grouped "" with None, so a peak list the client had
+# emptied was indistinguishable from one it never sent. With no integrations
+# either, nothing refreshed the jcamp and `tf_jcamp` returned the stored peak
+# file untouched, so the peaks the user deleted came straight back.
+#
+# The controller keeps the two apart -- request.form.get(default=None) gives
+# None for an absent field and "" for an empty one -- and the curve path
+# already relies on it: jcamp/technique.py guards __parse_edit with
+# `params['peaks_str'] is not None`. That is #289, "honor explicitly cleared
+# peaks_str instead of keeping stale edit peaks", which never reached here.
+
+
+@pytest.mark.parametrize('params,expected', [
+    (None, False),
+    ({}, False),
+    ({'peaks_str': None}, False),
+    ({'peaks_str': ''}, True),          # cleared: the case this fixes
+    ({'peaks_str': '1.0,2.0'}, True),
+])
+def test_a_sent_peaks_str_counts_as_an_edit(params, expected):
+    assert LCMSConverterAppComposer._has_lcms_edits(params) is expected
+
+
+@pytest.mark.parametrize('integration,expected', [
+    ('{}', False),
+    ('[]', False),
+    ('{"stack": [1]}', True),
+    ('{"curves": [{"x": 1}]}', True),
+    ('{"230": [[0, 1, 2]]}', True),
+])
+def test_the_integration_cases_are_unchanged(integration, expected):
+    assert LCMSConverterAppComposer._has_lcms_edits(
+        {'integration': integration}) is expected
+
+
+def test_clearing_every_peak_rewrites_the_file(uvvis_tmp):
+    """The symptom, at the level the user sees it.
+
+    Without the fix `tf_jcamp` hands back `self.data[0]` -- the same object,
+    the stored bytes -- and the deleted peaks reappear.
+    """
+    composer = LCMSConverterAppComposer([uvvis_tmp], None, {'peaks_str': ''})
+    assert composer._should_refresh_jcamp() is True
+    out = composer.tf_jcamp()
+    assert out is not uvvis_tmp, 'the stored file was returned unchanged'
+    body = open(out.name).read()
+    assert '##NPOINTS=0' in body
+    assert '##PEAKTABLE= (XY..XY)\n##END=' in body, 'the peak table must be empty'
+
+
+def test_a_file_with_no_instructions_is_still_passed_through(uvvis_tmp):
+    """The other half: absent must keep meaning absent, or every read of an
+    untouched dataset would recompose it."""
+    composer = LCMSConverterAppComposer([uvvis_tmp], None, None)
+    assert composer._should_refresh_jcamp() is False
+    assert composer.tf_jcamp() is uvvis_tmp
