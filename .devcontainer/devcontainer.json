@@ -13,6 +13,14 @@
   "remoteUser": "debian",
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/debian/chem_spectra,type=bind",
   "workspaceFolder": "/home/debian/chem_spectra",
+  // `uv sync` installs into ${containerWorkspaceFolder}/.venv, where the pip
+  // step it replaced installed into the user site. Without .venv/bin on PATH
+  // the commands INSTALL.md, docs/ and CLAUDE.md tell you to run -- plain
+  // `python -m pytest`, `flask run ...` -- fail with ModuleNotFoundError
+  // unless every one of them is prefixed with `uv run`.
+  "remoteEnv": {
+    "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}"
+  },
   // Configure tool-specific properties.
   "customizations": {
     // Configure properties specific to VS Code.
@@ -25,7 +33,8 @@
       ],
       "settings": {
         "[python]": {
-          "python.defaultInterpreterPath": "/usr/local/bin/python",
+          // the interpreter uv sync populates, not the image's bare one
+          "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
           "editor.defaultFormatter": "ms-python.autopep8"
         },
         "editor.formatOnSave": true
