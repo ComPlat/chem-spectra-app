@@ -44,7 +44,6 @@ class JcampBaseConverter:
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
         self.solv_peaks = []
-        self.is_dept = self.__is_dept()
         self.__read_solvent()
         self.__read_user_data_type_mapping()
 
@@ -153,12 +152,3 @@ class JcampBaseConverter:
     def __read_solvent(self):
         parse_solvent(self)
 
-    def __is_dept(self):
-        if not self.ncl == '13C':
-            return False
-
-        for p in (self.dic.get('.PULSESEQUENCE', []) + self.dic.get('.PULSE SEQUENCE', [])):
-            if 'dept' in p:
-                return True
-
-        return False
