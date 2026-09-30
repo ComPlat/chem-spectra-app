@@ -56,7 +56,7 @@ def test_unknown_technique_matches_the_generic_curve_path():
     assert technique_for('NEUTRON SCATTERING') is UNKNOWN_TECHNIQUE
     assert technique_for('') is UNKNOWN_TECHNIQUE
     assert UNKNOWN_TECHNIQUE.threshold == 0.5
-    assert UNKNOWN_TECHNIQUE.x_reversed is True
+    assert UNKNOWN_TECHNIQUE.x_reversed is False
     assert UNKNOWN_TECHNIQUE.x_axis == 'generic'
     assert UNKNOWN_TECHNIQUE.y_axis == 'generic'
 

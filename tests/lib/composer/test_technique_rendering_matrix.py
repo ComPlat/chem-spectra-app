@@ -176,11 +176,18 @@ def test_unrecognised_datatype_rendering(render, tmp_path):
     """The generic curve path, which #291 established.
 
     A datatype absent from data_type.json is not an error: it renders with
-    the default threshold, the reversed fallback orientation and generic
-    axis labels.
+    the default threshold, generic axis labels, and the x-axis running
+    forward.
+
+    Forward is a change of value, not of intent. `UNKNOWN_TECHNIQUE` used to
+    inherit `x_reversed=True` from the `SpectrumTechnique` default, which no
+    mapped entry reads, so "draw an unidentified x quantity the way NMR
+    draws ppm" was never decided -- and react-spectra-editor#336 draws the
+    PLAIN layout, where every unrecognised datatype lands, ascending. See
+    `test_unknown_orientation.py`.
     """
     drawn = render('NEUTRON SCATTERING', tmp_path)
     assert drawn['threshold'] == 0.5
-    assert drawn['orientation'] == 'reversed'
+    assert drawn['orientation'] == 'forward'
     assert _x_style(drawn['xlabel']) == 'generic'
     assert _y_style(drawn['ylabel']) == 'generic'
