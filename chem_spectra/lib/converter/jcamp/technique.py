@@ -49,14 +49,28 @@ class JcampTechniqueConverter:
         self.solv_peaks = base.solv_peaks
         # - - - - - - - - - - -
         self.fname = base.fname
-        # set by __to_transmittance, read by __set_label and the composer
+        # set by __to_transmittance *this run*, read by __set_label: only a
+        # conversion we performed may rename the unit.
         self.converted_to_transmittance = False
-        # a drawing instruction, carried to the composer and written into the
+        # ...whereas the record says the data *is* transmittance, whoever
+        # converted it and whenever. A file we composed earlier already
+        # carries it, and recomposing must not throw that away: see below.
+        self.transmittance_recorded = self.__declared_flag('$CSTRANSMITTANCE')
+        # A drawing instruction, carried to the composer and written into the
         # composed file as ##$CSINVERTY. It never reaches self.ys: inversion
         # is a viewport concern, and `max(y) - y` on the stored array destroys
         # the baseline, skews the area-under-curve integration and travels
         # into every downstream consumer of the exported JCAMP.
-        self.draw_y_inverted = bool(base.params.get('invert_y'))
+        #
+        # It is set by the request *or* by the file's own record. Without the
+        # second half the flag is write-only: every pass through this app
+        # recomposes, and a recompose carries no `invert_y`, so the record
+        # written on one request is dropped on the next. A viewing preference
+        # that does not survive a round trip is not a preference. The file's
+        # declaration is authoritative unless the request overrides it, which
+        # is the rule #312 applied to the stored point order.
+        self.draw_y_inverted = (bool(base.params.get('invert_y'))
+                                or self.__declared_flag('$CSINVERTY'))
         self.block_count = self.__count_block()
         self.threshold = self.technique.threshold
         self.obs_freq = self.__set_obs_freq()
@@ -218,6 +232,16 @@ class JcampTechniqueConverter:
         
         return x
 
+    def __declared_flag(self, record):
+        """Whether the file carries `##<record>=true`.
+
+        Only the real record counts. The original-metadata dump re-emits it as
+        `###$CSINVERTY= true`, which parses under a different key, so reading
+        it here cannot resurrect a flag from a file that never set one.
+        """
+        values = self.dic.get(record) or []
+        return any(str(v).strip().lower() == 'true' for v in values)
+
     def __read_ys(self):
         """Apply the client's processing instructions, and nothing else.
 
@@ -329,6 +353,7 @@ class JcampTechniqueConverter:
             )
 
         self.converted_to_transmittance = True
+        self.transmittance_recorded = True
         return transmittance
 
     def __find_boundary(self):

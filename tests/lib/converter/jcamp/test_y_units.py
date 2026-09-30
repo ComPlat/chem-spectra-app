@@ -30,6 +30,7 @@ photometric HPLC, where the analyte is a dip. Instrument software offers the
 same toggle. What none of them do is rewrite the stored trace.
 """
 
+import io
 import json
 import re
 
@@ -395,3 +396,87 @@ def test_slightly_negative_absorbance_still_converts(tmp_path):
         JcampBaseConverter(_synthetic(tmp_path, ys), {'transmittance': True}))
     assert converter.label['y'] == '% TRANSMITTANCE'
     assert all(abs(float(v)) < 1e6 for v in converter.ys)
+
+
+# - - - the records have to survive a round trip - - -
+#
+# Every pass through this app recomposes, and a recompose carries no
+# instructions, so a record written on one request was dropped on the next.
+# That made both flags write-only: the editor, which reads them from the file,
+# never saw one. Found by loading a composed file in the editor and watching
+# the y-axis toggle stay off.
+
+def _recompose(client, body):
+    response = client.post(
+        '/jcamp',
+        data={'file': (io.BytesIO(body), 'p.jdx')},
+        content_type='multipart/form-data',
+    )
+    assert response.status_code == 200
+    return response.data
+
+
+def _records(body, name):
+    return re.findall((r'^##\$%s=.*$' % name).encode(), body, re.M)
+
+
+def _recompose_with(client, body, **form):
+    data = {'file': (io.BytesIO(body), 'p.jdx')}
+    data.update(form)
+    response = client.post('/jcamp', data=data,
+                           content_type='multipart/form-data')
+    assert response.status_code == 200
+    return response.data
+
+
+def test_the_inversion_record_survives_recomposition(client):
+    with open(TRANSMITTANCE_SHAPED, 'rb') as handle:
+        source = handle.read()
+    once = _recompose_with(client, source, invert_y='true')
+    assert _records(once, 'CSINVERTY'), 'the first pass must write it'
+    twice = _recompose(client, once)
+    assert _records(twice, 'CSINVERTY'), 'a recompose must keep it'
+    assert _records(_recompose(client, twice), 'CSINVERTY')
+
+
+def test_a_file_that_never_asked_does_not_gain_the_record(client):
+    """The other half: reading the file must not invent a flag."""
+    with open(TRANSMITTANCE_SHAPED, 'rb') as handle:
+        plain = _recompose(client, handle.read())
+    assert not _records(plain, 'CSINVERTY')
+
+
+def test_the_metadata_echo_alone_does_not_set_it(client):
+    """`###$CSINVERTY= true` is the original-metadata dump, not a record.
+
+    It is written on every pass whether or not the flag is set, so reading it
+    would make the first inverted file infect every later one -- including a
+    file whose real record had been deliberately removed.
+    """
+    with open(TRANSMITTANCE_SHAPED, 'rb') as handle:
+        once = _recompose_with(client, handle.read(), invert_y='true')
+    # The echo appears only once the record is in the *input*, so it takes a
+    # second pass to produce a file carrying both spellings.
+    twice = _recompose(client, once)
+    assert b'###$CSINVERTY' in twice, 'the echo must be there to strip around'
+
+    stripped = re.sub(rb'^##\$CSINVERTY=true\r?\n', b'', twice, flags=re.M)
+    assert not _records(stripped, 'CSINVERTY')
+    assert b'###$CSINVERTY' in stripped
+    assert not _records(_recompose(client, stripped), 'CSINVERTY')
+
+
+def test_the_transmittance_record_survives_recomposition(client, tmp_path):
+    """Through the endpoint, which is the path that actually recomposes.
+
+    `_absorbance_probe` is called only to write the file; the conversion under
+    test is the one the request asks for.
+    """
+    _absorbance_probe(tmp_path)
+    source = (tmp_path / 'absorbance.jdx').read_bytes()
+    once = _recompose_with(client, source, transmittance='true')
+    assert _records(once, 'CSTRANSMITTANCE')
+    assert b'##YUNITS=% TRANSMITTANCE' in once
+    twice = _recompose(client, once)
+    assert _records(twice, 'CSTRANSMITTANCE'), 'a recompose must keep it'
+    assert b'##YUNITS=% TRANSMITTANCE' in twice
