@@ -105,4 +105,15 @@ def create_app(test_config=None):
     def _unconvertible_spectrum(err):
         return jsonify(error=str(err)), 422
 
+    # Same shape, so the ELN can show the reason. `Jcamp::Create.spectrum`
+    # reaches "Chemspectra response missing metadata header" whenever the body
+    # is not JSON, which is what an unhandled exception here used to produce.
+    # The status comes off the exception: 422 when the upload cannot be
+    # processed, 502 when the converter is the thing that is unavailable.
+    from chem_spectra.lib.converter.ms import MSConversionFailed
+
+    @app.errorhandler(MSConversionFailed)
+    def _ms_conversion_failed(err):
+        return jsonify(error=str(err)), getattr(err, 'status', 422)
+
     return app
