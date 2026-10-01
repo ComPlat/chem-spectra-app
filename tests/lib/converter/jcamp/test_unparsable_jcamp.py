@@ -36,15 +36,21 @@ def _post(client, endpoint):
         )
 
 
-@pytest.mark.parametrize('endpoint,expected', [
-    # each endpoint's own existing "could not convert" status, unchanged
-    ('/api/v1/chemspectra/file/convert', 400),
-    ('/zip_jcamp_n_img', 403),
+@pytest.mark.parametrize('endpoint', [
+    '/api/v1/chemspectra/file/convert',
+    '/zip_jcamp_n_img',
 ])
-def test_unparsable_jcamp_is_rejected_not_a_500(client, endpoint, expected):
+def test_unparsable_jcamp_is_rejected_not_a_500(client, endpoint):
     """Asserted at the endpoint. A converter-level test would pass while
-    the controller still returned 500 -- that has happened twice."""
-    assert _post(client, endpoint).status_code == expected
+    the controller still returned 500 -- that has happened twice.
+
+    These were each endpoint's own status, 400 and 403. Every refusal now
+    answers 422 with a JSON body, so the ELN can show the reason instead of
+    "Chemspectra response missing metadata header" -- see
+    tests/controller/test_refusals.py."""
+    response = _post(client, endpoint)
+    assert response.status_code == 422
+    assert response.get_json()['error']
 
 
 def test_the_parse_failure_is_named(client):
@@ -141,7 +147,8 @@ def test_combine_images_rejects_an_overlay_of_nothing(client):
         data={'files[]': [(_bad(), 'a.jdx'), (_bad(), 'b.jdx')]},
         content_type='multipart/form-data',
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
+    assert response.get_json()['error']
 
 
 def test_combine_images_is_unaffected_for_usable_files(client):
