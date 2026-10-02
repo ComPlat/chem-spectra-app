@@ -562,6 +562,16 @@ def test_an_explicit_false_clears_the_inversion_record(client):
     assert not _records(_recompose(client, cleared), 'CSINVERTY')
 
 
+@pytest.mark.parametrize('value', ['undefined', 'null', 'on'])
+def test_an_unrecognised_value_keeps_the_inversion_record(client, value):
+    """Only a recognised false clears it. `undefined` is what JS FormData
+    makes of a missing value, and must not undo the user's choice."""
+    with open(TRANSMITTANCE_SHAPED, 'rb') as handle:
+        once = _recompose_with(client, handle.read(), invert_y='true')
+    kept = _recompose_with(client, once, invert_y=value)
+    assert _records(kept, 'CSINVERTY')
+
+
 def _converted_once(client, tmp_path):
     _absorbance_probe(tmp_path)
     source = (tmp_path / 'absorbance.jdx').read_bytes()
