@@ -41,7 +41,7 @@ import chem_spectra.lib.composer.technique as technique_module
 from chem_spectra.lib.composer.technique import TechniqueComposer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.technique import (
-    JcampTechniqueConverter, UnconvertibleSpectrum,
+    JcampTechniqueConverter, UnconvertibleSpectrum, is_transmittance_unit,
 )
 from chem_spectra.lib.converter.jcamp.techniques import SPECTRUM_TECHNIQUES
 
@@ -625,15 +625,20 @@ def test_converted_data_is_refused_a_second_conversion(client, tmp_path):
 def test_a_relabelled_conversion_is_still_refused(client, tmp_path):
     """The record, not the unit text, is what proves the data is %T.
 
-    A converted file whose y unit was later rewritten (here to `T`, which
-    names no transmittance) slips past the declared-unit check. Without the
-    record check a strongly absorbing trace would be converted a second
+    A converted file whose y unit was later rewritten (here to `COUNTS`,
+    which names no transmittance) slips past the declared-unit check. Without
+    the record check a strongly absorbing trace would be converted a second
     time, and anything else refused with a misleading shape reason.
     """
     once = _converted_once(client, tmp_path)
-    relabelled = re.sub(rb'^##YUNITS=.*$', b'##YUNITS=T', once, flags=re.M)
+    relabelled = re.sub(rb'^##YUNITS=.*$', b'##YUNITS=COUNTS', once,
+                        flags=re.M)
     assert _records(relabelled, 'CSTRANSMITTANCE')
-    assert not re.search(rb'^##YUNITS=.*TRANSMITTANCE', relabelled, re.M)
+    # every declared y unit must be one the declared-unit check lets through
+    declared = re.findall(rb'^##YUNITS=(.*)$', relabelled, re.M)
+    assert declared
+    assert not any(is_transmittance_unit(u.decode()) for u in declared)
+    assert not re.search(rb'^##UNITS=', relabelled, re.M)
     response = client.post(
         '/zip_jcamp_n_img', content_type='multipart/form-data',
         data={'file': (io.BytesIO(relabelled), 'p.jdx'),
