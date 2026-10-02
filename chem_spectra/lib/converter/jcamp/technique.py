@@ -462,11 +462,13 @@ class JcampTechniqueConverter:
                 'would overflow'.format(y_min)
             )
 
-        # Percent, not the 0-1 ratio: every commercial IR/UV-Vis instrument
-        # stores %T, absorbance itself runs 0-2.5 so a 0-1 array is routinely
-        # misread as absorbance, and '% TRANSMITTANCE' is a unit JCAMP-DX can
-        # declare -- so external tools axis it correctly with no renderer
-        # knowing to multiply by 100.
+        # Percent, not the 0-1 ratio: %T is how instruments commonly present
+        # transmittance, and absorbance itself runs 0-2.5, so a 0-1 array is
+        # routinely misread as absorbance. '% TRANSMITTANCE' is NOT a JCAMP-DX
+        # unit, though: 4.24 (6.2.2) lists TRANSMITTANCE only as the ratio
+        # I_T/I_0, beside REFLECTANCE, ABSORBANCE, KUBELKA-MUNK and ARBITRARY
+        # UNITS. A strict reader will not recognise it as transmittance, and
+        # one that maps it to TRANSMITTANCE sees values 100x too large.
         transmittance = absorbance_to_percent_transmittance(ys)
         if not np.isfinite(transmittance).all():
             raise UnconvertibleSpectrum(
