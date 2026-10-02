@@ -127,6 +127,13 @@ class JcampTechniqueConverter:
         # the baseline, skews the area-under-curve integration and travels
         # into every downstream consumer of the exported JCAMP.
         #
+        # Display only, so nothing computed from the data follows it: peak
+        # picking, integration and the peak tables all run on self.ys, and
+        # whether peaks are maxima or dips is decided by the technique
+        # (`peaks_inverted`), never by this flag. Under #298, which mirrored
+        # the array, the picker ran on the mirrored data and picked the
+        # other polarity; it no longer does.
+        #
         # It is set by the request *or* by the file's own record. Without the
         # second half the flag is write-only: every pass through this app
         # recomposes, and a recompose carries no `invert_y`, so the record
@@ -691,6 +698,9 @@ class JcampTechniqueConverter:
         self.edit_peaks = {'x': edit_x, 'y': edit_y}
 
     def __exec_peak_picking_logic(self, refresh_solvent=False):
+        # Polarity comes from the technique (`peaks_inverted`,
+        # `negative_peaks`), not from draw_y_inverted: invert_y is a
+        # viewport flip and the picker sees the data as stored.
         max_y = np.max(self.ys)
         height = 0.2 * max_y if refresh_solvent else self.threshold * max_y
 
