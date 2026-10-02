@@ -713,3 +713,47 @@ def test_the_bagit_overlay_flips_when_every_member_is_inverted(tmp_path):
 def test_a_mixed_bagit_overlay_stays_upright(tmp_path):
     low, high = _bagit_overlay_ylim(tmp_path, BAGIT_MEMBERS[:1])
     assert low < high
+
+
+# - - - unit records belong to the block that declares them - - -
+#
+# nmrglue collects every block's records into one list per label, so an
+# index into it is a block number only when every block declares the record.
+# Here only the interferogram declares ##UNITS=, and its `CM, VOLTS, ...`
+# landed at index 0 -- the spectrum's index -- relabelling the spectrum and
+# hiding a %T y axis from the transmittance guard.
+
+LINK_WITH_INTERFEROGRAM = './tests/fixtures/source/ir_link_interferogram.jdx'
+
+
+def test_another_blocks_units_do_not_relabel_the_spectrum():
+    converter = JcampTechniqueConverter(
+        JcampBaseConverter(LINK_WITH_INTERFEROGRAM, None))
+    assert converter.label == {'x': '1/CM', 'y': 'ABSORBANCE'}
+
+
+def test_the_composed_file_keeps_the_spectrums_units():
+    composed = ''.join(TechniqueComposer(JcampTechniqueConverter(
+        JcampBaseConverter(LINK_WITH_INTERFEROGRAM, None))).meta)
+    assert '##XUNITS=1/CM' in composed
+    assert '##YUNITS=ABSORBANCE' in composed
+    assert 'VOLTS' not in composed.split('$$ === CHEMSPECTRA SPECTRUM ORIG')[0]
+
+
+def test_the_guard_reads_the_spectrums_own_unit(tmp_path):
+    """The data is absorbance-shaped, so only the unit can stop this."""
+    body = open(LINK_WITH_INTERFEROGRAM).read().replace(
+        '##YUNITS=ABSORBANCE', '##YUNITS=%T', 1)
+    target = tmp_path / 'link.jdx'
+    target.write_text(body)
+    with pytest.raises(UnconvertibleSpectrum, match='already declares'):
+        JcampTechniqueConverter(
+            JcampBaseConverter(str(target), {'transmittance': True}))
+
+
+def test_a_trailing_comma_in_the_units_record_is_accepted(tmp_path):
+    """Mnova writes `HZ, ARBITRARY UNITS, ARBITRARY UNITS,`. Rejected, the
+    label was taken from the peak-table block's XUNITS/YUNITS instead."""
+    converter = JcampTechniqueConverter(JcampBaseConverter(
+        './tests/fixtures/source/mnova/STM212_H.jcamp', None))
+    assert converter.label == {'x': 'PPM', 'y': 'ARBITRARY'}
