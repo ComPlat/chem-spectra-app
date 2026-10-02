@@ -35,6 +35,44 @@ def _normalise_unit(unit):
 
 def is_transmittance_unit(unit):
     return bool(unit) and _normalise_unit(unit) in TRANSMITTANCE_UNITS
+
+
+UNIT_RECORDS = ('XUNITS', 'YUNITS', 'UNITS')
+
+
+def _label_key(label):
+    """A JCAMP-DX label as nmrglue keys it: upper case, without spaces,
+    dashes, slashes or underscores."""
+    return (label.strip().upper().replace(' ', '').replace('-', '')
+            .replace('_', '').replace('/', ''))
+
+
+def read_block_records(path, keys):
+    """The `keys` records of each block, in file order, or None.
+
+    nmrglue collects every block's records into one list per label, so an
+    index into that list is a block number only when every block declares
+    the record. This rebuilds the blocks from the file itself: each
+    ##TITLE= opens one, as JCAMP-DX requires. Only single-line values are
+    kept, which is all the unit records need.
+    """
+    try:
+        with open(path, encoding='utf-8', errors='ignore') as handle:
+            lines = handle.readlines()
+    except (OSError, TypeError):
+        return None
+    blocks = []
+    for line in lines:
+        line = line.split('$$', 1)[0].strip()
+        if not line.startswith('##') or '=' not in line:
+            continue
+        label, value = line[2:].split('=', 1)
+        key = _label_key(label)
+        if key == 'TITLE':
+            blocks.append({})
+        elif blocks and key in keys and value.strip():
+            blocks[-1].setdefault(key, value.strip())
+    return blocks
 import json
 import os
 
@@ -306,14 +344,43 @@ class JcampTechniqueConverter:
         could disagree.
 
         ##XUNITS=/##YUNITS= are read first, then the JCAMP 6 ##UNITS= triple,
-        which overrides them. Both are per block, so the record wanted is the
-        target block's, falling back to the first for files that declare one
-        record only. Deliberately ignores the caller's `axesUnits`: that is a
+        which overrides them -- but only records the target block itself
+        declares. Another block's triple (an interferogram's `CM, VOLTS, ...`
+        beside an absorbance spectrum) must not relabel the spectrum. When
+        the file cannot be reread, the flattened nmrglue lists are indexed
+        as before. Deliberately ignores the caller's `axesUnits`: that is a
         display preference, and the guard is about what the data already is.
 
         Runs before __set_label, which is why the guard cannot read
         self.label.
         """
+        records = self.__target_block_records()
+        x, y = records.get('XUNITS'), records.get('YUNITS')
+        try:
+            triple = records['UNITS'].replace(' ', '').replace('\t', '')
+            # Mnova ends the record with a comma: `HZ, ARBITRARY UNITS,
+            # ARBITRARY UNITS,`. Rejecting it left the label to be taken from
+            # whichever other block declared XUNITS/YUNITS.
+            x, y, _ = triple[:-1].split(',') if triple.endswith(',') \
+                else triple.split(',')
+        except (KeyError, AttributeError, ValueError):
+            pass
+        return {'x': x, 'y': y}
+
+    def __target_block_records(self):
+        """The unit records declared in the target block.
+
+        target_idx counts data blocks; LINK blocks hold none and come first,
+        so the target is block `target_idx + LINK count` in file order.
+        """
+        blocks = read_block_records(getattr(self.base, 'path', None),
+                                    UNIT_RECORDS)
+        if blocks:
+            position = self.target_idx + self.datatypes.count('LINK')
+            if position < len(blocks):
+                return blocks[position]
+            return {}
+
         def per_block(records):
             for idx in (self.target_idx, 0):
                 try:
@@ -322,14 +389,8 @@ class JcampTechniqueConverter:
                     continue
             return None
 
-        x = per_block(self.dic.get('XUNITS'))
-        y = per_block(self.dic.get('YUNITS'))
-        triple = per_block(self.dic.get('UNITS'))
-        try:
-            x, y, _ = triple.replace(' ', '').split(',')
-        except (AttributeError, ValueError):
-            pass
-        return {'x': x, 'y': y}
+        found = {key: per_block(self.dic.get(key)) for key in UNIT_RECORDS}
+        return {key: value for key, value in found.items() if value}
 
     def __to_transmittance(self, ys):
         """T = 10**(-A). Refuses rather than returning a ruined spectrum.

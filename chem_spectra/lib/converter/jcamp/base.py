@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = parse_params(params)
+        # kept for readers that need the block structure nmrglue flattens
+        self.path = path
         self.dic, self.data = self.__read(path)
         # A file with no ##DATA TYPE= at all raised KeyError straight out of
         # the request. An absent header is no more exceptional than an
