@@ -480,3 +480,47 @@ def test_the_transmittance_record_survives_recomposition(client, tmp_path):
     twice = _recompose(client, once)
     assert _records(twice, 'CSTRANSMITTANCE'), 'a recompose must keep it'
     assert b'##YUNITS=% TRANSMITTANCE' in twice
+
+
+def test_an_explicit_false_clears_the_inversion_record(client):
+    """The record is a preference the request may override in either
+    direction. `invert_y` used to collapse "not sent" and "false" into one
+    value, so once a file was inverted nothing could un-invert it."""
+    with open(TRANSMITTANCE_SHAPED, 'rb') as handle:
+        once = _recompose_with(client, handle.read(), invert_y='true')
+    assert _records(once, 'CSINVERTY')
+    cleared = _recompose_with(client, once, invert_y='false')
+    assert not _records(cleared, 'CSINVERTY')
+    assert not _records(_recompose(client, cleared), 'CSINVERTY')
+
+
+def _converted_once(client, tmp_path):
+    _absorbance_probe(tmp_path)
+    source = (tmp_path / 'absorbance.jdx').read_bytes()
+    return _recompose_with(client, source, transmittance='true')
+
+
+def _absorbance_units():
+    return json.dumps({'axes': [{'xUnit': '', 'yUnit': 'ABSORBANCE'}]})
+
+
+def test_a_recompose_cannot_relabel_converted_data(client, tmp_path):
+    """The record outlives the request that converted, and so must the label:
+    otherwise %T data goes out declared as absorbance while still carrying
+    ##$CSTRANSMITTANCE=true."""
+    once = _converted_once(client, tmp_path)
+    twice = _recompose_with(client, once, axes_units=_absorbance_units())
+    assert _records(twice, 'CSTRANSMITTANCE')
+    assert b'##YUNITS=% TRANSMITTANCE' in twice
+    assert b'##YUNITS=ABSORBANCE' not in twice
+
+
+def test_converted_data_is_refused_a_second_conversion(client, tmp_path):
+    """The record says the data is already transmittance, so that is the
+    reason given -- not whatever the shape heuristic happens to conclude."""
+    once = _converted_once(client, tmp_path)
+    response = client.post(
+        '/zip_jcamp_n_img', content_type='multipart/form-data',
+        data={'file': (io.BytesIO(once), 'p.jdx'), 'transmittance': 'true'})
+    assert response.status_code == 422
+    assert 'already converted' in response.get_json()['error']
