@@ -210,9 +210,10 @@ def test_invert_and_transmittance_are_no_longer_exclusive(tmp_path):
 def test_transmittance_converts_and_relabels(tmp_path):
     """Percent, not the 0-1 ratio.
 
-    Instruments store %T; a 0-1 array is routinely misread as absorbance,
-    which itself runs 0-2.5. `% TRANSMITTANCE` is a unit JCAMP-DX declares, so
-    an external reader axes it correctly without knowing to multiply by 100.
+    %T is how instruments commonly present it; a 0-1 array is routinely
+    misread as absorbance, which itself runs 0-2.5. `% TRANSMITTANCE` is not a
+    JCAMP-DX unit -- 4.24 defines TRANSMITTANCE only as the ratio I_T/I_0 --
+    so this is a readability choice, not spec conformance.
     """
     converter = _absorbance_probe(tmp_path, params={'transmittance': True})
     assert converter.label['y'] == '% TRANSMITTANCE'
