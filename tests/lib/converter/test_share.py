@@ -33,7 +33,7 @@ def expected_default_params():
         'lcms_mz_page': None,
         'lcms_mz_page_data': None,
         'transmittance': False,
-        'invert_y': False,
+        'invert_y': None,
     }
 
 def test_parse_params_without_params(expected_default_params):

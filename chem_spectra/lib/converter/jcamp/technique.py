@@ -68,9 +68,12 @@ class JcampTechniqueConverter:
         # written on one request is dropped on the next. A viewing preference
         # that does not survive a round trip is not a preference. The file's
         # declaration is authoritative unless the request overrides it, which
-        # is the rule #312 applied to the stored point order.
-        self.draw_y_inverted = (bool(base.params.get('invert_y'))
-                                or self.__declared_flag('$CSINVERTY'))
+        # is the rule #312 applied to the stored point order. Overriding works
+        # both ways: `invert_y` is None when not sent, and an explicit False
+        # clears the record.
+        requested = base.params.get('invert_y')
+        self.draw_y_inverted = (self.__declared_flag('$CSINVERTY')
+                                if requested is None else bool(requested))
         self.block_count = self.__count_block()
         self.threshold = self.technique.threshold
         self.obs_freq = self.__set_obs_freq()
@@ -315,6 +318,13 @@ class JcampTechniqueConverter:
         finiteness check on the result is a backstop for anything the input
         checks do not anticipate.
         """
+        # Our own record is checked first: a file we converted earlier is
+        # transmittance whatever unit a later recompose wrote over it.
+        if self.transmittance_recorded:
+            raise UnconvertibleSpectrum(
+                'the file records that it was already converted to '
+                'transmittance; there is nothing to convert'
+            )
         declared = self.__declared_y_unit()
         if declared and 'TRANSMITTANCE' in declared.upper():
             # What the file says outranks what its shape suggests: this is a
@@ -410,9 +420,12 @@ class JcampTechniqueConverter:
           if yUnit != '':
             target['y'] = yUnit
 
-        # A conversion we performed is a fact, so it outranks axesUnits, which
-        # is a preference.
-        if self.converted_to_transmittance:
+        # A conversion is a fact, so it outranks axesUnits, which is a
+        # preference -- whether it happened on this request or on an earlier
+        # one that left ##$CSTRANSMITTANCE behind. Checking only this run let
+        # a recompose label %T data with the caller's absorbance unit while
+        # still writing the record.
+        if self.converted_to_transmittance or self.transmittance_recorded:
             target['y'] = '% TRANSMITTANCE'
 
         return target

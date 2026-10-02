@@ -42,7 +42,7 @@ def parse_params(params):
             'lcms_mz_page': None,
             'lcms_mz_page_data': None,
             'transmittance': False,
-            'invert_y': False,
+            'invert_y': None,
         }
 
     select_x = params.get('select_x', None)
@@ -98,7 +98,13 @@ def parse_params(params):
     # touch the data, so it does not conflict with `transmittance`, which
     # does: converting to %T already puts absorbance bands downward, and a
     # caller wanting them up is asking about the picture, not the numbers.
-    invert_y = _as_bool(params.get('invert_y'))
+    #
+    # Unlike `transmittance` it is tri-state. A file can already carry the
+    # preference (##$CSINVERTY), so "not sent" means "keep what the file
+    # says" and only an explicit false may clear it. Collapsing absent into
+    # False made an inverted file impossible to un-invert.
+    invert_y = params.get('invert_y')
+    invert_y = None if invert_y in (None, '') else _as_bool(invert_y)
     if (cyclicvolta is not None):
         # The ELN does not guarantee these keys: ViewSpectra.js reads
         # `spectraList?.[curveIdx]` and bails when it is missing. Subscripting
