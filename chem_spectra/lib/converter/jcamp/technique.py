@@ -27,6 +27,11 @@ TRANSMITTANCE_UNITS = frozenset({
 })
 
 
+def absorbance_to_percent_transmittance(values):
+    """%T = 100 * 10**(-A)."""
+    return 100.0 * np.power(10.0, -np.asarray(values, dtype=float))
+
+
 def _normalise_unit(unit):
     """Upper case, letters and digits only: '%T' -> 'T',
     'Transmission (%)' -> 'TRANSMISSION'."""
@@ -412,6 +417,14 @@ class JcampTechniqueConverter:
                 'the file records that it was already converted to '
                 'transmittance; there is nothing to convert'
             )
+        if self.__carries_integrals():
+            # An area under absorbance is proportional to concentration; the
+            # same region of the %T trace has no such meaning, and %T is not
+            # linear in A, so the areas cannot be carried across either.
+            raise UnconvertibleSpectrum(
+                'the spectrum carries integrals or multiplets, which have no '
+                'meaning in transmittance; remove them before converting'
+            )
         declared = self.__declared_units()['y']
         if is_transmittance_unit(declared):
             # What the file says outranks what its shape suggests: this is a
@@ -454,7 +467,7 @@ class JcampTechniqueConverter:
         # misread as absorbance, and '% TRANSMITTANCE' is a unit JCAMP-DX can
         # declare -- so external tools axis it correctly with no renderer
         # knowing to multiply by 100.
-        transmittance = 100.0 * np.power(10.0, -ys)
+        transmittance = absorbance_to_percent_transmittance(ys)
         if not np.isfinite(transmittance).all():
             raise UnconvertibleSpectrum(
                 'the conversion produced non-finite values; the series is not '
@@ -464,6 +477,18 @@ class JcampTechniqueConverter:
         self.converted_to_transmittance = True
         self.transmittance_recorded = True
         return transmittance
+
+    def __carries_integrals(self):
+        """Integrals or multiplets in the file or in the request."""
+        for record in ('$OBSERVEDINTEGRALS', '$OBSERVEDMULTIPLETS'):
+            for value in self.dic.get(record) or []:
+                # the first line is the table header, e.g. `(X Y Z)`
+                if any(line.strip() for line in str(value).split('\n')[1:]):
+                    return True
+        for param in ('integration', 'multiplicity'):
+            if (self.params.get(param) or {}).get('stack'):
+                return True
+        return False
 
     def __find_boundary(self):
         return {
@@ -780,10 +805,31 @@ class JcampTechniqueConverter:
     def __read_peak_from_file(self):
         self.__read_auto_peaks()
         self.__read_edit_peaks()
+        if self.converted_to_transmittance:
+            # Every peak read so far was picked on the absorbance trace. The
+            # automatic ones are re-picked: an absorbance band is a maximum
+            # and the picker looks for %T dips, so the old table is wrong in
+            # position as well as scale. Edited peaks are the user's choice,
+            # so they keep their x and only change units.
+            self.auto_peaks = None
+            self.edit_peaks = self.__peaks_to_transmittance(self.edit_peaks)
         if not self.auto_peaks or not self.params['delta'] == 0.0:
             self.__run_auto_pick_peak()
         if self.params['peaks_str'] is not None:
             self.__parse_edit()
+            # sent by an editor that was showing the absorbance trace
+            if self.converted_to_transmittance:
+                self.edit_peaks = self.__peaks_to_transmittance(
+                    self.edit_peaks)
+
+    @staticmethod
+    def __peaks_to_transmittance(peaks):
+        if not peaks or not peaks.get('y'):
+            return peaks
+        return {
+            'x': peaks['x'],
+            'y': absorbance_to_percent_transmittance(peaks['y']).tolist(),
+        }
 
     def __read_voltammetry_data_from_file(self):
         target = self.dic.get('$CSCYCLICVOLTAMMETRYDATA')
