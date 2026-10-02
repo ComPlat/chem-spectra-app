@@ -640,7 +640,17 @@ Operational requirements:
 
 - `chem_spectra/tmp` must exist and be mounted into the container as `/data`.
 - A running container named `msconvert_docker` is expected.
-- RAW conversion runs with `subprocess.run(..., timeout=10)`.
+- RAW conversion runs with `subprocess.run(..., timeout=SIDECAR_TIMEOUT)`,
+  currently 30s. It must stay above the ceiling the sidecar imposes on itself
+  (`mscrunner.py` runs msconvert under `timeout=10`), or the sidecar's own
+  reply is cut off before it arrives.
+- The result of that call is checked: a non-zero exit raises
+  `MSConversionFailed`. The `/bin/docker` shim exits non-zero when it cannot
+  reach the service, so this is what catches an absent sidecar.
+- After the sidecar answers, the `.mzML` is waited for up to `MZML_WAIT`
+  (120s). In this topology it should already exist; the wait is for the
+  `docker exec -d` setup in `INSTALL.md`, where the command genuinely detaches.
+  mzML and mzXML uploads are not waited for at all — nothing converts them.
 
 `Dockerfile.p2d` references `fake-docker.py` as part of the P2D image setup.
 
