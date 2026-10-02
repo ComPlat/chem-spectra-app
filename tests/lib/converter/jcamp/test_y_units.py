@@ -757,3 +757,86 @@ def test_a_trailing_comma_in_the_units_record_is_accepted(tmp_path):
     converter = JcampTechniqueConverter(JcampBaseConverter(
         './tests/fixtures/source/mnova/STM212_H.jcamp', None))
     assert converter.label == {'x': 'PPM', 'y': 'ARBITRARY'}
+
+
+# - - - peak tables are converted with the trace - - -
+#
+# The normal ELN flow saves a file once and asks for the conversion later, so
+# the file already carries peak tables picked on the absorbance trace. Kept
+# as read, PEAK TABLE AUTO stayed in absorbance (y = 0.02 against a 1-95 %T
+# trace) and the preview drew its markers along the bottom.
+
+def _composed_absorbance(client, tmp_path, **form):
+    _absorbance_probe(tmp_path)
+    return _recompose_with(
+        client, (tmp_path / 'absorbance.jdx').read_bytes(), **form)
+
+
+def _read_back(tmp_path, body):
+    target = tmp_path / 'read_back.jdx'
+    target.write_bytes(body)
+    return JcampTechniqueConverter(JcampBaseConverter(str(target), None))
+
+
+def test_auto_peaks_are_picked_again_on_the_converted_trace(client, tmp_path):
+    saved = _composed_absorbance(client, tmp_path)
+    converted = _read_back(
+        tmp_path, _recompose_with(client, saved, transmittance='true'))
+    low, high = float(min(converted.ys)), float(max(converted.ys))
+    assert high > 90, 'the trace should be %T'
+    # the absorbance bands at 420, 455 and 480 are the %T dips
+    assert sorted(converted.auto_peaks['x']) == [420.0, 455.0, 480.0]
+    assert all(low <= y <= high for y in converted.auto_peaks['y'])
+    assert min(converted.auto_peaks['y']) == pytest.approx(1.0)
+
+
+def test_edited_peaks_keep_their_position_and_change_units(client, tmp_path):
+    saved = _composed_absorbance(client, tmp_path, peaks_str='420,2.0#455,1.2')
+    converted = _read_back(
+        tmp_path, _recompose_with(client, saved, transmittance='true'))
+    assert converted.edit_peaks['x'] == [420.0, 455.0]
+    assert converted.edit_peaks['y'] == pytest.approx(
+        [100 * 10 ** -2.0, 100 * 10 ** -1.2])
+
+
+def test_peaks_sent_with_the_conversion_are_converted_too(tmp_path):
+    """The editor sending them was showing the absorbance trace."""
+    converter = _absorbance_probe(
+        tmp_path, params={'transmittance': True, 'peaks_str': '480,0.6'})
+    assert converter.edit_peaks['x'] == [480.0]
+    assert converter.edit_peaks['y'] == pytest.approx([100 * 10 ** -0.6])
+
+
+def test_peaks_are_untouched_without_a_conversion(tmp_path):
+    converter = _absorbance_probe(tmp_path, params={'peaks_str': '480,0.6'})
+    assert converter.edit_peaks['y'] == [0.6]
+
+
+def test_integrals_in_the_file_refuse_the_conversion(tmp_path):
+    _absorbance_probe(tmp_path)
+    source = tmp_path / 'absorbance.jdx'
+    source.write_text(source.read_text().replace(
+        '##XYPOINTS=',
+        '##$OBSERVEDINTEGRALS= (X Y Z)\n(425.0, 415.0, 1.0)\n##XYPOINTS=', 1))
+    with pytest.raises(UnconvertibleSpectrum, match='integrals'):
+        JcampTechniqueConverter(
+            JcampBaseConverter(str(source), {'transmittance': True}))
+
+
+def test_integrals_in_the_request_refuse_the_conversion(tmp_path):
+    stack = json.dumps({'stack': [{'xL': 415.0, 'xU': 425.0, 'area': 1.0}],
+                        'refArea': 1, 'refFactor': 1, 'shift': 0})
+    with pytest.raises(UnconvertibleSpectrum, match='integrals'):
+        _absorbance_probe(
+            tmp_path, params={'transmittance': True, 'integration': stack})
+
+
+def test_an_empty_integral_table_does_not_refuse(tmp_path):
+    """Only rows count: the record's first line is its `(X Y Z)` header."""
+    _absorbance_probe(tmp_path)
+    source = tmp_path / 'absorbance.jdx'
+    source.write_text(source.read_text().replace(
+        '##XYPOINTS=', '##$OBSERVEDINTEGRALS= (X Y Z)\n##XYPOINTS=', 1))
+    converter = JcampTechniqueConverter(
+        JcampBaseConverter(str(source), {'transmittance': True}))
+    assert converter.converted_to_transmittance
