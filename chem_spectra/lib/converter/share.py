@@ -1,4 +1,7 @@
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UnconvertibleSpectrum(ValueError):
@@ -11,6 +14,34 @@ def _as_bool(value):
     if isinstance(value, str):
         return value.strip().lower() in ('true', '1', 'yes')
     return bool(value)
+
+
+TRUE_STRINGS = ('true', '1', 'yes')
+FALSE_STRINGS = ('false', '0', 'no')
+
+
+def _as_tristate(value, name):
+    """True, False, or None for "not given".
+
+    For instructions where an explicit false does something -- `invert_y`
+    clears the file's record -- so only a recognised false may produce one.
+    Anything unrecognised is None, the same as not sending it: `undefined`
+    and `null` are what JS FormData makes of a missing value, and must not
+    clear a record the user never touched.
+    """
+    if value is None or isinstance(value, bool):
+        return value
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
+    text = str(value).strip().lower()
+    if text in TRUE_STRINGS:
+        return True
+    if text in FALSE_STRINGS:
+        return False
+    if text:
+        logger.warning('unrecognised %s=%r; treating it as not sent',
+                       name, value)
+    return None
 
 
 def parse_params(params):
@@ -103,8 +134,7 @@ def parse_params(params):
     # preference (##$CSINVERTY), so "not sent" means "keep what the file
     # says" and only an explicit false may clear it. Collapsing absent into
     # False made an inverted file impossible to un-invert.
-    invert_y = params.get('invert_y')
-    invert_y = None if invert_y in (None, '') else _as_bool(invert_y)
+    invert_y = _as_tristate(params.get('invert_y'), 'invert_y')
     if (cyclicvolta is not None):
         # The ELN does not guarantee these keys: ViewSpectra.js reads
         # `spectraList?.[curveIdx]` and bails when it is missing. Subscripting
