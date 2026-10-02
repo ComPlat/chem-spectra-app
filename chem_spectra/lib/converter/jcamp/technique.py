@@ -212,10 +212,22 @@ class JcampTechniqueConverter:
             except:  # noqa
                 pass
 
-        if self.technique.em_wave and beg_pt < end_pt:
-            buf = beg_pt
-            beg_pt = end_pt
-            end_pt = buf
+        # Store the points the way the technique is conventionally drawn.
+        # Which way that is comes from `x_reversed`; whether it may be
+        # normalised at all comes from `store_in_drawn_order`, because for
+        # some techniques the traversal order is data (see the registry).
+        #
+        # This used to ask `em_wave` for both, which is a header-shape
+        # grouping and says nothing about an axis. Written for INFRARED
+        # alone in 2019 (40da642), it grew to the grouping when Raman joined
+        # it (af68fdd), and swept UV-Vis in when UV/VIS was first recognised
+        # (387083a -- a commit about identifiers, thresholds and bin counts).
+        # UV-Vis ascends by convention, so the grouping stored it backwards.
+        if (self.technique.store_in_drawn_order
+                and beg_pt is not None and end_pt is not None
+                and beg_pt != end_pt
+                and (beg_pt > end_pt) != self.technique.x_reversed):
+            beg_pt, end_pt = end_pt, beg_pt
             self.ys = self.ys[::-1]
 
         num_pt = self.ys.shape[0]
