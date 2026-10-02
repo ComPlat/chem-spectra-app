@@ -233,6 +233,37 @@ def test_transmittance_refuses_a_file_that_declares_transmittance(tmp_path):
                params={'transmittance': True})
 
 
+@pytest.mark.parametrize('yunits', [
+    'TRANSMITTANCE', '% TRANSMITTANCE', '%T', 'T', 'T%', 'TRANSMISSION',
+    'Transmission (%)', 'transmittance [%]', 'Percent Transmittance',
+])
+def test_every_common_spelling_of_transmittance_is_refused(yunits, tmp_path):
+    """Instrument exports rarely say exactly 'TRANSMITTANCE'.
+
+    The data is absorbance-shaped on purpose -- median far below the maximum,
+    as for a heavily absorbing %T trace -- so the median heuristic would let
+    every one of these through, and only the unit can stop the conversion.
+    """
+    ys = [0.1] * 100
+    ys[40:60] = [2.0] * 20
+    with pytest.raises(UnconvertibleSpectrum, match='already declares'):
+        JcampTechniqueConverter(JcampBaseConverter(
+            _synthetic(tmp_path, ys, yunits=yunits), {'transmittance': True}))
+
+
+@pytest.mark.parametrize('yunits', [
+    'ABSORBANCE', 'Absorbance (a.u.)', 'ARBITRARY UNITS', 'TEMPERATURE',
+    'OPTICAL DENSITY',
+])
+def test_units_that_are_not_transmittance_still_convert(yunits, tmp_path):
+    """An exact set, so no unrelated unit blocks a conversion by accident."""
+    ys = [0.1] * 100
+    ys[40:60] = [2.0] * 20
+    converter = JcampTechniqueConverter(JcampBaseConverter(
+        _synthetic(tmp_path, ys, yunits=yunits), {'transmittance': True}))
+    assert converter.label['y'] == '% TRANSMITTANCE'
+
+
 def test_a_single_units_record_is_read_for_the_declared_unit(tmp_path):
     """JCAMP 6 declares x, y and z in one `##UNITS=` record per block.
 
@@ -264,6 +295,43 @@ def test_a_single_units_record_is_read_for_the_declared_unit(tmp_path):
     with pytest.raises(UnconvertibleSpectrum, match='already declares'):
         JcampTechniqueConverter(
             JcampBaseConverter(str(target), {'transmittance': True}))
+
+
+def _single_units_record(tmp_path, yunits, units_y):
+    """A one-block file declaring its y unit twice: ##YUNITS= and a JCAMP 6
+    ##UNITS= triple, which overrides it."""
+    ys = [0.1] * 100
+    ys[40:60] = [2.0] * 20
+    path = _synthetic(tmp_path, ys, yunits=yunits)
+    body = open(path).read().replace(
+        '##XYPOINTS=', '##UNITS=1/CM, {}, ARBITRARY UNITS\n##XYPOINTS='.format(
+            units_y), 1)
+    open(path, 'w').write(body)
+    return path
+
+
+def test_the_guard_and_the_label_read_the_same_record(tmp_path):
+    """Review caught this: the guard read UNITS[target_idx] then UNITS[0],
+    __set_label read UNITS[1]. In a one-record file the guard refused on the
+    ##UNITS= transmittance while the composed label came from ##YUNITS=."""
+    path = _single_units_record(tmp_path, 'ABSORBANCE', '% TRANSMITTANCE')
+    label = JcampTechniqueConverter(JcampBaseConverter(path, None)).label
+    assert 'TRANSMITTANCE' in label['y'].upper()
+    with pytest.raises(UnconvertibleSpectrum, match='already declares'):
+        JcampTechniqueConverter(
+            JcampBaseConverter(path, {'transmittance': True}))
+
+
+def test_the_units_record_overrides_yunits_for_both(tmp_path):
+    """The other direction: ##UNITS= says absorbance, ##YUNITS= says %T.
+    Both readers take the triple, so the label and the guard agree that this
+    is absorbance and the conversion goes ahead."""
+    path = _single_units_record(tmp_path, '% TRANSMITTANCE', 'ABSORBANCE')
+    assert JcampTechniqueConverter(
+        JcampBaseConverter(path, None)).label['y'] == 'ABSORBANCE'
+    converted = JcampTechniqueConverter(
+        JcampBaseConverter(path, {'transmittance': True}))
+    assert converted.label['y'] == '% TRANSMITTANCE'
 
 
 def test_the_shape_guard_still_catches_a_file_that_declares_nothing(tmp_path):
@@ -522,6 +590,26 @@ def test_converted_data_is_refused_a_second_conversion(client, tmp_path):
     response = client.post(
         '/zip_jcamp_n_img', content_type='multipart/form-data',
         data={'file': (io.BytesIO(once), 'p.jdx'), 'transmittance': 'true'})
+    assert response.status_code == 422
+    assert 'already converted' in response.get_json()['error']
+
+
+def test_a_relabelled_conversion_is_still_refused(client, tmp_path):
+    """The record, not the unit text, is what proves the data is %T.
+
+    A converted file whose y unit was later rewritten (here to `T`, which
+    names no transmittance) slips past the declared-unit check. Without the
+    record check a strongly absorbing trace would be converted a second
+    time, and anything else refused with a misleading shape reason.
+    """
+    once = _converted_once(client, tmp_path)
+    relabelled = re.sub(rb'^##YUNITS=.*$', b'##YUNITS=T', once, flags=re.M)
+    assert _records(relabelled, 'CSTRANSMITTANCE')
+    assert not re.search(rb'^##YUNITS=.*TRANSMITTANCE', relabelled, re.M)
+    response = client.post(
+        '/zip_jcamp_n_img', content_type='multipart/form-data',
+        data={'file': (io.BytesIO(relabelled), 'p.jdx'),
+              'transmittance': 'true'})
     assert response.status_code == 422
     assert 'already converted' in response.get_json()['error']
 

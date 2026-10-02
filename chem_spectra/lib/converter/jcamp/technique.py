@@ -13,6 +13,28 @@ from chem_spectra.lib.converter.share import UnconvertibleSpectrum  # noqa: F401
 # Real absorbance runs roughly 0-3; beyond this T = 10**(-A) underflows and
 # the spectrum becomes a flat line.
 ABSORBANCE_CEILING = 10.0
+
+# y units that already mean transmittance, after _normalise_unit. Instrument
+# exports spell it many ways -- '%T', 'T', 'TRANSMISSION', 'Transmission (%)',
+# '% TRANSMITTANCE' -- and a substring test for 'TRANSMITTANCE' missed most of
+# them, leaving the median heuristic, which is unreliable on heavily absorbing
+# samples, as the only guard. An exact set rather than a looser substring
+# match, so an unrelated unit cannot block a conversion by accident.
+TRANSMITTANCE_UNITS = frozenset({
+    'T', 'TRANSMITTANCE', 'TRANSMISSION',
+    'PERCENTT', 'PERCENTTRANSMITTANCE', 'PERCENTTRANSMISSION',
+    'TRANSMITTANCEPERCENT', 'TRANSMISSIONPERCENT',
+})
+
+
+def _normalise_unit(unit):
+    """Upper case, letters and digits only: '%T' -> 'T',
+    'Transmission (%)' -> 'TRANSMISSION'."""
+    return ''.join(ch for ch in str(unit).upper() if ch.isalnum())
+
+
+def is_transmittance_unit(unit):
+    return bool(unit) and _normalise_unit(unit) in TRANSMITTANCE_UNITS
 import json
 import os
 
@@ -275,35 +297,39 @@ class JcampTechniqueConverter:
 
         return ys
 
-    def __declared_y_unit(self):
-        """The y unit the *file* declares, or None.
+    def __declared_units(self):
+        """The x and y units the *file* declares for the target block, each
+        None when it declares none. The one reader of the unit records: the
+        transmittance guard and __set_label used to read them separately, at
+        different indices, so in a LINK or multi-block file the unit the
+        guard refused on and the unit the composed file was labelled with
+        could disagree.
 
-        Mirrors how __set_label reads it -- ##YUNITS=, then the JCAMP 6
-        ##UNITS= triple which overrides it -- but deliberately ignores the
-        caller's `axesUnits`. That is a display preference; this guard is
-        about what the data already is.
+        ##XUNITS=/##YUNITS= are read first, then the JCAMP 6 ##UNITS= triple,
+        which overrides them. Both are per block, so the record wanted is the
+        target block's, falling back to the first for files that declare one
+        record only. Deliberately ignores the caller's `axesUnits`: that is a
+        display preference, and the guard is about what the data already is.
 
-        Runs before __set_label, which is why it cannot just read self.label.
+        Runs before __set_label, which is why the guard cannot read
+        self.label.
         """
-        unit = None
+        def per_block(records):
+            for idx in (self.target_idx, 0):
+                try:
+                    return records[idx]
+                except (IndexError, KeyError, TypeError):
+                    continue
+            return None
+
+        x = per_block(self.dic.get('XUNITS'))
+        y = per_block(self.dic.get('YUNITS'))
+        triple = per_block(self.dic.get('UNITS'))
         try:
-            unit = self.dic['YUNITS'][self.target_idx]
-        except:  # noqa
-            try:
-                unit = self.dic['YUNITS'][0]
-            except:  # noqa
-                pass
-        # ##UNITS= is per block, so the record wanted is the target block's,
-        # not a fixed index. Four fixtures declare exactly one record and no
-        # ##YUNITS= at all; a hardcoded [1] returns nothing for them, so a file
-        # declaring transmittance only there would slip past this guard.
-        for idx in (self.target_idx, 0):
-            try:
-                _, y, _ = self.dic['UNITS'][idx].replace(' ', '').split(',')
-                return y
-            except:  # noqa
-                continue
-        return unit
+            x, y, _ = triple.replace(' ', '').split(',')
+        except (AttributeError, ValueError):
+            pass
+        return {'x': x, 'y': y}
 
     def __to_transmittance(self, ys):
         """T = 10**(-A). Refuses rather than returning a ruined spectrum.
@@ -325,8 +351,8 @@ class JcampTechniqueConverter:
                 'the file records that it was already converted to '
                 'transmittance; there is nothing to convert'
             )
-        declared = self.__declared_y_unit()
-        if declared and 'TRANSMITTANCE' in declared.upper():
+        declared = self.__declared_units()['y']
+        if is_transmittance_unit(declared):
             # What the file says outranks what its shape suggests: this is a
             # fact, where the median test below is an inference.
             raise UnconvertibleSpectrum(
@@ -391,23 +417,12 @@ class JcampTechniqueConverter:
         }
 
     def __set_label(self):
-        target = {'x': 'PPM', 'y': 'ARBITRARY'}
-        try:
-            x = self.dic['XUNITS'][self.target_idx]
-            y = self.dic['YUNITS'][self.target_idx]
-            x = 'PPM' if x.upper() == 'HZ' else x
-            y = 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y
-            target = {'x': x, 'y': y}
-        except:  # noqa
-            pass
-
-        try:
-            x, y, _ = self.dic['UNITS'][1].replace(' ', '').split(',')
-            x = 'PPM' if x.upper() == 'HZ' else x
-            y = 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y
-            target = {'x': x, 'y': y}
-        except:  # noqa
-            pass
+        declared = self.__declared_units()
+        x, y = declared['x'] or 'PPM', declared['y'] or 'ARBITRARY'
+        target = {
+            'x': 'PPM' if x.upper() == 'HZ' else x,
+            'y': 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y,
+        }
 
         if self.technique.x_axis == 'xrd':
             target['x'] = '2Theta'
