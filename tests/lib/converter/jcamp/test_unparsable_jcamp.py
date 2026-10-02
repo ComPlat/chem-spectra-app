@@ -158,3 +158,19 @@ def test_combine_images_is_unaffected_for_usable_files(client):
         content_type='multipart/form-data',
     )
     assert response.status_code == 200
+
+
+def test_a_bagit_archive_skips_an_unusable_member(tmp_path):
+    """The skip path logged through a `logger` the module never defined, so
+    the first unusable member raised NameError instead of being skipped."""
+    import zipfile
+    from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
+
+    with zipfile.ZipFile(
+            './tests/fixtures/source/bagit/cv/File053_BagIt.zip') as archive:
+        archive.extractall(tmp_path)
+    (tmp_path / 'data' / 'table_02.jdx').write_bytes(_bad().read())
+
+    converter = BagItBaseConverter(str(tmp_path))
+    assert converter.data is not None
+    assert len(converter.data) == 2

@@ -524,3 +524,104 @@ def test_converted_data_is_refused_a_second_conversion(client, tmp_path):
         data={'file': (io.BytesIO(once), 'p.jdx'), 'transmittance': 'true'})
     assert response.status_code == 422
     assert 'already converted' in response.get_json()['error']
+
+
+# - - - the overlay image draws the same way up as the single one - - -
+#
+# Under #298 the mirrored data reached tf_combine by itself. Now inversion is
+# a viewport flip, and the overlay has its own figure, so it has to apply the
+# flip too -- otherwise an inverted file is drawn inverted alone and upright
+# beside others.
+
+def _with_inversion_record(source):
+    first, rest = source.split(b'\n', 1)
+    return first + b'\n##$CSINVERTY=true\n' + rest
+
+
+def _overlay_ylim(bodies):
+    import chem_spectra.model.transformer as transformer_module
+    from werkzeug.datastructures import FileStorage
+    from chem_spectra.controller.helper.file_container import FileContainer
+    from chem_spectra.model.transformer import TransformerModel
+
+    files = [
+        FileContainer(FileStorage(io.BytesIO(body), filename='s%d.dx' % idx))
+        for idx, body in enumerate(bodies)
+    ]
+    captured = {}
+    real_savefig = transformer_module.plt.savefig
+
+    def spy(*args, **kwargs):
+        captured['ylim'] = transformer_module.plt.gca().get_ylim()
+        return real_savefig(*args, **kwargs)
+
+    transformer_module.plt.savefig = spy
+    try:
+        TransformerModel(None, params={'ext': 'dx'},
+                         multiple_files=files).tf_combine().close()
+    finally:
+        transformer_module.plt.savefig = real_savefig
+    return captured['ylim']
+
+
+def test_the_overlay_flips_when_every_curve_is_inverted():
+    with open(TRANSMITTANCE_SHAPED, 'rb') as handle:
+        plain = handle.read()
+    inverted = _with_inversion_record(plain)
+    low, high = _overlay_ylim([plain, plain])
+    assert low < high, 'the plain overlay should ascend'
+    top, bottom = _overlay_ylim([inverted, inverted])
+    assert (top, bottom) == pytest.approx((high, low)), (
+        'only the direction should change, not the bounds')
+
+
+def test_a_mixed_overlay_stays_upright():
+    """One y axis per figure: flipping it would misdraw the upright curves."""
+    with open(TRANSMITTANCE_SHAPED, 'rb') as handle:
+        plain = handle.read()
+    low, high = _overlay_ylim([plain, _with_inversion_record(plain)])
+    assert low < high
+
+
+def _bagit_overlay_ylim(tmp_path, invert):
+    """`invert` names which of the archive's members carry the record."""
+    import zipfile
+    import chem_spectra.lib.converter.bagit.base as bagit_module
+    from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
+
+    with zipfile.ZipFile(
+            './tests/fixtures/source/bagit/cv/File053_BagIt.zip') as archive:
+        archive.extractall(tmp_path)
+    for name in invert:
+        member = tmp_path / 'data' / name
+        member.write_bytes(_with_inversion_record(member.read_bytes()))
+
+    captured = {}
+    real_savefig = bagit_module.plt.savefig
+
+    def spy(*args, **kwargs):
+        captured['ylim'] = bagit_module.plt.gca().get_ylim()
+        return real_savefig(*args, **kwargs)
+
+    bagit_module.plt.savefig = spy
+    try:
+        BagItBaseConverter(str(tmp_path))
+    finally:
+        bagit_module.plt.savefig = real_savefig
+    return captured['ylim']
+
+
+BAGIT_MEMBERS = ('table_01.jdx', 'table_02.jdx', 'table_03.jdx')
+
+
+def test_the_bagit_overlay_flips_when_every_member_is_inverted(tmp_path):
+    """The archive overlay is a separate figure from tf_combine's."""
+    low, high = _bagit_overlay_ylim(tmp_path / 'plain', ())
+    assert low < high, 'the plain overlay should ascend'
+    top, bottom = _bagit_overlay_ylim(tmp_path / 'inverted', BAGIT_MEMBERS)
+    assert (top, bottom) == pytest.approx((high, low))
+
+
+def test_a_mixed_bagit_overlay_stays_upright(tmp_path):
+    low, high = _bagit_overlay_ylim(tmp_path, BAGIT_MEMBERS[:1])
+    assert low < high
