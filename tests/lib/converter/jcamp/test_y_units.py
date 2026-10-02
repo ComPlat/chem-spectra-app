@@ -514,24 +514,41 @@ def test_a_file_that_never_asked_does_not_gain_the_record(client):
     assert not _records(plain, 'CSINVERTY')
 
 
-def test_the_metadata_echo_alone_does_not_set_it(client):
-    """`###$CSINVERTY= true` is the original-metadata dump, not a record.
+@pytest.mark.parametrize('record, form', [
+    ('CSINVERTY', {'invert_y': 'true'}),
+    ('CSTRANSMITTANCE', {'transmittance': 'true'}),
+])
+def test_the_records_are_not_echoed_into_the_metadata(
+        client, tmp_path, record, form):
+    """They are written as real records when they apply. Echoed as well,
+    `###$CSINVERTY= true` survived the record being cleared, and the file's
+    metadata contradicted itself."""
+    _absorbance_probe(tmp_path)
+    once = _recompose_with(
+        client, (tmp_path / 'absorbance.jdx').read_bytes(), **form)
+    twice = _recompose(client, once)
+    assert _records(twice, record)
+    assert ('###$' + record).encode() not in twice
 
-    It is written on every pass whether or not the flag is set, so reading it
-    would make the first inverted file infect every later one -- including a
-    file whose real record had been deliberately removed.
-    """
+
+def test_clearing_the_inversion_leaves_no_trace_of_it(client):
     with open(TRANSMITTANCE_SHAPED, 'rb') as handle:
         once = _recompose_with(client, handle.read(), invert_y='true')
-    # The echo appears only once the record is in the *input*, so it takes a
-    # second pass to produce a file carrying both spellings.
-    twice = _recompose(client, once)
-    assert b'###$CSINVERTY' in twice, 'the echo must be there to strip around'
+    cleared = _recompose_with(client, _recompose(client, once),
+                              invert_y='false')
+    assert b'CSINVERTY' not in cleared
 
-    stripped = re.sub(rb'^##\$CSINVERTY=true\r?\n', b'', twice, flags=re.M)
-    assert not _records(stripped, 'CSINVERTY')
-    assert b'###$CSINVERTY' in stripped
-    assert not _records(_recompose(client, stripped), 'CSINVERTY')
+
+def test_an_old_echo_neither_sets_the_record_nor_survives(client):
+    """`###$CSINVERTY= true` is metadata, not a record: nmrglue keys it as
+    `#$CSINVERTY`. Files composed before the echo was suppressed carry it, so
+    it must not set the flag, and is dropped on the next pass."""
+    with open(TRANSMITTANCE_SHAPED, 'rb') as handle:
+        source = handle.read()
+    first, rest = source.split(b'\n', 1)
+    legacy = first + b'\n###$CSINVERTY= true\n' + rest
+    recomposed = _recompose(client, legacy)
+    assert b'CSINVERTY' not in recomposed
 
 
 def test_the_transmittance_record_survives_recomposition(client, tmp_path):
