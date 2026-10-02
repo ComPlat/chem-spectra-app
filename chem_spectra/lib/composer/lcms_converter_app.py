@@ -94,8 +94,18 @@ class LCMSConverterAppComposer:
     def _has_lcms_edits(params: Optional[Dict]) -> bool:
         if not params:
             return False
+        # `is not None` distinguishes "cleared" from "never sent", and the
+        # controller preserves that distinction: request.form.get(default=None)
+        # gives None when the field is absent and "" when the client sent an
+        # empty list. Grouping "" with None made a cleared peak list invisible,
+        # so with no integrations either this returned False, the jcamp was
+        # never refreshed, and tf_jcamp handed back the stored peak file
+        # unchanged -- the peaks the user deleted came straight back.
+        #
+        # #289 fixed exactly this on the curve path and did not reach here;
+        # jcamp/technique.py guards __parse_edit with the same `is not None`.
         peaks = params.get("peaks_str")
-        if peaks not in (None, "", [], {}):
+        if peaks is not None:
             return True
 
         integration = params.get("integration")

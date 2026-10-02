@@ -3,19 +3,53 @@ name: Tests
 on: [push]
 
 jobs:
-  run-unit-tests:
+  static:
+    name: ruff + mypy
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
-    - uses: actions/setup-python@v6
+    - uses: astral-sh/setup-uv@v5
       with:
-        check-latest: true
-        cache: "pip"
-        python-version: "3.12"
+        enable-cache: true
+    - uses: extractions/setup-just@v2
+    # --frozen: fail rather than silently re-resolve if uv.lock and
+    # pyproject.toml disagree.
+    - name: Install dependencies (locked)
+      run: uv sync --frozen --all-groups
+    - name: Lint (ruff)
+      run: just lint
+    # Whole-tree check. Modules with pre-existing errors are exempted via
+    # [[tool.mypy.overrides]] in pyproject.toml; that list only ever shrinks.
+    - name: Type check (mypy)
+      run: just mypy
+
+  run-unit-tests:
+    name: tests (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    # Both ends of the supported range. 3.14 is what the production image runs
+    # (Dockerfile.p2d); 3.12 is the floor `requires-python` still promises, and
+    # a matrix is the only thing that keeps that promise honest.
+    #
+    # The lockfile is resolved for 3.14, so only that leg can use it. The 3.12
+    # leg resolves from pyproject.toml instead -- which is also what checks
+    # that the declared specs still install on the floor.
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    steps:
+    - uses: actions/checkout@v5
+    - uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+        python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        pip install .[dev]   
+        if [ "${{ matrix.python-version }}" = "3.14" ]; then
+          uv sync --frozen --all-groups
+        else
+          uv sync --all-groups
+        fi
     - name: Create tmp directory with permissions
       run: |
         mkdir -p chem_spectra/tmp
@@ -28,6 +62,4 @@ jobs:
           -v ${{ github.workspace }}/chem_spectra/tmp:/data \
           proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses bash
     - name: Test with pytest
-      shell: bash -el {0}
-      run: |
-        python -m pytest
+      run: uv run python -m pytest

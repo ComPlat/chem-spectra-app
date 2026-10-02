@@ -72,6 +72,13 @@ class SpectrumTechnique:
     # - - - groupings and per-technique extras - - -
     # IR / Raman / UV-Vis share a header shape (the old `is_em_wave`)
     em_wave: bool = False
+    # the order the points are stored in carries no information for this
+    # technique, so the converter is free to normalise it to `x_reversed`.
+    # Opt-in, because for others the traversal order *is* data: a sorption
+    # isotherm's branch is labelled ADSORPTION or DESORPTION by which way x
+    # runs, and a cyclic voltammogram's sweep likewise. Driving the
+    # normalisation off `x_reversed` alone relabels every desorption branch.
+    store_in_drawn_order: bool = False
     # this technique is cyclic voltammetry. Fourteen sites across the
     # converter, both composers, the bagit writer and the transformer ask
     # exactly that question -- the shift offset, the display info, the data
@@ -142,10 +149,11 @@ SPECTRUM_TECHNIQUES = {
     'NMR': _nmr('NMR'),
 
     'INFRARED': SpectrumTechnique('INFRARED', x_reversed=True, threshold=0.93,
-                             em_wave=True, conventionally_transmittance=True,
+                             em_wave=True, store_in_drawn_order=True,
+                             conventionally_transmittance=True,
                              peaks_inverted=True, negative_peaks=False),
     'RAMAN': SpectrumTechnique('RAMAN', x_reversed=True, threshold=0.07,
-                          em_wave=True),
+                          em_wave=True, store_in_drawn_order=True),
     # MS is not routed through TechniqueComposer yet: every production
     # `typ == 'MS'` path goes to MSComposer (transformer.py:273, :381,
     # bagit/base.py:82), which draws sticks and never calls plt.xlim, so
@@ -155,9 +163,12 @@ SPECTRUM_TECHNIQUES = {
 
     'HPLC UVVIS': SpectrumTechnique('HPLC UVVIS', x_reversed=False, threshold=0.05,
                                auc_column=True, visual_split=True),
+    # Also covers Avantes AvaSoft exports (data_type.json), whose instruments
+    # are UV/VIS/NIR -- wider than this name, but handled identically: nm on x
+    # running forward, same threshold. No NIR technique exists to route to.
     'UVVIS': SpectrumTechnique('UVVIS', x_reversed=False, threshold=0.05,
                           visual_split=True,
-                          em_wave=True),
+                          em_wave=True, store_in_drawn_order=True),
 
     'THERMOGRAVIMETRIC ANALYSIS': SpectrumTechnique(
         'THERMOGRAVIMETRIC ANALYSIS', x_reversed=False, threshold=1.05),
@@ -198,7 +209,19 @@ SPECTRUM_TECHNIQUES = {
 
 # What an unrecognised datatype gets: the generic curve path established by
 # b87ea91. Its key is '' so that `typ` and `technique.key` stay in step.
-UNKNOWN_TECHNIQUE = SpectrumTechnique('')
+#
+# x_reversed is passed explicitly, like every entry above, rather than
+# inheriting the dataclass default. Reversal is the ppm / wavenumber
+# convention; a file whose x quantity we could not identify has nothing to
+# justify it, and the generic curve path already declines every other
+# NMR-specific assumption. The reversal here was inherited, never chosen.
+#
+# It also has to be False for the editor to agree. react-spectra-editor#336
+# draws the PLAIN layout ascending (`Format.isNonReversedXLayout`), and its
+# comment there states the intent outright -- keep in step with this field,
+# which draws the preview image. Left True, one spectrum would be drawn as
+# two mirror images.
+UNKNOWN_TECHNIQUE = SpectrumTechnique('', x_reversed=False)
 
 
 def technique_for(typ):

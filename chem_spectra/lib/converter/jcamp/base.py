@@ -44,7 +44,6 @@ class JcampBaseConverter:
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
         self.solv_peaks = []
-        self.is_dept = self.__is_dept()
         self.__read_solvent()
         self.__read_user_data_type_mapping()
 
@@ -85,6 +84,42 @@ class JcampBaseConverter:
             for key, values in data_type_mappings.items():
                 if dt in [value.upper() for value in values]:
                     return dt_dict.get(key, key)
+        # Nothing matched. Keep the file's own ##DATA TYPE= rather than
+        # returning '', because the composer writes this value straight back
+        # out (composer/technique.py) and 'DATATYPE' is suppressed from the
+        # original-metadata dump (composer/base.py) -- so '' erased the only
+        # record of what the file said it was. The spectrum still renders as a
+        # generic curve either way; what is lost is the ability to reclassify
+        # it later, which is exactly what happens when an under-specified
+        # technique is added to data_type.json after the fact.
+        return self.__unrecognised_datatype()
+
+    # Blocks that JCAMP uses structurally, or that carry a derived table
+    # rather than a measurement. None of them names the technique.
+    #
+    # Compared with spaces removed, because the same block is spelled both
+    # ways in the wild: this app composes `NMRPEAKTABLE`, while
+    # chemotion-converter-app emits `NMR PEAK TABLE`. The suffix rules cover
+    # every per-technique variant of those two -- `INFRARED PEAK TABLE`,
+    # `NMP PEAK ASSIGNMENTS` (its misspelling) and so on.
+    #
+    # `tests/lib/converter/jcamp/test_jcamp_datatype_classification.py
+    # ::test_auxiliary_blocks_stay_unmapped` holds the authoritative list of
+    # spellings, and pins that none of them is in data_type.json.
+    AUXILIARY_DATATYPES = ('LINK', 'NMRFID', 'INFRAREDINTERFEROGRAM')
+    AUXILIARY_SUFFIXES = ('PEAKTABLE', 'PEAKASSIGNMENTS')
+
+    @classmethod
+    def _is_auxiliary_datatype(cls, datatype):
+        squashed = datatype.replace(' ', '')
+        return (squashed in cls.AUXILIARY_DATATYPES
+                or squashed.endswith(cls.AUXILIARY_SUFFIXES))
+
+    def __unrecognised_datatype(self):
+        for dt in self.datatypes:
+            if self._is_auxiliary_datatype(dt):
+                continue
+            return dt
         return ''
 
     def __typ(self):
@@ -153,12 +188,3 @@ class JcampBaseConverter:
     def __read_solvent(self):
         parse_solvent(self)
 
-    def __is_dept(self):
-        if not self.ncl == '13C':
-            return False
-
-        for p in (self.dic.get('.PULSESEQUENCE', []) + self.dic.get('.PULSE SEQUENCE', [])):
-            if 'dept' in p:
-                return True
-
-        return False
