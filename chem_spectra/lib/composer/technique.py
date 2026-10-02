@@ -25,6 +25,22 @@ TEXT_INTEGRATION = '$$ === CHEMSPECTRA INTEGRATION ===\n'
 TEXT_MULTIPLICITY = '$$ === CHEMSPECTRA MULTIPLICITY ===\n'
 
 
+def flip_overlay_if_inverted(ax, inverted):
+    """Draw an overlay the other way up when every curve asks for it.
+
+    The overlay counterpart of the `draw_y_inverted` flip in `tf_img`: the
+    data is never mirrored, so an overlay that skipped this would draw an
+    inverted file upright beside others and inverted on its own. A figure
+    has one y axis, so it flips only when all curves agree; a mixed overlay
+    stays upright rather than misdrawing some of them. `inverted` holds one
+    flag per plotted curve. Returns whether the curves disagreed.
+    """
+    if inverted and all(inverted):
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim(ymax, ymin)
+    return any(inverted) and not all(inverted)
+
+
 class TechniqueComposer(BaseComposer):
     def __init__(self, core):
         super().__init__(core)

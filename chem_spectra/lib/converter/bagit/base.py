@@ -2,6 +2,7 @@ import os
 import base64
 import tempfile
 import json
+import logging
 import math
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
@@ -9,7 +10,9 @@ from chem_spectra.lib.shared.misc import shorten_label
 from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.technique import (
+    TechniqueComposer, flip_overlay_if_inverted,
+)
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 from chem_spectra.lib.converter.share import parse_params
@@ -17,6 +20,8 @@ from chem_spectra.lib.converter.bagit.lcms_builder import append_lcms_group
 import numpy as np  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib import ticker  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 
 class BagItBaseConverter:
@@ -241,7 +246,16 @@ class BagItBaseConverter:
                 plt.ylabel("{}".format(composer.core.label['y']), fontsize=18)
             else:
                 plt.ylabel("Y ({})".format(composer.core.label['y']), fontsize=18)
-        
+
+        if flip_overlay_if_inverted(plt.gca(), [
+            bool(getattr(c.core, 'draw_y_inverted', False))
+            for c in list_composer
+        ]):
+            logger.info(
+                'archive overlay mixes inverted and upright spectra; drawing '
+                'it upright',
+            )
+
         if cv_mode and cv_abs_max > 0:
             exp = int(math.floor(math.log10(cv_abs_max))) if cv_abs_max > 0 else 0
             base = (10.0 ** exp) if exp != 0 else 1.0
