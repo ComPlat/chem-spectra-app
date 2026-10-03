@@ -81,6 +81,9 @@ class JcampTechniqueConverter:
         self.dataclass = base.dataclass
         self.data_format = base.data_format
         self.typ = base.typ
+        # resolved once, by __target_block_records: the records cannot
+        # change, and the mismatch warning should be said once if at all
+        self.__target_records = None
         self.target_idx = self.__index_target()
         self.dic = base.dic
         self.data = make_ni_data_ys(base, self.target_idx)
@@ -390,6 +393,12 @@ class JcampTechniqueConverter:
         the flattened lists are indexed as before and the disagreement is
         logged rather than guessed at.
         """
+        if self.__target_records is not None:
+            return self.__target_records
+        self.__target_records = self.__resolve_target_block_records()
+        return self.__target_records
+
+    def __resolve_target_block_records(self):
         blocks = getattr(self.base, 'block_records', None) or []
         declaring = [block for block in blocks if block.get('DATATYPE')]
         sequence = [block['DATATYPE'].upper() for block in declaring]
