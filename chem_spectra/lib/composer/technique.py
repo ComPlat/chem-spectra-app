@@ -188,8 +188,9 @@ class TechniqueComposer(BaseComposer):
         given, which is different from being given as false.
         """
         lines = []
-        if getattr(self.core, 'transmittance_recorded',
-                   getattr(self.core, 'converted_to_transmittance', False)):
+        # transmittance_recorded alone: a conversion on this request sets
+        # both, so the second was never the one that answered.
+        if getattr(self.core, 'transmittance_recorded', False):
             lines.append('##$CSTRANSMITTANCE=true\n')
         if getattr(self.core, 'draw_y_inverted', False):
             lines.append('##$CSINVERTY=true\n')

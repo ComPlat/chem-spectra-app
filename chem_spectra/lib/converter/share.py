@@ -9,15 +9,19 @@ class UnconvertibleSpectrum(ValueError):
     support. Mapped to 422 with a JSON body naming the reason."""
 
 
-def _as_bool(value):
-    """Multipart form values arrive as strings, JSON payloads as booleans."""
-    if isinstance(value, str):
-        return value.strip().lower() in ('true', '1', 'yes')
-    return bool(value)
-
-
 TRUE_STRINGS = ('true', '1', 'yes')
 FALSE_STRINGS = ('false', '0', 'no')
+
+
+def _as_bool(value):
+    """Multipart form values arrive as strings, JSON payloads as booleans.
+
+    Shares TRUE_STRINGS with _as_tristate: two lists of the same words drift,
+    and then `transmittance` and `invert_y` disagree about what true means.
+    """
+    if isinstance(value, str):
+        return value.strip().lower() in TRUE_STRINGS
+    return bool(value)
 
 
 def _as_tristate(value, name):

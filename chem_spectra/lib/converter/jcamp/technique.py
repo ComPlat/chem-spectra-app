@@ -358,12 +358,16 @@ class JcampTechniqueConverter:
         records = self.__target_block_records()
         x, y = records.get('XUNITS'), records.get('YUNITS')
         try:
-            triple = records['UNITS'].replace(' ', '').replace('\t', '')
+            # Split first, strip after: stripping the whole record turned
+            # `% TRANSMITTANCE` into `%TRANSMITTANCE`, and that is what went
+            # into ##YUNITS. Only the space around the separators is noise.
+            triple = records['UNITS'].strip()
             # Mnova ends the record with a comma: `HZ, ARBITRARY UNITS,
             # ARBITRARY UNITS,`. Rejecting it left the label to be taken from
             # whichever other block declared XUNITS/YUNITS.
-            x, y, _ = triple[:-1].split(',') if triple.endswith(',') \
-                else triple.split(',')
+            fields = [field.strip()
+                      for field in triple.rstrip(',').split(',')]
+            x, y, _ = fields
         except (KeyError, AttributeError, ValueError):
             pass
         return {'x': x, 'y': y}
@@ -614,7 +618,13 @@ class JcampTechniqueConverter:
         x, y = declared['x'] or 'PPM', declared['y'] or 'ARBITRARY'
         target = {
             'x': 'PPM' if x.upper() == 'HZ' else x,
-            'y': 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y,
+            # Bruker LINK files already arrive space-stripped, so this
+            # compared the squeezed spelling. Now that the triple keeps its
+            # spaces, the comparison has to do the squeezing itself or
+            # Mnova's `ARBITRARY UNITS` stops matching and the two sources
+            # label the same quantity differently again.
+            'y': ('ARBITRARY' if y.upper().replace(' ', '') == 'ARBITRARYUNITS'
+                  else y),
         }
 
         if self.technique.x_axis == 'xrd':
