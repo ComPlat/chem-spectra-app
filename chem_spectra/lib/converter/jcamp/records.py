@@ -15,6 +15,10 @@ before the technique converter is built.
 
 UNIT_RECORDS = ('XUNITS', 'YUNITS', 'UNITS')
 
+# what read_block_records is asked for: the units, plus the datatype that
+# says which block each one belongs to.
+BLOCK_RECORDS = UNIT_RECORDS + ('DATATYPE',)
+
 
 def _label_key(label):
     """A JCAMP-DX label as nmrglue keys it: upper case, without spaces,

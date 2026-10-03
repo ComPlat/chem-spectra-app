@@ -913,3 +913,21 @@ def test_a_byte_order_mark_does_not_shift_the_blocks(client, tmp_path):
     composed = _composed_jcamp(_post(client, str(source)))
     assert '##XUNITS=1/CM' in composed
     assert '##YUNITS=ABSORBANCE' in composed
+
+
+def test_a_block_that_declares_no_datatype_does_not_shift_the_rest(client,
+                                                                   tmp_path):
+    """The outer block of a LINK file need not declare `##DATA TYPE=`.
+
+    Counting every block, and subtracting the LINK blocks, assumed it did.
+    With the outer `##DATA TYPE=LINK` line gone the spectrum sat one place
+    later than the arithmetic expected, and was labelled from the
+    interferogram that follows it.
+    """
+    source = tmp_path / 'no_outer_datatype.jdx'
+    source.write_text('\n'.join(
+        line for line in open(MULTI_BLOCK, encoding='utf-8').read().splitlines()
+        if line.strip() != '##DATA TYPE=LINK'), encoding='utf-8')
+    composed = _composed_jcamp(_post(client, str(source)))
+    assert '##XUNITS=1/CM' in composed
+    assert '##YUNITS=ABSORBANCE' in composed
