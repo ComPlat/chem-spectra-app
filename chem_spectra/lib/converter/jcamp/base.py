@@ -5,7 +5,7 @@ import logging
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
 from chem_spectra.lib.converter.jcamp.records import (
-    UNIT_RECORDS, read_block_records,
+    BLOCK_RECORDS, read_block_records,
 )
 import os
 
@@ -22,7 +22,7 @@ class JcampBaseConverter:
         # nothing and silently fell back to nmrglue's flattened lists, so
         # the same file was labelled one way through a fixture path and
         # another way through the endpoint.
-        self.block_records = read_block_records(path, UNIT_RECORDS)
+        self.block_records = read_block_records(path, BLOCK_RECORDS)
         self.dic, self.data = self.__read(path)
         # A file with no ##DATA TYPE= at all raised KeyError straight out of
         # the request. An absent header is no more exceptional than an

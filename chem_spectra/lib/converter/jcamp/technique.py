@@ -1,3 +1,7 @@
+import json
+import logging
+import os
+
 import numpy as np
 from scipy import signal
 
@@ -6,8 +10,9 @@ from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
 from chem_spectra.lib.converter.jcamp.records import UNIT_RECORDS
-# re-exported: the check that raises it moved to parse_params, but the
-# error handler and the tests import it from here
+# defined in share, re-exported here: the app's error handler
+# (chem_spectra/__init__.py), transformer.py and the tests all import it
+# from this module, which is where most of the raises are
 from chem_spectra.lib.converter.share import UnconvertibleSpectrum  # noqa: F401
 
 
@@ -43,8 +48,7 @@ def is_transmittance_unit(unit):
     return bool(unit) and _normalise_unit(unit) in TRANSMITTANCE_UNITS
 
 
-import json
-import os
+logger = logging.getLogger(__name__)
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
@@ -180,7 +184,14 @@ class JcampTechniqueConverter:
             # first block and skip the LINK offset below: it would drive the
             # index negative and silently read the last block instead. The
             # unrecognised datatype is logged by JcampBaseConverter.
+            self.datatype_pos = 0
             return 0
+
+        # The position in the file's own ##DATA TYPE= sequence, which the
+        # LINK subtraction below throws away. __target_block_records needs
+        # it: nmrglue's DATATYPE list is exactly the blocks that declare one,
+        # in file order, so this indexes them directly.
+        self.datatype_pos = idx
 
         if 'LINK' in self.datatypes:
             count_link = self.datatypes.count('LINK')
@@ -348,15 +359,36 @@ class JcampTechniqueConverter:
     def __target_block_records(self):
         """The unit records declared in the target block.
 
-        target_idx counts data blocks; LINK blocks hold none and come first,
-        so the target is block `target_idx + LINK count` in file order.
+        nmrglue's DATATYPE list is exactly the blocks that declare a
+        ##DATA TYPE=, in file order, so `datatype_pos` -- the position the
+        target was found at in that list -- indexes them directly.
+
+        The earlier `target_idx + count('LINK')` indexed *every* block
+        instead, which assumed each one declares a datatype and that the
+        LINK blocks all come first. Neither is required: an outer block that
+        declares a title and nothing else shifted the whole file by one, and
+        the spectrum was labelled from the block after it.
+
+        The two lists are compared before either is trusted. If they
+        disagree the file is shaped in a way neither reader anticipated, so
+        the flattened lists are indexed as before and the disagreement is
+        logged rather than guessed at.
         """
-        blocks = getattr(self.base, 'block_records', None)
-        if blocks:
-            position = self.target_idx + self.datatypes.count('LINK')
-            if position < len(blocks):
-                return blocks[position]
+        blocks = getattr(self.base, 'block_records', None) or []
+        declaring = [block for block in blocks if block.get('DATATYPE')]
+        sequence = [block['DATATYPE'].upper() for block in declaring]
+        position = getattr(self, 'datatype_pos', None)
+        if blocks and sequence == self.datatypes:
+            if position is not None and 0 <= position < len(declaring):
+                return declaring[position]
             return {}
+        if blocks:
+            logger.warning(
+                'the ##DATA TYPE= sequence read from the file, %s, is not the '
+                'one nmrglue reports, %s; falling back to the flattened '
+                'records for %r',
+                sequence, self.datatypes, self.params.get('fname'),
+            )
 
         def per_block(records):
             for idx in (self.target_idx, 0):
