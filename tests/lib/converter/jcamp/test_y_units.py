@@ -873,3 +873,43 @@ def test_an_empty_integral_table_does_not_refuse(tmp_path):
     converter = JcampTechniqueConverter(
         JcampBaseConverter(str(source), {'transmittance': True}))
     assert converter.converted_to_transmittance
+
+
+MULTI_BLOCK = 'tests/fixtures/source/ir_link_interferogram.jdx'
+
+
+def _composed_jcamp(response):
+    """The .jdx out of the endpoint's zip."""
+    import zipfile
+    with zipfile.ZipFile(io.BytesIO(response.data)) as archive:
+        name = next(n for n in archive.namelist() if n.endswith('.jdx'))
+        return archive.read(name).decode('utf-8', errors='ignore')
+
+
+def test_the_endpoint_labels_a_multi_block_file_from_its_own_block(client):
+    """The unit records come from the block that holds the spectrum.
+
+    At the endpoint the uploaded file is a NamedTemporaryFile that is closed,
+    and so deleted, before the technique converter is built. A reader that
+    re-opens the path by name therefore found nothing here and fell back to
+    nmrglue's flattened lists, where the interferogram's `CM`/`VOLTS` sit
+    beside the spectrum's own records. The same file was then labelled one way
+    through a fixture path and another way through the endpoint.
+    """
+    response = _post(client, MULTI_BLOCK)
+    assert response.status_code == 200
+    composed = _composed_jcamp(response)
+    assert '##XUNITS=1/CM' in composed
+    assert '##YUNITS=ABSORBANCE' in composed
+
+
+def test_a_byte_order_mark_does_not_shift_the_blocks(client, tmp_path):
+    """`str.strip` keeps U+FEFF, so a BOM'd first line does not start with
+    `##`. The outer `##TITLE=` was then missed, every block moved up one, and
+    the spectrum was labelled from the interferogram that follows it."""
+    source = tmp_path / 'bom.jdx'
+    source.write_text(open(MULTI_BLOCK, encoding='utf-8').read(),
+                      encoding='utf-8-sig')
+    composed = _composed_jcamp(_post(client, str(source)))
+    assert '##XUNITS=1/CM' in composed
+    assert '##YUNITS=ABSORBANCE' in composed

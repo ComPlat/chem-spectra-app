@@ -5,6 +5,7 @@ from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
+from chem_spectra.lib.converter.jcamp.records import UNIT_RECORDS
 # re-exported: the check that raises it moved to parse_params, but the
 # error handler and the tests import it from here
 from chem_spectra.lib.converter.share import UnconvertibleSpectrum  # noqa: F401
@@ -42,42 +43,6 @@ def is_transmittance_unit(unit):
     return bool(unit) and _normalise_unit(unit) in TRANSMITTANCE_UNITS
 
 
-UNIT_RECORDS = ('XUNITS', 'YUNITS', 'UNITS')
-
-
-def _label_key(label):
-    """A JCAMP-DX label as nmrglue keys it: upper case, without spaces,
-    dashes, slashes or underscores."""
-    return (label.strip().upper().replace(' ', '').replace('-', '')
-            .replace('_', '').replace('/', ''))
-
-
-def read_block_records(path, keys):
-    """The `keys` records of each block, in file order, or None.
-
-    nmrglue collects every block's records into one list per label, so an
-    index into that list is a block number only when every block declares
-    the record. This rebuilds the blocks from the file itself: each
-    ##TITLE= opens one, as JCAMP-DX requires. Only single-line values are
-    kept, which is all the unit records need.
-    """
-    try:
-        with open(path, encoding='utf-8', errors='ignore') as handle:
-            lines = handle.readlines()
-    except (OSError, TypeError):
-        return None
-    blocks = []
-    for line in lines:
-        line = line.split('$$', 1)[0].strip()
-        if not line.startswith('##') or '=' not in line:
-            continue
-        label, value = line[2:].split('=', 1)
-        key = _label_key(label)
-        if key == 'TITLE':
-            blocks.append({})
-        elif blocks and key in keys and value.strip():
-            blocks[-1].setdefault(key, value.strip())
-    return blocks
 import json
 import os
 
@@ -359,9 +324,10 @@ class JcampTechniqueConverter:
         which overrides them -- but only records the target block itself
         declares. Another block's triple (an interferogram's `CM, VOLTS, ...`
         beside an absorbance spectrum) must not relabel the spectrum. When
-        the file cannot be reread, the flattened nmrglue lists are indexed
-        as before. Deliberately ignores the caller's `axesUnits`: that is a
-        display preference, and the guard is about what the data already is.
+        the file could not be split into blocks, the flattened nmrglue
+        lists are indexed as before. Deliberately ignores the caller's
+        `axesUnits`: that is a display preference, and the guard is about
+        what the data already is.
 
         Runs before __set_label, which is why the guard cannot read
         self.label.
@@ -385,8 +351,7 @@ class JcampTechniqueConverter:
         target_idx counts data blocks; LINK blocks hold none and come first,
         so the target is block `target_idx + LINK count` in file order.
         """
-        blocks = read_block_records(getattr(self.base, 'path', None),
-                                    UNIT_RECORDS)
+        blocks = getattr(self.base, 'block_records', None)
         if blocks:
             position = self.target_idx + self.datatypes.count('LINK')
             if position < len(blocks):

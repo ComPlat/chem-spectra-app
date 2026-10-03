@@ -4,6 +4,9 @@ import logging
 
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
+from chem_spectra.lib.converter.jcamp.records import (
+    UNIT_RECORDS, read_block_records,
+)
 import os
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
@@ -13,8 +16,13 @@ logger = logging.getLogger(__name__)
 class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = parse_params(params)
-        # kept for readers that need the block structure nmrglue flattens
-        self.path = path
+        # Read here, not later from a path: at the endpoint `path` names a
+        # NamedTemporaryFile that is closed, and so deleted, as soon as this
+        # converter is built. A reader that re-opened it by name found
+        # nothing and silently fell back to nmrglue's flattened lists, so
+        # the same file was labelled one way through a fixture path and
+        # another way through the endpoint.
+        self.block_records = read_block_records(path, UNIT_RECORDS)
         self.dic, self.data = self.__read(path)
         # A file with no ##DATA TYPE= at all raised KeyError straight out of
         # the request. An absent header is no more exceptional than an
