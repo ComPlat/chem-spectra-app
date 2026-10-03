@@ -577,9 +577,14 @@ class JcampTechniqueConverter:
         """Integrals or multiplets the composed file would carry.
 
         Not "present anywhere": a request that clears the table clears it.
-        The composer writes nothing when an edited table arrives empty
-        (`gen_integration_info`), so refusing on the file's stale record
-        would refuse a conversion over integrals that are on their way out.
+        The composer writes nothing when an edited table arrives empty --
+        `gen_integration_info` for the integrals, `gen_mpy_integ_info` and
+        `gen_mpy_peaks_info` for the multiplets -- so refusing on the file's
+        stale record would refuse a conversion over a table on its way out.
+
+        `edited` absent is not `edited` false: parse_params supplies a
+        default with no such key, so a request that simply does not mention
+        integrals leaves the file's record standing, as it should.
         """
         for param, record in (('integration', '$OBSERVEDINTEGRALS'),
                               ('multiplicity', '$OBSERVEDMULTIPLETS')):
