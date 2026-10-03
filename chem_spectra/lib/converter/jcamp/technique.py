@@ -48,6 +48,16 @@ def is_transmittance_unit(unit):
     return bool(unit) and _normalise_unit(unit) in TRANSMITTANCE_UNITS
 
 
+# Deliberately short. 'AU' is arbitrary units, not absorbance units, and a
+# bare 'A' is as likely to be amperes; guessing either way is worse than
+# falling back to the technique.
+ABSORBANCE_UNITS = frozenset({'ABSORBANCE', 'ABS'})
+
+
+def is_absorbance_unit(unit):
+    return bool(unit) and _normalise_unit(unit) in ABSORBANCE_UNITS
+
+
 logger = logging.getLogger(__name__)
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
@@ -98,10 +108,10 @@ class JcampTechniqueConverter:
         #
         # Display only, so nothing computed from the data follows it: peak
         # picking, integration and the peak tables all run on self.ys, and
-        # whether peaks are maxima or dips is decided by the technique
-        # (`peaks_inverted`), never by this flag. Under #298, which mirrored
-        # the array, the picker ran on the mirrored data and picked the
-        # other polarity; it no longer does.
+        # whether peaks are maxima or dips is decided by what the y axis
+        # measures (see __peaks_point_down), never by this flag. Under #298,
+        # which mirrored the array, the picker ran on the mirrored data and
+        # picked the other polarity; it no longer does.
         #
         # It is set by the request *or* by the file's own record. Without the
         # second half the flag is write-only: every pass through this app
@@ -120,6 +130,8 @@ class JcampTechniqueConverter:
         self.obs_freq = self.__set_obs_freq()
         self.x_unit = self.__set_x_unit()
         self.ys = self.__read_ys()
+        # after __read_ys, which is where a conversion happens
+        self.peaks_point_down = self.__peaks_point_down()
         self.xs = self.__read_xs(base)
         self.__check_cylic_volta_shifted_info()
 
@@ -400,6 +412,42 @@ class JcampTechniqueConverter:
 
         found = {key: per_block(self.dic.get(key)) for key in UNIT_RECORDS}
         return {key: value for key, value in found.items() if value}
+
+    def __peaks_point_down(self):
+        """Whether the bands of interest are dips in the stored trace.
+
+        The quantity decides it, not the technique. `peaks_inverted` is set
+        per technique because an infrared spectrum is nearly always %T, but
+        that is a habit of the format, not a property of infrared: an IR
+        file in absorbance has maxima, and a UV/VIS spectrum converted to %T
+        has dips. Reading the technique alone meant a converted UV/VIS
+        spectrum came back with its auto peaks on the baseline *between* the
+        bands, and an IR absorbance file had no request that would find its
+        bands at all.
+
+        The technique stays as the fallback, for the files -- most NMR among
+        them -- whose y unit says nothing about direction.
+        """
+        if self.converted_to_transmittance or self.transmittance_recorded:
+            return True
+        declared = self.__declared_units()['y']
+        if is_transmittance_unit(declared):
+            return True
+        if is_absorbance_unit(declared):
+            return False
+        return self.technique.peaks_inverted
+
+    def __peak_threshold(self):
+        """`technique.threshold` is a fraction of the maximum, read against
+        the technique's own polarity: 0.93 for infrared means "dips below
+        93% of the maximum", 0.05 for UV/VIS means "maxima above 5% of it".
+        Where the polarity we need is the other one, so is the fraction --
+        otherwise a converted UV/VIS trace is searched for dips below 5% of
+        the maximum, which is the floor, and nothing is found.
+        """
+        if self.peaks_point_down == self.technique.peaks_inverted:
+            return self.threshold
+        return 1.0 - self.threshold
 
     def __to_transmittance(self, ys):
         """T = 10**(-A). Refuses rather than returning a ruined spectrum.
@@ -748,15 +796,17 @@ class JcampTechniqueConverter:
         self.edit_peaks = {'x': edit_x, 'y': edit_y}
 
     def __exec_peak_picking_logic(self, refresh_solvent=False):
-        # Polarity comes from the technique (`peaks_inverted`,
-        # `negative_peaks`), not from draw_y_inverted: invert_y is a
-        # viewport flip and the picker sees the data as stored.
+        # Polarity comes from what the y axis measures (__peaks_point_down)
+        # and, for the second pass, from `negative_peaks`. Never from
+        # draw_y_inverted: invert_y is a viewport flip and the picker sees
+        # the data as stored.
         max_y = np.max(self.ys)
-        height = 0.2 * max_y if refresh_solvent else self.threshold * max_y
+        height = (0.2 * max_y if refresh_solvent
+                  else self.__peak_threshold() * max_y)
 
         corr_data_ys = self.ys
         corr_height = height
-        if self.technique.peaks_inverted:
+        if self.peaks_point_down:
             corr_data_ys = 1 - self.ys
             corr_height = 1 - height
 
@@ -775,7 +825,8 @@ class JcampTechniqueConverter:
         auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx]} for idx in peak_idxs]
         auto_peaks.sort(key=lambda d: d['y'], reverse=True)
 
-        if self.technique.peaks_inverted:
+        if self.peaks_point_down:
+            # sorted by descending y, so the deepest dips are at the end
             auto_peaks = auto_peaks[-100:]
         elif self.ncl == '13C':
             simu_length = len(self.simu_peaks)

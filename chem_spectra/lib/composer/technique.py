@@ -430,10 +430,14 @@ class TechniqueComposer(BaseComposer):
         return 20
 
     def __fakto(self):
-        typ = self.core.typ
-        if 'INFRARED' == typ:
-            return -1
-        return 1
+        """Which way the peak marker points. It follows the picker, so a
+        marker cannot sit on the opposite side of the trace from the peak it
+        marks; keyed on the technique, it did exactly that for an infrared
+        file in absorbance."""
+        points_down = getattr(self.core, 'peaks_point_down', None)
+        if points_down is None:
+            points_down = 'INFRARED' == self.core.typ
+        return -1 if points_down else 1
 
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]

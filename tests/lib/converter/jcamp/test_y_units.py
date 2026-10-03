@@ -1008,3 +1008,50 @@ def test_peaks_str_replaces_the_stored_table_before_it_is_converted(tmp_path):
         str(source), {'transmittance': True, 'peaks_str': '480,0.6'}))
     assert converter.edit_peaks['x'] == [480.0]
     assert converter.edit_peaks['y'] == pytest.approx([100 * 10 ** -0.6])
+
+
+# - - - which way the bands point is a property of the quantity - - -
+
+def _auto_peak_xs(converter):
+    return sorted(round(x, 0) for x in (converter.auto_peaks or {}).get('x', []))
+
+
+def test_a_converted_uvvis_spectrum_keeps_its_bands(tmp_path):
+    """An absorbance band is a maximum; the same band in %T is a dip.
+
+    Reading `technique.peaks_inverted` alone, the picker went on looking for
+    maxima after the conversion and returned the %T baseline *between* the
+    bands instead of the bands.
+    """
+    converter = _absorbance_probe(
+        tmp_path, datatype='UV/VIS SPECTRUM', params={'transmittance': True})
+    assert _auto_peak_xs(converter) == [420.0, 455.0, 480.0]
+
+
+def test_an_infrared_spectrum_in_absorbance_keeps_its_bands(tmp_path):
+    """Infrared is nearly always %T, which is why the flag was set per
+    technique -- but that is a habit of the format, not a property of
+    infrared. An IR file declaring ABSORBANCE had no request that found its
+    bands: the picker looked for dips and returned nothing."""
+    converter = _absorbance_probe(tmp_path, datatype='INFRARED SPECTRUM')
+    assert _auto_peak_xs(converter) == [420.0, 455.0, 480.0]
+
+
+def test_a_transmittance_file_still_dips(tmp_path):
+    """The unaffected case, pinned: IR in %T is what peaks_inverted was
+    written for, and it must not move."""
+    converter = _probe(TRANSMITTANCE_SHAPED, 'INFRARED', tmp_path)
+    assert converter.peaks_point_down is True
+
+
+def test_nmr_follows_the_technique(tmp_path):
+    """ARBITRARY says nothing about direction, so the descriptor decides."""
+    converter = _probe(ABSORBANCE_SHAPED, 'NMR', tmp_path, yunits='ARBITRARY')
+    assert converter.peaks_point_down is False
+
+
+def test_the_marker_points_the_way_the_picker_looked(tmp_path):
+    """A marker on the opposite side of the trace from its own peak."""
+    composer = TechniqueComposer(
+        _absorbance_probe(tmp_path, datatype='INFRARED SPECTRUM'))
+    assert composer._TechniqueComposer__fakto() == 1
