@@ -1055,3 +1055,29 @@ def test_the_marker_points_the_way_the_picker_looked(tmp_path):
     composer = TechniqueComposer(
         _absorbance_probe(tmp_path, datatype='INFRARED SPECTRUM'))
     assert composer._TechniqueComposer__fakto() == 1
+
+
+# - - - an inverted viewport moves the screen-space offsets with it - - -
+
+def _ir_composer(tmp_path, **params):
+    return TechniqueComposer(_probe(TRANSMITTANCE_SHAPED, 'INFRARED',
+                                    tmp_path, params=params))
+
+
+def test_the_marker_turns_with_the_viewport(tmp_path):
+    """The marker is a Path in points, which plt.ylim does not touch. Left
+    alone it pointed into the body of the peak it marks."""
+    upright = _ir_composer(tmp_path)
+    flipped = _ir_composer(tmp_path, invert_y=True)
+    assert upright._TechniqueComposer__fakto() == -1
+    assert flipped._TechniqueComposer__fakto() == 1
+
+
+def test_the_label_nudge_turns_with_the_viewport(tmp_path):
+    """The annotation sits beyond the peak in data space, which the flipped
+    ylim carries along, then is nudged outwards in screen space, which it
+    does not. Unflipped, the nudge pulled the label back over the peak."""
+    upright = _ir_composer(tmp_path)
+    flipped = _ir_composer(tmp_path, invert_y=True)
+    assert upright._TechniqueComposer__label_offset(12) == (0, 12)
+    assert flipped._TechniqueComposer__label_offset(12) == (0, -12)

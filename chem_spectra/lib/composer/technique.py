@@ -430,14 +430,36 @@ class TechniqueComposer(BaseComposer):
         return 20
 
     def __fakto(self):
-        """Which way the peak marker points. It follows the picker, so a
-        marker cannot sit on the opposite side of the trace from the peak it
-        marks; keyed on the technique, it did exactly that for an infrared
-        file in absorbance."""
+        """Which way the peak marker points, on screen.
+
+        It follows the picker, so a marker cannot sit on the opposite side
+        of the trace from the peak it marks; keyed on the technique, it did
+        exactly that for an infrared file in absorbance.
+
+        And it follows the viewport. `draw_y_inverted` flips the y axis, so
+        a trace that dips in the data rises on screen -- but the marker is
+        a Path in points, which the flip does not touch. It kept pointing
+        the way it had, straight into the body of the peak.
+        """
         points_down = getattr(self.core, 'peaks_point_down', None)
         if points_down is None:
             points_down = 'INFRARED' == self.core.typ
+        if getattr(self.core, 'draw_y_inverted', False):
+            points_down = not points_down
         return -1 if points_down else 1
+
+    def __label_offset(self, points):
+        """A label offset in points, the way the viewport shows it.
+
+        The annotations sit beyond the peak in *data* space, which the
+        inverted ylim carries along with everything else, and are then
+        nudged outwards by an offset in *screen* space, which it does not.
+        Unflipped, that nudge pulled every label back over the peak it
+        names.
+        """
+        if getattr(self.core, 'draw_y_inverted', False):
+            return (0, -points)
+        return (0, points)
 
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
@@ -906,7 +928,7 @@ class TechniqueComposer(BaseComposer):
 
                     ax.annotate(peak_label,
                         xy=(gap_value + x_text, max_current_group  + h * 0.11), xycoords='data',
-                        xytext=(0, 12), textcoords='offset points',
+                        xytext=self.__label_offset(12), textcoords='offset points',
                         arrowprops=dict(arrowstyle="-", linewidth=0.2),
                         rotation=90, size=6)
 
@@ -918,7 +940,7 @@ class TechniqueComposer(BaseComposer):
                 peak_label = '{x}'.format(x=x_float)
                 ax.annotate(peak_label,
                     xy=(x_pos, y_pos), xycoords='data',
-                    xytext=(0, 20), textcoords='offset points',
+                    xytext=self.__label_offset(20), textcoords='offset points',
                     arrowprops=dict(arrowstyle="-", linewidth=0.2),
                     rotation=90, size=6)
 
