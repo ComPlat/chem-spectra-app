@@ -25,6 +25,22 @@ TEXT_INTEGRATION = '$$ === CHEMSPECTRA INTEGRATION ===\n'
 TEXT_MULTIPLICITY = '$$ === CHEMSPECTRA MULTIPLICITY ===\n'
 
 
+def flip_overlay_if_inverted(ax, inverted):
+    """Draw an overlay the other way up when every curve asks for it.
+
+    The overlay counterpart of the `draw_y_inverted` flip in `tf_img`: the
+    data is never mirrored, so an overlay that skipped this would draw an
+    inverted file upright beside others and inverted on its own. A figure
+    has one y axis, so it flips only when all curves agree; a mixed overlay
+    stays upright rather than misdrawing some of them. `inverted` holds one
+    flag per plotted curve. Returns whether the curves disagreed.
+    """
+    if inverted and all(inverted):
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim(ymax, ymin)
+    return any(inverted) and not all(inverted)
+
+
 class TechniqueComposer(BaseComposer):
     def __init__(self, core):
         super().__init__(core)
@@ -172,9 +188,11 @@ class TechniqueComposer(BaseComposer):
         given, which is different from being given as false.
         """
         lines = []
-        if getattr(self.core, 'converted_to_transmittance', False):
+        # transmittance_recorded alone: a conversion on this request sets
+        # both, so the second was never the one that answered.
+        if getattr(self.core, 'transmittance_recorded', False):
             lines.append('##$CSTRANSMITTANCE=true\n')
-        if getattr(self.core, 'inverted_y', False):
+        if getattr(self.core, 'draw_y_inverted', False):
             lines.append('##$CSINVERTY=true\n')
         return lines
 
@@ -413,10 +431,36 @@ class TechniqueComposer(BaseComposer):
         return 20
 
     def __fakto(self):
-        typ = self.core.typ
-        if 'INFRARED' == typ:
-            return -1
-        return 1
+        """Which way the peak marker points, on screen.
+
+        It follows the picker, so a marker cannot sit on the opposite side
+        of the trace from the peak it marks; keyed on the technique, it did
+        exactly that for an infrared file in absorbance.
+
+        And it follows the viewport. `draw_y_inverted` flips the y axis, so
+        a trace that dips in the data rises on screen -- but the marker is
+        a Path in points, which the flip does not touch. It kept pointing
+        the way it had, straight into the body of the peak.
+        """
+        points_down = getattr(self.core, 'peaks_point_down', None)
+        if points_down is None:
+            points_down = 'INFRARED' == self.core.typ
+        if getattr(self.core, 'draw_y_inverted', False):
+            points_down = not points_down
+        return -1 if points_down else 1
+
+    def __label_offset(self, points):
+        """A label offset in points, the way the viewport shows it.
+
+        The annotations sit beyond the peak in *data* space, which the
+        inverted ylim carries along with everything else, and are then
+        nudged outwards by an offset in *screen* space, which it does not.
+        Unflipped, that nudge pulled every label back over the peak it
+        names.
+        """
+        if getattr(self.core, 'draw_y_inverted', False):
+            return (0, -points)
+        return (0, points)
 
     def tf_img(self):
         plt.rcParams['figure.figsize'] = [16, 9]
@@ -676,10 +720,16 @@ class TechniqueComposer(BaseComposer):
         y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max * (1.1 if self._technique().peaks_inverted else 1.5))
 
 
-        plt.ylim(
-            y_boundary_min,
-            y_boundary_max,
-        )
+        # Drawn the other way up when asked. The data is untouched, so the
+        # axis ticks and the peak table still read in the units the file
+        # declares -- this only changes which end of the plot is at the top.
+        # Standard practice where the convention is regional or the signal is
+        # a dip: DSC exo-up against exo-down, cyclic voltammetry's IUPAC
+        # against Texas sign, indirect photometric HPLC.
+        if getattr(self.core, 'draw_y_inverted', False):
+            plt.ylim(y_boundary_max, y_boundary_min)
+        else:
+            plt.ylim(y_boundary_min, y_boundary_max)
 
         ax = plt.gca()
         if self._technique().cyclic_voltammetry:
@@ -879,7 +929,7 @@ class TechniqueComposer(BaseComposer):
 
                     ax.annotate(peak_label,
                         xy=(gap_value + x_text, max_current_group  + h * 0.11), xycoords='data',
-                        xytext=(0, 12), textcoords='offset points',
+                        xytext=self.__label_offset(12), textcoords='offset points',
                         arrowprops=dict(arrowstyle="-", linewidth=0.2),
                         rotation=90, size=6)
 
@@ -891,7 +941,7 @@ class TechniqueComposer(BaseComposer):
                 peak_label = '{x}'.format(x=x_float)
                 ax.annotate(peak_label,
                     xy=(x_pos, y_pos), xycoords='data',
-                    xytext=(0, 20), textcoords='offset points',
+                    xytext=self.__label_offset(20), textcoords='offset points',
                     arrowprops=dict(arrowstyle="-", linewidth=0.2),
                     rotation=90, size=6)
 

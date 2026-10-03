@@ -1,3 +1,7 @@
+import json
+import logging
+import os
+
 import numpy as np
 from scipy import signal
 
@@ -5,17 +9,56 @@ from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
-
-
-class UnconvertibleSpectrum(ValueError):
-    """The client asked for a conversion this data cannot support."""
+from chem_spectra.lib.converter.jcamp.records import UNIT_RECORDS
+# defined in share, re-exported here: the app's error handler
+# (chem_spectra/__init__.py), transformer.py and the tests all import it
+# from this module, which is where most of the raises are
+from chem_spectra.lib.converter.share import UnconvertibleSpectrum  # noqa: F401
 
 
 # Real absorbance runs roughly 0-3; beyond this T = 10**(-A) underflows and
 # the spectrum becomes a flat line.
 ABSORBANCE_CEILING = 10.0
-import json
-import os
+
+# y units that already mean transmittance, after _normalise_unit. Instrument
+# exports spell it many ways -- '%T', 'T', 'TRANSMISSION', 'Transmission (%)',
+# '% TRANSMITTANCE' -- and a substring test for 'TRANSMITTANCE' missed most of
+# them, leaving the median heuristic, which is unreliable on heavily absorbing
+# samples, as the only guard. An exact set rather than a looser substring
+# match, so an unrelated unit cannot block a conversion by accident.
+TRANSMITTANCE_UNITS = frozenset({
+    'T', 'TRANSMITTANCE', 'TRANSMISSION',
+    'PERCENTT', 'PERCENTTRANSMITTANCE', 'PERCENTTRANSMISSION',
+    'TRANSMITTANCEPERCENT', 'TRANSMISSIONPERCENT',
+})
+
+
+def absorbance_to_percent_transmittance(values):
+    """%T = 100 * 10**(-A)."""
+    return 100.0 * np.power(10.0, -np.asarray(values, dtype=float))
+
+
+def _normalise_unit(unit):
+    """Upper case, letters and digits only: '%T' -> 'T',
+    'Transmission (%)' -> 'TRANSMISSION'."""
+    return ''.join(ch for ch in str(unit).upper() if ch.isalnum())
+
+
+def is_transmittance_unit(unit):
+    return bool(unit) and _normalise_unit(unit) in TRANSMITTANCE_UNITS
+
+
+# Deliberately short. 'AU' is arbitrary units, not absorbance units, and a
+# bare 'A' is as likely to be amperes; guessing either way is worse than
+# falling back to the technique.
+ABSORBANCE_UNITS = frozenset({'ABSORBANCE', 'ABS'})
+
+
+def is_absorbance_unit(unit):
+    return bool(unit) and _normalise_unit(unit) in ABSORBANCE_UNITS
+
+
+logger = logging.getLogger(__name__)
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
@@ -38,6 +81,9 @@ class JcampTechniqueConverter:
         self.dataclass = base.dataclass
         self.data_format = base.data_format
         self.typ = base.typ
+        # resolved once, by __target_block_records: the records cannot
+        # change, and the mismatch warning should be said once if at all
+        self.__target_records = None
         self.target_idx = self.__index_target()
         self.dic = base.dic
         self.data = make_ni_data_ys(base, self.target_idx)
@@ -50,14 +96,45 @@ class JcampTechniqueConverter:
         self.solv_peaks = base.solv_peaks
         # - - - - - - - - - - -
         self.fname = base.fname
-        # set by __read_ys / __to_transmittance, read by __set_label
+        # set by __to_transmittance *this run*, read by __set_label: only a
+        # conversion we performed may rename the unit.
         self.converted_to_transmittance = False
-        self.inverted_y = False
+        # ...whereas the record says the data *is* transmittance, whoever
+        # converted it and whenever. A file we composed earlier already
+        # carries it, and recomposing must not throw that away: see below.
+        self.transmittance_recorded = self.__declared_flag('$CSTRANSMITTANCE')
+        # A drawing instruction, carried to the composer and written into the
+        # composed file as ##$CSINVERTY. It never reaches self.ys: inversion
+        # is a viewport concern, and `max(y) - y` on the stored array destroys
+        # the baseline, skews the area-under-curve integration and travels
+        # into every downstream consumer of the exported JCAMP.
+        #
+        # Display only, so nothing computed from the data follows it: peak
+        # picking, integration and the peak tables all run on self.ys, and
+        # whether peaks are maxima or dips is decided by what the y axis
+        # measures (see __peaks_point_down), never by this flag. Under #298,
+        # which mirrored the array, the picker ran on the mirrored data and
+        # picked the other polarity; it no longer does.
+        #
+        # It is set by the request *or* by the file's own record. Without the
+        # second half the flag is write-only: every pass through this app
+        # recomposes, and a recompose carries no `invert_y`, so the record
+        # written on one request is dropped on the next. A viewing preference
+        # that does not survive a round trip is not a preference. The file's
+        # declaration is authoritative unless the request overrides it, which
+        # is the rule #312 applied to the stored point order. Overriding works
+        # both ways: `invert_y` is None when not sent, and an explicit False
+        # clears the record.
+        requested = base.params.get('invert_y')
+        self.draw_y_inverted = (self.__declared_flag('$CSINVERTY')
+                                if requested is None else bool(requested))
         self.block_count = self.__count_block()
         self.threshold = self.technique.threshold
         self.obs_freq = self.__set_obs_freq()
         self.x_unit = self.__set_x_unit()
         self.ys = self.__read_ys()
+        # after __read_ys, which is where a conversion happens
+        self.peaks_point_down = self.__peaks_point_down()
         self.xs = self.__read_xs(base)
         self.__check_cylic_volta_shifted_info()
 
@@ -122,7 +199,14 @@ class JcampTechniqueConverter:
             # first block and skip the LINK offset below: it would drive the
             # index negative and silently read the last block instead. The
             # unrecognised datatype is logged by JcampBaseConverter.
+            self.datatype_pos = 0
             return 0
+
+        # The position in the file's own ##DATA TYPE= sequence, which the
+        # LINK subtraction below throws away. __target_block_records needs
+        # it: nmrglue's DATATYPE list is exactly the blocks that declare one,
+        # in file order, so this indexes them directly.
+        self.datatype_pos = idx
 
         if 'LINK' in self.datatypes:
             count_link = self.datatypes.count('LINK')
@@ -226,6 +310,16 @@ class JcampTechniqueConverter:
         
         return x
 
+    def __declared_flag(self, record):
+        """Whether the file carries `##<record>=true`.
+
+        Only the real record counts. The original-metadata dump re-emits it as
+        `###$CSINVERTY= true`, which parses under a different key, so reading
+        it here cannot resurrect a flag from a file that never set one.
+        """
+        values = self.dic.get(record) or []
+        return any(str(v).strip().lower() == 'true' for v in values)
+
     def __read_ys(self):
         """Apply the client's processing instructions, and nothing else.
 
@@ -241,11 +335,132 @@ class JcampTechniqueConverter:
 
         if self.params.get('transmittance'):
             ys = self.__to_transmittance(ys)
-        if self.params.get('invert_y'):
-            ys = np.max(ys) - ys
-            self.inverted_y = True
 
         return ys
+
+    def __declared_units(self):
+        """The x and y units the *file* declares for the target block, each
+        None when it declares none. The one reader of the unit records: the
+        transmittance guard and __set_label used to read them separately, at
+        different indices, so in a LINK or multi-block file the unit the
+        guard refused on and the unit the composed file was labelled with
+        could disagree.
+
+        ##XUNITS=/##YUNITS= are read first, then the JCAMP 6 ##UNITS= triple,
+        which overrides them -- but only records the target block itself
+        declares. Another block's triple (an interferogram's `CM, VOLTS, ...`
+        beside an absorbance spectrum) must not relabel the spectrum. When
+        the file could not be split into blocks, the flattened nmrglue
+        lists are indexed as before. Deliberately ignores the caller's
+        `axesUnits`: that is a display preference, and the guard is about
+        what the data already is.
+
+        Runs before __set_label, which is why the guard cannot read
+        self.label.
+        """
+        records = self.__target_block_records()
+        x, y = records.get('XUNITS'), records.get('YUNITS')
+        try:
+            # Split first, strip after: stripping the whole record turned
+            # `% TRANSMITTANCE` into `%TRANSMITTANCE`, and that is what went
+            # into ##YUNITS. Only the space around the separators is noise.
+            triple = records['UNITS'].strip()
+            # Mnova ends the record with a comma: `HZ, ARBITRARY UNITS,
+            # ARBITRARY UNITS,`. Rejecting it left the label to be taken from
+            # whichever other block declared XUNITS/YUNITS.
+            fields = [field.strip()
+                      for field in triple.rstrip(',').split(',')]
+            x, y, _ = fields
+        except (KeyError, AttributeError, ValueError):
+            pass
+        return {'x': x, 'y': y}
+
+    def __target_block_records(self):
+        """The unit records declared in the target block.
+
+        nmrglue's DATATYPE list is exactly the blocks that declare a
+        ##DATA TYPE=, in file order, so `datatype_pos` -- the position the
+        target was found at in that list -- indexes them directly.
+
+        The earlier `target_idx + count('LINK')` indexed *every* block
+        instead, which assumed each one declares a datatype and that the
+        LINK blocks all come first. Neither is required: an outer block that
+        declares a title and nothing else shifted the whole file by one, and
+        the spectrum was labelled from the block after it.
+
+        The two lists are compared before either is trusted. If they
+        disagree the file is shaped in a way neither reader anticipated, so
+        the flattened lists are indexed as before and the disagreement is
+        logged rather than guessed at.
+        """
+        if self.__target_records is not None:
+            return self.__target_records
+        self.__target_records = self.__resolve_target_block_records()
+        return self.__target_records
+
+    def __resolve_target_block_records(self):
+        blocks = getattr(self.base, 'block_records', None) or []
+        declaring = [block for block in blocks if block.get('DATATYPE')]
+        sequence = [block['DATATYPE'].upper() for block in declaring]
+        position = getattr(self, 'datatype_pos', None)
+        if blocks and sequence == self.datatypes:
+            if position is not None and 0 <= position < len(declaring):
+                return declaring[position]
+            return {}
+        if blocks:
+            logger.warning(
+                'the ##DATA TYPE= sequence read from the file, %s, is not the '
+                'one nmrglue reports, %s; falling back to the flattened '
+                'records for %r',
+                sequence, self.datatypes, self.params.get('fname'),
+            )
+
+        def per_block(records):
+            for idx in (self.target_idx, 0):
+                try:
+                    return records[idx]
+                except (IndexError, KeyError, TypeError):
+                    continue
+            return None
+
+        found = {key: per_block(self.dic.get(key)) for key in UNIT_RECORDS}
+        return {key: value for key, value in found.items() if value}
+
+    def __peaks_point_down(self):
+        """Whether the bands of interest are dips in the stored trace.
+
+        The quantity decides it, not the technique. `peaks_inverted` is set
+        per technique because an infrared spectrum is nearly always %T, but
+        that is a habit of the format, not a property of infrared: an IR
+        file in absorbance has maxima, and a UV/VIS spectrum converted to %T
+        has dips. Reading the technique alone meant a converted UV/VIS
+        spectrum came back with its auto peaks on the baseline *between* the
+        bands, and an IR absorbance file had no request that would find its
+        bands at all.
+
+        The technique stays as the fallback, for the files -- most NMR among
+        them -- whose y unit says nothing about direction.
+        """
+        if self.converted_to_transmittance or self.transmittance_recorded:
+            return True
+        declared = self.__declared_units()['y']
+        if is_transmittance_unit(declared):
+            return True
+        if is_absorbance_unit(declared):
+            return False
+        return self.technique.peaks_inverted
+
+    def __peak_threshold(self):
+        """`technique.threshold` is a fraction of the maximum, read against
+        the technique's own polarity: 0.93 for infrared means "dips below
+        93% of the maximum", 0.05 for UV/VIS means "maxima above 5% of it".
+        Where the polarity we need is the other one, so is the fraction --
+        otherwise a converted UV/VIS trace is searched for dips below 5% of
+        the maximum, which is the floor, and nothing is found.
+        """
+        if self.peaks_point_down == self.technique.peaks_inverted:
+            return self.threshold
+        return 1.0 - self.threshold
 
     def __to_transmittance(self, ys):
         """T = 10**(-A). Refuses rather than returning a ruined spectrum.
@@ -260,13 +475,34 @@ class JcampTechniqueConverter:
         finiteness check on the result is a backstop for anything the input
         checks do not anticipate.
         """
-        ys = np.asarray(ys, dtype=float)
-        if not np.isfinite(ys).all():
+        # Our own record is checked first: a file we converted earlier is
+        # transmittance whatever unit a later recompose wrote over it.
+        if self.transmittance_recorded:
             raise UnconvertibleSpectrum(
-                'the series contains non-finite values, so it cannot be '
-                'absorbance'
+                'the file records that it was already converted to '
+                'transmittance; there is nothing to convert'
+            )
+        declared = self.__declared_units()['y']
+        if is_transmittance_unit(declared):
+            # What the file says outranks what its shape suggests: this is a
+            # fact, where the median test below is an inference. It is also
+            # checked before the integrals: there is no point telling someone
+            # to remove integrals from a file that is going to be refused as
+            # already transmittance whatever they do.
+            raise UnconvertibleSpectrum(
+                'the file already declares its y axis as {!r}; there is '
+                'nothing to convert'.format(declared)
+            )
+        if self.__carries_integrals():
+            # An area under absorbance is proportional to concentration; the
+            # same region of the %T trace has no such meaning, and %T is not
+            # linear in A, so the areas cannot be carried across either.
+            raise UnconvertibleSpectrum(
+                'the spectrum carries integrals or multiplets, which have no '
+                'meaning in transmittance; remove them before converting'
             )
 
+        ys = self.__refuse_unless_absorbance(ys)
         y_max = float(np.max(ys))
         y_min = float(np.min(ys))
 
@@ -275,28 +511,109 @@ class JcampTechniqueConverter:
                 'already appears to be transmittance (baseline near the '
                 'maximum); there is nothing to convert'
             )
-        if y_max > ABSORBANCE_CEILING:
-            raise UnconvertibleSpectrum(
-                'y values up to {:g} are not absorbance; transmittance would '
-                'underflow to zero'.format(y_max)
-            )
-        # Absorbance dips slightly below zero from baseline drift, but not far:
-        # A = -10 already means T = 10**10, which is not a transmittance.
-        if y_min < -ABSORBANCE_CEILING:
-            raise UnconvertibleSpectrum(
-                'y values down to {:g} are not absorbance; transmittance '
-                'would overflow'.format(y_min)
-            )
-
-        transmittance = np.power(10.0, -ys)
-        if not np.isfinite(transmittance).all():
-            raise UnconvertibleSpectrum(
-                'the conversion produced non-finite values; the series is not '
-                'absorbance'
-            )
+        # Percent, not the 0-1 ratio: %T is how instruments commonly present
+        # transmittance, and absorbance itself runs 0-2.5, so a 0-1 array is
+        # routinely misread as absorbance. '% TRANSMITTANCE' is NOT a JCAMP-DX
+        # unit, though: 4.24 (6.2.2) lists TRANSMITTANCE only as the ratio
+        # I_T/I_0, beside REFLECTANCE, ABSORBANCE, KUBELKA-MUNK and ARBITRARY
+        # UNITS. A strict reader will not recognise it as transmittance, and
+        # one that maps it to TRANSMITTANCE sees values 100x too large.
+        transmittance = self.__to_percent(ys)
 
         self.converted_to_transmittance = True
+        self.transmittance_recorded = True
         return transmittance
+
+    @staticmethod
+    def __refuse_unless_absorbance(values, what=None):
+        """The range checks both the trace and the peak table need.
+
+        Every refusal names what is wrong with the *input*, so the reason
+        says what the data is rather than what the arithmetic did. `what`
+        names the table when it is not the trace; the trace's own wording is
+        unchanged, because it is what the API has been answering with.
+        """
+        where = '{}: '.format(what) if what else ''
+        values = np.asarray(values, dtype=float)
+        if values.size == 0:
+            return values
+        if not np.isfinite(values).all():
+            raise UnconvertibleSpectrum(
+                where + 'the series contains non-finite values, so it cannot '
+                'be absorbance'
+            )
+        y_max = float(np.max(values))
+        if y_max > ABSORBANCE_CEILING:
+            raise UnconvertibleSpectrum(
+                where + 'y values up to {:g} are not absorbance; '
+                'transmittance would underflow to zero'.format(y_max)
+            )
+        # Absorbance dips slightly below zero from baseline drift, but not
+        # far: A = -10 already means T = 10**10, which is not a
+        # transmittance.
+        y_min = float(np.min(values))
+        if y_min < -ABSORBANCE_CEILING:
+            raise UnconvertibleSpectrum(
+                where + 'y values down to {:g} are not absorbance; '
+                'transmittance would overflow'.format(y_min)
+            )
+        return values
+
+    @classmethod
+    def __to_percent(cls, values, what=None):
+        """Guarded conversion. The finiteness check on the result is a
+        backstop for anything the input checks do not anticipate."""
+        where = '{}: '.format(what) if what else ''
+        values = cls.__refuse_unless_absorbance(values, what)
+        converted = absorbance_to_percent_transmittance(values)
+        if converted.size and not np.isfinite(converted).all():
+            raise UnconvertibleSpectrum(
+                where + 'the conversion produced non-finite values; the '
+                'series is not absorbance'
+            )
+        return converted
+
+    def __carries_integrals(self):
+        """Integrals or multiplets the composed file would carry.
+
+        Not "present anywhere": a request that clears the table clears it.
+        The composer writes nothing when an edited table arrives empty --
+        `gen_integration_info` for the integrals, `gen_mpy_integ_info` and
+        `gen_mpy_peaks_info` for the multiplets -- so refusing on the file's
+        stale record would refuse a conversion over a table on its way out.
+
+        `edited` absent is not `edited` false: parse_params supplies a
+        default with no such key, so a request that simply does not mention
+        integrals leaves the file's record standing, as it should.
+        """
+        for param, record in (('integration', '$OBSERVEDINTEGRALS'),
+                              ('multiplicity', '$OBSERVEDMULTIPLETS')):
+            sent = self.params.get(param) or {}
+            if sent.get('stack'):
+                return True
+            if sent.get('edited'):
+                # an explicit, empty edit: the table is being removed
+                continue
+            if self.__record_has_rows(record):
+                return True
+        return False
+
+    def __record_has_rows(self, record):
+        """Whether a peak-table record holds any data rows.
+
+        By shape, not by position. `$OBSERVEDINTEGRALS` opens with an
+        `(X Y Z)` header and `$OBSERVEDMULTIPLETS` has none at all, so
+        skipping the first line read a one-row multiplet table as empty.
+        A data row is parenthesised and carries at least one digit, which
+        no column header does.
+        """
+        for value in self.dic.get(record) or []:
+            for line in str(value).split('\n'):
+                line = line.strip()
+                if (line.startswith('(') and
+                        any(char.isdigit() for char in line)):
+                    return True
+        return False
 
     def __find_boundary(self):
         return {
@@ -311,23 +628,18 @@ class JcampTechniqueConverter:
         }
 
     def __set_label(self):
-        target = {'x': 'PPM', 'y': 'ARBITRARY'}
-        try:
-            x = self.dic['XUNITS'][self.target_idx]
-            y = self.dic['YUNITS'][self.target_idx]
-            x = 'PPM' if x.upper() == 'HZ' else x
-            y = 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y
-            target = {'x': x, 'y': y}
-        except:  # noqa
-            pass
-
-        try:
-            x, y, _ = self.dic['UNITS'][1].replace(' ', '').split(',')
-            x = 'PPM' if x.upper() == 'HZ' else x
-            y = 'ARBITRARY' if y.upper() == 'ARBITRARYUNITS' else y
-            target = {'x': x, 'y': y}
-        except:  # noqa
-            pass
+        declared = self.__declared_units()
+        x, y = declared['x'] or 'PPM', declared['y'] or 'ARBITRARY'
+        target = {
+            'x': 'PPM' if x.upper() == 'HZ' else x,
+            # Bruker LINK files already arrive space-stripped, so this
+            # compared the squeezed spelling. Now that the triple keeps its
+            # spaces, the comparison has to do the squeezing itself or
+            # Mnova's `ARBITRARY UNITS` stops matching and the two sources
+            # label the same quantity differently again.
+            'y': ('ARBITRARY' if y.upper().replace(' ', '') == 'ARBITRARYUNITS'
+                  else y),
+        }
 
         if self.technique.x_axis == 'xrd':
             target['x'] = '2Theta'
@@ -340,14 +652,13 @@ class JcampTechniqueConverter:
           if yUnit != '':
             target['y'] = yUnit
 
-        # A conversion we performed is a fact, so it outranks axesUnits, which
-        # is a preference. The inversion suffix records direction, the only
-        # thing a mirror changes -- `max - y` preserves the dimension, and is
-        # not `1 / y`, so `^-1` would be wrong twice over.
-        if self.converted_to_transmittance:
-            target['y'] = 'TRANSMITTANCE'
-        if self.inverted_y:
-            target['y'] = '{} - inverted'.format(target['y'])
+        # A conversion is a fact, so it outranks axesUnits, which is a
+        # preference -- whether it happened on this request or on an earlier
+        # one that left ##$CSTRANSMITTANCE behind. Checking only this run let
+        # a recompose label %T data with the caller's absorbance unit while
+        # still writing the record.
+        if self.converted_to_transmittance or self.transmittance_recorded:
+            target['y'] = '% TRANSMITTANCE'
 
         return target
 
@@ -509,12 +820,17 @@ class JcampTechniqueConverter:
         self.edit_peaks = {'x': edit_x, 'y': edit_y}
 
     def __exec_peak_picking_logic(self, refresh_solvent=False):
+        # Polarity comes from what the y axis measures (__peaks_point_down)
+        # and, for the second pass, from `negative_peaks`. Never from
+        # draw_y_inverted: invert_y is a viewport flip and the picker sees
+        # the data as stored.
         max_y = np.max(self.ys)
-        height = 0.2 * max_y if refresh_solvent else self.threshold * max_y
+        height = (0.2 * max_y if refresh_solvent
+                  else self.__peak_threshold() * max_y)
 
         corr_data_ys = self.ys
         corr_height = height
-        if self.technique.peaks_inverted:
+        if self.peaks_point_down:
             corr_data_ys = 1 - self.ys
             corr_height = 1 - height
 
@@ -533,7 +849,8 @@ class JcampTechniqueConverter:
         auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx]} for idx in peak_idxs]
         auto_peaks.sort(key=lambda d: d['y'], reverse=True)
 
-        if self.technique.peaks_inverted:
+        if self.peaks_point_down:
+            # sorted by descending y, so the deepest dips are at the end
             auto_peaks = auto_peaks[-100:]
         elif self.ncl == '13C':
             simu_length = len(self.simu_peaks)
@@ -625,10 +942,36 @@ class JcampTechniqueConverter:
     def __read_peak_from_file(self):
         self.__read_auto_peaks()
         self.__read_edit_peaks()
+        if self.converted_to_transmittance:
+            # Every peak read so far was picked on the absorbance trace. The
+            # automatic ones are re-picked, because an absorbance band and a
+            # %T dip are not at the same place; the old table is wrong in
+            # position as well as scale.
+            self.auto_peaks = None
         if not self.auto_peaks or not self.params['delta'] == 0.0:
             self.__run_auto_pick_peak()
         if self.params['peaks_str'] is not None:
             self.__parse_edit()
+        if self.converted_to_transmittance:
+            # Edited peaks are the user's choice, so they keep their x and
+            # only change units -- whether they came from the file or from
+            # this request's peaks_str, which was sent by an editor showing
+            # the absorbance trace. Converted once, and only the table that
+            # survives: converting a stored table the request is about to
+            # replace could refuse the whole conversion over numbers that
+            # were on their way out.
+            self.edit_peaks = self.__peaks_to_transmittance(self.edit_peaks)
+
+    def __peaks_to_transmittance(self, peaks):
+        """The same guards the trace gets. A stored table that is not
+        absorbance -- y = -400, or 75 -- became inf or 1e-73 and was written
+        into ##PEAKTABLE as a coordinate."""
+        if not peaks or not peaks.get('y'):
+            return peaks
+        return {
+            'x': peaks['x'],
+            'y': self.__to_percent(peaks['y'], 'the stored peak table').tolist(),
+        }
 
     def __read_voltammetry_data_from_file(self):
         target = self.dic.get('$CSCYCLICVOLTAMMETRYDATA')
