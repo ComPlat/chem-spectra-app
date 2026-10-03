@@ -369,11 +369,24 @@ def test_the_flags_are_emitted_only_when_asked_for(tmp_path):
     assert '##$CSTRANSMITTANCE=true' in ''.join(converted.meta)
 
 
-def test_nothing_infers_from_the_data_shape():
-    """The 0.5 heuristic must not come back as a decision."""
-    source = open('chem_spectra/lib/converter/jcamp/technique.py').read()
-    read_ys = source[source.index('def __read_ys'):source.index('def __to_transmittance')]
-    assert '0.5' not in read_ys
+@pytest.mark.parametrize('datatype', ['INFRARED SPECTRUM', 'UV/VIS SPECTRUM'])
+def test_nothing_infers_from_the_data_shape(datatype, tmp_path):
+    """The 0.5 heuristic must not come back as a decision.
+
+    The probe's median (0.02) sits far below half its maximum (2.0), which
+    is exactly what used to trigger `ys = max(ys) - ys`. Nothing is sent
+    with it, so nothing may happen: the array arrives as written and no
+    instruction is recorded. Asserted on behaviour rather than on the text
+    of __read_ys, which an unrelated edit could quietly make vacuous.
+    """
+    converter = _absorbance_probe(tmp_path, datatype=datatype)
+    assert float(np.max(converter.ys)) == pytest.approx(2.0)
+    assert float(np.min(converter.ys)) == pytest.approx(0.02)
+    assert converter.draw_y_inverted is False
+    assert converter.converted_to_transmittance is False
+    meta = ''.join(TechniqueComposer(converter).meta)
+    assert '##$CSINVERTY' not in meta
+    assert '##$CSTRANSMITTANCE' not in meta
 
 
 # - - - at the endpoint, which is where it matters - - -
@@ -1081,3 +1094,29 @@ def test_the_label_nudge_turns_with_the_viewport(tmp_path):
     flipped = _ir_composer(tmp_path, invert_y=True)
     assert upright._TechniqueComposer__label_offset(12) == (0, 12)
     assert flipped._TechniqueComposer__label_offset(12) == (0, -12)
+
+
+def test_the_units_triple_keeps_the_spaces_inside_its_fields(tmp_path):
+    """Only the space around the separators is noise. Stripping all of it
+    wrote `%TRANSMITTANCE` into ##YUNITS."""
+    _absorbance_probe(tmp_path)
+    source = tmp_path / 'absorbance.jdx'
+    source.write_text(source.read_text().replace(
+        '##YUNITS=ABSORBANCE',
+        '##UNITS= 1/CM, % TRANSMITTANCE, ARBITRARY', 1))
+    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    assert converter.label['y'] == '% TRANSMITTANCE'
+
+
+def test_arbitrary_units_still_collapses_however_it_is_spelled(tmp_path):
+    """Bruker writes the triple without spaces and Mnova with them. They
+    name the same quantity, so they must not be labelled differently."""
+    source = tmp_path / 'absorbance.jdx'
+    for spelling in ('ARBITRARY UNITS', 'ARBITRARYUNITS'):
+        _absorbance_probe(tmp_path)
+        source.write_text(source.read_text().replace(
+            '##YUNITS=ABSORBANCE',
+            '##UNITS= HZ, {0}, {0}'.format(spelling), 1))
+        converter = JcampTechniqueConverter(
+            JcampBaseConverter(str(source), {}))
+        assert converter.label['y'] == 'ARBITRARY', spelling
