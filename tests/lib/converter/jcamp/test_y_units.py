@@ -931,3 +931,80 @@ def test_a_block_that_declares_no_datatype_does_not_shift_the_rest(client,
     composed = _composed_jcamp(_post(client, str(source)))
     assert '##XUNITS=1/CM' in composed
     assert '##YUNITS=ABSORBANCE' in composed
+
+
+# - - - what the guard refuses, and in which order - - -
+
+def _with_record(tmp_path, record, rows):
+    """A copy of the absorbance probe carrying one peak-table record."""
+    _absorbance_probe(tmp_path)
+    source = tmp_path / 'absorbance.jdx'
+    source.write_text(source.read_text().replace(
+        '##XYPOINTS=', '##{}={}\n##XYPOINTS='.format(record, rows), 1))
+    return source
+
+
+def test_a_transmittance_file_is_refused_on_its_unit_not_its_integrals(
+        tmp_path):
+    """Telling someone to remove integrals from a file that will be refused
+    as already transmittance whatever they do is not a reason, it is a
+    detour."""
+    source = _with_record(tmp_path, '$OBSERVEDINTEGRALS',
+                          ' (X Y Z)\n(425.0, 415.0, 1.0)')
+    source.write_text(
+        source.read_text().replace('##YUNITS=ABSORBANCE',
+                                   '##YUNITS=TRANSMITTANCE'))
+    with pytest.raises(UnconvertibleSpectrum, match='already declares'):
+        JcampTechniqueConverter(
+            JcampBaseConverter(str(source), {'transmittance': True}))
+
+
+def test_a_request_that_clears_the_integrals_may_convert(tmp_path):
+    """The composer writes nothing for an edited, empty table, so the file's
+    stale record is not something the output will carry."""
+    source = _with_record(tmp_path, '$OBSERVEDINTEGRALS',
+                          ' (X Y Z)\n(425.0, 415.0, 1.0)')
+    cleared = json.dumps({'edited': True, 'stack': [],
+                          'refArea': 1, 'refFactor': 1, 'shift': 0})
+    converter = JcampTechniqueConverter(JcampBaseConverter(
+        str(source), {'transmittance': True, 'integration': cleared}))
+    assert converter.converted_to_transmittance
+
+
+def test_a_single_multiplet_row_refuses_the_conversion(tmp_path):
+    """`$OBSERVEDMULTIPLETS` has no column header, so its only row was the
+    record's whole value and skipping the first line read it as empty."""
+    source = _with_record(
+        tmp_path, '$OBSERVEDMULTIPLETS',
+        '\n(1, 6.31, 8.13, 7.11, 1.08, 1, m, A)')
+    with pytest.raises(UnconvertibleSpectrum, match='integrals or multiplets'):
+        JcampTechniqueConverter(
+            JcampBaseConverter(str(source), {'transmittance': True}))
+
+
+# - - - the stored peak table gets the trace's guards - - -
+
+def test_a_stored_peak_table_that_is_not_absorbance_is_refused(tmp_path):
+    """100 * 10**-75 is 1e-73 and 100 * 10**400 is inf. Either was written
+    into ##PEAKTABLE as a coordinate."""
+    source = _with_record(tmp_path, 'PEAK TABLE', '(XY..XY)\n420.0, 75.0')
+    with pytest.raises(UnconvertibleSpectrum, match='stored peak table'):
+        JcampTechniqueConverter(
+            JcampBaseConverter(str(source), {'transmittance': True}))
+
+
+def test_the_endpoint_refuses_it_with_422_not_500(client, tmp_path):
+    source = _with_record(tmp_path, 'PEAK TABLE', '(XY..XY)\n420.0, 75.0')
+    response = _post(client, str(source), transmittance='true')
+    assert response.status_code == 422
+    assert 'stored peak table' in json.loads(response.data)['error']
+
+
+def test_peaks_str_replaces_the_stored_table_before_it_is_converted(tmp_path):
+    """The stored table is discarded by this request, so refusing the
+    conversion because of it would refuse over numbers on their way out."""
+    source = _with_record(tmp_path, 'PEAK TABLE', '(XY..XY)\n420.0, 75.0')
+    converter = JcampTechniqueConverter(JcampBaseConverter(
+        str(source), {'transmittance': True, 'peaks_str': '480,0.6'}))
+    assert converter.edit_peaks['x'] == [480.0]
+    assert converter.edit_peaks['y'] == pytest.approx([100 * 10 ** -0.6])

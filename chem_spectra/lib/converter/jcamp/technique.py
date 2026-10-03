@@ -421,6 +421,17 @@ class JcampTechniqueConverter:
                 'the file records that it was already converted to '
                 'transmittance; there is nothing to convert'
             )
+        declared = self.__declared_units()['y']
+        if is_transmittance_unit(declared):
+            # What the file says outranks what its shape suggests: this is a
+            # fact, where the median test below is an inference. It is also
+            # checked before the integrals: there is no point telling someone
+            # to remove integrals from a file that is going to be refused as
+            # already transmittance whatever they do.
+            raise UnconvertibleSpectrum(
+                'the file already declares its y axis as {!r}; there is '
+                'nothing to convert'.format(declared)
+            )
         if self.__carries_integrals():
             # An area under absorbance is proportional to concentration; the
             # same region of the %T trace has no such meaning, and %T is not
@@ -429,22 +440,8 @@ class JcampTechniqueConverter:
                 'the spectrum carries integrals or multiplets, which have no '
                 'meaning in transmittance; remove them before converting'
             )
-        declared = self.__declared_units()['y']
-        if is_transmittance_unit(declared):
-            # What the file says outranks what its shape suggests: this is a
-            # fact, where the median test below is an inference.
-            raise UnconvertibleSpectrum(
-                'the file already declares its y axis as {!r}; there is '
-                'nothing to convert'.format(declared)
-            )
 
-        ys = np.asarray(ys, dtype=float)
-        if not np.isfinite(ys).all():
-            raise UnconvertibleSpectrum(
-                'the series contains non-finite values, so it cannot be '
-                'absorbance'
-            )
-
+        ys = self.__refuse_unless_absorbance(ys)
         y_max = float(np.max(ys))
         y_min = float(np.min(ys))
 
@@ -453,19 +450,6 @@ class JcampTechniqueConverter:
                 'already appears to be transmittance (baseline near the '
                 'maximum); there is nothing to convert'
             )
-        if y_max > ABSORBANCE_CEILING:
-            raise UnconvertibleSpectrum(
-                'y values up to {:g} are not absorbance; transmittance would '
-                'underflow to zero'.format(y_max)
-            )
-        # Absorbance dips slightly below zero from baseline drift, but not far:
-        # A = -10 already means T = 10**10, which is not a transmittance.
-        if y_min < -ABSORBANCE_CEILING:
-            raise UnconvertibleSpectrum(
-                'y values down to {:g} are not absorbance; transmittance '
-                'would overflow'.format(y_min)
-            )
-
         # Percent, not the 0-1 ratio: %T is how instruments commonly present
         # transmittance, and absorbance itself runs 0-2.5, so a 0-1 array is
         # routinely misread as absorbance. '% TRANSMITTANCE' is NOT a JCAMP-DX
@@ -473,27 +457,96 @@ class JcampTechniqueConverter:
         # I_T/I_0, beside REFLECTANCE, ABSORBANCE, KUBELKA-MUNK and ARBITRARY
         # UNITS. A strict reader will not recognise it as transmittance, and
         # one that maps it to TRANSMITTANCE sees values 100x too large.
-        transmittance = absorbance_to_percent_transmittance(ys)
-        if not np.isfinite(transmittance).all():
-            raise UnconvertibleSpectrum(
-                'the conversion produced non-finite values; the series is not '
-                'absorbance'
-            )
+        transmittance = self.__to_percent(ys)
 
         self.converted_to_transmittance = True
         self.transmittance_recorded = True
         return transmittance
 
+    @staticmethod
+    def __refuse_unless_absorbance(values, what=None):
+        """The range checks both the trace and the peak table need.
+
+        Every refusal names what is wrong with the *input*, so the reason
+        says what the data is rather than what the arithmetic did. `what`
+        names the table when it is not the trace; the trace's own wording is
+        unchanged, because it is what the API has been answering with.
+        """
+        where = '{}: '.format(what) if what else ''
+        values = np.asarray(values, dtype=float)
+        if values.size == 0:
+            return values
+        if not np.isfinite(values).all():
+            raise UnconvertibleSpectrum(
+                where + 'the series contains non-finite values, so it cannot '
+                'be absorbance'
+            )
+        y_max = float(np.max(values))
+        if y_max > ABSORBANCE_CEILING:
+            raise UnconvertibleSpectrum(
+                where + 'y values up to {:g} are not absorbance; '
+                'transmittance would underflow to zero'.format(y_max)
+            )
+        # Absorbance dips slightly below zero from baseline drift, but not
+        # far: A = -10 already means T = 10**10, which is not a
+        # transmittance.
+        y_min = float(np.min(values))
+        if y_min < -ABSORBANCE_CEILING:
+            raise UnconvertibleSpectrum(
+                where + 'y values down to {:g} are not absorbance; '
+                'transmittance would overflow'.format(y_min)
+            )
+        return values
+
+    @classmethod
+    def __to_percent(cls, values, what=None):
+        """Guarded conversion. The finiteness check on the result is a
+        backstop for anything the input checks do not anticipate."""
+        where = '{}: '.format(what) if what else ''
+        values = cls.__refuse_unless_absorbance(values, what)
+        converted = absorbance_to_percent_transmittance(values)
+        if converted.size and not np.isfinite(converted).all():
+            raise UnconvertibleSpectrum(
+                where + 'the conversion produced non-finite values; the '
+                'series is not absorbance'
+            )
+        return converted
+
     def __carries_integrals(self):
-        """Integrals or multiplets in the file or in the request."""
-        for record in ('$OBSERVEDINTEGRALS', '$OBSERVEDMULTIPLETS'):
-            for value in self.dic.get(record) or []:
-                # the first line is the table header, e.g. `(X Y Z)`
-                if any(line.strip() for line in str(value).split('\n')[1:]):
-                    return True
-        for param in ('integration', 'multiplicity'):
-            if (self.params.get(param) or {}).get('stack'):
+        """Integrals or multiplets the composed file would carry.
+
+        Not "present anywhere": a request that clears the table clears it.
+        The composer writes nothing when an edited table arrives empty
+        (`gen_integration_info`), so refusing on the file's stale record
+        would refuse a conversion over integrals that are on their way out.
+        """
+        for param, record in (('integration', '$OBSERVEDINTEGRALS'),
+                              ('multiplicity', '$OBSERVEDMULTIPLETS')):
+            sent = self.params.get(param) or {}
+            if sent.get('stack'):
                 return True
+            if sent.get('edited'):
+                # an explicit, empty edit: the table is being removed
+                continue
+            if self.__record_has_rows(record):
+                return True
+        return False
+
+    def __record_has_rows(self, record):
+        """Whether a peak-table record holds any data rows.
+
+        By shape, not by position. `$OBSERVEDINTEGRALS` opens with an
+        `(X Y Z)` header and `$OBSERVEDMULTIPLETS` has none at all, so
+        skipping the first line read a one-row multiplet table as empty.
+        A data row is parenthesised and carries at least one digit, which
+        no column header does.
+        """
+        for value in self.dic.get(record) or []:
+            for line in str(value).split('\n'):
+                line = line.strip()
+                if (line.startswith('(') and
+                        any(char.isdigit() for char in line)):
+                    return True
         return False
 
     def __find_boundary(self):
@@ -816,28 +869,33 @@ class JcampTechniqueConverter:
         self.__read_edit_peaks()
         if self.converted_to_transmittance:
             # Every peak read so far was picked on the absorbance trace. The
-            # automatic ones are re-picked: an absorbance band is a maximum
-            # and the picker looks for %T dips, so the old table is wrong in
-            # position as well as scale. Edited peaks are the user's choice,
-            # so they keep their x and only change units.
+            # automatic ones are re-picked, because an absorbance band and a
+            # %T dip are not at the same place; the old table is wrong in
+            # position as well as scale.
             self.auto_peaks = None
-            self.edit_peaks = self.__peaks_to_transmittance(self.edit_peaks)
         if not self.auto_peaks or not self.params['delta'] == 0.0:
             self.__run_auto_pick_peak()
         if self.params['peaks_str'] is not None:
             self.__parse_edit()
-            # sent by an editor that was showing the absorbance trace
-            if self.converted_to_transmittance:
-                self.edit_peaks = self.__peaks_to_transmittance(
-                    self.edit_peaks)
+        if self.converted_to_transmittance:
+            # Edited peaks are the user's choice, so they keep their x and
+            # only change units -- whether they came from the file or from
+            # this request's peaks_str, which was sent by an editor showing
+            # the absorbance trace. Converted once, and only the table that
+            # survives: converting a stored table the request is about to
+            # replace could refuse the whole conversion over numbers that
+            # were on their way out.
+            self.edit_peaks = self.__peaks_to_transmittance(self.edit_peaks)
 
-    @staticmethod
-    def __peaks_to_transmittance(peaks):
+    def __peaks_to_transmittance(self, peaks):
+        """The same guards the trace gets. A stored table that is not
+        absorbance -- y = -400, or 75 -- became inf or 1e-73 and was written
+        into ##PEAKTABLE as a coordinate."""
         if not peaks or not peaks.get('y'):
             return peaks
         return {
             'x': peaks['x'],
-            'y': absorbance_to_percent_transmittance(peaks['y']).tolist(),
+            'y': self.__to_percent(peaks['y'], 'the stored peak table').tolist(),
         }
 
     def __read_voltammetry_data_from_file(self):
