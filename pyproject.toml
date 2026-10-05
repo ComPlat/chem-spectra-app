@@ -15,26 +15,42 @@ classifiers = [
     "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "flask==2.*",
-  "gunicorn==22.*",
+  "flask==3.*",
+  "gunicorn==26.*",
   "matplotlib==3.*",
   "netCDF4==1.*",
-  "numpy>=2.0,<2.4",
+  # The 2018 fork we pin below writes `np.dtype('a8')` in fileio/tecmag.py.
+  # numpy removed that alias in 2.5, so `import nmrglue` raises TypeError and
+  # every test errors at collection. Measured: fails on 2.5.3, imports on
+  # 2.4.0. The ceiling is the pin's, not ours -- it lifts when the pin does.
+  "numpy>=2.0,<2.5",
+  # Imported directly by lib/external/chemotion_converter_lcms.py. It was
+  # never declared and arrived only as a pyopenms transitive dependency, so a
+  # pyopenms release that drops it would have broken us with an ImportError.
+  "pandas>=2.3,<4",
   "pymzml==2.*",
   "requests==2.*",
-  "rdkit==2025.*",
-  "setuptools>=80,<84",
+  "rdkit==2026.*",
   "werkzeug==3.*",
   "scipy==1.*",
   "pyopenms==3.*",
   "nmrglue@git+https://github.com/ComPlat/nmrglue.git@b0802a080b44de6bb75fd294e8d14cb4b24b95e9",
 ]
 
+# Kept as an extra so `pip install .[dev]` still works for anyone not using uv.
+# `just` and CI go through the dependency group below instead.
 [project.optional-dependencies]
-# prod is the production installation till https://github.com/pypa/pip/issues/11440 gets solved
 dev = [
     "coverage",
     "pytest"
+]
+
+[dependency-groups]
+dev = [
+    "coverage[toml]>=7.6",
+    "pytest>=8",
+    "ruff>=0.14",          # `just lint`; [tool.ruff] below
+    "mypy>=1.10",          # `just mypy`; [tool.mypy] below
 ]
 
 [project.urls]
@@ -43,3 +59,61 @@ repository = "https://github.com/ComPlat/chem-spectra-app"
 
 [tool.setuptools]
 py-modules = []
+
+
+# Modernization only: pyupgrade (UP) keeps the code on current-Python idioms.
+# The target is the floor `requires-python` promises, not the version the image
+# runs, so a fix suggested here cannot break the 3.12 leg of the CI matrix.
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["UP"]
+
+# A ratchet, in the same spirit as the mypy overrides below: the whole UP set
+# is selected, and the rules that already fire are muted so the gate is green
+# today and any *new* kind of violation is caught.
+#
+# These are NOT fixed in this branch on purpose. All 289 are mechanical and
+# auto-fixable, but a repo-wide `ruff --fix` would rewrite technique.py,
+# base.py and composer/ -- which every open PR (#299-#305) also rewrites. It
+# runs once that stack has landed.
+#
+# The list only ever gets shorter. Counts are from the run that introduced it;
+# clear a rule with `just lint-fix`, then delete its line in the same commit.
+ignore = [
+    "UP032",  # 95x  f-string instead of str.format
+    "UP006",  # 69x  builtin generics (List -> list)
+    "UP045",  # 61x  X | None instead of Optional[X]
+    "UP015",  # 26x  redundant open() mode
+    "UP031",  # 14x  f-string instead of percent formatting
+    "UP035",  # 9x   deprecated typing imports
+]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+
+# Type checking is a ratchet. The whole tree is checked; the modules listed
+# below carry pre-existing errors and are exempted for now.
+#
+# The list only ever gets shorter: when a change makes a module type-clean,
+# delete its entry in the same commit. Never add an entry -- that would mean a
+# clean module regressed, which is what this gate exists to prevent.
+#
+# This buys more than expected for an untyped codebase: 51 of 57 modules are
+# already clean, so the gate really does guard most of the tree. The six below
+# are the LC/MS and BagIt paths plus two single-error modules that the open PR
+# stack rewrites anyway.
+[[tool.mypy.overrides]]
+ignore_errors = true
+# 21 errors across these 6 of 57 modules when the gate was introduced.
+# The other 51 are enforced from day one and cannot regress.
+module = [
+    "chem_spectra.lib.composer.lcms_converter_app",
+    "chem_spectra.lib.composer.technique",
+    "chem_spectra.lib.converter.bagit.base",
+    "chem_spectra.lib.converter.bagit.lcms_builder",
+    "chem_spectra.lib.converter.fid.base",
+    "chem_spectra.lib.external.chemotion_converter_lcms",
+]

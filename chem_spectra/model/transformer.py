@@ -15,9 +15,12 @@ from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
+from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
 from chem_spectra.lib.converter.bagit.lcms_builder import build_lcms_composer
 from chem_spectra.lib.converter.ms import MSConverter
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.technique import (
+    TechniqueComposer, flip_overlay_if_inverted,
+)
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
@@ -63,12 +66,40 @@ def find_and_get_dir(path, name):
             return os.path.join(root, name)
     return False
 
+def find_dirs(path, name):
+    """Every directory under `path` holding a file called `name`, sorted.
+
+    `find_dir` returns the first and stops, which is right when looking for
+    the one `fid` in a Bruker upload. For BagIt it silently decided which of
+    several archives to process -- see `search_bag_it_file`.
+    """
+    found = []
+    for root, _, files in os.walk(path):
+        if name in files:
+            found.append(root)
+    return sorted(found)
+
+
 def search_bag_it_file(td):
+    """The single BagIt root in this upload, or False.
+
+    Raises when there is more than one. A BagIt archive is a dataset, so two
+    of them in one upload are two datasets; merging them into one attachment
+    group would be wrong, and picking one -- which is what happened, whichever
+    `os.walk` reached first -- silently discarded the rest. Issue #244, where
+    the reporter asked for exactly this: "ELN needs to send feedback / warning
+    to user, to ask them to create additional Datasets".
+    """
     try:
-        target_dir = find_dir(td, 'bagit.txt')
-        return target_dir
+        roots = find_dirs(td, 'bagit.txt')
     except:     # noqa: E722
         return False
+    if len(roots) > 1:
+        raise UnconvertibleSpectrum(
+            'this upload contains {} BagIt archives. Each one is a separate '
+            'dataset, so they cannot be combined into a single attachment — '
+            'please upload them one at a time.'.format(len(roots)))
+    return roots[0] if roots else False
 
 
 def search_jdx_dir(td):
@@ -390,6 +421,9 @@ class TransformerModel:
         self.multiple_files.sort(key=lambda file: file.name)
 
         plotted_any = False
+        # one entry per plotted curve: whether its file asks to be drawn the
+        # other way up (##$CSINVERTY or the request's `invert_y`)
+        inverted = []
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
@@ -399,6 +433,7 @@ class TransformerModel:
                 mscp = MSComposer(mscv)
                 plt.plot(mscp.core.xs, mscp.core.ys, label=filename)
                 plotted_any = True
+                inverted.append(False)
             else:
                 try:
                     tcv = JcampTechniqueConverter(jbcv)
@@ -477,6 +512,7 @@ class TransformerModel:
                         marker = 'v'
                 plt.plot(xs, y_values, label=filename, marker=marker)
                 plotted_any = True
+                inverted.append(bool(getattr(tcp.core, 'draw_y_inverted', False)))
 
                 # PLOT label
                 core_label_x = tcp.core.label['x']
@@ -516,6 +552,11 @@ class TransformerModel:
         plt.xlabel(xlabel, fontsize=18)
         plt.ylabel(ylabel, fontsize=18)
         ax = plt.gca()
+        if flip_overlay_if_inverted(ax, inverted):
+            logger.info(
+                'overlay mixes inverted and upright spectra; drawing it '
+                'upright',
+            )
         if cv_mode:
             ymin, ymax = ax.get_ylim()
             cv_abs_max = max(abs(ymin), abs(ymax))

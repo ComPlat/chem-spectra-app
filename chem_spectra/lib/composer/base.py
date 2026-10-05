@@ -39,8 +39,14 @@ def is_metadata_to_be_ignored(keyword, is_ntuples=False):
         '$OBSERVEDMULTIPLETSPEAKS',
         '$CSITAREA',
         '$CSITFACTOR',
+        # written as real records when they apply; echoing them as well left
+        # `###$CSINVERTY= true` behind after the record itself was cleared
+        '$CSINVERTY',
+        '$CSTRANSMITTANCE',
     }
-    if keyword in chemspectra_managed:
+    # `###$X` in an earlier composed file parses as `#$X`, so the echo of an
+    # echo is caught here too instead of travelling on indefinitely
+    if keyword.lstrip('#') in chemspectra_managed:
         return True
     if keyword == 'XYPOINTS':
         # XYPOINTS is the authoritative data table for XYPOINTS-classified

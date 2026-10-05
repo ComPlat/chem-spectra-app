@@ -106,13 +106,15 @@ def test_zip_image(client):
     assert response.mimetype == 'application/zip'
     
 def test_combine_images_no_file(client):
+    """Was an HTML 400 from `abort(400)`; now 422 with a JSON body."""
     response = client.post(
         '/combine_images',
         content_type='multipart/form-data',
         data=None
     )
-    
-    assert response.status_code == 400
+
+    assert response.status_code == 422
+    assert response.get_json()['error']
 
 def test_combine_images(client):
     #TODO: implement later
