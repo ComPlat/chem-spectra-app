@@ -17,7 +17,13 @@ UNIT_RECORDS = ('XUNITS', 'YUNITS', 'UNITS')
 
 # what read_block_records is asked for: the units, plus the datatype that
 # says which block each one belongs to.
-BLOCK_RECORDS = UNIT_RECORDS + ('DATATYPE',)
+# The records this app writes itself. They have to be read back from the
+# block they were written into: a `$CSINVERTY` on a peak-table block was
+# flipping the spectrum's viewport, and a `$CSTRANSMITTANCE` there
+# relabelled untouched absorbance as %T.
+MANAGED_RECORDS = ('$CSTRANSMITTANCE', '$CSINVERTY')
+
+BLOCK_RECORDS = UNIT_RECORDS + ('DATATYPE',) + MANAGED_RECORDS
 
 
 def _label_key(label):

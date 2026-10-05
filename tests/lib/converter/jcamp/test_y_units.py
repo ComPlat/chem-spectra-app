@@ -1383,3 +1383,85 @@ def test_the_real_chromatogram_converts(client):
     response = _post(client, './tests/fixtures/source/hplc/chromatogram.jdx',
                      transmittance='true')
     assert response.status_code == 200
+
+
+# - - - a record this app wrote is read from the block it wrote it into - - -
+
+def test_a_managed_flag_on_another_block_does_not_govern_the_spectrum(
+        tmp_path):
+    """`$CSINVERTY` and `$CSTRANSMITTANCE` are written by this app, into the
+    block it composes. Read from nmrglue's merged dict, a copy on a
+    peak-table block flipped the spectrum's viewport and relabelled untouched
+    absorbance as `% TRANSMITTANCE`."""
+    _absorbance_probe(tmp_path)
+    source = tmp_path / 'absorbance.jdx'
+    spectrum = source.read_text().replace('##END=\n', '')
+    source.write_text('\n'.join(
+        ['##TITLE=outer', '##JCAMP-DX=5.00', '##DATA TYPE=LINK',
+         '##BLOCKS=2', '']) + '\n' + spectrum + '\n'.join([
+            '##TITLE=side table', '##JCAMP-DX=5.00',
+            '##DATA TYPE=INFRARED PEAK TABLE', '##DATA CLASS=PEAKTABLE',
+            '##$CSINVERTY=true', '##$CSTRANSMITTANCE=true',
+            '##PEAK TABLE=(XY..XY)', '420.0, 0.5', '##END=', '##END=', '']))
+    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    assert converter.draw_y_inverted is False
+    assert converter.transmittance_recorded is False
+    assert converter.label['y'] == 'ABSORBANCE'
+
+
+def test_a_scaled_absorbance_unit_is_absorbance_for_polarity_too(tmp_path):
+    """`mAU` was recognised for the conversion but not for the band
+    direction, so an infrared trace in mAU was searched for dips."""
+    source = _relabelled(tmp_path, 'INFRARED SPECTRUM', 'mAU')
+    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    assert converter.peaks_point_down is False
+
+
+def test_a_declared_absorbance_outranks_the_shape_heuristic(tmp_path):
+    """The median test is the last guard for a file that declares nothing.
+    A strongly absorbing sample sits high and still is absorbance; an
+    inference must not overrule a declaration."""
+    source = tmp_path / 'high.jdx'
+    xs = [400.0 + i for i in range(101)]
+    ys = [1.8] * 101
+    ys[50] = 2.0
+    body = ['##TITLE=t\n', '##JCAMP-DX=5.00\n',
+            '##DATA TYPE=INFRARED SPECTRUM\n', '##DATA CLASS=XYPOINTS\n',
+            '##FIRSTX=400.0\n', '##LASTX=500.0\n', '##MINX=400.0\n',
+            '##MAXX=500.0\n', '##MINY=1.8\n', '##MAXY=2.0\n',
+            '##NPOINTS=101\n', '##FIRSTY=1.8\n', '##XUNITS=1/CM\n',
+            '##YUNITS=ABSORBANCE\n', '##XYPOINTS=(XY..XY)\n']
+    body += ['{:.6f}, {:.6f}\n'.format(x, y) for x, y in zip(xs, ys)]
+    body.append('##END=\n')
+    source.write_text(''.join(body))
+    converter = JcampTechniqueConverter(
+        JcampBaseConverter(str(source), {'transmittance': True}))
+    assert converter.converted_to_transmittance
+
+
+def test_edited_peaks_carry_the_same_scale_as_the_trace(tmp_path):
+    """A 100 mAU peak is 0.1 absorbance, so ~79.4 %T. Unscaled it computed
+    `100 * 10**-100` and was refused, so a converted chromatogram's peak
+    table no longer matched its own trace."""
+    source = _relabelled(tmp_path, 'HPLC UV/VIS SPECTRUM', 'mAU')
+    converter = JcampTechniqueConverter(JcampBaseConverter(
+        str(source), {'transmittance': True, 'peaks_str': '480,100'}))
+    assert converter.edit_peaks['y'] == pytest.approx([79.433], abs=0.01)
+
+
+def test_multiplets_block_a_conversion_a_declared_unit_would_allow(tmp_path):
+    """An NMR file declaring `##YUNITS=ABSORBANCE` reaches the guard now that
+    a declared unit outranks the technique. Its multiplet table would have
+    survived the conversion, which the refusal promises to prevent."""
+    _absorbance_probe(tmp_path)
+    source = tmp_path / 'absorbance.jdx'
+    source.write_text(source.read_text()
+                      .replace('##DATA TYPE=INFRARED SPECTRUM',
+                               '##DATA TYPE=NMR SPECTRUM', 1)
+                      .replace('##XYPOINTS=',
+                               '##$OBSERVEDMULTIPLETS=\n'
+                               '(1, 6.31, 8.13, 7.11, 1.08, 1, m, A)\n'
+                               '##XYPOINTS=', 1))
+    with pytest.raises(UnconvertibleSpectrum, match='integrals or multiplets'):
+        JcampTechniqueConverter(
+            JcampBaseConverter(str(source), {'transmittance': True}))

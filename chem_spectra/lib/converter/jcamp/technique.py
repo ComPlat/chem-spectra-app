@@ -370,9 +370,15 @@ class JcampTechniqueConverter:
         Only the real record counts. The original-metadata dump re-emits it as
         `###$CSINVERTY= true`, which parses under a different key, so reading
         it here cannot resurrect a flag from a file that never set one.
+
+        Read from the target block, not from nmrglue's merged dict. This
+        app writes these records itself, into the block it composes, so a
+        flattened read let a `$CSINVERTY` on a peak-table block flip the
+        spectrum's viewport and a `$CSTRANSMITTANCE` there relabel
+        untouched absorbance as %T. A decision names a block.
         """
-        values = self.dic.get(record) or []
-        return any(str(v).strip().lower() == 'true' for v in values)
+        value = self.__target_block_records().get(record)
+        return str(value).strip().lower() == 'true' if value else False
 
     def __read_ys(self):
         """Apply the client's processing instructions, and nothing else.
@@ -512,7 +518,10 @@ class JcampTechniqueConverter:
         declared = self.__declared_units()['y']
         if is_transmittance_unit(declared):
             return True
-        if is_absorbance_unit(declared):
+        if absorbance_scale(declared) is not None:
+            # every unit with a known absorbance scale, not only the
+            # unscaled spellings: an infrared trace in mAU is absorbance
+            # and its bands are maxima, whatever the technique defaults to
             return False
         return self.technique.peaks_inverted
 
@@ -602,7 +611,11 @@ class JcampTechniqueConverter:
         y_max = float(np.max(ys))
         y_min = float(np.min(ys))
 
-        if float(np.median(ys)) >= 0.5 * y_max:
+        if scale is None and float(np.median(ys)) >= 0.5 * y_max:
+            # Only where the file declares no absorbance unit. A trace
+            # that says it is absorbance and happens to sit high -- a
+            # strongly absorbing sample -- is absorbance, and an
+            # inference must not overrule a declaration.
             raise UnconvertibleSpectrum(
                 'already appears to be transmittance (baseline near the '
                 'maximum); there is nothing to convert'
@@ -618,6 +631,9 @@ class JcampTechniqueConverter:
 
         self.converted_to_transmittance = True
         self.transmittance_recorded = True
+        # kept for the peak tables: they are in the file's declared unit
+        # too, so they need the same scaling the trace just had
+        self.absorbance_scale = scale or 1.0
         return transmittance
 
     @staticmethod
@@ -681,19 +697,34 @@ class JcampTechniqueConverter:
         default with no such key, so a request that simply does not mention
         integrals leaves the file's record standing, as it should.
 
-        Multiplets are not consulted. Only NMR writes them
-        (`technique.multiplicity`), and NMR declares no absorbance, so a file
-        can never reach here carrying multiplets that the output would keep.
-        The branch that asked about them also mirrored the composer wrongly:
-        `gen_mpy_integ_info` reads `originStack` from the *integration*
-        dictionary, not from the multiplicity one.
+        Multiplets are consulted again. They were dropped as unreachable
+        while the conversion was gated on the technique alone: only NMR
+        writes multiplets, and no NMR technique measures absorption.
+        Letting a *declared* absorbance unit convert whatever the datatype
+        reopened that door -- an NMR file saying `##YUNITS=ABSORBANCE`
+        reaches this guard, and its multiplet table would have survived a
+        conversion the refusal promises to prevent.
+
+        Both tables are cleared through the *integration* dictionary,
+        because that is where the composer reads `edited` and
+        `originStack` from -- `gen_mpy_integ_info` included.
         """
-        sent = self.params.get('integration') or {}
-        if sent.get('stack'):
-            return True
-        if self.__table_is_cleared(sent):
-            return False
-        return self.__record_has_rows('$OBSERVEDINTEGRALS')
+        cleared = self.__table_is_cleared(
+            self.params.get('integration') or {})
+        for param, record in (('integration', '$OBSERVEDINTEGRALS'),
+                              ('multiplicity', '$OBSERVEDMULTIPLETS')):
+            if param == 'multiplicity' and not self.technique.multiplicity:
+                # the composer writes no multiplet table for this
+                # technique, so a stale record is not something the
+                # output would carry
+                continue
+            if (self.params.get(param) or {}).get('stack'):
+                return True
+            if cleared:
+                continue
+            if self.__record_has_rows(record):
+                return True
+        return False
 
     @staticmethod
     def __table_is_cleared(sent):
@@ -1082,9 +1113,11 @@ class JcampTechniqueConverter:
         into ##PEAKTABLE as a coordinate."""
         if not peaks or not peaks.get('y'):
             return peaks
+        scale = getattr(self, 'absorbance_scale', 1.0)
+        values = [y * scale for y in peaks['y']]
         return {
             'x': peaks['x'],
-            'y': self.__to_percent(peaks['y'], 'the stored peak table').tolist(),
+            'y': self.__to_percent(values, 'the stored peak table').tolist(),
         }
 
     def __read_voltammetry_data_from_file(self):
