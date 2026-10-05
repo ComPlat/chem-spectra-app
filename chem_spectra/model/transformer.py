@@ -18,7 +18,9 @@ from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
 from chem_spectra.lib.converter.bagit.lcms_builder import build_lcms_composer
 from chem_spectra.lib.converter.ms import MSConverter
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.technique import (
+    TechniqueComposer, flip_overlay_if_inverted,
+)
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
@@ -419,6 +421,9 @@ class TransformerModel:
         self.multiple_files.sort(key=lambda file: file.name)
 
         plotted_any = False
+        # one entry per plotted curve: whether its file asks to be drawn the
+        # other way up (##$CSINVERTY or the request's `invert_y`)
+        inverted = []
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
@@ -428,6 +433,7 @@ class TransformerModel:
                 mscp = MSComposer(mscv)
                 plt.plot(mscp.core.xs, mscp.core.ys, label=filename)
                 plotted_any = True
+                inverted.append(False)
             else:
                 try:
                     tcv = JcampTechniqueConverter(jbcv)
@@ -506,6 +512,7 @@ class TransformerModel:
                         marker = 'v'
                 plt.plot(xs, y_values, label=filename, marker=marker)
                 plotted_any = True
+                inverted.append(bool(getattr(tcp.core, 'draw_y_inverted', False)))
 
                 # PLOT label
                 core_label_x = tcp.core.label['x']
@@ -545,6 +552,11 @@ class TransformerModel:
         plt.xlabel(xlabel, fontsize=18)
         plt.ylabel(ylabel, fontsize=18)
         ax = plt.gca()
+        if flip_overlay_if_inverted(ax, inverted):
+            logger.info(
+                'overlay mixes inverted and upright spectra; drawing it '
+                'upright',
+            )
         if cv_mode:
             ymin, ymax = ax.get_ylim()
             cv_abs_max = max(abs(ymin), abs(ymax))

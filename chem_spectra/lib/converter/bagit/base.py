@@ -2,14 +2,20 @@ import os
 import base64
 import tempfile
 import json
+import logging
 import math
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.converter.share import (
+    UnconvertibleSpectrum, parse_params,
+)
 from chem_spectra.lib.shared.misc import shorten_label
 from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.technique import (
+    TechniqueComposer, flip_overlay_if_inverted,
+)
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
 from chem_spectra.lib.converter.share import parse_params
@@ -17,6 +23,8 @@ from chem_spectra.lib.converter.bagit.lcms_builder import append_lcms_group
 import numpy as np  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib import ticker  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 
 class BagItBaseConverter:
@@ -56,12 +64,17 @@ class BagItBaseConverter:
         archive_stems = []
         # Determine if there is any LC/MS or UV-Vis context to group MS files.
         has_lcms_context = False
+        detected = {}
         for file_name in list_file_names:
             if not file_name.lower().endswith('.jdx'):
                 continue
             jcamp_path = os.path.join(data_dir_path, file_name)
             try:
                 base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
+                # kept for the second pass: building it twice costs two
+                # nmrglue parses and two header scans per member, and this
+                # loop stops at the first LC/MS-ish file anyway
+                detected[jcamp_path] = base_cv
                 if base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS'):
                     has_lcms_context = True
                     break
@@ -73,7 +86,8 @@ class BagItBaseConverter:
                 continue
             jcamp_path = os.path.join(data_dir_path, file_name)
             stem = os.path.splitext(file_name)[0].replace('.', '_')
-            base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
+            base_cv = detected.get(jcamp_path) or JcampBaseConverter(
+                jcamp_path, self.raw_params)
             # BagIt / flat LCMS zips: keep all chromatogram and MS traces in one
             # LCMSConverterAppComposer (incl. MASS SPECTRUM), not JcampMSConverter/ms.py.
             is_lcms_candidate = base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS') or (base_cv.typ == 'MS' and has_lcms_context)
@@ -115,6 +129,19 @@ class BagItBaseConverter:
                     tf_csv = tcp.tf_csv()
                     list_csv.append(tf_csv)
                 archive_stems.append(stem)
+
+        if lcms_paths and parse_params(self.raw_params).get('transmittance'):
+            # The LC/MS composer has no conversion, and these members are
+            # read as one LC/MS dataset rather than as separate spectra, so
+            # the instruction cannot be honoured here -- not even for a
+            # UV/VIS member that converts perfectly well on its own. Said
+            # rather than dropped: the archive came back 200 and unconverted,
+            # which is indistinguishable from a conversion that happened.
+            raise UnconvertibleSpectrum(
+                'this archive is read as one LC/MS dataset, which has no '
+                'transmittance conversion; convert the absorbance members '
+                'on their own instead'
+            )
 
         append_lcms_group(
             lcms_paths, self.raw_params,
@@ -241,7 +268,16 @@ class BagItBaseConverter:
                 plt.ylabel("{}".format(composer.core.label['y']), fontsize=18)
             else:
                 plt.ylabel("Y ({})".format(composer.core.label['y']), fontsize=18)
-        
+
+        if flip_overlay_if_inverted(plt.gca(), [
+            bool(getattr(c.core, 'draw_y_inverted', False))
+            for c in list_composer
+        ]):
+            logger.info(
+                'archive overlay mixes inverted and upright spectra; drawing '
+                'it upright',
+            )
+
         if cv_mode and cv_abs_max > 0:
             exp = int(math.floor(math.log10(cv_abs_max))) if cv_abs_max > 0 else 0
             base = (10.0 ** exp) if exp != 0 else 1.0

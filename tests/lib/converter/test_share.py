@@ -33,7 +33,7 @@ def expected_default_params():
         'lcms_mz_page': None,
         'lcms_mz_page_data': None,
         'transmittance': False,
-        'invert_y': False,
+        'invert_y': None,
     }
 
 def test_parse_params_without_params(expected_default_params):
@@ -295,3 +295,19 @@ def test_cv_shift_offset_tolerates_a_spectra_entry_without_shift():
     assert cal_cyclic_volta_shift_prev_offset_at_index(
         {'spectraList': [{'hasRefPeak': True, 'shift': {'prevValue': 2.0}}]},
         0) == 2.0
+
+
+@pytest.mark.parametrize('value, expected', [
+    (None, None), ('', None), ('  ', None),
+    (True, True), ('true', True), ('TRUE', True), ('1', True), ('yes', True),
+    (1, True),
+    (False, False), ('false', False), (' False ', False), ('0', False),
+    ('no', False), (0, False),
+    # unrecognised: the same as not sent, never an explicit false
+    ('undefined', None), ('null', None), ('on', None), ('t', None),
+    ('y', None), ('off', None), (2, None),
+])
+def test_invert_y_is_tristate(value, expected):
+    """An explicit false clears ##$CSINVERTY, so only a recognised false may
+    produce one. `undefined` is what JS FormData sends for a missing value."""
+    assert parse_params({'invert_y': value})['invert_y'] is expected
