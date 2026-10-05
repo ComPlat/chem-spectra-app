@@ -26,6 +26,13 @@ NUM_DIM_RE = re.compile(r'^##\s*NUM[\s_/-]*DIM\s*=\s*(\d+)',
 ND_DATATYPE_RE = re.compile(r'^##\s*DATA[\s_/-]*TYPE\s*=\s*([2-9]|n)\s*D\s+NMR',
                             re.MULTILINE | re.IGNORECASE)
 
+# Only to word the refusal: an NMR file can be sent to NMRium, anything else
+# cannot. The refusal itself does not depend on this -- no technique here can
+# hold a second dimension.
+NMR_RE = re.compile(
+    r'^##\s*(DATA[\s_/-]*TYPE\s*=.*NMR|\.?OBSERVE[\s_/-]*NUCLEUS\s*=)',
+    re.MULTILINE | re.IGNORECASE)
+
 
 def declared_dimensions(header_text):
     """How many dimensions the header declares, or None if it does not say.
@@ -52,9 +59,14 @@ def read_header(path):
     """
     try:
         with open(path, 'rb') as handle:
-            return handle.read(HEADER_BYTES).decode('latin-1')
+            raw = handle.read(HEADER_BYTES).decode('latin-1')
     except (OSError, TypeError, ValueError):
         return ''
+    # Line endings normalised so `^` finds a label whatever wrote the file.
+    # A CR-only file -- classic Mac, and some instrument exports -- is one
+    # long line to `re.MULTILINE`, so every record after the first was
+    # invisible.
+    return raw.replace('\r\n', '\n').replace('\r', '\n')
 
 class JcampBaseConverter:
     def __init__(self, path, params=False):
@@ -111,12 +123,18 @@ class JcampBaseConverter:
         holding two bagits is -- processing part of an upload silently is the
         defect, not the remedy.
         """
-        dimensions = declared_dimensions(read_header(path))
+        header = read_header(path)
+        dimensions = declared_dimensions(header)
         if dimensions is None or dimensions <= 1:
             return
+        if NMR_RE.search(header):
+            raise UnconvertibleSpectrum(
+                'this is a {}D NMR file. ChemSpectra reads one-dimensional '
+                'spectra only; open it in NMRium instead'.format(dimensions)
+            )
         raise UnconvertibleSpectrum(
-            'this is a {}D NMR file. ChemSpectra reads one-dimensional '
-            'spectra only; open it in NMRium instead'.format(dimensions)
+            'this file declares {} dimensions. ChemSpectra reads '
+            'one-dimensional spectra only'.format(dimensions)
         )
 
     def __read(self, path):

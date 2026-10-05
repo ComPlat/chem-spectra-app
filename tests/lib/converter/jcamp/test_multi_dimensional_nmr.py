@@ -160,3 +160,47 @@ def test_an_archive_carrying_one_is_refused_whole(client, tmp_path):
     response = _post(client, '/zip_jcamp_n_img', str(archive))
     assert response.status_code == 422
     assert '2D' in json.loads(response.data)['error']
+
+
+# - - - agreeing with the ELN's rule, and where we deliberately differ - - -
+
+@pytest.mark.parametrize('ending', ['\n', '\r\n', '\r'])
+def test_every_line_ending_is_read(ending, tmp_path):
+    """A CR-only file -- classic Mac, and some instrument exports -- is one
+    long line to a multiline regex, so every record after the first was
+    invisible and the file was accepted."""
+    target = tmp_path / 'endings.dx'
+    target.write_bytes(ending.join([
+        '##TITLE=t', '##DATA TYPE= NMR SPECTRUM', '##NUM DIM= 2',
+        '##XUNITS=SECONDS', '##YUNITS=ARBITRARY', '##NPOINTS=4',
+        '##XYDATA=(X++(Y..Y))', '0 1 2 3 4', '##END=', '']).encode())
+    with pytest.raises(UnconvertibleSpectrum, match='2D'):
+        JcampBaseConverter(str(target))
+
+
+def test_a_multi_dimensional_non_nmr_file_is_refused_without_naming_nmr(
+        tmp_path):
+    """chemotion_ELN requires NMR before it diverts a file, because it is
+    choosing between ChemSpectra and NMRium. The question here is different
+    -- whether this app can represent the data at all -- and it cannot, for
+    any technique: `xs`/`ys` hold one curve.
+
+    So a multi-dimensional UV/VIS file is still refused, but the reason does
+    not call it NMR and does not send the user to NMRium, which would not
+    read it either.
+    """
+    source = _two_d(tmp_path, datatype='UV/VIS SPECTRUM',
+                    num_dim='##NUM DIM= 2')
+    with pytest.raises(UnconvertibleSpectrum, match='declares 2 dimensions'):
+        JcampBaseConverter(str(source))
+
+
+def test_an_observed_nucleus_is_enough_to_name_it_nmr(tmp_path):
+    """The datatype need not say NMR: `##.OBSERVE NUCLEUS=` does."""
+    target = tmp_path / 'nucleus.dx'
+    target.write_text('\n'.join([
+        '##TITLE=t', '##DATA TYPE= SPECTRUM', '##.OBSERVE NUCLEUS= ^1H',
+        '##NUM DIM= 2', '##XUNITS=SECONDS', '##YUNITS=ARBITRARY',
+        '##NPOINTS=4', '##XYDATA=(X++(Y..Y))', '0 1 2 3 4', '##END=', '']))
+    with pytest.raises(UnconvertibleSpectrum, match='NMRium'):
+        JcampBaseConverter(str(target))
