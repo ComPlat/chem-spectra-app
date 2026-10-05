@@ -21,7 +21,7 @@ import io
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import (
-    JcampBaseConverter, declared_dimensions,
+    JcampBaseConverter, declared_dimensions, declares_nmr,
 )
 from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
 
@@ -204,3 +204,43 @@ def test_an_observed_nucleus_is_enough_to_name_it_nmr(tmp_path):
         '##NPOINTS=4', '##XYDATA=(X++(Y..Y))', '0 1 2 3 4', '##END=', '']))
     with pytest.raises(UnconvertibleSpectrum, match='NMRium'):
         JcampBaseConverter(str(target))
+
+
+# - - - the label rule, as JCAMP-DX states it - - -
+
+@pytest.mark.parametrize('label', [
+    '##NUM DIM', '##NUMDIM', '##NUM_DIM', '##NUM-DIM',
+    '##N-UM D/IM', '##N U M D I M', '##num dim',
+])
+def test_a_label_is_compared_with_its_separators_removed(label):
+    """4.24 (5.1) compares labels with spaces, dashes, underscores and
+    slashes removed, and without regard to case -- anywhere in the label, not
+    only between its words. Matching each spelling with an optional separator
+    between `NUM` and `DIM` left `##N-UM D/IM=` through, which is the same
+    record.
+    """
+    assert declared_dimensions('##TITLE=t\n{}= 2\n'.format(label)) == 2
+
+
+def test_the_datatype_says_how_many_when_it_knows():
+    """`nD` does not say which n, so two is the least it can mean; `3D` does
+    say."""
+    def dims(datatype):
+        return declared_dimensions(
+            '##TITLE=t\n##DATA TYPE= {}\n'.format(datatype))
+    assert dims('nD NMR FID') == 2
+    assert dims('2D NMR SPECTRUM') == 2
+    assert dims('3D NMR FID') == 3
+    assert dims('NMR SPECTRUM') is None
+
+
+@pytest.mark.parametrize('header, expected', [
+    ('##DATA TYPE= NMR SPECTRUM', True),
+    ('##DATA TYPE= nD NMR FID', True),
+    ('##.OBSERVE NUCLEUS= ^1H', True),
+    ('##.OBSERVE-NUCLEUS= ^1H', True),
+    ('##DATA TYPE= UV/VIS SPECTRUM', False),
+    ('##DATA TYPE= MASS SPECTRUM', False),
+])
+def test_what_counts_as_nmr_for_the_wording(header, expected):
+    assert declares_nmr('##TITLE=t\n{}\n'.format(header)) is expected

@@ -16,22 +16,26 @@ logger = logging.getLogger(__name__)
 # rest of the file is numbers. The same window chemotion_ELN reads.
 HEADER_BYTES = 64 * 1024
 
-# JCAMP-DX 4.24 (5.1) ignores spaces, dashes, underscores and slashes inside
-# a label, so `NUM DIM`, `NUMDIM` and `NUM_DIM` are one record. Five fixtures
-# here write it `##NUMDIM=<tab>1`.
-NUM_DIM_RE = re.compile(r'^##\s*NUM[\s_/-]*DIM\s*=\s*(\d+)',
-                        re.MULTILINE | re.IGNORECASE)
+# JCAMP-DX 4.24 (5.1): a label is compared with spaces, dashes, underscores
+# and slashes removed, and without regard to case. Anywhere in the label, not
+# only between its words -- so `##N-UM D/IM=` is `##NUMDIM=`. Normalising the
+# whole label is both closer to the spec and simpler than matching each
+# spelling.
+LABEL_NOISE_RE = re.compile(r'[\s_/-]')
 
 # `nD` is the JCAMP-DX 6 spelling; some vendors write the number instead.
-ND_DATATYPE_RE = re.compile(r'^##\s*DATA[\s_/-]*TYPE\s*=\s*([2-9]|n)\s*D\s+NMR',
-                            re.MULTILINE | re.IGNORECASE)
+ND_VALUE_RE = re.compile(r'^\s*([2-9]|n)\s*D\s+NMR', re.IGNORECASE)
 
-# Only to word the refusal: an NMR file can be sent to NMRium, anything else
-# cannot. The refusal itself does not depend on this -- no technique here can
-# hold a second dimension.
-NMR_RE = re.compile(
-    r'^##\s*(DATA[\s_/-]*TYPE\s*=.*NMR|\.?OBSERVE[\s_/-]*NUCLEUS\s*=)',
-    re.MULTILINE | re.IGNORECASE)
+
+def header_records(header_text):
+    """Every `##LABEL= value` in the text, label normalised, in file order."""
+    for line in header_text.split('\n'):
+        if not line.startswith('##'):
+            continue
+        label, sep, value = line[2:].partition('=')
+        if not sep:
+            continue
+        yield LABEL_NOISE_RE.sub('', label).upper(), value.strip()
 
 
 def declared_dimensions(header_text):
@@ -41,14 +45,39 @@ def declared_dimensions(header_text):
     drops the records -- it keeps them on a small file -- but because a real
     2D dataset is large and need not parse at all, and there is no reason to
     spend that read on a file that will be refused either way.
+
+    An explicit `##NUM DIM=` decides. Failing that, the datatype is read: it
+    says `nD` or `2D` without always saying which n, so two is the least it
+    can mean.
     """
-    match = NUM_DIM_RE.search(header_text)
-    if match:
-        return int(match.group(1))
-    if ND_DATATYPE_RE.search(header_text):
-        # the datatype says nD without saying which n
-        return 2
-    return None
+    from_datatype = None
+    for label, value in header_records(header_text):
+        if label == 'NUMDIM':
+            try:
+                return int(value.split()[0])
+            except (ValueError, IndexError):
+                continue
+        if label == 'DATATYPE' and from_datatype is None:
+            match = ND_VALUE_RE.match(value)
+            if match:
+                head = match.group(1)
+                from_datatype = 2 if head.lower() == 'n' else int(head)
+    return from_datatype
+
+
+def declares_nmr(header_text):
+    """Whether the header says this is NMR at all.
+
+    Only used to word the refusal -- an NMR file can be opened in NMRium,
+    anything else cannot. The refusal itself does not depend on it: no
+    technique here can hold a second dimension.
+    """
+    for label, value in header_records(header_text):
+        if label == 'DATATYPE' and 'NMR' in value.upper():
+            return True
+        if label in ('.OBSERVENUCLEUS', 'OBSERVENUCLEUS'):
+            return True
+    return False
 
 
 def read_header(path):
@@ -127,7 +156,7 @@ class JcampBaseConverter:
         dimensions = declared_dimensions(header)
         if dimensions is None or dimensions <= 1:
             return
-        if NMR_RE.search(header):
+        if declares_nmr(header):
             raise UnconvertibleSpectrum(
                 'this is a {}D NMR file. ChemSpectra reads one-dimensional '
                 'spectra only; open it in NMRium instead'.format(dimensions)
