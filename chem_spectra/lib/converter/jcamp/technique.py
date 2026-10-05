@@ -670,41 +670,38 @@ class JcampTechniqueConverter:
         return converted
 
     def __carries_integrals(self):
-        """Integrals or multiplets the composed file would carry.
+        """Integrals the composed file would carry.
 
         Not "present anywhere": a request that clears the table clears it.
-        The composer writes nothing when an edited table arrives empty --
-        `gen_integration_info` for the integrals, `gen_mpy_integ_info` and
-        `gen_mpy_peaks_info` for the multiplets -- so refusing on the file's
-        stale record would refuse a conversion over a table on its way out.
+        The composer writes nothing when an edited table arrives empty
+        (`gen_integration_info`), so refusing on the file's stale record
+        would refuse a conversion over a table on its way out.
 
         `edited` absent is not `edited` false: parse_params supplies a
         default with no such key, so a request that simply does not mention
         integrals leaves the file's record standing, as it should.
+
+        Multiplets are not consulted. Only NMR writes them
+        (`technique.multiplicity`), and NMR declares no absorbance, so a file
+        can never reach here carrying multiplets that the output would keep.
+        The branch that asked about them also mirrored the composer wrongly:
+        `gen_mpy_integ_info` reads `originStack` from the *integration*
+        dictionary, not from the multiplicity one.
         """
-        for param, record in (('integration', '$OBSERVEDINTEGRALS'),
-                              ('multiplicity', '$OBSERVEDMULTIPLETS')):
-            if param == 'multiplicity' and not self.technique.multiplicity:
-                # the composer never writes multiplets for this technique,
-                # so a stale record in the file is not something the output
-                # would carry
-                continue
-            sent = self.params.get(param) or {}
-            if sent.get('stack'):
-                return True
-            if self.__table_is_cleared(sent):
-                continue
-            if self.__record_has_rows(record):
-                return True
-        return False
+        sent = self.params.get('integration') or {}
+        if sent.get('stack'):
+            return True
+        if self.__table_is_cleared(sent):
+            return False
+        return self.__record_has_rows('$OBSERVEDINTEGRALS')
 
     @staticmethod
     def __table_is_cleared(sent):
         """Whether the request is removing the table, by either spelling.
 
-        The composer treats two shapes as "write nothing" (`gen_integration_info`,
-        `gen_mpy_integ_info`): an `edited` table that arrives empty, and an
-        empty `stack` accompanied by an `originStack`. The second is what
+        The composer treats two shapes as "write nothing"
+        (`gen_integration_info`): an `edited` table that arrives empty, and
+        an empty `stack` accompanied by an `originStack`. The second is what
         react-spectra-editor sends after `rmFromStack`, whose reducer never
         sets `edited` -- so asking only about `edited` refused a conversion
         the user had already prepared for it.

@@ -61,12 +61,17 @@ class BagItBaseConverter:
         archive_stems = []
         # Determine if there is any LC/MS or UV-Vis context to group MS files.
         has_lcms_context = False
+        detected = {}
         for file_name in list_file_names:
             if not file_name.lower().endswith('.jdx'):
                 continue
             jcamp_path = os.path.join(data_dir_path, file_name)
             try:
                 base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
+                # kept for the second pass: building it twice costs two
+                # nmrglue parses and two header scans per member, and this
+                # loop stops at the first LC/MS-ish file anyway
+                detected[jcamp_path] = base_cv
                 if base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS'):
                     has_lcms_context = True
                     break
@@ -78,7 +83,8 @@ class BagItBaseConverter:
                 continue
             jcamp_path = os.path.join(data_dir_path, file_name)
             stem = os.path.splitext(file_name)[0].replace('.', '_')
-            base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
+            base_cv = detected.get(jcamp_path) or JcampBaseConverter(
+                jcamp_path, self.raw_params)
             # BagIt / flat LCMS zips: keep all chromatogram and MS traces in one
             # LCMSConverterAppComposer (incl. MASS SPECTRUM), not JcampMSConverter/ms.py.
             is_lcms_candidate = base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS') or (base_cv.typ == 'MS' and has_lcms_context)

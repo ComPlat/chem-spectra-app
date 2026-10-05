@@ -34,23 +34,42 @@ def read_block_records(path, keys):
     values are kept, which is all the unit records need. `utf-8-sig` so a
     byte-order mark cannot hide the first ##TITLE= and shift every block.
     """
-    blocks = []
     try:
         with open(path, encoding='utf-8-sig', errors='ignore') as handle:
-            return _scan(handle, keys, blocks)
+            return _scan(handle, keys)
     except (OSError, TypeError, ValueError):
         return None
 
 
-def _scan(handle, keys, blocks):
+# A block's records all precede its data, so once one of these is seen there
+# is nothing left to find until the next block opens.
+DATA_LABELS = frozenset({
+    'XYDATA', 'XYPOINTS', 'PEAKTABLE', 'PEAKASSIGNMENTS', 'DATATABLE',
+    'NTUPLES', 'RADATA',
+})
+
+
+def _scan(handle, keys):
     """Iterate the handle rather than reading it whole: these files run to
     several megabytes and only the header lines are wanted."""
+    blocks = []
+    in_data = False
     for line in handle:
+        if not line.startswith('##'):
+            # a data row, or a comment -- and that is nearly every line in
+            # the file. Checked before any splitting or stripping.
+            continue
+        if in_data:
+            # inside a data table only `##` lines matter, and only to end it
+            in_data = False
         line = line.split('$$', 1)[0].strip()
         if not line.startswith('##') or '=' not in line:
             continue
         label, value = line[2:].split('=', 1)
         key = _label_key(label)
+        if key in DATA_LABELS:
+            in_data = True
+            continue
         if key == 'TITLE':
             blocks.append({})
         elif blocks and key == 'DATATYPE':
