@@ -47,44 +47,51 @@ def read_block_records(path, keys):
         return None
 
 
-# A block's records all precede its data, so once one of these is seen there
-# is nothing left to find until the next block opens.
-DATA_LABELS = frozenset({
-    'XYDATA', 'XYPOINTS', 'PEAKTABLE', 'PEAKASSIGNMENTS', 'DATATABLE',
-    'NTUPLES', 'RADATA',
+# The labels that open a data table. They are not records, so they are not
+# collected -- but which block carries the *spectrum* decides which block's
+# units describe it, so those are marked.
+SPECTRUM_LABELS = frozenset({
+    'XYDATA', 'XYPOINTS', 'DATATABLE', 'NTUPLES', 'RADATA',
 })
+
+# A peak table is a side table: a file can carry one in its own block, with
+# its own units, beside the spectrum. Marking it as the data block is how the
+# spectrum came to be labelled from the peak table.
+DATA_LABELS = SPECTRUM_LABELS | frozenset({'PEAKTABLE', 'PEAKASSIGNMENTS'})
+
+# Set on the block that opens a spectrum data table. A JCAMP label cannot
+# produce this key: `_label_key` removes underscores.
+HOLDS_SPECTRUM = '_SPECTRUM'
 
 
 def _scan(handle, keys):
     """Iterate the handle rather than reading it whole: these files run to
     several megabytes and only the header lines are wanted."""
     blocks = []
-    in_data = False
     for line in handle:
-        if not line.startswith('##'):
+        if '##' not in line:
             # a data row, or a comment -- and that is nearly every line in
             # the file. Checked before any splitting or stripping.
             continue
-        if in_data:
-            # inside a data table only `##` lines matter, and only to end it
-            in_data = False
         line = line.split('$$', 1)[0].strip()
+        # `strip` first: nmrglue strips too, so an indented child block's
+        # `##TITLE=` opens a block for it as well. Testing the raw line made
+        # those blocks invisible here and nowhere else, and the two readings
+        # of the file then disagreed about how many blocks it has.
         if not line.startswith('##') or '=' not in line:
             continue
         label, value = line[2:].split('=', 1)
         key = _label_key(label)
         if key in DATA_LABELS:
-            in_data = True
+            if blocks and key in SPECTRUM_LABELS:
+                blocks[-1][HOLDS_SPECTRUM] = True
             continue
         if key == 'TITLE':
             blocks.append({})
-        elif blocks and key == 'DATATYPE':
-            # Recorded even when empty. This app composes `##DATA TYPE=` with
-            # no value for a file that declared none, and nmrglue keeps that
-            # empty string in its DATATYPE list -- so dropping it here made
-            # the two sequences disagree on the very files round-tripping
-            # through us, and the lookup fell back to the flattened records.
-            blocks[-1].setdefault(key, value.strip())
         elif blocks and key in keys and value.strip():
+            # An empty value is no value, for `##DATA TYPE=` as for the rest.
+            # nmrglue warns and drops it, so recording it here was the one
+            # thing that could make the two sequences disagree on a file this
+            # app had composed itself.
             blocks[-1].setdefault(key, value.strip())
     return blocks

@@ -9,7 +9,9 @@ from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
 from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
-from chem_spectra.lib.converter.jcamp.records import UNIT_RECORDS
+from chem_spectra.lib.converter.jcamp.records import (
+    HOLDS_SPECTRUM, UNIT_RECORDS,
+)
 # defined in share, re-exported here: the app's error handler
 # (chem_spectra/__init__.py), transformer.py and the tests all import it
 # from this module, which is where most of the raises are
@@ -247,13 +249,12 @@ class JcampTechniqueConverter:
             # relabelled PPM/ARBITRARY. Every composed file is LINK-wrapped,
             # so a single-block file survived its first compose and lost its
             # units on the next one.
-            # None, not 0, when every declared datatype is LINK -- or none
-            # is declared at all. Position 0 of the declaring blocks is then
-            # the wrapper, which carries no units, and the resolver has to
-            # look for the block holding the data instead.
-            self.datatype_pos = next(
-                (pos for pos, dt in enumerate(self.datatypes)
-                 if dt != 'LINK'), None)
+            # No position at all: the resolver finds the block that holds
+            # the spectrum instead. Naming the first non-LINK datatype looked
+            # equivalent and was not -- a file whose spectrum block declares
+            # no `##DATA TYPE=`, beside a peak table that does, pointed at
+            # the peak table and was relabelled with its units.
+            self.datatype_pos = None
             return 0
 
         # The position in the file's own ##DATA TYPE= sequence, which the
@@ -460,10 +461,7 @@ class JcampTechniqueConverter:
 
     def __resolve_target_block_records(self):
         blocks = getattr(self.base, 'block_records', None) or []
-        # `is not None`, not truthiness: an empty ##DATA TYPE= is a declared
-        # datatype as far as nmrglue is concerned, and the sequences have to
-        # agree about that.
-        declaring = [b for b in blocks if b.get('DATATYPE') is not None]
+        declaring = [b for b in blocks if b.get('DATATYPE')]
         sequence = [b['DATATYPE'].upper() for b in declaring]
         position = getattr(self, 'datatype_pos', None)
         if blocks and sequence == self.datatypes:
@@ -471,10 +469,13 @@ class JcampTechniqueConverter:
                 return declaring[position]
             # No block declares a datatype the registry knows -- which
             # includes a file that declares none at all, a case base.py
-            # supports on purpose. `declaring` is then empty or holds only
-            # the LINK wrapper, so there is no position to index and the
-            # units have to come from the block that carries the data: the
-            # first one that is not a wrapper.
+            # supports on purpose. There is no position to index, so the
+            # units come from the block that holds the spectrum. That block
+            # need not declare a datatype, so it is looked for among all the
+            # blocks rather than among the declaring ones.
+            for block in blocks:
+                if block.get(HOLDS_SPECTRUM):
+                    return block
             for block in blocks:
                 if (block.get('DATATYPE') or '').upper() != 'LINK':
                     return block

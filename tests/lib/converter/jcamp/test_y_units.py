@@ -32,6 +32,7 @@ same toggle. What none of them do is rewrite the stored trace.
 
 import io
 import json
+import logging
 import re
 
 import numpy as np
@@ -40,6 +41,9 @@ import pytest
 import chem_spectra.lib.composer.technique as technique_module
 from chem_spectra.lib.composer.technique import TechniqueComposer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.converter.jcamp.records import (
+    BLOCK_RECORDS, read_block_records,
+)
 from chem_spectra.lib.converter.jcamp.technique import (
     JcampTechniqueConverter, UnconvertibleSpectrum, is_transmittance_unit,
 )
@@ -1275,7 +1279,8 @@ def _no_datatype_file(tmp_path, name, wrapped):
 
 
 @pytest.mark.parametrize('wrapped', [False, True])
-def test_a_file_with_no_datatype_keeps_its_units(client, tmp_path, wrapped):
+def test_a_file_with_no_datatype_keeps_its_units(client, tmp_path, wrapped,
+                                                 caplog):
     """`base.py` supports a file with no `##DATA TYPE=` on purpose -- "an
     absent header is no more exceptional than an unrecognised one".
 
@@ -1292,9 +1297,78 @@ def test_a_file_with_no_datatype_keeps_its_units(client, tmp_path, wrapped):
 
     again = tmp_path / 'nodt_again.jdx'
     again.write_text(first)
-    second = _composed_jcamp(_post(client, str(again)))
+    with caplog.at_level(logging.WARNING):
+        second = _composed_jcamp(_post(client, str(again)))
     assert '##XUNITS=NANOMETERS' in second
     assert '##YUNITS=ABSORBANCE' in second
+    # and for the right reason. This app composes `##DATA TYPE=` with no
+    # value, which nmrglue warns about and drops; recording it here as a
+    # declared datatype made the two readings disagree about every file we
+    # had written ourselves, and the units survived only because the
+    # flattened fallback happened to pick the same block.
+    assert 'is not the one nmrglue reports' not in caplog.text
+
+
+def _spectrum_without_datatype_beside_a_peak_table(tmp_path):
+    """A LINK file whose spectrum declares no `##DATA TYPE=` while a side
+    table does. Both are legal, and only one of them describes the curve.
+    """
+    xs = [300.0 + i * 10 for i in range(11)]
+    ys = [0.1] * 11
+    ys[5] = 0.6
+    lines = (['##TITLE=outer', '##JCAMP-DX=5.00', '##DATA TYPE=LINK',
+              '##BLOCKS=2', '',
+              '##TITLE=spectrum', '##JCAMP-DX=5.00', '##DATA CLASS=XYPOINTS',
+              '##XUNITS=NANOMETERS', '##YUNITS=ABSORBANCE',
+              '##FIRSTX={}'.format(xs[0]), '##LASTX={}'.format(xs[-1]),
+              '##NPOINTS=11', '##FIRSTY={}'.format(ys[0]),
+              '##XYPOINTS=(XY..XY)']
+             + ['{:.1f}, {:.3f}'.format(x, y) for x, y in zip(xs, ys)]
+             + ['##END=',
+                '##TITLE=peaks', '##JCAMP-DX=5.00',
+                '##DATA TYPE=UV/VIS PEAK TABLE',
+                '##XUNITS=PPM', '##YUNITS=ARBITRARY', '##NPOINTS=1',
+                '##PEAK TABLE=(XY..XY)', '350.0, 0.6', '##END=',
+                '##END='])
+    target = tmp_path / 'side_table.jdx'
+    target.write_text('\n'.join(lines) + '\n')
+    return target
+
+
+def test_the_units_come_from_the_block_holding_the_spectrum(client, tmp_path):
+    """Not from whichever block happens to declare a datatype first.
+
+    When no declared datatype is one this app knows, there is no position to
+    index, and the first non-wrapper *declaring* block was taken instead.
+    Here that is the peak table, so a UV/VIS absorbance spectrum came back
+    labelled `PPM` / `ARBITRARY` -- the peak table's own units, describing
+    nothing in the curve. The block that opens the data table is the one the
+    units belong to.
+    """
+    source = _spectrum_without_datatype_beside_a_peak_table(tmp_path)
+    composed = _composed_jcamp(_post(client, str(source)))
+    assert '##XUNITS=NANOMETERS' in composed
+    assert '##YUNITS=ABSORBANCE' in composed
+
+
+def test_an_indented_block_is_a_block(tmp_path):
+    """nmrglue strips each line before looking for `##`, so an indented
+    child block opens a block for it. Testing the raw line here did not, and
+    the two readings of the same file then disagreed about how many blocks
+    it has -- which is the one thing that sends the lookup to the flattened
+    records.
+    """
+    source = tmp_path / 'indented.jdx'
+    source.write_text(
+        '##TITLE=outer\n##JCAMP-DX=5.00\n##DATA TYPE=LINK\n##BLOCKS=1\n'
+        '  ##TITLE=inner\n  ##JCAMP-DX=5.00\n'
+        '  ##DATA TYPE=UV/VIS SPECTRUM\n'
+        '  ##XUNITS=NANOMETERS\n  ##YUNITS=ABSORBANCE\n'
+        '  ##END=\n##END=\n')
+    blocks = read_block_records(str(source), BLOCK_RECORDS)
+    assert [b.get('DATATYPE') for b in blocks] == [
+        'LINK', 'UV/VIS SPECTRUM']
+    assert blocks[1]['XUNITS'] == 'NANOMETERS'
 
 
 def test_the_integral_label_keeps_its_upright_anchor(tmp_path):
