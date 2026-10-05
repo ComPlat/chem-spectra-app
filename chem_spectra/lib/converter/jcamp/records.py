@@ -34,13 +34,18 @@ def read_block_records(path, keys):
     values are kept, which is all the unit records need. `utf-8-sig` so a
     byte-order mark cannot hide the first ##TITLE= and shift every block.
     """
+    blocks = []
     try:
         with open(path, encoding='utf-8-sig', errors='ignore') as handle:
-            lines = handle.readlines()
+            return _scan(handle, keys, blocks)
     except (OSError, TypeError, ValueError):
         return None
-    blocks = []
-    for line in lines:
+
+
+def _scan(handle, keys, blocks):
+    """Iterate the handle rather than reading it whole: these files run to
+    several megabytes and only the header lines are wanted."""
+    for line in handle:
         line = line.split('$$', 1)[0].strip()
         if not line.startswith('##') or '=' not in line:
             continue

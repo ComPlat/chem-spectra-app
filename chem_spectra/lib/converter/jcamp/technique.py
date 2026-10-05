@@ -135,6 +135,11 @@ class JcampTechniqueConverter:
         self.ys = self.__read_ys()
         # after __read_ys, which is where a conversion happens
         self.peaks_point_down = self.__peaks_point_down()
+        # the fraction the picker actually used, which is what
+        # ##$CSTHRESHOLD must record: react-spectra-editor reads that record
+        # as its own `thresRef`, so writing the technique's raw value would
+        # have the editor filter peaks against a threshold we did not use.
+        self.peak_threshold = self.__peak_threshold()
         self.xs = self.__read_xs(base)
         self.__check_cylic_volta_shifted_info()
 
@@ -470,7 +475,11 @@ class JcampTechniqueConverter:
         """
         if self.peaks_point_down == self.technique.peaks_inverted:
             return self.threshold
-        return 1.0 - self.threshold
+        # rounded because this is written into ##$CSTHRESHOLD and read back
+        # by react-spectra-editor as `thresRef * 100`: 1.0 - 0.93 is
+        # 0.06999999999999995 in binary floating point, and that is not a
+        # number to put in a file other people parse.
+        return round(1.0 - self.threshold, 6)
 
     def __to_transmittance(self, ys):
         """T = 10**(-A). Refuses rather than returning a ruined spectrum.
@@ -491,6 +500,18 @@ class JcampTechniqueConverter:
             raise UnconvertibleSpectrum(
                 'the file records that it was already converted to '
                 'transmittance; there is nothing to convert'
+            )
+        if not self.technique.beer_lambert:
+            # Absorbance and transmittance are two views of one measurement.
+            # Where the measurement is not absorption through a sample there
+            # is nothing to convert, and the record this would leave behind
+            # (##$CSTRANSMITTANCE=true) refuses every later conversion and
+            # forces the % label, so the spectrum cannot be recovered through
+            # the API.
+            raise UnconvertibleSpectrum(
+                'a transmittance conversion is not meaningful for {}; it is '
+                'defined where absorbance is measured through a sample'
+                .format(self.technique.key or 'this technique')
             )
         declared = self.__declared_units()['y']
         if is_transmittance_unit(declared):
@@ -598,15 +619,36 @@ class JcampTechniqueConverter:
         """
         for param, record in (('integration', '$OBSERVEDINTEGRALS'),
                               ('multiplicity', '$OBSERVEDMULTIPLETS')):
+            if param == 'multiplicity' and not self.technique.multiplicity:
+                # the composer never writes multiplets for this technique,
+                # so a stale record in the file is not something the output
+                # would carry
+                continue
             sent = self.params.get(param) or {}
             if sent.get('stack'):
                 return True
-            if sent.get('edited'):
-                # an explicit, empty edit: the table is being removed
+            if self.__table_is_cleared(sent):
                 continue
             if self.__record_has_rows(record):
                 return True
         return False
+
+    @staticmethod
+    def __table_is_cleared(sent):
+        """Whether the request is removing the table, by either spelling.
+
+        The composer treats two shapes as "write nothing" (`gen_integration_info`,
+        `gen_mpy_integ_info`): an `edited` table that arrives empty, and an
+        empty `stack` accompanied by an `originStack`. The second is what
+        react-spectra-editor sends after `rmFromStack`, whose reducer never
+        sets `edited` -- so asking only about `edited` refused a conversion
+        the user had already prepared for it.
+        """
+        if sent.get('stack'):
+            return False
+        if sent.get('edited'):
+            return True
+        return 'stack' in sent and 'originStack' in sent
 
     def __record_has_rows(self, record):
         """Whether a peak-table record holds any data rows.

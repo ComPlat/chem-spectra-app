@@ -984,15 +984,34 @@ def test_a_request_that_clears_the_integrals_may_convert(tmp_path):
     assert converter.converted_to_transmittance
 
 
-def test_a_single_multiplet_row_refuses_the_conversion(tmp_path):
-    """`$OBSERVEDMULTIPLETS` has no column header, so its only row was the
-    record's whole value and skipping the first line read it as empty."""
+def test_a_header_less_single_row_is_seen(tmp_path):
+    """`$OBSERVEDMULTIPLETS` has no column header, so its only row is the
+    record's whole value and skipping the first line read it as empty.
+
+    Asserted on the row check itself. The guard that used to carry this can
+    no longer reach it: multiplets are written by NMR alone, and a
+    transmittance conversion is not meaningful for NMR, so the two
+    conditions cannot both hold.
+    """
     source = _with_record(
         tmp_path, '$OBSERVEDMULTIPLETS',
         '\n(1, 6.31, 8.13, 7.11, 1.08, 1, m, A)')
-    with pytest.raises(UnconvertibleSpectrum, match='integrals or multiplets'):
-        JcampTechniqueConverter(
-            JcampBaseConverter(str(source), {'transmittance': True}))
+    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    has_rows = converter._JcampTechniqueConverter__record_has_rows
+    assert has_rows('$OBSERVEDMULTIPLETS') is True
+    assert has_rows('$OBSERVEDINTEGRALS') is False
+
+
+def test_multiplets_do_not_block_a_technique_that_never_writes_them(tmp_path):
+    """The guard asks what the output would carry. `technique.multiplicity`
+    is False for infrared, so its composer writes no multiplet table however
+    many rows the uploaded file carries."""
+    source = _with_record(
+        tmp_path, '$OBSERVEDMULTIPLETS',
+        '\n(1, 6.31, 8.13, 7.11, 1.08, 1, m, A)')
+    converter = JcampTechniqueConverter(
+        JcampBaseConverter(str(source), {'transmittance': True}))
+    assert converter.converted_to_transmittance
 
 
 # - - - the stored peak table gets the trace's guards - - -
@@ -1157,3 +1176,69 @@ def test_an_unmapped_datatype_keeps_its_units_through_two_composes(client,
     second = _composed_jcamp(_post(client, str(again)))
     assert '##XUNITS=NANOMETERS' in second
     assert '##YUNITS=ABSORBANCE' in second
+
+
+# - - - a conversion the request already prepared for - - -
+
+def test_the_editors_way_of_removing_integrals_does_not_block(tmp_path):
+    """`rmFromStack` sends an empty `stack` beside an `originStack` and never
+    sets `edited`. The composer writes nothing for that shape, so refusing on
+    the file's stale record refused a conversion the user had prepared."""
+    source = _with_record(tmp_path, '$OBSERVEDINTEGRALS',
+                          ' (X Y Z)\n(425.0, 415.0, 1.0)')
+    removed = json.dumps({'stack': [], 'originStack': [
+        {'xL': 415.0, 'xU': 425.0, 'area': 1.0}]})
+    converter = JcampTechniqueConverter(JcampBaseConverter(
+        str(source), {'transmittance': True, 'integration': removed}))
+    assert converter.converted_to_transmittance
+
+
+def test_integrals_still_sent_still_refuse(tmp_path):
+    """The other half of the same rule, so the fix cannot be read as
+    'integrals never block'."""
+    source = _with_record(tmp_path, '$OBSERVEDINTEGRALS', ' (X Y Z)')
+    kept = json.dumps({'stack': [{'xL': 415.0, 'xU': 425.0, 'area': 1.0}],
+                       'originStack': []})
+    with pytest.raises(UnconvertibleSpectrum, match='integrals or multiplets'):
+        JcampTechniqueConverter(JcampBaseConverter(
+            str(source), {'transmittance': True, 'integration': kept}))
+
+
+# - - - a conversion only where it means something - - -
+
+@pytest.mark.parametrize('key, convertible', [
+    ('INFRARED', True), ('UVVIS', True), ('HPLC UVVIS', True),
+    ('RAMAN', False), ('NMR', False), ('CYCLIC VOLTAMMETRY', False),
+    ('X-RAY DIFFRACTION', False),
+])
+def test_only_absorption_techniques_may_be_converted(key, convertible):
+    """Scattering, diffraction and voltammetry have no transmittance. Before
+    this, a voltammogram accepted `transmittance=true`, came back a flat
+    99.99-100.00 trace labelled `% TRANSMITTANCE`, and carried
+    `##$CSTRANSMITTANCE=true` for good: every later recompose refused a second
+    conversion and forced the label, so the file could not be recovered."""
+    assert SPECTRUM_TECHNIQUES[key].beer_lambert is convertible
+
+
+def test_a_voltammogram_is_refused(client):
+    response = _post(client, './tests/fixtures/source/cyclicvoltammetry/'
+                             'RCV_LSH-R444_full+Fc.jdx', transmittance='true')
+    assert response.status_code == 422
+    assert 'not meaningful' in json.loads(response.data)['error']
+
+
+# - - - what the threshold record says is what the picker used - - -
+
+def test_the_threshold_record_is_the_fraction_the_picker_used(tmp_path):
+    """react-spectra-editor reads `$CSTHRESHOLD` as its own `thresRef`, so a
+    record of the technique's raw value has the editor filter peaks against a
+    threshold the backend did not use."""
+    ir_pct = _probe(TRANSMITTANCE_SHAPED, 'INFRARED', tmp_path)
+    assert ir_pct.peak_threshold == pytest.approx(ir_pct.technique.threshold)
+
+    ir_abs = _absorbance_probe(tmp_path, datatype='INFRARED SPECTRUM')
+    assert ir_abs.peaks_point_down is False
+    assert ir_abs.peak_threshold == pytest.approx(
+        1.0 - ir_abs.technique.threshold)
+    meta = ''.join(TechniqueComposer(ir_abs).meta)
+    assert '##$CSTHRESHOLD={}'.format(ir_abs.peak_threshold) in meta

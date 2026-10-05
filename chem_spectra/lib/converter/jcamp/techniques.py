@@ -93,6 +93,15 @@ class SpectrumTechnique:
     # spectrum is decided by the client's `transmittance` instruction, never
     # inferred from the technique or the data.
     conventionally_transmittance: bool = False
+
+    # Absorbance and transmittance are two views of one measurement, related
+    # by the Beer-Lambert law, so converting between them is meaningful.
+    # True where the measurement is absorption through a sample; false for
+    # scattering (Raman), diffraction, voltammetry and the rest, where a
+    # "transmittance" has no physical referent. Gates the `transmittance`
+    # instruction, which otherwise recorded ##$CSTRANSMITTANCE=true on a
+    # voltammogram and made it unrecoverable through the API.
+    beer_lambert: bool = False
     # converter/jcamp/technique.py __exec_peak_picking_logic and
     # __run_auto_pick_peak: bands are troughs, so find_peaks runs on 1 - ys
     # and the auto table keeps the *lowest* hundred. composer/technique.py
@@ -151,6 +160,7 @@ SPECTRUM_TECHNIQUES = {
     'INFRARED': SpectrumTechnique('INFRARED', x_reversed=True, threshold=0.93,
                              em_wave=True, store_in_drawn_order=True,
                              conventionally_transmittance=True,
+                             beer_lambert=True,
                              peaks_inverted=True, negative_peaks=False),
     'RAMAN': SpectrumTechnique('RAMAN', x_reversed=True, threshold=0.07,
                           em_wave=True, store_in_drawn_order=True),
@@ -162,12 +172,13 @@ SPECTRUM_TECHNIQUES = {
     'MS': SpectrumTechnique('MS', x_reversed=False, threshold=0.05),
 
     'HPLC UVVIS': SpectrumTechnique('HPLC UVVIS', x_reversed=False, threshold=0.05,
-                               auc_column=True, visual_split=True),
+                               auc_column=True, visual_split=True,
+                               beer_lambert=True),
     # Also covers Avantes AvaSoft exports (data_type.json), whose instruments
     # are UV/VIS/NIR -- wider than this name, but handled identically: nm on x
     # running forward, same threshold. No NIR technique exists to route to.
     'UVVIS': SpectrumTechnique('UVVIS', x_reversed=False, threshold=0.05,
-                          visual_split=True,
+                          visual_split=True, beer_lambert=True,
                           em_wave=True, store_in_drawn_order=True),
 
     'THERMOGRAVIMETRIC ANALYSIS': SpectrumTechnique(

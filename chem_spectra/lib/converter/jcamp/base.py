@@ -16,13 +16,6 @@ logger = logging.getLogger(__name__)
 class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = parse_params(params)
-        # Read here, not later from a path: at the endpoint `path` names a
-        # NamedTemporaryFile that is closed, and so deleted, as soon as this
-        # converter is built. A reader that re-opened it by name found
-        # nothing and silently fell back to nmrglue's flattened lists, so
-        # the same file was labelled one way through a fixture path and
-        # another way through the endpoint.
-        self.block_records = read_block_records(path, BLOCK_RECORDS)
         self.dic, self.data = self.__read(path)
         # A file with no ##DATA TYPE= at all raised KeyError straight out of
         # the request. An absent header is no more exceptional than an
@@ -37,6 +30,17 @@ class JcampBaseConverter:
         self.data_format = self.__set_dataformat()
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = self.__typ()
+        # Read here and not later from a path: at the endpoint `path` names a
+        # NamedTemporaryFile that is closed, and so deleted, as soon as this
+        # converter is built. A reader that re-opened it by name found
+        # nothing and silently fell back to nmrglue's flattened lists, so the
+        # same file was labelled one way through a fixture path and another
+        # way through the endpoint. Still inside __init__, so the file is
+        # certainly there; after `typ`, so the techniques that never consult
+        # these records do not pay for a second pass over a 5 MB file.
+        self.block_records = (
+            None if self.typ in ('MS', 'LC/MS')
+            else read_block_records(path, BLOCK_RECORDS))
         self.fname = self.params.get('fname')
         if not self.typ:
             # a caller-supplied data_type_mapping REPLACES the built-in one,

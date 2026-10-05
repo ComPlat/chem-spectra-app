@@ -449,6 +449,20 @@ class TechniqueComposer(BaseComposer):
             points_down = not points_down
         return -1 if points_down else 1
 
+    def __rotated_anchor(self):
+        """`ha`/`va` for the rotated data labels, the way the viewport shows
+        them.
+
+        The multiplet and integral labels sit just below their feature in
+        *data* space and are anchored `right`/`top` in *screen* space, which
+        the inverted ylim does not touch. Unflipped, `7.111 (m)` ran across
+        the cluster it names and the integral value reached into the trace
+        instead of its margin.
+        """
+        if getattr(self.core, 'draw_y_inverted', False):
+            return {'ha': 'left', 'va': 'bottom'}
+        return {'ha': 'right', 'va': 'top'}
+
     def __label_offset(self, points):
         """A label offset in points, the way the viewport shows it.
 
@@ -698,7 +712,7 @@ class TechniqueComposer(BaseComposer):
                 plt.plot([xL, xU], [mpy_h, mpy_h], color='#DA70D6')
                 plt.plot([xL, xL], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
                 plt.plot([xU, xU], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
-                plt.text((xL + xU) / 2, mpy_h - h * 0.01, '{:0.3f} ({})'.format(calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType']), typ), color='#DA70D6', size=7, rotation=90., ha='right', va='top', rotation_mode='anchor')  # noqa: E501
+                plt.text((xL + xU) / 2, mpy_h - h * 0.01, '{:0.3f} ({})'.format(calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType']), typ), color='#DA70D6', size=7, rotation=90., rotation_mode='anchor', **self.__rotated_anchor())  # noqa: E501
                 for p in peaks:
                     x = p['x']
                     plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.02], color='#DA70D6')  # noqa: E501
@@ -852,7 +866,7 @@ class TechniqueComposer(BaseComposer):
                 plt.plot([itg_xL, itg_xU], [itg_value_position_y, itg_value_position_y], color='#228B22')
                 plt.plot([itg_xL, itg_xL], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
                 plt.plot([itg_xU, itg_xU], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
-                plt.text((itg_xL + itg_xU) / 2, itg_value_position_y - h * 0.01, '{:0.2f}'.format(itg_area), color='#228B22', ha='right', rotation_mode='anchor', size=7, rotation=90.)   # noqa: E501
+                plt.text((itg_xL + itg_xU) / 2, itg_value_position_y - h * 0.01, '{:0.2f}'.format(itg_area), color='#228B22', rotation_mode='anchor', size=7, rotation=90., **self.__rotated_anchor())   # noqa: E501
 
             cys = (ks[iL:iU] - ref) * 1.5 + h * 0.15
             plt.plot(cxs, cys, color='#228B22')
