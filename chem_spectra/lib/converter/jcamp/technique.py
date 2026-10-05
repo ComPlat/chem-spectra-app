@@ -61,6 +61,18 @@ ABSORBANCE_UNITS = frozenset({
     'ABSORBANCE', 'ABS',
     'ABSORBANCEUNIT', 'ABSORBANCEUNITS', 'ABSORBANCEAU',
     'ABSORBANCEUNITSAU', 'AUABSORBANCE',
+    # Optical density is absorbance under its older name: OD = A.
+    'OPTICALDENSITY', 'OD',
+})
+
+# Units that name no quantity at all. The technique decides for these, and
+# only for these: `AU` is as likely to be arbitrary units as absorbance
+# units, and a bare `A` is as likely to be amperes. Guessing is worse than
+# falling back -- but falling back for *every* unrecognised unit meant a file
+# declaring `TEMPERATURE` was converted with 100*10**(-t) and stamped
+# irreversible, because its technique happens to absorb.
+AMBIGUOUS_UNITS = frozenset({
+    'ARBITRARY', 'ARBITRARYUNIT', 'ARBITRARYUNITS', 'AU', 'A',
 })
 
 # Absorbance under another scale. The unit states the factor, so applying it
@@ -619,6 +631,17 @@ class JcampTechniqueConverter:
                 'it'.format(declared)
             )
         scale = absorbance_scale(declared)
+        if (scale is None and declared
+                and _normalise_unit(declared) not in AMBIGUOUS_UNITS):
+            # Declared, and not absorbance under any spelling this knows.
+            # The technique is the fallback for silence, not an override for
+            # a statement: a UV/VIS file is an absorbing measurement, but a
+            # UV/VIS file whose y axis says TEMPERATURE is not absorbance,
+            # and 100*10**(-t) means nothing for it.
+            raise UnconvertibleSpectrum(
+                'the file declares its y axis as {!r}, which is not '
+                'absorbance; there is nothing to convert'.format(declared)
+            )
         if scale is None and not self.technique.beer_lambert:
             # Nothing names absorbance, so fall back to the technique.
             # Absorbance and transmittance are two views of one measurement;

@@ -257,16 +257,41 @@ def test_every_common_spelling_of_transmittance_is_refused(yunits, tmp_path):
 
 
 @pytest.mark.parametrize('yunits', [
-    'ABSORBANCE', 'Absorbance (a.u.)', 'ARBITRARY UNITS', 'TEMPERATURE',
-    'OPTICAL DENSITY',
+    'ABSORBANCE', 'Absorbance (a.u.)', 'OPTICAL DENSITY', 'ARBITRARY UNITS',
 ])
 def test_units_that_are_not_transmittance_still_convert(yunits, tmp_path):
-    """An exact set, so no unrelated unit blocks a conversion by accident."""
+    """An exact set, so no unrelated unit blocks a conversion by accident.
+
+    Absorbance under three spellings -- optical density is absorbance under
+    its older name, OD = A -- and `ARBITRARY UNITS`, which names no quantity
+    at all and so leaves the decision to the technique.
+    """
     ys = [0.1] * 100
     ys[40:60] = [2.0] * 20
     converter = JcampTechniqueConverter(JcampBaseConverter(
         _synthetic(tmp_path, ys, yunits=yunits), {'transmittance': True}))
     assert converter.label['y'] == '% TRANSMITTANCE'
+
+
+@pytest.mark.parametrize('yunits', [
+    'TEMPERATURE', 'DEGREES CELSIUS', 'VOLTS', 'COUNTS',
+])
+def test_a_declared_unit_that_is_not_absorbance_is_refused(yunits, tmp_path):
+    """This list used to include `TEMPERATURE`, as a unit that must not
+    block a conversion. That was the wrong half of the question.
+
+    The technique is the fallback for a file that says nothing, not an
+    override for one that says something. A UV/VIS measurement absorbs, so
+    `beer_lambert` let any declared unit through -- and a UV/VIS file whose y
+    axis says TEMPERATURE was converted with `100 * 10**(-t)` and stamped
+    `##$CSTRANSMITTANCE=true`, which refuses every later conversion. The
+    units that genuinely name nothing are listed instead, and they are few.
+    """
+    ys = [0.1] * 100
+    ys[40:60] = [2.0] * 20
+    with pytest.raises(UnconvertibleSpectrum, match='which is not absorbance'):
+        JcampTechniqueConverter(JcampBaseConverter(
+            _synthetic(tmp_path, ys, yunits=yunits), {'transmittance': True}))
 
 
 def test_a_single_units_record_is_read_for_the_declared_unit(tmp_path):
