@@ -1101,7 +1101,7 @@ def test_an_infrared_spectrum_in_absorbance_keeps_its_bands(tmp_path):
 def test_a_transmittance_file_still_dips(tmp_path):
     """The unaffected case, pinned: IR in %T is what peaks_inverted was
     written for, and it must not move."""
-    converter = _probe(TRANSMITTANCE_SHAPED, 'INFRARED', tmp_path)
+    converter = _probe(TRANSMITTANCE_SHAPED, 'INFRARED SPECTRUM', tmp_path)
     assert converter.peaks_point_down is True
 
 
@@ -1121,7 +1121,7 @@ def test_the_marker_points_the_way_the_picker_looked(tmp_path):
 # - - - an inverted viewport moves the screen-space offsets with it - - -
 
 def _ir_composer(tmp_path, **params):
-    return TechniqueComposer(_probe(TRANSMITTANCE_SHAPED, 'INFRARED',
+    return TechniqueComposer(_probe(TRANSMITTANCE_SHAPED, 'INFRARED SPECTRUM',
                                     tmp_path, params=params))
 
 
@@ -1270,7 +1270,7 @@ def test_the_threshold_record_keeps_the_techniques_own_value(tmp_path):
     `thresRef` from the peak table, so nothing downstream wanted the flipped
     value either.
     """
-    ir_pct = _probe(TRANSMITTANCE_SHAPED, 'INFRARED', tmp_path)
+    ir_pct = _probe(TRANSMITTANCE_SHAPED, 'INFRARED SPECTRUM', tmp_path)
     assert ir_pct.peaks_point_down is True
     assert ir_pct.peak_threshold == pytest.approx(ir_pct.technique.threshold)
 
@@ -1748,3 +1748,61 @@ def test_a_single_lcms_file_refuses_a_transmittance_request(client, tmp_path,
     assert refused.status_code == 422
     assert 'does not measure absorption' in json.loads(refused.data)['error']
     assert _post(client, str(source)).status_code == 200
+
+
+# - - - a label this app wrote over the data is not a declaration - - -
+
+def _relabelled_legacy_chromatogram(tmp_path):
+    """The shape every release before #298 produced: milli-absorbance values
+    with `##YUNITS=TRANSMITTANCE` written over them.
+
+    react-spectra-editor's own `hplc_uvvis_jcamp_2` fixture is this file:
+    `##YUNITS=TRANSMITTANCE` with `##MAXY=409.8`, which no transmittance can
+    be, and a `###YUNITS` dump that has been overwritten with `TRANSMITTANCE`
+    as well. Two bands and a flat baseline, so a reversed polarity is visible
+    as a peak in the gap between them.
+    """
+    ys = [2.0] * 41
+    ys[9], ys[10], ys[11] = 60.0, 100.0, 60.0
+    ys[29], ys[30], ys[31] = 7.0, 12.0, 7.0
+    return _curve(tmp_path, 'HPLC UV/VIS SPECTRUM', 'TRANSMITTANCE', ys,
+                  name='legacy.jdx')
+
+
+def test_a_relabelled_legacy_file_is_not_read_as_transmittance(tmp_path):
+    """These files are in production, and the ELN re-picks on every recompose.
+
+    Letting the label decide gave `peaks_point_down`, and the picker then
+    searched a milli-absorbance chromatogram for dips: one auto peak, at
+    420 nm -- the *baseline between* the two bands. `##$CSTRANSMITTANCE` is
+    what distinguishes a conversion this app actually made; without it the
+    technique decides, as it did before this branch.
+    """
+    source = _relabelled_legacy_chromatogram(tmp_path)
+    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    assert converter.peaks_point_down is False
+    assert sorted(round(float(x), 1)
+                  for x in converter.auto_peaks['x']) == [410.0, 430.0]
+
+
+def test_our_own_record_still_says_the_trace_is_transmittance(tmp_path):
+    """The other half: a file this app converted carries the record, and the
+    record is believed. Otherwise the fix above would take the dips away from
+    the spectra that really have them.
+    """
+    source = _relabelled_legacy_chromatogram(tmp_path)
+    source.write_text(source.read_text().replace(
+        '##YUNITS=TRANSMITTANCE',
+        '##YUNITS=TRANSMITTANCE\n##$CSTRANSMITTANCE=true', 1))
+    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    assert converter.peaks_point_down is True
+
+
+def test_an_infrared_percent_transmittance_file_still_dips(tmp_path):
+    """And the common case is untouched: a third-party %T infrared file
+    carries no record either, and the infrared descriptor says dips, so the
+    answer is the same from either direction.
+    """
+    converter = _probe(TRANSMITTANCE_SHAPED, 'INFRARED SPECTRUM', tmp_path)
+    assert converter.technique.peaks_inverted is True
+    assert converter.peaks_point_down is True

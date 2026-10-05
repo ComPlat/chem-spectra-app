@@ -547,12 +547,23 @@ class JcampTechniqueConverter:
 
         The technique stays as the fallback, for the files -- most NMR among
         them -- whose y unit says nothing about direction.
+
+        A bare `TRANSMITTANCE` label is NOT one of the things that decides.
+        Every release before #298 wrote that label over absorbance data, so
+        the corpus holds files whose y axis says transmittance and whose
+        numbers are milli-absorbance -- react-spectra-editor's own
+        `hplc_uvvis_jcamp_2` fixture says `##YUNITS=TRANSMITTANCE` with
+        `##MAXY=409.8`, which no transmittance can be. Believing the label
+        put their auto peaks on the baseline *between* the bands, and the
+        ELN re-picks on every recompose. `##$CSTRANSMITTANCE` is the record
+        that distinguishes a conversion this app actually made, and it is
+        checked above; without it the technique decides, as it did before
+        this branch. The `###YUNITS` dump cannot help -- in that fixture it
+        has been overwritten with `TRANSMITTANCE` too.
         """
         if self.converted_to_transmittance or self.transmittance_recorded:
             return True
         declared = self.__declared_units()['y']
-        if is_transmittance_unit(declared):
-            return True
         if absorbance_scale(declared) is not None:
             # every unit with a known absorbance scale, not only the
             # unscaled spellings: an infrared trace in mAU is absorbance
