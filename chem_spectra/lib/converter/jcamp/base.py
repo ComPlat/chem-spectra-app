@@ -1,18 +1,65 @@
 import nmrglue as ng
 import json
 import logging
+import re
 
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
+from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
 import os
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
 logger = logging.getLogger(__name__)
 
+# Enough to reach the records; a JCAMP header is a few hundred bytes and the
+# rest of the file is numbers. The same window chemotion_ELN reads.
+HEADER_BYTES = 64 * 1024
+
+# JCAMP-DX 4.24 (5.1) ignores spaces, dashes, underscores and slashes inside
+# a label, so `NUM DIM`, `NUMDIM` and `NUM_DIM` are one record. Five fixtures
+# here write it `##NUMDIM=<tab>1`.
+NUM_DIM_RE = re.compile(r'^##\s*NUM[\s_/-]*DIM\s*=\s*(\d+)',
+                        re.MULTILINE | re.IGNORECASE)
+
+# `nD` is the JCAMP-DX 6 spelling; some vendors write the number instead.
+ND_DATATYPE_RE = re.compile(r'^##\s*DATA[\s_/-]*TYPE\s*=\s*([2-9]|n)\s*D\s+NMR',
+                            re.MULTILINE | re.IGNORECASE)
+
+
+def declared_dimensions(header_text):
+    """How many dimensions the header declares, or None if it does not say.
+
+    Read from the text rather than from nmrglue's result. Not because nmrglue
+    drops the records -- it keeps them on a small file -- but because a real
+    2D dataset is large and need not parse at all, and there is no reason to
+    spend that read on a file that will be refused either way.
+    """
+    match = NUM_DIM_RE.search(header_text)
+    if match:
+        return int(match.group(1))
+    if ND_DATATYPE_RE.search(header_text):
+        # the datatype says nD without saying which n
+        return 2
+    return None
+
+
+def read_header(path):
+    """The first HEADER_BYTES of the file, as text.
+
+    latin-1 because it maps every byte and so cannot raise: this runs before
+    anything has established the file is even a JCAMP.
+    """
+    try:
+        with open(path, 'rb') as handle:
+            return handle.read(HEADER_BYTES).decode('latin-1')
+    except (OSError, TypeError, ValueError):
+        return ''
+
 class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = parse_params(params)
+        self.__refuse_multi_dimensional(path)
         self.dic, self.data = self.__read(path)
         # A file with no ##DATA TYPE= at all raised KeyError straight out of
         # the request. An absent header is no more exceptional than an
@@ -46,6 +93,31 @@ class JcampBaseConverter:
         self.solv_peaks = []
         self.__read_solvent()
         self.__read_user_data_type_mapping()
+
+    @staticmethod
+    def __refuse_multi_dimensional(path):
+        """A 2D dataset is not a curve, and this app has nowhere to put one.
+
+        Read one row of it and you get a 1D spectrum with the acquisition
+        time axis labelled as the spectrum's -- which is what happened, with
+        a 200 and no indication that the answer meant nothing. Refusing is
+        the whole fix: `xs`/`ys` cannot hold a matrix, so detecting and
+        continuing would only move the failure.
+
+        Checked before the file is parsed, in the one place every endpoint
+        goes through, so /convert, /zip_jcamp, the save and refresh paths and
+        each BagIt member are all covered by this single guard. A BagIt
+        archive carrying one such member is refused whole, as an archive
+        holding two bagits is -- processing part of an upload silently is the
+        defect, not the remedy.
+        """
+        dimensions = declared_dimensions(read_header(path))
+        if dimensions is None or dimensions <= 1:
+            return
+        raise UnconvertibleSpectrum(
+            'this is a {}D NMR file. ChemSpectra reads one-dimensional '
+            'spectra only; open it in NMRium instead'.format(dimensions)
+        )
 
     def __read(self, path):
         return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')

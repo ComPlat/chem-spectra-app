@@ -100,9 +100,11 @@ def test_one_dimensional_files_are_untouched(source):
 
 # - - - and every endpoint says so - - -
 
-def _post(client, route, path):
+def _post(client, route, path, name=None):
+    import os
     with open(path, 'rb') as handle:
-        data = {'file': (io.BytesIO(handle.read()), 'twod.dx')}
+        data = {'file': (io.BytesIO(handle.read()),
+                         name or os.path.basename(path))}
     return client.post(route, content_type='multipart/form-data', data=data)
 
 
@@ -116,5 +118,45 @@ def test_every_endpoint_refuses_with_a_reason(route, client, tmp_path):
     standalone client show to the user. All three answered 200 before."""
     import json
     response = _post(client, route, str(_two_d(tmp_path)))
+    assert response.status_code == 422
+    assert '2D' in json.loads(response.data)['error']
+
+
+@pytest.mark.parametrize('route', [
+    '/api/v1/chemspectra/file/save',
+    '/api/v1/chemspectra/file/refresh',
+])
+def test_the_save_paths_refuse_it_too(route, client, tmp_path):
+    """Saving and refreshing re-read the uploaded file, so they reach the
+    same guard. The standalone client downloads a save response as a zip, so
+    a 200 carrying a flattened spectrum would be written to disk.
+
+    These two take the file as `dst_list`, with `src` alongside on save.
+    """
+    import json
+    body = _two_d(tmp_path).read_bytes()
+    data = {'dst_list': (io.BytesIO(body), 'twod.dx')}
+    if route.endswith('/save'):
+        data['src'] = (io.BytesIO(body), 'twod.dx')
+    response = client.post(route, content_type='multipart/form-data',
+                           data=data)
+    assert response.status_code == 422
+    assert '2D' in json.loads(response.data)['error']
+
+
+def test_an_archive_carrying_one_is_refused_whole(client, tmp_path):
+    """One 2D member refuses the upload, rather than a partial result that
+    looks complete. The same call this repository already makes for an upload
+    holding two BagIt archives: silently processing part of it is the defect,
+    not the remedy.
+    """
+    import json
+    import zipfile
+    archive = tmp_path / 'mixed.zip'
+    with zipfile.ZipFile(archive, 'w') as zf:
+        zf.write('./tests/fixtures/source/1H.dx', 'data/one.jdx')
+        zf.writestr('data/two.jdx', _two_d(tmp_path).read_text())
+        zf.writestr('bagit.txt', 'BagIt-Version: 0.97\n')
+    response = _post(client, '/zip_jcamp_n_img', str(archive))
     assert response.status_code == 422
     assert '2D' in json.loads(response.data)['error']
