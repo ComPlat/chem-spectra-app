@@ -38,8 +38,14 @@ class JcampBaseConverter:
         # way through the endpoint. Still inside __init__, so the file is
         # certainly there; after `typ`, so the techniques that never consult
         # these records do not pay for a second pass over a 5 MB file.
+        # MS only. LC/MS was skipped too, which was wrong: tf_combine sends
+        # everything that is not `typ == 'MS'` through the technique
+        # converter, and the jcamp2cvp fallback does the same when the LC/MS
+        # composer declines -- so a multi-block LC/MS file reached the
+        # resolver with no records and fell back to the flattened lists
+        # silently, without even the mismatch warning.
         self.block_records = (
-            None if self.typ in ('MS', 'LC/MS')
+            None if self.typ == 'MS'
             else read_block_records(path, BLOCK_RECORDS))
         self.fname = self.params.get('fname')
         if not self.typ:

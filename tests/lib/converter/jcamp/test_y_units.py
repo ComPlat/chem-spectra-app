@@ -1311,3 +1311,75 @@ def test_the_integral_label_keeps_its_upright_anchor(tmp_path):
     # the multiplet label does carry a va, and keeps it
     assert upright._TechniqueComposer__rotated_anchor() == {
         'ha': 'right', 'va': 'top'}
+
+
+# - - - the quantity decides; the technique is only the fallback - - -
+
+def _relabelled(tmp_path, datatype, yunits):
+    _absorbance_probe(tmp_path)
+    source = tmp_path / 'absorbance.jdx'
+    source.write_text(source.read_text()
+                      .replace('##YUNITS=ABSORBANCE', '##YUNITS=' + yunits, 1)
+                      .replace('##DATA TYPE=INFRARED SPECTRUM',
+                               '##DATA TYPE=' + datatype, 1))
+    return source
+
+
+@pytest.mark.parametrize('datatype', [
+    'FTIR SPECTRUM', 'NEAR INFRARED SPECTRUM', 'FOO SPECTRUM'])
+def test_a_declared_absorbance_converts_whatever_the_datatype(datatype,
+                                                              tmp_path):
+    """An unmapped datatype has no descriptor, so gating on the technique
+    alone refused a file that plainly declares what it measures. The rule
+    this PR applies to peak polarity applies here too: the quantity decides,
+    and the technique is the fallback for files whose unit says nothing."""
+    source = _relabelled(tmp_path, datatype, 'ABSORBANCE')
+    converter = JcampTechniqueConverter(
+        JcampBaseConverter(str(source), {'transmittance': True}))
+    assert converter.converted_to_transmittance
+
+
+@pytest.mark.parametrize('yunits', ['REFLECTANCE', 'KUBELKA-MUNK',
+                                    '% REFLECTANCE'])
+def test_neither_absorbance_nor_transmittance_is_refused(yunits, tmp_path):
+    """JCAMP-DX 4.24 lists both beside ABSORBANCE. `10**(-y)` means nothing
+    for either: reflectance is already a ratio, Kubelka-Munk is
+    (1-R)^2 / 2R. They used to convert, because the gate only knew the
+    technique and infrared passes it."""
+    source = _relabelled(tmp_path, 'INFRARED SPECTRUM', yunits)
+    with pytest.raises(UnconvertibleSpectrum, match='neither absorbance'):
+        JcampTechniqueConverter(
+            JcampBaseConverter(str(source), {'transmittance': True}))
+
+
+def test_milliabsorbance_is_absorbance_at_a_declared_scale(tmp_path):
+    """Chromatograms are recorded in mAU. Converting 5 mAU as though it were
+    5 AU gives 0.001 %T, and the record left behind refuses any undo.
+
+    The unit states the factor, so applying it reads the declaration rather
+    than inferring from the data -- the distinction this module is built on.
+    """
+    import numpy as np
+    source = _relabelled(tmp_path, 'HPLC UV/VIS SPECTRUM', 'mAU')
+    scaled = []
+    for line in source.read_text().splitlines():
+        if ',' in line and not line.startswith('##'):
+            x, y = line.split(',')
+            line = '{}, {:.6f}'.format(x, float(y) * 1000.0)
+        scaled.append(line)
+    source.write_text('\n'.join(scaled) + '\n')
+
+    in_mau = JcampTechniqueConverter(
+        JcampBaseConverter(str(source), {'transmittance': True}))
+    in_au = _absorbance_probe(tmp_path, datatype='HPLC UV/VIS SPECTRUM',
+                              params={'transmittance': True})
+    assert np.allclose(in_mau.ys, in_au.ys)
+
+
+def test_the_real_chromatogram_converts(client):
+    """`hplc/chromatogram.jdx` declares mAU and peaks at 100. Judged as AU it
+    was refused with "y values up to 100 are not absorbance", which named the
+    wrong problem -- 100 mAU is 0.1 absorbance."""
+    response = _post(client, './tests/fixtures/source/hplc/chromatogram.jdx',
+                     transmittance='true')
+    assert response.status_code == 200

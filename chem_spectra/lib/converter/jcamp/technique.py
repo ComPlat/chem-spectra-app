@@ -53,9 +53,41 @@ def is_transmittance_unit(unit):
 # falling back to the technique.
 ABSORBANCE_UNITS = frozenset({'ABSORBANCE', 'ABS'})
 
+# Absorbance under another scale. The unit states the factor, so applying it
+# is reading the declaration rather than inferring from the data -- which is
+# the distinction this module is built on. Chromatograms are recorded in mAU,
+# and converting 5 mAU as though it were 5 AU gives 0.001 %T.
+ABSORBANCE_SCALES = {
+    'MAU': 1e-3, 'MILLIABSORBANCE': 1e-3, 'MILLIABSORBANCEUNITS': 1e-3,
+    'MILLIAU': 1e-3,
+}
+
+# Quantities that are neither absorbance nor transmittance. JCAMP-DX 4.24
+# lists both beside ABSORBANCE, and 10**(-y) means nothing for either:
+# reflectance is already a ratio, and Kubelka-Munk is (1-R)^2/2R.
+REFLECTANCE_UNITS = frozenset({
+    'REFLECTANCE', 'PERCENTREFLECTANCE', 'REFLECTANCEPERCENT',
+    'KUBELKAMUNK', 'LOG1R',
+})
+
 
 def is_absorbance_unit(unit):
     return bool(unit) and _normalise_unit(unit) in ABSORBANCE_UNITS
+
+
+def is_reflectance_unit(unit):
+    return bool(unit) and _normalise_unit(unit) in REFLECTANCE_UNITS
+
+
+def absorbance_scale(unit):
+    """The factor taking a declared absorbance unit to plain absorbance, or
+    None when the unit does not name absorbance at all."""
+    if not unit:
+        return None
+    key = _normalise_unit(unit)
+    if key in ABSORBANCE_UNITS:
+        return 1.0
+    return ABSORBANCE_SCALES.get(key)
 
 
 logger = logging.getLogger(__name__)
@@ -519,28 +551,38 @@ class JcampTechniqueConverter:
                 'the file records that it was already converted to '
                 'transmittance; there is nothing to convert'
             )
-        if not self.technique.beer_lambert:
-            # Absorbance and transmittance are two views of one measurement.
-            # Where the measurement is not absorption through a sample there
-            # is nothing to convert, and the record this would leave behind
-            # (##$CSTRANSMITTANCE=true) refuses every later conversion and
-            # forces the % label, so the spectrum cannot be recovered through
-            # the API.
-            raise UnconvertibleSpectrum(
-                'a transmittance conversion is not meaningful for {}; it is '
-                'defined where absorbance is measured through a sample'
-                .format(self.technique.key or 'this technique')
-            )
+        # The quantity decides, and the technique is only the fallback --
+        # the same rule the peak polarity follows. Checked before the
+        # integrals: there is no point telling someone to remove integrals
+        # from a file that will be refused whatever they do.
         declared = self.__declared_units()['y']
         if is_transmittance_unit(declared):
             # What the file says outranks what its shape suggests: this is a
-            # fact, where the median test below is an inference. It is also
-            # checked before the integrals: there is no point telling someone
-            # to remove integrals from a file that is going to be refused as
-            # already transmittance whatever they do.
+            # fact, where the median test below is an inference.
             raise UnconvertibleSpectrum(
                 'the file already declares its y axis as {!r}; there is '
                 'nothing to convert'.format(declared)
+            )
+        if is_reflectance_unit(declared):
+            raise UnconvertibleSpectrum(
+                'the file declares its y axis as {!r}, which is neither '
+                'absorbance nor transmittance; 10**(-y) means nothing for '
+                'it'.format(declared)
+            )
+        scale = absorbance_scale(declared)
+        if scale is None and not self.technique.beer_lambert:
+            # Nothing names absorbance, so fall back to the technique.
+            # Absorbance and transmittance are two views of one measurement;
+            # where the measurement is not absorption through a sample there
+            # is nothing to convert, and the record this would leave behind
+            # (##$CSTRANSMITTANCE=true) refuses every later conversion and
+            # forces the % label, so the spectrum could not be recovered
+            # through the API.
+            raise UnconvertibleSpectrum(
+                'a transmittance conversion is not meaningful here: {} does '
+                'not measure absorption through a sample, and the file '
+                'declares no absorbance unit'
+                .format(self.technique.key or 'this technique')
             )
         if self.__carries_integrals():
             # An area under absorbance is proportional to concentration; the
@@ -551,6 +593,11 @@ class JcampTechniqueConverter:
                 'meaning in transmittance; remove them before converting'
             )
 
+        if scale is not None and scale != 1.0:
+            # mAU -> AU. Done before the range checks, so a 100 mAU
+            # chromatogram is judged as the 0.1 absorbance it declares
+            # rather than refused for "y values up to 100".
+            ys = np.asarray(ys, dtype=float) * scale
         ys = self.__refuse_unless_absorbance(ys)
         y_max = float(np.max(ys))
         y_min = float(np.min(ys))
