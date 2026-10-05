@@ -1120,3 +1120,40 @@ def test_arbitrary_units_still_collapses_however_it_is_spelled(tmp_path):
         converter = JcampTechniqueConverter(
             JcampBaseConverter(str(source), {}))
         assert converter.label['y'] == 'ARBITRARY', spelling
+
+
+# - - - a datatype nobody mapped keeps its own units - - -
+
+def test_an_unmapped_datatype_keeps_its_units_through_two_composes(client,
+                                                                   tmp_path):
+    """`target_idx = 0` means the first *data* block, so the record lookup
+    has to name the same one.
+
+    Taking position 0 of the declaring blocks named the outer LINK wrapper
+    instead, which declares no units, and the file came back `PPM`/
+    `ARBITRARY`. Composed twice because every output this app writes is
+    LINK-wrapped: a single-block upload survived the first pass and lost its
+    units on the second, which is the one the ELN performs on every save.
+    """
+    source = tmp_path / 'unmapped.jdx'
+    xs = [300.0 + i * 10 for i in range(11)]
+    ys = [0.1] * 11
+    ys[5] = 0.6
+    source.write_text('\n'.join(
+        ['##TITLE=unmapped', '##JCAMP-DX=5.00', '##DATA TYPE=FOO SPECTRUM',
+         '##DATA CLASS=XYPOINTS', '##XUNITS=NANOMETERS',
+         '##YUNITS=ABSORBANCE', '##FIRSTX={}'.format(xs[0]),
+         '##LASTX={}'.format(xs[-1]), '##NPOINTS=11',
+         '##FIRSTY={}'.format(ys[0]), '##XYPOINTS=(XY..XY)']
+        + ['{:.1f}, {:.3f}'.format(x, y) for x, y in zip(xs, ys)]
+        + ['##END=', '']))
+
+    first = _composed_jcamp(_post(client, str(source)))
+    assert '##XUNITS=NANOMETERS' in first
+    assert '##YUNITS=ABSORBANCE' in first
+
+    again = tmp_path / 'unmapped_recomposed.jdx'
+    again.write_text(first)
+    second = _composed_jcamp(_post(client, str(again)))
+    assert '##XUNITS=NANOMETERS' in second
+    assert '##YUNITS=ABSORBANCE' in second

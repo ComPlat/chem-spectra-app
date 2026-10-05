@@ -199,7 +199,17 @@ class JcampTechniqueConverter:
             # first block and skip the LINK offset below: it would drive the
             # index negative and silently read the last block instead. The
             # unrecognised datatype is logged by JcampBaseConverter.
-            self.datatype_pos = 0
+            #
+            # `target_idx = 0` means the first *data* block, so datatype_pos
+            # has to name the same one. Taking position 0 instead named the
+            # outer LINK wrapper, which declares no units -- so an unmapped
+            # datatype in a LINK file lost its ##XUNITS=/##YUNITS= and was
+            # relabelled PPM/ARBITRARY. Every composed file is LINK-wrapped,
+            # so a single-block file survived its first compose and lost its
+            # units on the next one.
+            self.datatype_pos = next(
+                (pos for pos, dt in enumerate(self.datatypes)
+                 if dt != 'LINK'), 0)
             return 0
 
         # The position in the file's own ##DATA TYPE= sequence, which the
