@@ -463,6 +463,19 @@ class TechniqueComposer(BaseComposer):
             return {'ha': 'left', 'va': 'bottom'}
         return {'ha': 'right', 'va': 'top'}
 
+    def __integral_anchor(self):
+        """The same, for the integral value label, which carried no `va` at
+        all and so used matplotlib's `baseline`.
+
+        Its own pair rather than the multiplet's: giving it `va='top'`
+        upright moved every integral label across its centre line on every
+        upright preview, which is the common case and nothing to do with
+        inversion.
+        """
+        if getattr(self.core, 'draw_y_inverted', False):
+            return {'ha': 'left'}
+        return {'ha': 'right'}
+
     def __label_offset(self, points):
         """A label offset in points, the way the viewport shows it.
 
@@ -866,7 +879,7 @@ class TechniqueComposer(BaseComposer):
                 plt.plot([itg_xL, itg_xU], [itg_value_position_y, itg_value_position_y], color='#228B22')
                 plt.plot([itg_xL, itg_xL], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
                 plt.plot([itg_xU, itg_xU], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
-                plt.text((itg_xL + itg_xU) / 2, itg_value_position_y - h * 0.01, '{:0.2f}'.format(itg_area), color='#228B22', rotation_mode='anchor', size=7, rotation=90., **self.__rotated_anchor())   # noqa: E501
+                plt.text((itg_xL + itg_xU) / 2, itg_value_position_y - h * 0.01, '{:0.2f}'.format(itg_area), color='#228B22', rotation_mode='anchor', size=7, rotation=90., **self.__integral_anchor())   # noqa: E501
 
             cys = (ks[iL:iU] - ref) * 1.5 + h * 0.15
             plt.plot(cxs, cys, color='#228B22')

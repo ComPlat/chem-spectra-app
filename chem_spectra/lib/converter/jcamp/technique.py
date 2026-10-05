@@ -135,10 +135,13 @@ class JcampTechniqueConverter:
         self.ys = self.__read_ys()
         # after __read_ys, which is where a conversion happens
         self.peaks_point_down = self.__peaks_point_down()
-        # the fraction the picker actually used, which is what
-        # ##$CSTHRESHOLD must record: react-spectra-editor reads that record
-        # as its own `thresRef`, so writing the technique's raw value would
-        # have the editor filter peaks against a threshold we did not use.
+        # The fraction the picker actually used. NOT written to
+        # ##$CSTHRESHOLD: that record carries the technique's own value, and
+        # its meaning would otherwise depend on a polarity the file does not
+        # record -- 0.07 would mean "maxima above 7%" for one infrared file
+        # and "dips below 93%" for another. react-spectra-editor reads the
+        # record only in extrFeaturesMs, for the MS and LC/MS layouts; every
+        # other layout computes its own thresRef from the peak table.
         self.peak_threshold = self.__peak_threshold()
         self.xs = self.__read_xs(base)
         self.__check_cylic_volta_shifted_info()
@@ -212,9 +215,13 @@ class JcampTechniqueConverter:
             # relabelled PPM/ARBITRARY. Every composed file is LINK-wrapped,
             # so a single-block file survived its first compose and lost its
             # units on the next one.
+            # None, not 0, when every declared datatype is LINK -- or none
+            # is declared at all. Position 0 of the declaring blocks is then
+            # the wrapper, which carries no units, and the resolver has to
+            # look for the block holding the data instead.
             self.datatype_pos = next(
                 (pos for pos, dt in enumerate(self.datatypes)
-                 if dt != 'LINK'), 0)
+                 if dt != 'LINK'), None)
             return 0
 
         # The position in the file's own ##DATA TYPE= sequence, which the
@@ -415,12 +422,24 @@ class JcampTechniqueConverter:
 
     def __resolve_target_block_records(self):
         blocks = getattr(self.base, 'block_records', None) or []
-        declaring = [block for block in blocks if block.get('DATATYPE')]
-        sequence = [block['DATATYPE'].upper() for block in declaring]
+        # `is not None`, not truthiness: an empty ##DATA TYPE= is a declared
+        # datatype as far as nmrglue is concerned, and the sequences have to
+        # agree about that.
+        declaring = [b for b in blocks if b.get('DATATYPE') is not None]
+        sequence = [b['DATATYPE'].upper() for b in declaring]
         position = getattr(self, 'datatype_pos', None)
         if blocks and sequence == self.datatypes:
             if position is not None and 0 <= position < len(declaring):
                 return declaring[position]
+            # No block declares a datatype the registry knows -- which
+            # includes a file that declares none at all, a case base.py
+            # supports on purpose. `declaring` is then empty or holds only
+            # the LINK wrapper, so there is no position to index and the
+            # units have to come from the block that carries the data: the
+            # first one that is not a wrapper.
+            for block in blocks:
+                if (block.get('DATATYPE') or '').upper() != 'LINK':
+                    return block
             return {}
         if blocks:
             logger.warning(
@@ -475,10 +494,9 @@ class JcampTechniqueConverter:
         """
         if self.peaks_point_down == self.technique.peaks_inverted:
             return self.threshold
-        # rounded because this is written into ##$CSTHRESHOLD and read back
-        # by react-spectra-editor as `thresRef * 100`: 1.0 - 0.93 is
-        # 0.06999999999999995 in binary floating point, and that is not a
-        # number to put in a file other people parse.
+        # rounded so the value stays legible wherever it is logged or
+        # compared: 1.0 - 0.93 is 0.06999999999999995 in binary floating
+        # point.
         return round(1.0 - self.threshold, 6)
 
     def __to_transmittance(self, ys):

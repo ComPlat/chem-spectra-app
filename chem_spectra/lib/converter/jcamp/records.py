@@ -53,6 +53,13 @@ def _scan(handle, keys, blocks):
         key = _label_key(label)
         if key == 'TITLE':
             blocks.append({})
+        elif blocks and key == 'DATATYPE':
+            # Recorded even when empty. This app composes `##DATA TYPE=` with
+            # no value for a file that declared none, and nmrglue keeps that
+            # empty string in its DATATYPE list -- so dropping it here made
+            # the two sequences disagree on the very files round-tripping
+            # through us, and the lookup fell back to the flattened records.
+            blocks[-1].setdefault(key, value.strip())
         elif blocks and key in keys and value.strip():
             blocks[-1].setdefault(key, value.strip())
     return blocks

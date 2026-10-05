@@ -1229,16 +1229,85 @@ def test_a_voltammogram_is_refused(client):
 
 # - - - what the threshold record says is what the picker used - - -
 
-def test_the_threshold_record_is_the_fraction_the_picker_used(tmp_path):
-    """react-spectra-editor reads `$CSTHRESHOLD` as its own `thresRef`, so a
-    record of the technique's raw value has the editor filter peaks against a
-    threshold the backend did not use."""
+def test_the_threshold_record_keeps_the_techniques_own_value(tmp_path):
+    """`peak_threshold` is the fraction the picker used; `##$CSTHRESHOLD` is
+    not it.
+
+    The record would otherwise mean two different things depending on a
+    polarity the file does not carry: 0.07 would be "maxima above 7%" for one
+    infrared file and "dips below 93%" for another, with nothing to tell them
+    apart. react-spectra-editor reads the record only in `extrFeaturesMs`,
+    for the MS and LC/MS layouts; every other layout computes its own
+    `thresRef` from the peak table, so nothing downstream wanted the flipped
+    value either.
+    """
     ir_pct = _probe(TRANSMITTANCE_SHAPED, 'INFRARED', tmp_path)
+    assert ir_pct.peaks_point_down is True
     assert ir_pct.peak_threshold == pytest.approx(ir_pct.technique.threshold)
 
     ir_abs = _absorbance_probe(tmp_path, datatype='INFRARED SPECTRUM')
     assert ir_abs.peaks_point_down is False
     assert ir_abs.peak_threshold == pytest.approx(
         1.0 - ir_abs.technique.threshold)
+
     meta = ''.join(TechniqueComposer(ir_abs).meta)
-    assert '##$CSTHRESHOLD={}'.format(ir_abs.peak_threshold) in meta
+    assert '##$CSTHRESHOLD={}'.format(ir_abs.technique.threshold) in meta
+    assert '##$CSTHRESHOLD={}'.format(ir_abs.peak_threshold) not in meta
+
+
+def _no_datatype_file(tmp_path, name, wrapped):
+    xs = [300.0 + i * 10 for i in range(11)]
+    ys = [0.1] * 11
+    ys[5] = 0.6
+    block = (['##TITLE=inner', '##JCAMP-DX=5.00', '##DATA CLASS=XYPOINTS',
+              '##XUNITS=NANOMETERS', '##YUNITS=ABSORBANCE',
+              '##FIRSTX={}'.format(xs[0]), '##LASTX={}'.format(xs[-1]),
+              '##NPOINTS=11', '##FIRSTY={}'.format(ys[0]),
+              '##XYPOINTS=(XY..XY)']
+             + ['{:.1f}, {:.3f}'.format(x, y) for x, y in zip(xs, ys)]
+             + ['##END='])
+    if wrapped:
+        block = (['##TITLE=outer', '##JCAMP-DX=5.00', '##DATA TYPE=LINK',
+                  '##BLOCKS=1', ''] + block + ['##END='])
+    target = tmp_path / name
+    target.write_text('\n'.join(block) + '\n')
+    return target
+
+
+@pytest.mark.parametrize('wrapped', [False, True])
+def test_a_file_with_no_datatype_keeps_its_units(client, tmp_path, wrapped):
+    """`base.py` supports a file with no `##DATA TYPE=` on purpose -- "an
+    absent header is no more exceptional than an unrecognised one".
+
+    Nothing then declares a datatype, so the list of declaring blocks is
+    empty or holds only the LINK wrapper, and there is no position to index.
+    Taking position 0 regardless returned the wrapper, which carries no
+    units, and the file came back `PPM` / `ARBITRARY`. Composed twice, since
+    everything this app writes is LINK-wrapped.
+    """
+    source = _no_datatype_file(tmp_path, 'nodt.jdx', wrapped)
+    first = _composed_jcamp(_post(client, str(source)))
+    assert '##XUNITS=NANOMETERS' in first
+    assert '##YUNITS=ABSORBANCE' in first
+
+    again = tmp_path / 'nodt_again.jdx'
+    again.write_text(first)
+    second = _composed_jcamp(_post(client, str(again)))
+    assert '##XUNITS=NANOMETERS' in second
+    assert '##YUNITS=ABSORBANCE' in second
+
+
+def test_the_integral_label_keeps_its_upright_anchor(tmp_path):
+    """The integral value label carried no `va` at all, so matplotlib's
+    `baseline` applied. Handing it the multiplet label's anchor pair gave it
+    `va='top'`, which with `rotation=90` and `rotation_mode='anchor'` moved
+    every integral label across its centre line on every *upright* preview --
+    the common case, and nothing to do with inversion.
+    """
+    upright = _ir_composer(tmp_path)
+    flipped = _ir_composer(tmp_path, invert_y=True)
+    assert upright._TechniqueComposer__integral_anchor() == {'ha': 'right'}
+    assert flipped._TechniqueComposer__integral_anchor() == {'ha': 'left'}
+    # the multiplet label does carry a va, and keeps it
+    assert upright._TechniqueComposer__rotated_anchor() == {
+        'ha': 'right', 'va': 'top'}

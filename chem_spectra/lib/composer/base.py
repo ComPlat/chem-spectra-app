@@ -85,10 +85,7 @@ class BaseComposer:
             '##DATA TYPE={}PEAKTABLE\n'.format(self.core.typ),
             '##DATA CLASS=PEAKTABLE\n',
             '##$CSCATEGORY={}\n'.format(category),
-            '##$CSTHRESHOLD={}\n'.format(
-                getattr(self.core, 'peak_threshold', None)
-                if getattr(self.core, 'peak_threshold', None) is not None
-                else self.core.threshold),
+            '##$CSTHRESHOLD={}\n'.format(self.core.threshold),
             '##MAXX={}\n'.format(self.core.boundary['x']['max']),
             '##MAXY={}\n'.format(self.core.boundary['y']['max']),
             '##MINX={}\n'.format(self.core.boundary['x']['min']),
