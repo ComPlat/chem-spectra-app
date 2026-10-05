@@ -1539,3 +1539,187 @@ def test_multiplets_block_a_conversion_a_declared_unit_would_allow(tmp_path):
     with pytest.raises(UnconvertibleSpectrum, match='integrals or multiplets'):
         JcampTechniqueConverter(
             JcampBaseConverter(str(source), {'transmittance': True}))
+
+
+# - - - the declared unit, spelled the way instruments spell it - - -
+
+def _curve(tmp_path, datatype, yunits, ys, name='curve.jdx'):
+    """A minimal valid spectrum with the units and values asked for."""
+    xs = [400.0 + i for i in range(len(ys))]
+    head = ['##TITLE=probe', '##JCAMP-DX=5.00', '##DATA TYPE=' + datatype,
+            '##DATA CLASS=XYPOINTS', '##XUNITS=1/CM', '##YUNITS=' + yunits,
+            '##FIRSTX={}'.format(xs[0]), '##LASTX={}'.format(xs[-1]),
+            '##MINX={}'.format(min(xs)), '##MAXX={}'.format(max(xs)),
+            '##MINY={}'.format(min(ys)), '##MAXY={}'.format(max(ys)),
+            '##NPOINTS={}'.format(len(xs)), '##FIRSTY={}'.format(ys[0]),
+            '##XFACTOR=1', '##YFACTOR=1', '##XYPOINTS=(XY..XY)']
+    rows = ['{:.1f}, {:.6f}'.format(x, y) for x, y in zip(xs, ys)]
+    target = tmp_path / name
+    target.write_text('\n'.join(head + rows + ['##END=']) + '\n')
+    return target
+
+
+def _weak_chromatogram():
+    """Milli-absorbance values small enough that nothing in the range checks
+    objects to reading them as AU. That is what makes a missed milli spelling
+    silent rather than a refusal."""
+    ys = [0.2] * 21
+    ys[5] = 5.0
+    ys[12] = 1.5
+    return ys
+
+
+@pytest.mark.parametrize('yunits', [
+    'mAU', 'Absorbance (mAU)', 'Absorbance Units (mAU)', 'mAbs',
+    'MILLIABSORBANCE', 'mAU (Absorbance)',
+])
+def test_a_milli_absorbance_spelling_carries_its_factor(client, tmp_path,
+                                                        yunits):
+    """Normalisation only removes punctuation, so `Absorbance (mAU)` arrives
+    as ABSORBANCEMAU. Matching nothing, it fell through to the technique and
+    0.2 mAU was converted as 0.2 AU: a thousand times too dark, with
+    `##$CSTRANSMITTANCE=true` written over it, which refuses every later
+    conversion. A wrong scale is worse than a refusal, because it looks like
+    a spectrum.
+    """
+    source = _curve(tmp_path, 'UV/VIS SPECTRUM', yunits, _weak_chromatogram())
+    composed = _composed_jcamp(_post(client, str(source), transmittance='true'))
+    maxy = float(re.search(r'##MAXY=(.*)', composed).group(1))
+    # 0.2 mAU = 0.0002 A, so T = 99.954 %
+    assert maxy == pytest.approx(99.954, abs=0.01)
+
+
+@pytest.mark.parametrize('yunits', [
+    'ABSORBANCE', 'ABS', 'Abs.', 'ABSORBANCE UNITS', 'Absorbance (AU)',
+])
+def test_an_unscaled_absorbance_spelling_carries_no_factor(client, tmp_path,
+                                                           yunits):
+    """The counterpart. `ABSORBANCE UNITS` is absorbance, not milli-anything,
+    so the same numbers mean something else and must not be scaled. It used
+    to reach the right answer only where the technique happened to absorb,
+    and to be refused as "declares no absorbance unit" everywhere else.
+    """
+    source = _curve(tmp_path, 'FOO SPECTRUM', yunits, _weak_chromatogram())
+    composed = _composed_jcamp(_post(client, str(source), transmittance='true'))
+    maxy = float(re.search(r'##MAXY=(.*)', composed).group(1))
+    # 0.2 A, so T = 63.096 %
+    assert maxy == pytest.approx(63.096, abs=0.01)
+
+
+@pytest.mark.parametrize('yunits', [
+    'REFLECTANCE', '%R', 'R', 'F(R)', 'K-M', 'KUBELKA-MUNK',
+    'Kubelka-Munk units', 'log(1/R)', 'REMISSION',
+])
+def test_a_reflectance_spelling_is_refused(client, tmp_path, yunits):
+    """A dark sample: the baseline sits low, so the shape heuristic sees
+    nothing wrong and the trace was converted and stamped `% TRANSMITTANCE`.
+    The refusal this PR added caught only the spellings a catalogue uses --
+    an instrument writes `%R`, `F(R)` or `K-M`.
+    """
+    dark = [0.05] * 21
+    dark[5] = 0.80
+    source = _curve(tmp_path, 'UV/VIS SPECTRUM', yunits, dark)
+    response = _post(client, str(source), transmittance='true')
+    assert response.status_code == 422
+    assert 'neither absorbance nor transmittance' in json.loads(
+        response.data)['error']
+
+
+def test_the_peak_threshold_travels_through_the_conversion(tmp_path):
+    """`technique.threshold` is a fraction of the maximum, and the two maxima
+    are not linearly related: %T = 100 * 10**(-A).
+
+    Mirroring the fraction linearly (`1 - threshold`) turned "above 5% of the
+    absorbance maximum" into "deeper than about a quarter of it", so every
+    small peak disappeared the moment a chromatogram was converted -- which
+    is a conversion this PR is what made possible.
+    """
+    ys = [2.0] * 41
+    ys[9], ys[10], ys[11] = 60.0, 100.0, 60.0
+    ys[29], ys[30], ys[31] = 7.0, 12.0, 7.0
+    source = _curve(tmp_path, 'UV/VIS SPECTRUM', 'mAU', ys)
+
+    plain = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    converted = JcampTechniqueConverter(
+        JcampBaseConverter(str(source), {'transmittance': 'true'}))
+
+    assert plain.peak_threshold == 0.05
+    assert converted.peak_threshold == pytest.approx(0.9931, abs=1e-4)
+    assert sorted(converted.auto_peaks['x']) == sorted(plain.auto_peaks['x'])
+    assert len(converted.auto_peaks['x']) == 2
+
+
+def test_the_inverted_multiplet_label_keeps_its_horizontal_side(tmp_path):
+    """`rotation=90` with `rotation_mode='anchor'` swaps the two alignments:
+    `ha` places the text vertically on screen, `va` horizontally. Flipping
+    both moved the label across its own centre line as well as across the
+    trace, and `invert_y` inverts the y axis, not the x.
+    """
+    upright = _ir_composer(tmp_path)
+    flipped = _ir_composer(tmp_path, invert_y=True)
+    assert upright._TechniqueComposer__rotated_anchor() == {
+        'ha': 'right', 'va': 'top'}
+    assert flipped._TechniqueComposer__rotated_anchor() == {
+        'ha': 'left', 'va': 'top'}
+
+
+# - - - an instruction is honoured or refused, never dropped - - -
+
+def test_mass_spectrometry_refuses_a_transmittance_request(client):
+    """MS has its own converter and composer and never reaches the code that
+    answers `transmittance`, so the instruction was dropped and the file came
+    back 200 and unconverted -- indistinguishable, to the caller, from a
+    conversion that had happened. Every other non-absorbing technique says
+    why it cannot.
+    """
+    response = _post(client, './tests/fixtures/source/ms/svs813f1.jdx',
+                     transmittance='true')
+    assert response.status_code == 422
+    assert 'does not measure absorption' in json.loads(response.data)['error']
+    # and without the instruction nothing changes
+    assert _post(client, './tests/fixtures/source/ms/svs813f1.jdx'
+                 ).status_code == 200
+
+
+def _lcms_archive(tmp_path):
+    """A BagIt holding one UV/VIS absorbance spectrum. A single UV/VIS member
+    is enough to read the archive as an LC/MS dataset."""
+    import zipfile
+    source = _curve(tmp_path, 'UV/VIS SPECTRUM', 'ABSORBANCE',
+                    [0.02] * 20 + [1.0], name='member.jdx')
+    target = tmp_path / 'archive.zip'
+    with zipfile.ZipFile(target, 'w') as archive:
+        archive.writestr('data/uv.jdx', source.read_text())
+        archive.writestr('bagit.txt', 'BagIt-Version: 0.97\n'
+                                      'Tag-File-Character-Encoding: UTF-8\n')
+        archive.writestr('manifest-sha256.txt', '')
+    return target
+
+
+def test_an_lcms_archive_refuses_a_transmittance_request(client, tmp_path):
+    """The same instruction, the other path that silently dropped it. The
+    member converts perfectly well on its own; read as part of an LC/MS
+    dataset it cannot, and saying so is the only honest answer.
+    """
+    archive = _lcms_archive(tmp_path)
+    refused = _post(client, str(archive), transmittance='true')
+    assert refused.status_code == 422
+    assert 'LC/MS dataset' in json.loads(refused.data)['error']
+    # the archive itself is fine; it is the instruction that cannot be met
+    assert _post(client, str(archive)).status_code == 200
+
+
+@pytest.mark.parametrize('datatype', ['LC/MS', 'TOTAL ION CHROMATOGRAM'])
+def test_a_single_lcms_file_refuses_a_transmittance_request(client, tmp_path,
+                                                            datatype):
+    """The third path that dropped it, and the one no fixture covers: an
+    LC/MS file on its own goes to build_lcms_composer without an archive
+    around it, so neither the MS guard nor the archive's guard saw it. It
+    answered 200 with a zip that has no JCAMP in it at all, which is as
+    silent as a dropped instruction gets.
+    """
+    source = _curve(tmp_path, datatype, 'ABSORBANCE', [0.02] * 20 + [1.0])
+    refused = _post(client, str(source), transmittance='true')
+    assert refused.status_code == 422
+    assert 'does not measure absorption' in json.loads(refused.data)['error']
+    assert _post(client, str(source)).status_code == 200

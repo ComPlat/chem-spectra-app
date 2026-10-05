@@ -2,7 +2,9 @@ import nmrglue as ng
 import json
 import logging
 
-from chem_spectra.lib.converter.share import parse_params, parse_solvent
+from chem_spectra.lib.converter.share import (
+    UnconvertibleSpectrum, parse_params, parse_solvent,
+)
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
 from chem_spectra.lib.converter.jcamp.records import (
     BLOCK_RECORDS, read_block_records,
@@ -12,6 +14,10 @@ import os
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
 logger = logging.getLogger(__name__)
+
+# Techniques with their own converter and composer, which never reach
+# JcampTechniqueConverter and so cannot answer a `transmittance` request.
+NON_ABSORBING_TYPES = ('MS', 'LC/MS')
 
 class JcampBaseConverter:
     def __init__(self, path, params=False):
@@ -48,6 +54,7 @@ class JcampBaseConverter:
             None if self.typ == 'MS'
             else read_block_records(path, BLOCK_RECORDS))
         self.fname = self.params.get('fname')
+        self.__refuse_transmittance_where_it_cannot_run()
         if not self.typ:
             # a caller-supplied data_type_mapping REPLACES the built-in one,
             # so pointing at data_type.json would be useless advice there
@@ -66,6 +73,26 @@ class JcampBaseConverter:
         self.solv_peaks = []
         self.__read_solvent()
         self.__read_user_data_type_mapping()
+
+    def __refuse_transmittance_where_it_cannot_run(self):
+        """`transmittance` is an instruction, so it is honoured or refused.
+
+        Every technique that reaches JcampTechniqueConverter answers it, with
+        a conversion or with a reason. Mass spectrometry and LC/MS have their
+        own converters and composers and never reach that code, so the
+        instruction was dropped on the floor and the file came back 200,
+        unconverted, indistinguishable from a conversion that had happened.
+        Both are listed: an `LC/MS` or `TOTAL ION CHROMATOGRAM` file goes to
+        build_lcms_composer on its own, without an archive around it.
+        """
+        if (not self.params.get('transmittance')
+                or self.typ not in NON_ABSORBING_TYPES):
+            return
+        raise UnconvertibleSpectrum(
+            'a transmittance conversion is not meaningful here: {} does not '
+            'measure absorption through a sample, and the file declares no '
+            'absorbance unit'.format(self.typ)
+        )
 
     def __read(self, path):
         return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')

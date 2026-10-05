@@ -6,6 +6,9 @@ import logging
 import math
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.converter.share import (
+    UnconvertibleSpectrum, parse_params,
+)
 from chem_spectra.lib.shared.misc import shorten_label
 from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
@@ -126,6 +129,19 @@ class BagItBaseConverter:
                     tf_csv = tcp.tf_csv()
                     list_csv.append(tf_csv)
                 archive_stems.append(stem)
+
+        if lcms_paths and parse_params(self.raw_params).get('transmittance'):
+            # The LC/MS composer has no conversion, and these members are
+            # read as one LC/MS dataset rather than as separate spectra, so
+            # the instruction cannot be honoured here -- not even for a
+            # UV/VIS member that converts perfectly well on its own. Said
+            # rather than dropped: the archive came back 200 and unconverted,
+            # which is indistinguishable from a conversion that happened.
+            raise UnconvertibleSpectrum(
+                'this archive is read as one LC/MS dataset, which has no '
+                'transmittance conversion; convert the absorbance members '
+                'on their own instead'
+            )
 
         append_lcms_group(
             lcms_paths, self.raw_params,

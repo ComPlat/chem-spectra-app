@@ -53,23 +53,45 @@ def is_transmittance_unit(unit):
 # Deliberately short. 'AU' is arbitrary units, not absorbance units, and a
 # bare 'A' is as likely to be amperes; guessing either way is worse than
 # falling back to the technique.
-ABSORBANCE_UNITS = frozenset({'ABSORBANCE', 'ABS'})
+# Spelled out, because normalisation only removes punctuation: a vendor
+# writing `Absorbance (AU)` leaves `ABSORBANCEAU`, which matched nothing and
+# fell back to the technique -- right by luck where the technique absorbs,
+# and a 422 saying "the file declares no absorbance unit" where it does not.
+ABSORBANCE_UNITS = frozenset({
+    'ABSORBANCE', 'ABS',
+    'ABSORBANCEUNIT', 'ABSORBANCEUNITS', 'ABSORBANCEAU',
+    'ABSORBANCEUNITSAU', 'AUABSORBANCE',
+})
 
 # Absorbance under another scale. The unit states the factor, so applying it
 # is reading the declaration rather than inferring from the data -- which is
 # the distinction this module is built on. Chromatograms are recorded in mAU,
 # and converting 5 mAU as though it were 5 AU gives 0.001 %T.
+# These are the dangerous ones: an unrecognised milli spelling is not
+# refused, it is converted a thousand times too dark and the irreversible
+# ##$CSTRANSMITTANCE=true is written over it.
 ABSORBANCE_SCALES = {
     'MAU': 1e-3, 'MILLIABSORBANCE': 1e-3, 'MILLIABSORBANCEUNITS': 1e-3,
-    'MILLIAU': 1e-3,
+    'MILLIABSORBANCEUNIT': 1e-3, 'MILLIAU': 1e-3,
+    'ABSORBANCEMAU': 1e-3, 'ABSORBANCEUNITSMAU': 1e-3,
+    'ABSORBANCEMILLIAU': 1e-3,
+    'MABS': 1e-3, 'MILLIABS': 1e-3, 'MAUABSORBANCE': 1e-3,
 }
 
 # Quantities that are neither absorbance nor transmittance. JCAMP-DX 4.24
 # lists both beside ABSORBANCE, and 10**(-y) means nothing for either:
 # reflectance is already a ratio, and Kubelka-Munk is (1-R)^2/2R.
+# The short spellings matter more than the long ones: an instrument writes
+# `%R`, `F(R)` or `K-M`, and only a catalogue writes `KUBELKA-MUNK`. Missing
+# them is not a refusal, it is a conversion -- a dark reflectance trace was
+# relabelled `% TRANSMITTANCE` and stamped irreversible. `R` is listed for
+# the same reason `T` is listed as transmittance: once punctuation is gone,
+# `%R` is `R`.
 REFLECTANCE_UNITS = frozenset({
     'REFLECTANCE', 'PERCENTREFLECTANCE', 'REFLECTANCEPERCENT',
-    'KUBELKAMUNK', 'LOG1R',
+    'REFLECTANCEUNITS', 'R', 'PERCENTR', 'RPERCENT',
+    'KUBELKAMUNK', 'KUBELKAMUNKUNIT', 'KUBELKAMUNKUNITS', 'KM',
+    'FR', 'LOG1R', 'REMISSION',
 })
 
 
@@ -536,6 +558,23 @@ class JcampTechniqueConverter:
         """
         if self.peaks_point_down == self.technique.peaks_inverted:
             return self.threshold
+        converted = getattr(self, 'absorbance_range', None)
+        if converted is not None:
+            # A conversion ran, so the fraction has to travel through it.
+            # The complement is a linear mirror and %T is not linear in A:
+            # 0.05 of the absorbance maximum means "above 5 mAU" on a
+            # 100 mAU chromatogram, while 0.95 of the %T maximum means
+            # "deeper than about 24 mAU", and every small peak was lost.
+            #
+            # The picker compares against `fraction * max(y)`, so the
+            # fraction wanted is the cut over the maximum, both in %T:
+            #   cut    = 100 * 10**(-threshold * A_max)
+            #   max(T) = 100 * 10**(-A_min)
+            # whose ratio is the line below. Above 1.0 when the cut sits
+            # under the baseline, which is faithful: in absorbance every
+            # point would clear that cut too.
+            a_min, a_max = converted
+            return round(float(10.0 ** (a_min - self.threshold * a_max)), 6)
         # rounded so the value stays legible wherever it is logged or
         # compared: 1.0 - 0.93 is 0.06999999999999995 in binary floating
         # point.
@@ -632,6 +671,10 @@ class JcampTechniqueConverter:
 
         self.converted_to_transmittance = True
         self.transmittance_recorded = True
+        # what the peak threshold has to be mapped through: the picker's
+        # fraction is of the maximum, and the two maxima are not related
+        # linearly
+        self.absorbance_range = (y_min, y_max)
         # kept for the peak tables: they are in the file's declared unit
         # too, so they need the same scaling the trace just had
         self.absorbance_scale = scale or 1.0

@@ -458,9 +458,17 @@ class TechniqueComposer(BaseComposer):
         the inverted ylim does not touch. Unflipped, `7.111 (m)` ran across
         the cluster it names and the integral value reached into the trace
         instead of its margin.
+
+        With `rotation=90` and `rotation_mode='anchor'` the two alignments
+        swap axes: `ha` places the text vertically on screen and `va` places
+        it horizontally (measured: `right`/`top` sits +0..+10.3 px across and
+        -48..0 px down; `left`/`bottom` sits -10.3..0 across and 0..+48 down).
+        Only the vertical side belongs to the flip -- `invert_y` inverts the
+        y axis, not the x -- so `va` stays `top` and the label keeps its side
+        of its own centre line. This is the defect the integral label had.
         """
         if getattr(self.core, 'draw_y_inverted', False):
-            return {'ha': 'left', 'va': 'bottom'}
+            return {'ha': 'left', 'va': 'top'}
         return {'ha': 'right', 'va': 'top'}
 
     def __integral_anchor(self):
