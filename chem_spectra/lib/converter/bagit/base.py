@@ -103,6 +103,12 @@ class BagItBaseConverter:
             try:
                 detected[jcamp_path] = JcampBaseConverter(
                     jcamp_path, self.raw_params)
+            except UnconvertibleSpectrum:
+                # A member the converter refuses (a 2D file, say) refuses the
+                # archive whole. Here, before any member is converted or drawn,
+                # rather than from the loop below once earlier members have
+                # already been rendered onto the shared figure.
+                raise
             except Exception:
                 pass
         has_lcms_context = _has_lcms_evidence(detected.values())
