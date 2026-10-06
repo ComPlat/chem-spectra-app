@@ -42,9 +42,13 @@ class Block:
     def parent(self):
         """Index of the enclosing block, or None.
 
-        Not used for choosing the measurement: on `1H.dx` the spectrum block
-        reports None while the FID block reports 0, so this does not reliably
-        describe LINK nesting. File order does.
+        It describes LINK nesting correctly since nmrglue `0aa0aa7`, where
+        only `##END=` closes a block. Before that `##END NTUPLES=` closed one
+        too, so on `1H.dx` the LINK block ended after its first child and the
+        spectrum reported no parent at all.
+
+        Still not what picks the measurement: file order does, and that rule
+        does not depend on nesting being reported at all.
         """
         return self._raw.get('_parent')
 

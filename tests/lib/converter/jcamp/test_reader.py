@@ -126,3 +126,56 @@ def test_flat_ldrs_drops_the_readers_own_bookkeeping():
 
 def test_datatype_is_upper_cased_like_the_classifier_compares_it():
     assert read_jcamp(SINGLE_BLOCK)[0].datatype == 'INFRARED SPECTRUM'
+
+
+# - - - a coordinate table may carry more than two columns - - -
+
+def test_a_three_column_table_gives_its_x_and_y():
+    """`(XYW..XYW)` keeps its third column since nmrglue `0aa0aa7`; before
+    that the width was dropped and every table arrived two wide.
+
+    `__block_pairs` asked for exactly two columns, so a three-column block
+    fell through to `return data` and would have handed a three-dimensional
+    array to the y series. It asks for two *or more* now and reads the first
+    two, which is the same answer for an `(XY..XY)` table and the right one
+    for `(XYW..XYW)`.
+    """
+    import numpy as np
+
+    from chem_spectra.lib.converter.jcamp.technique import (
+        JcampTechniqueConverter,
+    )
+
+    pairs = JcampTechniqueConverter._JcampTechniqueConverter__block_pairs
+    xy = np.array([[[1.0, 10.0], [2.0, 20.0]]])          # (1, 2, 2)
+    xyw = np.array([[[1.0, 10.0, 0.5], [2.0, 20.0, 0.6]]])  # (1, 2, 3)
+    for data in (xy, xyw):
+        x, y = pairs(data)
+        assert list(x) == [1.0, 2.0]
+        assert list(y) == [10.0, 20.0]
+    assert pairs(np.array([[1.0, 10.0, 0.5], [2.0, 20.0, 0.6]])) is not None
+
+
+def test_the_peak_table_width_does_not_disturb_x_and_y():
+    """The same claim against the file that actually carries one.
+
+    `CHI-224_10.jdx`'s NMR peak table reads `(1, 55, 3)` on this pin and read
+    `(1, 55, 2)` before it. It is not that file's target block -- no fixture
+    here has a three-column target -- so this pins the columns rather than any
+    composed output.
+    """
+    from chem_spectra.lib.converter.jcamp.reader import read_jcamp
+    from chem_spectra.lib.converter.jcamp.technique import (
+        JcampTechniqueConverter,
+    )
+
+    blocks = read_jcamp('./tests/fixtures/source/CHI-224_10.jdx')
+    table = blocks[2]
+    assert table.datatype == 'NMR PEAK TABLE'
+    assert table.data.shape[:2] == (1, 55)
+
+    pairs = JcampTechniqueConverter._JcampTechniqueConverter__block_pairs
+    x, y = pairs(table.data)
+    assert len(x) == 55 and len(y) == 55
+    assert x[0] == table.data[0][0][0]
+    assert y[0] == table.data[0][0][1]

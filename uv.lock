@@ -292,7 +292,7 @@ requires-dist = [
     { name = "gunicorn", specifier = "==26.*" },
     { name = "matplotlib", specifier = "==3.*" },
     { name = "netcdf4", specifier = "==1.*" },
-    { name = "nmrglue", git = "https://github.com/ComPlat/nmrglue.git?rev=d43f6fe3dd5e3c7491c759920d072d571910913b" },
+    { name = "nmrglue", git = "https://github.com/ComPlat/nmrglue.git?rev=0aa0aa7cbcb69e981c2c7b6ec0052c81d4d796a0" },
     { name = "numpy", specifier = ">=2.0,<2.5" },
     { name = "pandas", specifier = ">=2.3,<4" },
     { name = "pymzml", specifier = "==2.*" },
@@ -1069,7 +1069,7 @@ wheels = [
 [[package]]
 name = "nmrglue"
 version = "0.13.dev0"
-source = { git = "https://github.com/ComPlat/nmrglue.git?rev=d43f6fe3dd5e3c7491c759920d072d571910913b#d43f6fe3dd5e3c7491c759920d072d571910913b" }
+source = { git = "https://github.com/ComPlat/nmrglue.git?rev=0aa0aa7cbcb69e981c2c7b6ec0052c81d4d796a0#0aa0aa7cbcb69e981c2c7b6ec0052c81d4d796a0" }
 dependencies = [
     { name = "numpy" },
     { name = "scipy" },

@@ -246,13 +246,22 @@ class JcampTechniqueConverter:
         app used to discard nmrglue's parse of these and re-read the raw text
         itself via `XYDATA_OLD`; nmrglue's own parse is byte-identical on the
         XRD fixtures and handles indented and signed lines the app's did not.
+
+        Two columns or more, not exactly two. Since nmrglue `0aa0aa7` an
+        `(XYW..XYW)` table keeps its third column, the peak width, instead of
+        dropping it silently -- `CHI-224_10.jdx`'s peak table went from
+        `(1, 55, 3)` where it was `(1, 55, 2)`, with X and Y unchanged.
+        Demanding exactly two would send such a block to `return data`, which
+        hands a three-dimensional array to the y series. No fixture reaches
+        that today, because no 3-column block is any file's target block; this
+        is so that the first one does not arrive as a crash.
         """
         if isinstance(data, dict) or data is None:
             return None
-        if data.ndim == 3 and data.shape[0] == 1 and data.shape[2] == 2:
-            return data[0].T
-        if data.ndim == 2 and data.shape[1] == 2:
-            return data.T
+        if data.ndim == 3 and data.shape[0] == 1 and data.shape[2] >= 2:
+            return data[0][:, :2].T
+        if data.ndim == 2 and data.shape[1] >= 2:
+            return data[:, :2].T
         return None
 
     @classmethod
