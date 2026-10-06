@@ -3,14 +3,22 @@ import json
 import logging
 import re
 
-from chem_spectra.lib.converter.share import parse_params, parse_solvent
+from chem_spectra.lib.converter.share import (
+    UnconvertibleSpectrum, parse_params, parse_solvent,
+)
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
-from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
+from chem_spectra.lib.converter.jcamp.records import (
+    BLOCK_RECORDS, read_block_records,
+)
 import os
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
 logger = logging.getLogger(__name__)
+
+# Techniques with their own converter and composer, which never reach
+# JcampTechniqueConverter and so cannot answer a `transmittance` request.
+NON_ABSORBING_TYPES = ('MS', 'LC/MS')
 
 # Enough to reach the records; a JCAMP header is a few hundred bytes and the
 # rest of the file is numbers. The same window chemotion_ELN reads.
@@ -115,7 +123,25 @@ class JcampBaseConverter:
         self.data_format = self.__set_dataformat()
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = self.__typ()
+        # Read here and not later from a path: at the endpoint `path` names a
+        # NamedTemporaryFile that is closed, and so deleted, as soon as this
+        # converter is built. A reader that re-opened it by name found
+        # nothing and silently fell back to nmrglue's flattened lists, so the
+        # same file was labelled one way through a fixture path and another
+        # way through the endpoint. Still inside __init__, so the file is
+        # certainly there; after `typ`, so the techniques that never consult
+        # these records do not pay for a second pass over a 5 MB file.
+        # MS only. LC/MS was skipped too, which was wrong: tf_combine sends
+        # everything that is not `typ == 'MS'` through the technique
+        # converter, and the jcamp2cvp fallback does the same when the LC/MS
+        # composer declines -- so a multi-block LC/MS file reached the
+        # resolver with no records and fell back to the flattened lists
+        # silently, without even the mismatch warning.
+        self.block_records = (
+            None if self.typ == 'MS'
+            else read_block_records(path, BLOCK_RECORDS))
         self.fname = self.params.get('fname')
+        self.__refuse_transmittance_where_it_cannot_run()
         if not self.typ:
             # a caller-supplied data_type_mapping REPLACES the built-in one,
             # so pointing at data_type.json would be useless advice there
@@ -135,6 +161,29 @@ class JcampBaseConverter:
         self.__read_solvent()
         self.__read_user_data_type_mapping()
 
+    def __refuse_transmittance_where_it_cannot_run(self):
+        """`transmittance` is an instruction, so it is honoured or refused.
+
+        Every technique that reaches JcampTechniqueConverter answers it, with
+        a conversion or with a reason. Mass spectrometry and LC/MS have their
+        own converters and composers and never reach that code, so the
+        instruction was dropped on the floor and the file came back 200,
+        unconverted, indistinguishable from a conversion that had happened.
+        Both are listed: an `LC/MS` or `TOTAL ION CHROMATOGRAM` file goes to
+        build_lcms_composer on its own, without an archive around it.
+        """
+        if (not self.params.get('transmittance')
+                or self.typ not in NON_ABSORBING_TYPES):
+            return
+        raise UnconvertibleSpectrum(
+            'a transmittance conversion is not meaningful here: {} does not '
+            'measure absorption through a sample, and the file declares no '
+            'absorbance unit'.format(self.typ)
+        )
+
+    def __read(self, path):
+        return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
+    
     @staticmethod
     def __refuse_multi_dimensional(path):
         """A 2D dataset is not a curve, and this app has nowhere to put one.
@@ -166,9 +215,6 @@ class JcampBaseConverter:
             'one-dimensional spectra only'.format(dimensions)
         )
 
-    def __read(self, path):
-        return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
-    
     def __read_user_data_type_mapping(self):
         user_dt_mapping = self.params.get('user_data_type_mapping')
         if user_dt_mapping == '' or user_dt_mapping is None:
