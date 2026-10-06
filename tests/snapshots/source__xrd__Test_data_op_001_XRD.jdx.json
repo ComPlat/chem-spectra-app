@@ -1,0 +1,50 @@
+{
+  "auto_peaks": {
+    "n": 1,
+    "sha1": "419019704a96853f"
+  },
+  "boundary": {
+    "x": {
+      "max": 19.9993,
+      "min": 2.0
+    },
+    "y": {
+      "max": 1084.5697,
+      "min": 6.4335
+    }
+  },
+  "edit_peaks": null,
+  "factor": {
+    "x": 1.0,
+    "y": 1.0
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 15982,
+    "sha1": "1f12940ce6162c43ec609126d13ecd813fa19772"
+  },
+  "label": {
+    "x": "2Theta",
+    "y": "COUNTS"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "NTUPLES",
+    "datatype": "X-RAY DIFFRACTION"
+  },
+  "threshold": 1.0,
+  "title": "Spectrum",
+  "typ": "X-RAY DIFFRACTION",
+  "xs": {
+    "first": 2.0,
+    "last": 19.9993,
+    "len": 928,
+    "sha1": "732cc5d966c2d9e365277a81f27e270df1c0fc57"
+  },
+  "ys": {
+    "first": 48.6612,
+    "last": 14.2767,
+    "len": 928,
+    "sha1": "abed04b931b987e08a72b5ea674fb853651c72e6"
+  }
+}

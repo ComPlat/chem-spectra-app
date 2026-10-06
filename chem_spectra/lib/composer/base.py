@@ -55,7 +55,12 @@ def is_metadata_to_be_ignored(keyword, is_ntuples=False):
         # a stray leftover LDR that duplicates the NTUPLES data table, so
         # it should be suppressed like XYDATA/XYDATA_OLD already are.
         return is_ntuples
-    return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE']
+    # DATATABLE is the NTUPLES data table's own LDR. The flat read never
+    # surfaced it, so it was never listed; reading per block does, and without
+    # this the whole encoded spectrum lands in the original-metadata dump.
+    # XYDATA_OLD is kept in the list although nothing produces it any more:
+    # removing it would silently change any file still carrying one.
+    return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', 'DATATABLE', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE']
 
 
 TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'

@@ -1,85 +1,44 @@
-import numpy as np
-from scipy.interpolate import interp1d
-
-
-def __num_pts(base, x_max, x_min):
-    if base.typ in ['NMR']:
-        return 32000
-    elif base.typ in ['INFRARED', 'RAMAN']:
-        return int(x_max - x_min + 1) * 2
-    else:
-        return 32000
-
-
-def __parse_xy_points(base):
-    pts = []
-    if 'XYPOINTS' in base.dic:
-        pts = base.dic['XYPOINTS'][0].split('\n')[1:]
-    elif base.data_format and base.data_format == '(XY..XY)':
-        pts = base.dic['XYDATA_OLD'][0].split('\n')[1:]
-    return np.array([[float(p) for p in pt.split(',')]for pt in pts])
-
-
 class UnparsableJcampData(ValueError):
     """nmrglue read the file but produced no usable data array."""
 
 
-def make_ni_data_ys(base, target_idx):
-    if base.data is None and base.dic.get('XYPOINTS'):
-        base.data = __parse_xy_points(base)
-    elif base.data_format and base.data_format == '(XY..XY)':
-        base.data = __parse_xy_points(base)
-
-    # base.data type is dict
-    if isinstance(base.data, dict):
-        return base.data['real'][target_idx]
-
-    if base.data is None:
-        # nmrglue returns None when it can parse no data array from the
-        # file. Dereferencing .shape here raised AttributeError straight out
-        # of the request; raising something named lets jcamp2cvp turn it
-        # into the same "could not convert" result any other unusable file
-        # produces.
-        raise UnparsableJcampData(
-            'no data array could be parsed from this JCAMP file'
-        )
-
-    # base.data type is array
-    data_shape = base.data.shape
-    if len(data_shape) == 1:
-        return base.data
-    elif len(data_shape) == 2:
-        [_, ys] = base.data.T
-        return ys
-    else:
-        return base.data
-
-
-def make_ni_data_xs(base):
-    if base.data_format and (base.data_format == '(XY..XY)'):
-        data = __parse_xy_points(base)
-        # base.data type is array
-        data_shape = data.shape
-        if len(data_shape) == 2:
-            [xs, _] = data.T
-            return xs
-
-    return None
-
-
 def make_ms_data_xsys(base):
-    if base.data is None:
-        has_xy = bool(base.dic.get('XYPOINTS'))
-        has_xy_old = (
-            base.data_format
-            and base.data_format == '(XY..XY)'
-            and base.dic.get('XYDATA_OLD')
-        )
-        if has_xy or has_xy_old:
-            base.data = [__parse_xy_points(base)]
+    """Every mass-spectrum run in the file, in file order.
 
-    # base.data type is dict
-    if isinstance(base.data, dict):
-        return base.data['real']
+    An MS file can hold one run per block. The flat read merged every block's
+    pages into one `data['real']` list, which happened to produce this same
+    sequence; reading per block, the merge has to be done here, deliberately.
 
-    return base.data
+    Each run is whatever shape its block declares -- an NTUPLES page, or the
+    `(N, 2)` coordinate pairs of a PEAK TABLE -- which is what `MSComposer`
+    already consumes.
+    """
+    runs = []
+    for block in _ms_blocks(base):
+        data = block.data
+        if data is None:
+            continue
+        if isinstance(data, dict):
+            runs.extend(data.get('real') or [])
+        elif data.ndim == 3 and data.shape[0] == 1:
+            # (1, N, 2) -- one run of coordinate pairs
+            runs.append(data[0])
+        else:
+            runs.append(data)
+    return runs or None
+
+
+def _ms_blocks(base):
+    """The blocks holding mass spectra, or just the target block.
+
+    A core that is not a JCAMP file -- `CdfMSConverter` -- has no file to walk,
+    so it falls back to the single block it carries.
+    """
+    jcamp = getattr(base, 'jcamp', None)
+    if jcamp is None:
+        return [base.target] if getattr(base, 'target', None) else []
+    target = getattr(base, 'target', None)
+    if target is None:
+        return []
+    blocks = [b for b in jcamp if b.datatype == target.datatype]
+    return blocks or [target]

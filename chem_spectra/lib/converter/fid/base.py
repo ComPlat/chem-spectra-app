@@ -3,21 +3,33 @@ import numpy as np  # noqa: F401
 
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
 from chem_spectra.lib.converter.jcamp.techniques import SPECTRUM_TECHNIQUES
+from chem_spectra.lib.converter.jcamp.reader import block_from_headers
 
 
 class FidBaseConverter:
-    def __init__(self, target_dir, params=False, fname=''):
-        self.params = parse_params(params)
-        self.dic, self.data = self.__read(target_dir, fname)
-        self.__set_properties()
-
     def __init__(self, dic, data, params=False, fname=''):
         self.params = params
         self.dic = dic
         self.data = data
         self.__set_properties()
 
-    def __read(self, target_dir, fname):
+    @classmethod
+    def from_directory(cls, target_dir, params=False, fname=''):
+        """Read a raw Bruker directory -- an upload with no processed data.
+
+        This logic was written and then unreachable. A second `__init__`
+        shadowed the one that called it, so the reader below was dead and the
+        only caller, `zip2cvp`, passed `(target_dir, params, fname)` into the
+        surviving `(dic, data, params, fname)` signature -- binding a path
+        string to `dic`. A Bruker zip carrying no `pdata` therefore raised
+        AttributeError out of the request. Both fixtures here ship processed
+        data, so no test reached it.
+        """
+        dic, data = cls._read_directory(parse_params(params), target_dir, fname)
+        return cls(dic, data, parse_params(params), fname)
+
+    @staticmethod
+    def _read_directory(params, target_dir, fname):
         dic, data = ng.bruker.read(target_dir)
         udic = ng.bruker.guess_udic(dic, data).get(0) or {}
         # process dic
@@ -58,9 +70,12 @@ class FidBaseConverter:
         data = ng.proc_base.rev(data)               # reverse the data
         return dic, data
 
+
     def __set_properties(self):
         self.datatypes = ['NMR SPECTRUM']
         self.datatype = 'NMR SPECTRUM'
+        # Not a JCAMP file: this core's own header dict is its only block.
+        self.target = block_from_headers(self.dic)
         self.dataclass = None
         self.data_format = None
         self.title = self.dic.get('TITLE', [''])[0]

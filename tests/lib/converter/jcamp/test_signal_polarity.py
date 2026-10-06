@@ -29,8 +29,17 @@ DIPPING = './tests/fixtures/source/13C-DEPT135.dx'
 
 
 def _relabelled(source, datatype, tmp_path):
+    """The same spectrum, declared as a different technique.
+
+    Relabels the *spectrum* block. This used to replace the file's first
+    `##DATA TYPE=`, which in these LINK files is the wrapper -- harmless while
+    the reader merged every block into one dict, but block-aware reading then
+    picks the wrapper, which carries no data at all.
+    """
     body = open(source).read()
-    header = re.search(r'##DATA TYPE=.*', body).group(0)
+    headers = [h for h in re.findall(r'^##DATA TYPE=.*$', body, re.M)
+               if h.split('=', 1)[1].strip().upper() not in ('LINK', 'NMR FID')]
+    header = headers[-1]
     target = tmp_path / 'probe.dx'
     target.write_text(body.replace(header, '##DATA TYPE=' + datatype, 1))
     return JcampTechniqueConverter(JcampBaseConverter(str(target)))

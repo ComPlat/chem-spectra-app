@@ -59,7 +59,9 @@ def test_the_probe_spans_past_the_visible_range(avasoft_file):
     visible-only.
     """
     base = JcampBaseConverter(avasoft_file)
-    assert base.dic['XUNITS'][0].strip().upper() == 'NANOMETERS'
+    # asked of the measurement block, not of a merged list of every block's
+    # XUNITS -- which for a multi-block file answered whichever came first
+    assert base.target.ldr('XUNITS').strip().upper() == 'NANOMETERS'
 
 
 def test_avasoft_is_not_mapped_to_hplc():
