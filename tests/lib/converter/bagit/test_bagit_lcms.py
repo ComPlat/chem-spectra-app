@@ -1,3 +1,5 @@
+import base64
+import json
 import os
 import tempfile
 
@@ -180,7 +182,7 @@ def test_flat_layout_ignores_non_jdx_siblings():
         assert len(converter.data) == 1
 
 
-def test_flat_layout_uvvis_only_goes_through_lcms_group():
+def test_flat_layout_uvvis_only_is_not_lcms():
     uvvis_jdx = """##TITLE=UV-Vis only
 ##JCAMP-DX=5.00
 ##DATA TYPE=UV/VIS SPECTRUM
@@ -202,6 +204,7 @@ def test_flat_layout_uvvis_only_goes_through_lcms_group():
         assert converter.data is not None
         assert len(converter.data) == 1
         assert converter.combined_image is None
+        assert converter.spc_type == 'UVVIS'
 
 
 def test_bagit_layout_unchanged_when_data_subdir_present():
@@ -387,3 +390,112 @@ $$ === CHEMSPECTRA UVVIS PEAK TABLE ===
 """
     path = _write_jdx(tmp_path, 'cf9d2f40_table_lcms_uvvis_peak.jdx', peak_content)
     assert classify_lcms_stems([path]) == ['lcms_uvvis.peak']
+
+
+# What chemotion-converter-app ships for a UV-Vis table: its jcampzip format
+# is always a BagIt, even for one table.
+CONVERTER_UVVIS = """##TITLE=Spectrum
+##JCAMP-DX=5.00 $$ chemotion-converter-app (1.9.3)
+##DATA TYPE=UV-VIS
+##DATA CLASS=XYPOINTS
+##XUNITS=wavelength (nm)
+##YUNITS=ABSORBANCE
+##FIRSTX=200
+##LASTX=204
+##NPOINTS=5
+##XYPOINTS=(XY..XY)
+200.0, 0.37
+201.0, 0.34
+202.0, 0.25
+203.0, 0.12
+204.0, 0.23
+##END=$$ End of the data block
+"""
+
+# The mapping an ELN may send as data_type_mapping: it replaces the built-in
+# one, and need not have an LC/MS key at all.
+ELN_MAPPING_WITHOUT_LCMS = json.dumps({'datatypes': {
+    'MS': ['MASS SPECTRUM'],
+    'UVVIS': ['UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM'],
+    'HPLC UVVIS': ['HPLC UV/VIS SPECTRUM', 'HPLC UV-VIS'],
+}})
+
+
+def _decoded_jcamps(converter):
+    return [base64.b64decode(b).decode('utf-8', 'replace')
+            for b in converter.get_base64_data()]
+
+
+def test_converter_bagit_with_one_uvvis_table_is_uvvis_not_lcms(tmp_path):
+    _write_bagit_layout(str(tmp_path), {'table_01.jdx': CONVERTER_UVVIS})
+
+    converter = BagItBaseConverter(str(tmp_path))
+
+    assert converter.spc_type == 'UVVIS'
+    assert not any(isinstance(c, LCMSConverterAppComposer)
+                   for c in converter._composers)
+    jcamps = _decoded_jcamps(converter)
+    assert len(jcamps) == 1
+    assert '##DATA TYPE=UV/VIS SPECTRUM' in jcamps[0]
+    assert 'LC/MS' not in jcamps[0]
+
+
+def test_converter_bagit_with_several_uvvis_tables_is_not_lcms(tmp_path):
+    _write_bagit_layout(str(tmp_path), {
+        'table_01.jdx': CONVERTER_UVVIS,
+        'table_02.jdx': CONVERTER_UVVIS,
+        'table_03.jdx': CONVERTER_UVVIS,
+    })
+
+    converter = BagItBaseConverter(str(tmp_path))
+
+    assert converter.spc_type == 'UVVIS'
+    assert len(converter.data) == 3
+    assert converter.combined_image is not None
+
+
+def test_bagit_with_hplc_uvvis_only_stays_lcms(tmp_path):
+    # An HPLC UV/VIS chromatogram is the LC half of a run, and its
+    # wavelength pages are what the LC/MS viewer reads.
+    _write_bagit_layout(str(tmp_path), {'NTUPLES0.jdx': UVVIS_NTUPLES})
+
+    converter = BagItBaseConverter(str(tmp_path))
+
+    assert converter.spc_type == 'lcms'
+
+
+def test_openlab_bagit_stays_lcms_under_a_mapping_without_lcms_key(tmp_path):
+    _write_bagit_layout(str(tmp_path), {
+        '01.jdx': MASS_TIC_NEG,
+        'NTUPLES0.jdx': UVVIS_NTUPLES,
+        'NTUPLES1.jdx': MASS_SPEC_POS,
+    })
+
+    converter = BagItBaseConverter(
+        str(tmp_path), {'data_type_mapping': ELN_MAPPING_WITHOUT_LCMS})
+
+    assert any(isinstance(c, LCMSConverterAppComposer)
+               for c in converter._composers)
+
+
+def test_uvvis_with_reuploaded_lcms_peak_file_stays_lcms(tmp_path):
+    peak = """##TITLE=Spectrum
+##JCAMP-DX=5.00
+##DATA TYPE=LC/MS
+##DATA CLASS=PEAK TABLE
+
+$$ === CHEMSPECTRA UVVIS PEAK TABLE ===
+##PAGE=210.0
+##DATA TABLE= (XY..XY), PEAKS
+0.0, 1.0;
+1.0, 2.0;
+##END=
+"""
+    _write_flat_layout(str(tmp_path), {
+        'x_lcms_uvvis.jdx': UVVIS_NTUPLES,
+        'x_lcms_uvvis.peak.jdx': peak,
+    })
+
+    converter = BagItBaseConverter(str(tmp_path))
+
+    assert converter.spc_type == 'lcms'

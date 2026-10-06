@@ -26,6 +26,37 @@ from matplotlib import ticker  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
+# ##DATA TYPE spellings only an LC/MS run carries: its total ion chromatogram,
+# or the LC/MS label ChemSpectra writes on the peak file it generates. Matched
+# on the file's own text rather than on the mapped typ, because a request's
+# data_type_mapping replaces the built-in mapping and need not list them.
+LCMS_MARKER_DATATYPES = (
+    'LC/MS', 'LCMS', 'LC-MS', 'MASS TIC',
+    'TOTAL ION CHROMATOGRAM', 'TOTAL ION CHROMATOGRAPHY',
+)
+MASS_SPECTRUM_DATATYPES = ('MASS SPECTRUM', 'CONTINUOUS MASS SPECTRUM')
+
+
+def _is_lcms_marker(cv):
+    return cv.typ == 'LC/MS' or bool(
+        set(cv.datatypes) & set(LCMS_MARKER_DATATYPES))
+
+
+def _has_lcms_evidence(converters):
+    """Whether the archive members together make an LC/MS run.
+
+    A member is LC/MS outright (a TIC, or a re-uploaded LC/MS peak file), or
+    is an HPLC UV/VIS chromatogram, or mass spectra come with a UV/VIS
+    spectrum. A plain UV/VIS spectrum alone is not enough.
+    """
+    converters = list(converters)
+    typs = {cv.typ for cv in converters}
+    if 'HPLC UVVIS' in typs or any(_is_lcms_marker(cv) for cv in converters):
+        return True
+    datatypes = {dt for cv in converters for dt in cv.datatypes}
+    has_ms = 'MS' in typs or bool(datatypes & set(MASS_SPECTRUM_DATATYPES))
+    return has_ms and 'UVVIS' in typs
+
 
 class BagItBaseConverter:
     def __init__(self, target_dir, params=False, fname=''):
@@ -62,24 +93,19 @@ class BagItBaseConverter:
         list_composer = []
         lcms_paths = []
         archive_stems = []
-        # Determine if there is any LC/MS or UV-Vis context to group MS files.
-        has_lcms_context = False
+        # Every member is read once here and kept for the second pass, so
+        # the archive is judged as a whole before anything is grouped.
         detected = {}
         for file_name in list_file_names:
             if not file_name.lower().endswith('.jdx'):
                 continue
             jcamp_path = os.path.join(data_dir_path, file_name)
             try:
-                base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
-                # kept for the second pass: building it twice costs two
-                # nmrglue parses and two header scans per member, and this
-                # loop stops at the first LC/MS-ish file anyway
-                detected[jcamp_path] = base_cv
-                if base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS'):
-                    has_lcms_context = True
-                    break
+                detected[jcamp_path] = JcampBaseConverter(
+                    jcamp_path, self.raw_params)
             except Exception:
                 pass
+        has_lcms_context = _has_lcms_evidence(detected.values())
 
         for file_name in list_file_names:
             if not file_name.lower().endswith('.jdx'):
@@ -90,7 +116,12 @@ class BagItBaseConverter:
                 jcamp_path, self.raw_params)
             # BagIt / flat LCMS zips: keep all chromatogram and MS traces in one
             # LCMSConverterAppComposer (incl. MASS SPECTRUM), not JcampMSConverter/ms.py.
-            is_lcms_candidate = base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS') or (base_cv.typ == 'MS' and has_lcms_context)
+            # Only an archive that is an LC/MS run: a UV/VIS spectrum on its
+            # own (the converter ships every table as a BagIt) is a UV/VIS
+            # spectrum, as it is when it arrives as a single file.
+            is_lcms_candidate = has_lcms_context and (
+                base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS', 'MS')
+                or _is_lcms_marker(base_cv))
             if is_lcms_candidate:
                 lcms_paths.append(jcamp_path)
             else:

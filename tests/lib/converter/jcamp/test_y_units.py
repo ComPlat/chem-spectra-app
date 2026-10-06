@@ -1706,15 +1706,20 @@ def test_mass_spectrometry_refuses_a_transmittance_request(client):
                  ).status_code == 200
 
 
-def _lcms_archive(tmp_path):
-    """A BagIt holding one UV/VIS absorbance spectrum. A single UV/VIS member
-    is enough to read the archive as an LC/MS dataset."""
+def _uvvis_archive(tmp_path, with_chromatogram):
+    """A BagIt holding one UV/VIS absorbance spectrum, and with
+    +with_chromatogram+ the HPLC UV/VIS trace that makes it an LC/MS dataset.
+    A UV/VIS spectrum alone is not one."""
     import zipfile
     source = _curve(tmp_path, 'UV/VIS SPECTRUM', 'ABSORBANCE',
                     [0.02] * 20 + [1.0], name='member.jdx')
     target = tmp_path / 'archive.zip'
     with zipfile.ZipFile(target, 'w') as archive:
         archive.writestr('data/uv.jdx', source.read_text())
+        if with_chromatogram:
+            trace = _curve(tmp_path, 'HPLC UV/VIS SPECTRUM', 'ABSORBANCE',
+                           [0.02] * 20 + [1.0], name='trace.jdx')
+            archive.writestr('data/trace.jdx', trace.read_text())
         archive.writestr('bagit.txt', 'BagIt-Version: 0.97\n'
                                       'Tag-File-Character-Encoding: UTF-8\n')
         archive.writestr('manifest-sha256.txt', '')
@@ -1726,12 +1731,19 @@ def test_an_lcms_archive_refuses_a_transmittance_request(client, tmp_path):
     member converts perfectly well on its own; read as part of an LC/MS
     dataset it cannot, and saying so is the only honest answer.
     """
-    archive = _lcms_archive(tmp_path)
+    archive = _uvvis_archive(tmp_path, with_chromatogram=True)
     refused = _post(client, str(archive), transmittance='true')
     assert refused.status_code == 422
     assert 'LC/MS dataset' in json.loads(refused.data)['error']
     # the archive itself is fine; it is the instruction that cannot be met
     assert _post(client, str(archive)).status_code == 200
+
+
+def test_a_uvvis_only_archive_honours_a_transmittance_request(client, tmp_path):
+    """Without a chromatogram the archive is not an LC/MS dataset, so its
+    UV/VIS member converts as it would on its own."""
+    archive = _uvvis_archive(tmp_path, with_chromatogram=False)
+    assert _post(client, str(archive), transmittance='true').status_code == 200
 
 
 @pytest.mark.parametrize('datatype', ['LC/MS', 'TOTAL ION CHROMATOGRAM'])
