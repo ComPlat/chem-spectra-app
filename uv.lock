@@ -1,22 +1,22 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.13.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version < '3.13' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and platform_machine != 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and platform_machine != 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.13.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and platform_machine != 'ARM64' and sys_platform == 'win32'",
-    "python_full_version < '3.13' and platform_machine != 'ARM64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version < '3.13' and sys_platform == 'emscripten'",
     "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.13' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version < '3.13' and platform_machine != 'ARM64' and sys_platform == 'win32'",
+    "python_full_version < '3.13' and sys_platform == 'emscripten'",
     "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
@@ -292,7 +292,7 @@ requires-dist = [
     { name = "gunicorn", specifier = "==26.*" },
     { name = "matplotlib", specifier = "==3.*" },
     { name = "netcdf4", specifier = "==1.*" },
-    { name = "nmrglue", git = "https://github.com/ComPlat/nmrglue.git?rev=b0802a080b44de6bb75fd294e8d14cb4b24b95e9" },
+    { name = "nmrglue", git = "https://github.com/ComPlat/nmrglue.git?rev=368c0edd29521ec84e3c1a46bb7b49dc7f3800f4" },
     { name = "numpy", specifier = ">=2.0,<2.5" },
     { name = "pandas", specifier = ">=2.3,<4" },
     { name = "pymzml", specifier = "==2.*" },
@@ -1069,7 +1069,7 @@ wheels = [
 [[package]]
 name = "nmrglue"
 version = "0.13.dev0"
-source = { git = "https://github.com/ComPlat/nmrglue.git?rev=b0802a080b44de6bb75fd294e8d14cb4b24b95e9#b0802a080b44de6bb75fd294e8d14cb4b24b95e9" }
+source = { git = "https://github.com/ComPlat/nmrglue.git?rev=368c0edd29521ec84e3c1a46bb7b49dc7f3800f4#368c0edd29521ec84e3c1a46bb7b49dc7f3800f4" }
 dependencies = [
     { name = "numpy" },
     { name = "scipy" },
@@ -1316,8 +1316,8 @@ resolution-markers = [
     "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", marker = "python_full_version < '3.13'" },
-    { name = "regex", marker = "python_full_version < '3.13'" },
+    { name = "numpy" },
+    { name = "regex" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/93/36/6eeb075309af656842127bf510f508246ab7c73f2a08be0e203d827a8468/pymzml-2.6.1.tar.gz", hash = "sha256:e36a352d5313e7d9b23882e5bcf6d8ce723e5ad6b0ae03d64dcbe62853bfcc57", size = 25342197, upload-time = "2026-06-23T07:27:27.48Z" }
 wheels = [
@@ -1330,21 +1330,21 @@ version = "2.7.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.13.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and platform_machine != 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and platform_machine != 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.13.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and platform_machine != 'ARM64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", marker = "python_full_version >= '3.13'" },
-    { name = "regex", marker = "python_full_version >= '3.13'" },
+    { name = "numpy" },
+    { name = "regex" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/3f/c9/4f0be3dff579711339e333229481748b99818b5dd9f3e176b65d3f20f417/pymzml-2.7.0.tar.gz", hash = "sha256:daba6ab5f91719de549ecd29d49789abd4678f43bef021c97a8ef84b96de25da", size = 25342164, upload-time = "2026-09-07T07:46:11.316Z" }
 wheels = [
