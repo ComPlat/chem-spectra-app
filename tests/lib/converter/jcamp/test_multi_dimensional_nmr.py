@@ -244,3 +244,68 @@ def test_the_datatype_says_how_many_when_it_knows():
 ])
 def test_what_counts_as_nmr_for_the_wording(header, expected):
     assert declares_nmr('##TITLE=t\n{}\n'.format(header)) is expected
+
+
+# - - - a refusal must not leave anything behind on the shared figure - - -
+
+def test_a_refused_overlay_leaves_the_figure_clean(client, tmp_path):
+    """`/combine_images` plots onto the module-global pyplot figure.
+
+    The converter refuses a 2D member from inside that loop, after the
+    earlier files have already been drawn, and nothing on the raising path
+    clears the figure. The curves stayed on `plt.gca()` and were drawn into
+    the *next* image the worker rendered -- a different request, whose
+    attachment image the ELN then stores. One request corrupting another's
+    saved preview is worse than the flattening this PR set out to fix.
+
+    The files are named so the 1D one sorts first and is plotted before the
+    2D one raises.
+    """
+    import json
+
+    import matplotlib.pyplot as plt
+
+    with open(ONE_D, 'rb') as handle:
+        one_d = handle.read()
+    two_d = _two_d(tmp_path).read_bytes()
+
+    plt.clf()
+    plt.cla()
+    response = client.post(
+        '/combine_images',
+        content_type='multipart/form-data',
+        data={'files[]': [(io.BytesIO(one_d), 'a_1d.dx'),
+                          (io.BytesIO(two_d), 'b_2d.dx')]},
+    )
+    assert response.status_code == 422
+    assert '2D' in json.loads(response.data)['error']
+    # the refusal names the member, because the caller sent several files
+    assert 'b_2d' in json.loads(response.data)['error']
+    assert len(plt.gca().lines) == 0, (
+        'a refused overlay left %d curve(s) on the shared figure'
+        % len(plt.gca().lines))
+
+
+def test_a_refused_overlay_does_not_convert_the_other_members(client,
+                                                              tmp_path):
+    """And it refuses before any of them is read.
+
+    Every member used to be parsed by nmrglue, converted and rendered to a
+    3200x1800 PNG before the 2D one raised: a twenty-member upload paid
+    nineteen full conversions for a 422. The header check costs a read of the
+    first 64 KB.
+    """
+    import json
+
+    unparsable = io.BytesIO(b'not a jcamp at all\n')
+    two_d = _two_d(tmp_path).read_bytes()
+    response = client.post(
+        '/combine_images',
+        content_type='multipart/form-data',
+        data={'files[]': [(unparsable, 'a_broken.dx'),
+                          (io.BytesIO(two_d), 'b_2d.dx')]},
+    )
+    # the unreadable member never gets as far as being read: the answer is
+    # about the dimensions, not about the broken file
+    assert response.status_code == 422
+    assert '2D' in json.loads(response.data)['error']

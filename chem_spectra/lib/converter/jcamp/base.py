@@ -99,11 +99,44 @@ def read_header(path):
             raw = handle.read(HEADER_BYTES).decode('latin-1')
     except (OSError, TypeError, ValueError):
         return ''
-    # Line endings normalised so `^` finds a label whatever wrote the file.
-    # A CR-only file -- classic Mac, and some instrument exports -- is one
-    # long line to `re.MULTILINE`, so every record after the first was
-    # invisible.
+    return header_from_text(raw)
+
+
+def header_from_text(raw):
+    """The same normalisation, for callers that already hold the text.
+
+    Line endings are normalised by hand rather than with `str.splitlines()`,
+    which also breaks on `\x85` and other latin-1 control characters: a byte
+    that is data to one instrument would silently become a line break here,
+    and a record could be split in half. A CR-only file -- classic Mac, and
+    some instrument exports -- would otherwise arrive as one long line, and
+    every record after the first would be invisible.
+    """
     return raw.replace('\r\n', '\n').replace('\r', '\n')
+
+
+def refuse_if_multi_dimensional(header, what=None):
+    """Raise unless `header` describes one dimension, or says nothing.
+
+    Module level so a caller that already holds the text, or that must decide
+    before it starts drawing, can ask the same question the converter asks.
+    `what` names the file when the answer is about one member of an upload
+    rather than about the upload itself.
+    """
+    dimensions = declared_dimensions(header)
+    if dimensions is None or dimensions <= 1:
+        return
+    where = '{}: '.format(what) if what else ''
+    if declares_nmr(header):
+        raise UnconvertibleSpectrum(
+            where + 'this is a {}D NMR file. ChemSpectra reads '
+            'one-dimensional spectra only; open it in NMRium '
+            'instead'.format(dimensions)
+        )
+    raise UnconvertibleSpectrum(
+        where + 'this file declares {} dimensions. ChemSpectra reads '
+        'one-dimensional spectra only'.format(dimensions)
+    )
 
 class JcampBaseConverter:
     def __init__(self, path, params=False):
@@ -201,19 +234,7 @@ class JcampBaseConverter:
         holding two bagits is -- processing part of an upload silently is the
         defect, not the remedy.
         """
-        header = read_header(path)
-        dimensions = declared_dimensions(header)
-        if dimensions is None or dimensions <= 1:
-            return
-        if declares_nmr(header):
-            raise UnconvertibleSpectrum(
-                'this is a {}D NMR file. ChemSpectra reads one-dimensional '
-                'spectra only; open it in NMRium instead'.format(dimensions)
-            )
-        raise UnconvertibleSpectrum(
-            'this file declares {} dimensions. ChemSpectra reads '
-            'one-dimensional spectra only'.format(dimensions)
-        )
+        refuse_if_multi_dimensional(read_header(path))
 
     def __read_user_data_type_mapping(self):
         user_dt_mapping = self.params.get('user_data_type_mapping')
