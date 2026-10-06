@@ -1,6 +1,7 @@
 import nmrglue as ng
 import json
 import logging
+import re
 
 from chem_spectra.lib.converter.share import (
     UnconvertibleSpectrum, parse_params, parse_solvent,
@@ -19,9 +20,128 @@ logger = logging.getLogger(__name__)
 # JcampTechniqueConverter and so cannot answer a `transmittance` request.
 NON_ABSORBING_TYPES = ('MS', 'LC/MS')
 
+# Enough to reach the records; a JCAMP header is a few hundred bytes and the
+# rest of the file is numbers. The same window chemotion_ELN reads.
+HEADER_BYTES = 64 * 1024
+
+# JCAMP-DX 4.24 (5.1): a label is compared with spaces, dashes, underscores
+# and slashes removed, and without regard to case. Anywhere in the label, not
+# only between its words -- so `##N-UM D/IM=` is `##NUMDIM=`. Normalising the
+# whole label is both closer to the spec and simpler than matching each
+# spelling.
+LABEL_NOISE_RE = re.compile(r'[\s_/-]')
+
+# `nD` is the JCAMP-DX 6 spelling; some vendors write the number instead.
+ND_VALUE_RE = re.compile(r'^\s*([2-9]|n)\s*D\s+NMR', re.IGNORECASE)
+
+
+def header_records(header_text):
+    """Every `##LABEL= value` in the text, label normalised, in file order."""
+    for line in header_text.split('\n'):
+        if not line.startswith('##'):
+            continue
+        label, sep, value = line[2:].partition('=')
+        if not sep:
+            continue
+        yield LABEL_NOISE_RE.sub('', label).upper(), value.strip()
+
+
+def declared_dimensions(header_text):
+    """How many dimensions the header declares, or None if it does not say.
+
+    Read from the text rather than from nmrglue's result. Not because nmrglue
+    drops the records -- it keeps them on a small file -- but because a real
+    2D dataset is large and need not parse at all, and there is no reason to
+    spend that read on a file that will be refused either way.
+
+    An explicit `##NUM DIM=` decides. Failing that, the datatype is read: it
+    says `nD` or `2D` without always saying which n, so two is the least it
+    can mean.
+    """
+    from_datatype = None
+    for label, value in header_records(header_text):
+        if label == 'NUMDIM':
+            try:
+                return int(value.split()[0])
+            except (ValueError, IndexError):
+                continue
+        if label == 'DATATYPE' and from_datatype is None:
+            match = ND_VALUE_RE.match(value)
+            if match:
+                head = match.group(1)
+                from_datatype = 2 if head.lower() == 'n' else int(head)
+    return from_datatype
+
+
+def declares_nmr(header_text):
+    """Whether the header says this is NMR at all.
+
+    Only used to word the refusal -- an NMR file can be opened in NMRium,
+    anything else cannot. The refusal itself does not depend on it: no
+    technique here can hold a second dimension.
+    """
+    for label, value in header_records(header_text):
+        if label == 'DATATYPE' and 'NMR' in value.upper():
+            return True
+        if label in ('.OBSERVENUCLEUS', 'OBSERVENUCLEUS'):
+            return True
+    return False
+
+
+def read_header(path):
+    """The first HEADER_BYTES of the file, as text.
+
+    latin-1 because it maps every byte and so cannot raise: this runs before
+    anything has established the file is even a JCAMP.
+    """
+    try:
+        with open(path, 'rb') as handle:
+            raw = handle.read(HEADER_BYTES).decode('latin-1')
+    except (OSError, TypeError, ValueError):
+        return ''
+    return header_from_text(raw)
+
+
+def header_from_text(raw):
+    """The same normalisation, for callers that already hold the text.
+
+    Line endings are normalised by hand rather than with `str.splitlines()`,
+    which also breaks on `\x85` and other latin-1 control characters: a byte
+    that is data to one instrument would silently become a line break here,
+    and a record could be split in half. A CR-only file -- classic Mac, and
+    some instrument exports -- would otherwise arrive as one long line, and
+    every record after the first would be invisible.
+    """
+    return raw.replace('\r\n', '\n').replace('\r', '\n')
+
+
+def refuse_if_multi_dimensional(header, what=None):
+    """Raise unless `header` describes one dimension, or says nothing.
+
+    Module level so a caller that already holds the text, or that must decide
+    before it starts drawing, can ask the same question the converter asks.
+    `what` names the file when the answer is about one member of an upload
+    rather than about the upload itself.
+    """
+    dimensions = declared_dimensions(header)
+    if dimensions is None or dimensions <= 1:
+        return
+    where = '{}: '.format(what) if what else ''
+    if declares_nmr(header):
+        raise UnconvertibleSpectrum(
+            where + 'this is a {}D NMR file. ChemSpectra reads '
+            'one-dimensional spectra only; open it in NMRium '
+            'instead'.format(dimensions)
+        )
+    raise UnconvertibleSpectrum(
+        where + 'this file declares {} dimensions. ChemSpectra reads '
+        'one-dimensional spectra only'.format(dimensions)
+    )
+
 class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = parse_params(params)
+        self.__refuse_multi_dimensional(path)
         self.dic, self.data = self.__read(path)
         # A file with no ##DATA TYPE= at all raised KeyError straight out of
         # the request. An absent header is no more exceptional than an
@@ -97,6 +217,25 @@ class JcampBaseConverter:
     def __read(self, path):
         return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
     
+    @staticmethod
+    def __refuse_multi_dimensional(path):
+        """A 2D dataset is not a curve, and this app has nowhere to put one.
+
+        Read one row of it and you get a 1D spectrum with the acquisition
+        time axis labelled as the spectrum's -- which is what happened, with
+        a 200 and no indication that the answer meant nothing. Refusing is
+        the whole fix: `xs`/`ys` cannot hold a matrix, so detecting and
+        continuing would only move the failure.
+
+        Checked before the file is parsed, in the one place every endpoint
+        goes through, so /convert, /zip_jcamp, the save and refresh paths and
+        each BagIt member are all covered by this single guard. A BagIt
+        archive carrying one such member is refused whole, as an archive
+        holding two bagits is -- processing part of an upload silently is the
+        defect, not the remedy.
+        """
+        refuse_if_multi_dimensional(read_header(path))
+
     def __read_user_data_type_mapping(self):
         user_dt_mapping = self.params.get('user_data_type_mapping')
         if user_dt_mapping == '' or user_dt_mapping is None:

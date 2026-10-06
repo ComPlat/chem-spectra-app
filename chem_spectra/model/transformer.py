@@ -6,7 +6,10 @@ import glob     # noqa: F401
 import os
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
-from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.converter.jcamp.base import (
+    HEADER_BYTES, JcampBaseConverter, header_from_text,
+    refuse_if_multi_dimensional,
+)
 from chem_spectra.lib.shared.misc import shorten_label
 from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
@@ -419,6 +422,20 @@ class TransformerModel:
                 self.multiple_files[idx] = file
 
         self.multiple_files.sort(key=lambda file: file.name)
+
+        # Before anything is drawn. The converter refuses a 2D file too, but
+        # it does so from inside the loop below, after earlier files have
+        # already been plotted onto the module-global pyplot figure -- and
+        # nothing on the raising path clears it. The curves then stayed on
+        # `plt.gca()` and appeared in the *next* image this worker rendered,
+        # for a different request, which the ELN stores as that spectrum's
+        # attachment image. Asking every file first also saves converting and
+        # rendering the members before the one that will be refused.
+        for file in self.multiple_files:
+            refuse_if_multi_dimensional(
+                header_from_text(file.core[:HEADER_BYTES]),
+                shorten_label(file.name),
+            )
 
         plotted_any = False
         # one entry per plotted curve: whether its file asks to be drawn the
