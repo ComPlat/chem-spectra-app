@@ -367,6 +367,17 @@ class JcampTechniqueConverter:
             except:  # noqa
                 pass
 
+        # None of the readings above found both ends of the axis: the block
+        # declares no x range this converter can read (an NTUPLES block read
+        # by ##PAGE= has none of these records, for instance). Building the
+        # axis anyway failed on `None + delta` with a 500; say why instead.
+        if beg_pt is None or end_pt is None:
+            raise UnconvertibleSpectrum(
+                'this block declares no x axis ChemSpectra can read (no '
+                'FIRSTX/LASTX or FIRST/LAST range). A paged NTUPLES '
+                'chromatogram is read only as part of an LC/MS dataset'
+            )
+
         # Store the points the way the technique is conventionally drawn.
         # Which way that is comes from `x_reversed`; whether it may be
         # normalised at all comes from `store_in_drawn_order`, because for
