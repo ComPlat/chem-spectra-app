@@ -1742,8 +1742,17 @@ def test_an_lcms_archive_refuses_a_transmittance_request(client, tmp_path):
 def test_a_uvvis_only_archive_honours_a_transmittance_request(client, tmp_path):
     """Without a chromatogram the archive is not an LC/MS dataset, so its
     UV/VIS member converts as it would on its own."""
+    import io
+    import zipfile
     archive = _uvvis_archive(tmp_path, with_chromatogram=False)
-    assert _post(client, str(archive), transmittance='true').status_code == 200
+    response = _post(client, str(archive), transmittance='true')
+    assert response.status_code == 200
+    # a bare 200 cannot tell a converted file from a dropped instruction
+    with zipfile.ZipFile(io.BytesIO(response.data)) as zf:
+        name = next(n for n in zf.namelist() if n.endswith('.jdx'))
+        jcamp = zf.read(name).decode('utf-8', 'replace')
+    assert '##YUNITS=% TRANSMITTANCE' in jcamp
+    assert '##$CSTRANSMITTANCE=true' in jcamp
 
 
 @pytest.mark.parametrize('datatype', ['LC/MS', 'TOTAL ION CHROMATOGRAM'])

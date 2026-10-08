@@ -474,8 +474,9 @@ def test_openlab_bagit_stays_lcms_under_a_mapping_without_lcms_key(tmp_path):
     converter = BagItBaseConverter(
         str(tmp_path), {'data_type_mapping': ELN_MAPPING_WITHOUT_LCMS})
 
-    assert any(isinstance(c, LCMSConverterAppComposer)
-               for c in converter._composers)
+    # the TIC is in the group, not merely some LC/MS composer next to it
+    assert converter.spc_type == 'lcms'
+    assert 'lcms_tic_neg' in converter.archive_entry_stems
 
 
 def test_uvvis_with_reuploaded_lcms_peak_file_stays_lcms(tmp_path):
@@ -491,11 +492,55 @@ $$ === CHEMSPECTRA UVVIS PEAK TABLE ===
 1.0, 2.0;
 ##END=
 """
+    # a plain UV/VIS table, so only the peak file's LC/MS label can decide
     _write_flat_layout(str(tmp_path), {
-        'x_lcms_uvvis.jdx': UVVIS_NTUPLES,
+        'x_lcms_uvvis.jdx': CONVERTER_UVVIS,
         'x_lcms_uvvis.peak.jdx': peak,
     })
 
     converter = BagItBaseConverter(str(tmp_path))
 
     assert converter.spc_type == 'lcms'
+
+
+def test_paged_uvvis_chromatogram_labelled_uv_vis_stays_lcms(tmp_path):
+    # The same LC-UV block can be labelled UV-VIS or HPLC UV-VIS by whoever
+    # writes the converter profile; its wavelength pages are what make it a
+    # chromatogram, and only the LC/MS composer reads them (the technique
+    # converter has no x axis for them).
+    paged = UVVIS_NTUPLES.replace('##DATA TYPE=HPLC UV-VIS', '##DATA TYPE=UV-VIS')
+    _write_bagit_layout(str(tmp_path), {'NTUPLES0.jdx': paged})
+
+    converter = BagItBaseConverter(str(tmp_path))
+
+    assert converter.spc_type == 'lcms'
+    assert 'lcms_uvvis' in converter.archive_entry_stems
+
+
+def test_hplc_chromatogram_under_a_mapping_without_its_key_stays_lcms(tmp_path):
+    mapping = json.dumps({'datatypes': {
+        'UVVIS': ['UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM'],
+    }})
+    _write_bagit_layout(str(tmp_path), {'NTUPLES0.jdx': UVVIS_NTUPLES})
+
+    converter = BagItBaseConverter(str(tmp_path), {'data_type_mapping': mapping})
+
+    assert converter.spc_type == 'lcms'
+
+
+def test_continuous_mass_spectrum_unnamed_by_the_mapping_is_grouped(tmp_path):
+    # The ELN mapping's MS key lists only MASS SPECTRUM: the member gets typ ''
+    # but is still a mass spectrum, so it joins the group instead of reaching
+    # the technique converter.
+    continuous = MASS_SPEC_POS.replace(
+        '##DATA TYPE=MASS SPECTRUM', '##DATA TYPE=CONTINUOUS MASS SPECTRUM')
+    _write_bagit_layout(str(tmp_path), {
+        'NTUPLES0.jdx': UVVIS_NTUPLES,
+        'NTUPLES1.jdx': continuous,
+    })
+
+    converter = BagItBaseConverter(
+        str(tmp_path), {'data_type_mapping': ELN_MAPPING_WITHOUT_LCMS})
+
+    assert converter.spc_type == 'lcms'
+    assert any(stem.startswith('lcms_mz') for stem in converter.archive_entry_stems)
