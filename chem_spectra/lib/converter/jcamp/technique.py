@@ -317,55 +317,60 @@ class JcampTechniqueConverter:
             xs = make_ni_data_xs(base)
             return xs
 
-        beg_pt = None
-        end_pt = None
         idx = self.target_idx
 
-        if beg_pt is None:
-            try:
-                obs_freq = self.obs_freq
-                shift = float(self.dic['$OFFSET'][idx])
-                beg_pt = float(
-                    self.dic['FIRST'][idx].replace(' ', '').split(',')[0]
-                ) / obs_freq
-                end_pt = float(
-                    self.dic['LAST'][idx].replace(' ', '').split(',')[0]
-                ) / obs_freq
-                shift = beg_pt - shift
-                beg_pt = beg_pt - shift
-                end_pt = end_pt - shift
-            except:  # noqa
-                pass
+        # Each reading yields both ends or nothing. Assigning one end and then
+        # failing on the other used to leave a half range that skipped every
+        # later reading, so a file with a valid FIRSTX/LASTX could end up with
+        # no axis at all.
+        def first_last_shifted():
+            obs_freq = self.obs_freq
+            shift = float(self.dic['$OFFSET'][idx])
+            beg = float(self.dic['FIRST'][idx].replace(' ', '').split(',')[0]) / obs_freq
+            end = float(self.dic['LAST'][idx].replace(' ', '').split(',')[0]) / obs_freq
+            shift = beg - shift
+            return beg - shift, end - shift
 
-        if beg_pt is None:  # MNova
-            try:
-                obs_freq = self.obs_freq
-                beg_pt = float(
-                    self.dic['FIRST'][idx].replace(' ', '').split(',')[0]
-                ) / obs_freq
-                end_pt = float(
-                    self.dic['LAST'][idx].replace(' ', '').split(',')[0]
-                ) / obs_freq
-            except:  # noqa
-                pass
+        def first_last():  # MNova
+            obs_freq = self.obs_freq
+            beg = float(self.dic['FIRST'][idx].replace(' ', '').split(',')[0]) / obs_freq
+            end = float(self.dic['LAST'][idx].replace(' ', '').split(',')[0]) / obs_freq
+            return beg, end
 
-        if beg_pt is None:
+        def firstx_lastx():
+            return to_float(self.dic['FIRSTX'][idx]), to_float(self.dic['LASTX'][idx])
+
+        def firstx_lastx_padded():
+            while len(self.dic['FIRSTX']) <= idx:
+                self.dic['FIRSTX'].insert(0, '')
+            while len(self.dic['LASTX']) <= idx:
+                self.dic['LASTX'].insert(0, '')
+            return to_float(self.dic['FIRSTX'][idx]), to_float(self.dic['LASTX'][idx])
+
+        beg_pt = end_pt = None
+        for reading in (first_last_shifted, first_last, firstx_lastx, firstx_lastx_padded):
             try:
-                beg_pt = to_float(self.dic['FIRSTX'][idx])
-                end_pt = to_float(self.dic['LASTX'][idx])
+                beg, end = reading()
             except:  # noqa
-                pass
-            
-        if beg_pt is None:
-            try:
-                while len(self.dic['FIRSTX']) <= idx:
-                    self.dic['FIRSTX'].insert(0, '')
-                while len(self.dic['LASTX']) <= idx:
-                    self.dic['LASTX'].insert(0, '')
-                beg_pt = to_float(self.dic['FIRSTX'][idx])
-                end_pt = to_float(self.dic['LASTX'][idx])
-            except:  # noqa
-                pass
+                continue
+            if beg is not None and end is not None:
+                beg_pt, end_pt = beg, end
+                break
+
+        # None of the readings found both ends of the axis. Building it anyway
+        # failed on `None + delta` with a 500; say why instead.
+        if beg_pt is None or end_pt is None:
+            paged = (any('NTUPLES' in str(c).upper() for c in (base.dataclasses or []))
+                     and 'PAGE' in self.dic)
+            if paged:
+                raise UnconvertibleSpectrum(
+                    'this is a paged NTUPLES block (##PAGE=), which ChemSpectra '
+                    'reads only as part of an LC/MS dataset, not on its own'
+                )
+            raise UnconvertibleSpectrum(
+                'the x range of this block could not be read: it has no '
+                'complete FIRSTX/LASTX or FIRST/LAST pair'
+            )
 
         # Store the points the way the technique is conventionally drawn.
         # Which way that is comes from `x_reversed`; whether it may be

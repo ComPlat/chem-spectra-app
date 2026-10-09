@@ -7,6 +7,7 @@ import logging
 
 from chem_spectra.lib.data_pipeline.infrared import InfraredLib
 from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
+from chem_spectra.lib.converter.share import UnconvertibleSpectrum
 from chem_spectra.lib.chem.artist import ArtistLib
 
 hdr_nsdb = {
@@ -184,6 +185,16 @@ class InferencerModel:
             )
             outcome['output']['result'][0]['svgs'] = svgs
             return outcome
+        except UnconvertibleSpectrum as err:
+            # A spectrum the converter refuses (no readable x range, ...).
+            # This endpoint reports errors in the body, so keep that contract
+            # and pass the reason on rather than answering 422.
+            return {
+                'outline': {
+                    'code': 400,
+                    'text': 'IR Spectrum error!\n{}'.format(err),
+                }
+            }
         except (TypeError, UnparsableJcampData):
             # UnparsableJcampData: the uploaded spectrum has no readable data
             # array, which is a bad upload rather than a server fault
