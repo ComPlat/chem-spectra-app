@@ -116,4 +116,19 @@ def create_app(test_config=None):
     def _ms_conversion_failed(err):
         return jsonify(error=str(err)), getattr(err, 'status', 422)
 
+    # Every image is drawn on pyplot's module-global figure, and a worker
+    # serves one request after another with the same one. A request that
+    # stops partway -- a refusal raised after some curves were already
+    # plotted, or any exception -- used to leave them there, and the next
+    # image this worker rendered, for somebody else's spectrum, carried them.
+    # Closed after every request, whichever way it ended. pyplot is not
+    # imported here if nothing has imported it yet: importing it first would
+    # fix the backend before the composers choose Agg.
+    @app.teardown_request
+    def _close_figures(_exc):
+        import sys
+        pyplot = sys.modules.get('matplotlib.pyplot')
+        if pyplot is not None:
+            pyplot.close('all')
+
     return app
