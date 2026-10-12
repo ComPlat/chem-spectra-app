@@ -154,7 +154,6 @@ class JcampBaseConverter:
         self.target = self.__select_target()
         self.data = self.target.data if self.target else None
         self.datatype = self.__set_datatype()
-        self.dataclasses = self.dic.get('DATACLASS', {})
         self.dataclass = self.__set_dataclass()
         self.data_format = self.__set_dataformat()
         self.title = self.dic.get('TITLE', [''])[0]
@@ -327,13 +326,21 @@ class JcampBaseConverter:
         return ''
 
     def __typ(self):
-        dt = self.datatype
+        return self.typ_of(self.datatype)
 
-        data_type_mappings = self.__data_type_mappings()
+    def typ_of(self, datatype):
+        """The technique key `datatype` maps to, or '' if none does.
 
-        for key, values in data_type_mappings.items():
-            values = [value.upper() for value in values]
-            if dt.upper() in values:
+        By the mapping this file is read with -- the request's own, when it
+        sends one, since that replaces the built-in mapping. Public because a
+        file can hold several blocks of one technique under different
+        spellings, and whatever gathers them has to ask the same question
+        the file's own `typ` was answered by.
+        """
+        if not datatype:
+            return ''
+        for key, values in self.__data_type_mappings().items():
+            if datatype.upper() in (value.upper() for value in values):
                 return key
         return ''
 

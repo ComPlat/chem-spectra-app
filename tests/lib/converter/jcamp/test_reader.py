@@ -136,9 +136,13 @@ def test_a_three_column_table_gives_its_x_and_y():
 
     `__block_pairs` asked for exactly two columns, so a three-column block
     fell through to `return data` and would have handed a three-dimensional
-    array to the y series. It asks for two *or more* now and reads the first
-    two, which is the same answer for an `(XY..XY)` table and the right one
-    for `(XYW..XYW)`.
+    array to the y series. For the `(1, N, k)` shape coordinate tables come
+    back as, it takes two *or more* now and reads the first two.
+
+    A plain two-dimensional array is still taken only at exactly two columns
+    wide. The FID path hands its processed data through the same function,
+    and a processed multi-dimensional Bruker dataset is `(increments,
+    points)` -- not a list of pairs.
     """
     import numpy as np
 
@@ -153,7 +157,9 @@ def test_a_three_column_table_gives_its_x_and_y():
         x, y = pairs(data)
         assert list(x) == [1.0, 2.0]
         assert list(y) == [10.0, 20.0]
-    assert pairs(np.array([[1.0, 10.0, 0.5], [2.0, 20.0, 0.6]])) is not None
+    assert pairs(np.array([[1.0, 10.0, 0.5], [2.0, 20.0, 0.6]])) is None
+    x, y = pairs(np.array([[1.0, 10.0], [2.0, 20.0]]))       # (2, 2)
+    assert list(x) == [1.0, 2.0] and list(y) == [10.0, 20.0]
 
 
 def test_the_peak_table_width_does_not_disturb_x_and_y():

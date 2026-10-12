@@ -247,21 +247,26 @@ class JcampTechniqueConverter:
         itself via `XYDATA_OLD`; nmrglue's own parse is byte-identical on the
         XRD fixtures and handles indented and signed lines the app's did not.
 
-        Two columns or more, not exactly two. Since nmrglue `0aa0aa7` an
-        `(XYW..XYW)` table keeps its third column, the peak width, instead of
-        dropping it silently -- `CHI-224_10.jdx`'s peak table went from
-        `(1, 55, 3)` where it was `(1, 55, 2)`, with X and Y unchanged.
-        Demanding exactly two would send such a block to `return data`, which
-        hands a three-dimensional array to the y series. No fixture reaches
-        that today, because no 3-column block is any file's target block; this
-        is so that the first one does not arrive as a crash.
+        A coordinate table may be wider than two columns: since nmrglue
+        `0aa0aa7` an `(XYW..XYW)` table keeps its third column, the peak
+        width, so `CHI-224_10.jdx`'s peak table reads `(1, 55, 3)` where it
+        read `(1, 55, 2)`, X and Y unchanged. The first two columns are read.
+        No fixture's target block is such a table; this is so that the first
+        one does not arrive as a three-dimensional y series.
+
+        Only the three-dimensional `(1, N, k)` shape that coordinate tables
+        come back as. A plain two-dimensional array is taken only when it is
+        exactly two columns wide: the FID path hands its processed data
+        through here too, and a multi-dimensional Bruker dataset, processed
+        to `(increments, points)`, is no list of pairs -- reading its first
+        two columns as x and y would draw a curve that means nothing.
         """
         if isinstance(data, dict) or data is None:
             return None
         if data.ndim == 3 and data.shape[0] == 1 and data.shape[2] >= 2:
             return data[0][:, :2].T
-        if data.ndim == 2 and data.shape[1] >= 2:
-            return data[:, :2].T
+        if data.ndim == 2 and data.shape[1] == 2:
+            return data.T
         return None
 
     @classmethod
@@ -989,7 +994,7 @@ class JcampTechniqueConverter:
         # the data as stored.
         max_y = np.max(self.ys)
         height = (0.2 * max_y if refresh_solvent
-                  else self.__peak_threshold() * max_y)
+                  else self.peak_threshold * max_y)
 
         corr_data_ys = self.ys
         corr_height = height

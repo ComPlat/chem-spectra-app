@@ -40,5 +40,15 @@ def _ms_blocks(base):
     target = getattr(base, 'target', None)
     if target is None:
         return []
-    blocks = [b for b in jcamp if b.datatype == target.datatype]
+    # By technique, not by spelling. `MASS SPECTRUM` and `CONTINUOUS MASS
+    # SPECTRUM` both map to MS, and the flat read merged every block's pages
+    # whatever each was called; matching the target's exact string dropped
+    # the other spelling's runs without a word. A TIC is not a mass spectrum
+    # (it maps to LC/MS), so it stays out.
+    typ_of = getattr(base, 'typ_of', None)
+    typ = getattr(base, 'typ', '')
+    if typ_of is not None and typ:
+        blocks = [b for b in jcamp if b.datatype and typ_of(b.datatype) == typ]
+    else:
+        blocks = [b for b in jcamp if b.datatype == target.datatype]
     return blocks or [target]
