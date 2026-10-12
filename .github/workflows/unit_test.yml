@@ -55,11 +55,15 @@ jobs:
         mkdir -p chem_spectra/tmp
         chmod -R 777 chem_spectra/tmp
     - name: Start msconvert Docker container
+      # Pinned to the ProteoWizard build the Chemotion msconvert sidecar ships
+      # (3.0.26121). Unpinned, CI took `latest`, which moved to 4.0 on
+      # 2026-10-09: msconvert then reports success without writing the mzML,
+      # and test_ms_raw_converter_composer fails. Upgrade deliberately.
       run: |
         docker run --detach --name msconvert_docker \
           --rm -it \
           -e WINEDEBUG=-all \
           -v ${{ github.workspace }}/chem_spectra/tmp:/data \
-          proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses bash
+          proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses:3.0.26121-ed8dc8a@sha256:52d830174eec595fc9fb17628effbbacec8b931fc13620a87fb44c77263daaef bash
     - name: Test with pytest
       run: uv run python -m pytest

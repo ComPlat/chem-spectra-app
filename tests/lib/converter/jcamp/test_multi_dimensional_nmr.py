@@ -162,6 +162,33 @@ def test_an_archive_carrying_one_is_refused_whole(client, tmp_path):
     assert '2D' in json.loads(response.data)['error']
 
 
+def test_an_archive_is_refused_before_any_member_is_converted(tmp_path,
+                                                             monkeypatch):
+    """The 2D member sorts after a 1D one, which used to be converted and
+    rendered first: the archive's members are read before any is drawn, so
+    the refusal comes before the first conversion, not after it.
+    """
+    import shutil
+    import chem_spectra.lib.converter.bagit.base as bagit_base
+
+    data = tmp_path / 'bag' / 'data'
+    data.mkdir(parents=True)
+    shutil.copy('./tests/fixtures/source/1H.dx', data / 'a_one.jdx')
+    _two_d(data, name='b_two.jdx')
+    (tmp_path / 'bag' / 'bagit.txt').write_text('BagIt-Version: 0.97\n')
+
+    composed = []
+
+    def spy(*args, **kwargs):
+        composed.append(args)
+        raise AssertionError('a member was composed before the refusal')
+
+    monkeypatch.setattr(bagit_base, 'TechniqueComposer', spy)
+    with pytest.raises(UnconvertibleSpectrum, match='2D'):
+        bagit_base.BagItBaseConverter(str(tmp_path / 'bag'))
+    assert composed == []
+
+
 # - - - agreeing with the ELN's rule, and where we deliberately differ - - -
 
 @pytest.mark.parametrize('ending', ['\n', '\r\n', '\r'])

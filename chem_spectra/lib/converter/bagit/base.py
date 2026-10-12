@@ -5,7 +5,9 @@ import json
 import logging
 import math
 
-from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.converter.jcamp.base import (
+    JcampBaseConverter, header_records, read_header,
+)
 from chem_spectra.lib.converter.share import (
     UnconvertibleSpectrum, parse_params,
 )
@@ -25,6 +27,69 @@ import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib import ticker  # noqa: E402
 
 logger = logging.getLogger(__name__)
+
+# ##DATA TYPE spellings only an LC/MS run carries: its total ion chromatogram,
+# or the LC/MS label ChemSpectra writes on the peak file it generates. Matched
+# on the file's own text rather than on the mapped typ, because a request's
+# data_type_mapping replaces the built-in mapping and need not list them.
+LCMS_MARKER_DATATYPES = frozenset((
+    'LC/MS', 'LCMS', 'LC-MS', 'MASS TIC',
+    'TOTAL ION CHROMATOGRAM', 'TOTAL ION CHROMATOGRAPHY',
+))
+MASS_SPECTRUM_DATATYPES = frozenset(('MASS SPECTRUM', 'CONTINUOUS MASS SPECTRUM'))
+HPLC_UVVIS_DATATYPES = frozenset(('HPLC UV/VIS SPECTRUM', 'HPLC UV-VIS'))
+UVVIS_DATATYPES = frozenset(('UV/VIS SPECTRUM', 'UV-VIS', 'ULTRAVIOLET SPECTRUM'))
+
+
+def _is_lcms_marker(cv):
+    return cv.typ == 'LC/MS' or bool(set(cv.datatypes) & LCMS_MARKER_DATATYPES)
+
+
+def _is_mass_spectrum(cv):
+    return cv.typ == 'MS' or bool(set(cv.datatypes) & MASS_SPECTRUM_DATATYPES)
+
+
+def _is_paged_ntuples(path):
+    """Whether the block is an NTUPLES table read page by page.
+
+    From the header text (#314's reader), since the base converter's
+    dataclass only knows XYPOINTS and XYDATA.
+    """
+    records = list(header_records(read_header(path)))
+    return (any(label == 'DATACLASS' and 'NTUPLES' in value.upper()
+                for label, value in records)
+            and any(label == 'PAGE' for label, _ in records))
+
+
+def _is_lc_uv(cv, path):
+    """Whether the member is a UV/VIS chromatogram, the LC half of a run.
+
+    An HPLC UV/VIS block under either spelling, or a UV/VIS block that comes
+    as wavelength pages. The converter's DATA TYPE is a profile dropdown, so
+    the same LC-UV run can be labelled UV-VIS; its pages are what tells it
+    from a spectrum, and only the LC/MS composer reads them.
+    """
+    datatypes = set(cv.datatypes)
+    if cv.typ == 'HPLC UVVIS' or datatypes & HPLC_UVVIS_DATATYPES:
+        return True
+    is_uvvis = cv.typ == 'UVVIS' or bool(datatypes & UVVIS_DATATYPES)
+    return is_uvvis and _is_paged_ntuples(path)
+
+
+def _has_lcms_evidence(detected):
+    """Whether the archive members together make an LC/MS run.
+
+    A member is LC/MS outright (a TIC, or a re-uploaded LC/MS peak file), or
+    is a UV/VIS chromatogram, or mass spectra come with a UV/VIS spectrum. A
+    plain UV/VIS spectrum alone is not enough. `detected` maps each member's
+    path to its base converter.
+    """
+    if any(_is_lcms_marker(cv) or _is_lc_uv(cv, path)
+           for path, cv in detected.items()):
+        return True
+    converters = detected.values()
+    has_ms = any(_is_mass_spectrum(cv) for cv in converters)
+    return has_ms and any(cv.typ == 'UVVIS' for cv in converters)
 
 
 class BagItBaseConverter:
@@ -62,24 +127,25 @@ class BagItBaseConverter:
         list_composer = []
         lcms_paths = []
         archive_stems = []
-        # Determine if there is any LC/MS or UV-Vis context to group MS files.
-        has_lcms_context = False
+        # Every member is read once here and kept for the second pass, so
+        # the archive is judged as a whole before anything is grouped.
         detected = {}
         for file_name in list_file_names:
             if not file_name.lower().endswith('.jdx'):
                 continue
             jcamp_path = os.path.join(data_dir_path, file_name)
             try:
-                base_cv = JcampBaseConverter(jcamp_path, self.raw_params)
-                # kept for the second pass: building it twice costs two
-                # nmrglue parses and two header scans per member, and this
-                # loop stops at the first LC/MS-ish file anyway
-                detected[jcamp_path] = base_cv
-                if base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS'):
-                    has_lcms_context = True
-                    break
+                detected[jcamp_path] = JcampBaseConverter(
+                    jcamp_path, self.raw_params)
+            except UnconvertibleSpectrum:
+                # A member the converter refuses (a 2D file, say) refuses the
+                # archive whole. Here, before any member is converted or drawn,
+                # rather than from the loop below once earlier members have
+                # already been rendered onto the shared figure.
+                raise
             except Exception:
                 pass
+        has_lcms_context = _has_lcms_evidence(detected)
 
         for file_name in list_file_names:
             if not file_name.lower().endswith('.jdx'):
@@ -90,7 +156,17 @@ class BagItBaseConverter:
                 jcamp_path, self.raw_params)
             # BagIt / flat LCMS zips: keep all chromatogram and MS traces in one
             # LCMSConverterAppComposer (incl. MASS SPECTRUM), not JcampMSConverter/ms.py.
-            is_lcms_candidate = base_cv.typ in ('LC/MS', 'HPLC UVVIS', 'UVVIS') or (base_cv.typ == 'MS' and has_lcms_context)
+            # Only an archive that is an LC/MS run: a UV/VIS spectrum on its
+            # own (the converter ships every table as a BagIt) is a UV/VIS
+            # spectrum, as it is when it arrives as a single file.
+            # Also by the file's own DATA TYPE: a mass spectrum or chromatogram
+            # the request's mapping does not name gets typ '' and would
+            # otherwise go to the technique converter, which cannot read it.
+            is_lcms_candidate = has_lcms_context and (
+                base_cv.typ in ('HPLC UVVIS', 'UVVIS')
+                or _is_lcms_marker(base_cv)
+                or _is_mass_spectrum(base_cv)
+                or _is_lc_uv(base_cv, jcamp_path))
             if is_lcms_candidate:
                 lcms_paths.append(jcamp_path)
             else:
