@@ -34,7 +34,7 @@ dependencies = [
   "werkzeug==3.*",
   "scipy==1.*",
   "pyopenms==3.*",
-  "nmrglue@git+https://github.com/ComPlat/nmrglue.git@0aa0aa7cbcb69e981c2c7b6ec0052c81d4d796a0",
+  "nmrglue@git+https://github.com/ComPlat/nmrglue.git@dc57e37676634dc8ac9e6554718fd4f1cb99e084",
 ]
 
 # Kept as an extra so `pip install .[dev]` still works for anyone not using uv.
