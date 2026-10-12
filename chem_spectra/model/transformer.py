@@ -6,7 +6,10 @@ import glob     # noqa: F401
 import os
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
-from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+from chem_spectra.lib.converter.jcamp.base import (
+    HEADER_BYTES, JcampBaseConverter, header_from_text,
+    refuse_if_multi_dimensional,
+)
 from chem_spectra.lib.shared.misc import shorten_label
 from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
@@ -18,7 +21,9 @@ from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
 from chem_spectra.lib.converter.bagit.lcms_builder import build_lcms_composer
 from chem_spectra.lib.converter.ms import MSConverter
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.technique import (
+    TechniqueComposer, flip_overlay_if_inverted,
+)
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
@@ -418,7 +423,24 @@ class TransformerModel:
 
         self.multiple_files.sort(key=lambda file: file.name)
 
+        # Before anything is drawn. The converter refuses a 2D file too, but
+        # it does so from inside the loop below, after earlier files have
+        # already been plotted onto the module-global pyplot figure -- and
+        # nothing on the raising path clears it. The curves then stayed on
+        # `plt.gca()` and appeared in the *next* image this worker rendered,
+        # for a different request, which the ELN stores as that spectrum's
+        # attachment image. Asking every file first also saves converting and
+        # rendering the members before the one that will be refused.
+        for file in self.multiple_files:
+            refuse_if_multi_dimensional(
+                header_from_text(file.core[:HEADER_BYTES]),
+                shorten_label(file.name),
+            )
+
         plotted_any = False
+        # one entry per plotted curve: whether its file asks to be drawn the
+        # other way up (##$CSINVERTY or the request's `invert_y`)
+        inverted = []
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
@@ -428,6 +450,7 @@ class TransformerModel:
                 mscp = MSComposer(mscv)
                 plt.plot(mscp.core.xs, mscp.core.ys, label=filename)
                 plotted_any = True
+                inverted.append(False)
             else:
                 try:
                     tcv = JcampTechniqueConverter(jbcv)
@@ -506,6 +529,7 @@ class TransformerModel:
                         marker = 'v'
                 plt.plot(xs, y_values, label=filename, marker=marker)
                 plotted_any = True
+                inverted.append(bool(getattr(tcp.core, 'draw_y_inverted', False)))
 
                 # PLOT label
                 core_label_x = tcp.core.label['x']
@@ -545,6 +569,11 @@ class TransformerModel:
         plt.xlabel(xlabel, fontsize=18)
         plt.ylabel(ylabel, fontsize=18)
         ax = plt.gca()
+        if flip_overlay_if_inverted(ax, inverted):
+            logger.info(
+                'overlay mixes inverted and upright spectra; drawing it '
+                'upright',
+            )
         if cv_mode:
             ymin, ymax = ax.get_ylim()
             cv_abs_max = max(abs(ymin), abs(ymax))
