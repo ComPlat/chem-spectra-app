@@ -20,7 +20,6 @@ from chem_spectra.lib.composer.technique import (
 )
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
-from chem_spectra.lib.converter.share import parse_params
 from chem_spectra.lib.converter.bagit.lcms_builder import append_lcms_group
 import numpy as np  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
@@ -146,6 +145,24 @@ class BagItBaseConverter:
             except Exception:
                 pass
         has_lcms_context = _has_lcms_evidence(detected)
+        if has_lcms_context and self.params.get('transmittance'):
+            # The LC/MS composer has no conversion, and these members are
+            # read as one LC/MS dataset rather than as separate spectra, so
+            # the instruction cannot be honoured here -- not even for a
+            # UV/VIS member that converts perfectly well on its own. Said
+            # rather than dropped: the archive came back 200 and unconverted,
+            # which is indistinguishable from a conversion that happened.
+            #
+            # Here, as soon as the members have been read, and not after the
+            # loop below: by then every member outside the LC/MS group had
+            # already been converted and rendered for nothing. Every kind of
+            # evidence above is a member the loop would put in the LC/MS
+            # group, so the context and a non-empty group are the same thing.
+            raise UnconvertibleSpectrum(
+                'this archive is read as one LC/MS dataset, which has no '
+                'transmittance conversion; convert the absorbance members '
+                'on their own instead'
+            )
 
         for file_name in list_file_names:
             if not file_name.lower().endswith('.jdx'):
@@ -205,19 +222,6 @@ class BagItBaseConverter:
                     tf_csv = tcp.tf_csv()
                     list_csv.append(tf_csv)
                 archive_stems.append(stem)
-
-        if lcms_paths and parse_params(self.raw_params).get('transmittance'):
-            # The LC/MS composer has no conversion, and these members are
-            # read as one LC/MS dataset rather than as separate spectra, so
-            # the instruction cannot be honoured here -- not even for a
-            # UV/VIS member that converts perfectly well on its own. Said
-            # rather than dropped: the archive came back 200 and unconverted,
-            # which is indistinguishable from a conversion that happened.
-            raise UnconvertibleSpectrum(
-                'this archive is read as one LC/MS dataset, which has no '
-                'transmittance conversion; convert the absorbance members '
-                'on their own instead'
-            )
 
         append_lcms_group(
             lcms_paths, self.raw_params,
