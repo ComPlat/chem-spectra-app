@@ -430,6 +430,20 @@ class TechniqueComposer(BaseComposer):
     def __plt_nbins(self):
         return 20
 
+    def __label_headroom(self):
+        """How far above the trace the plot extends, for the peak labels.
+
+        Upward bands carry their labels above the trace and need the room;
+        dips carry them below and do not. It follows the picker, as the
+        marker direction does: keyed on the technique, an infrared file in
+        absorbance got a dip's 1.1 and clipped its labels, and a UV/VIS trace
+        converted to %T got the reverse.
+        """
+        points_down = getattr(self.core, 'peaks_point_down', None)
+        if points_down is None:
+            points_down = self._technique().peaks_inverted
+        return 1.1 if points_down else 1.5
+
     def __fakto(self):
         """Which way the peak marker points, on screen.
 
@@ -752,7 +766,7 @@ class TechniqueComposer(BaseComposer):
 
         self.__generate_info_box(plt)
 
-        y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max * (1.1 if self._technique().peaks_inverted else 1.5))
+        y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max * self.__label_headroom())
 
 
         # Drawn the other way up when asked. The data is untouched, so the
