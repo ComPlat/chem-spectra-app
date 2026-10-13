@@ -368,8 +368,8 @@ class JcampTechniqueConverter:
                     'reads only as part of an LC/MS dataset, not on its own'
                 )
             raise UnconvertibleSpectrum(
-                'the x range of this block could not be read: it has no '
-                'complete FIRSTX/LASTX or FIRST/LAST pair'
+                'the x range of this block could not be read from its '
+                'FIRSTX/LASTX or FIRST/LAST records'
             )
 
         # Store the points the way the technique is conventionally drawn.

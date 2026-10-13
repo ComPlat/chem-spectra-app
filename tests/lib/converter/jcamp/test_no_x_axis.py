@@ -73,6 +73,24 @@ def test_a_file_without_a_range_is_refused_without_naming_ntuples(client, route)
     assert 'NTUPLES' not in error
 
 
+def test_a_range_that_is_declared_but_unreadable_is_not_called_missing(
+        client):
+    """Every reading swallows its own failure -- a value that will not parse,
+    a missing or zero observe frequency -- so the refusal cannot know the
+    records are absent. It used to say the block "has no complete" pair, which
+    is untrue for a file that declares FIRSTX and writes something unparsable
+    in it.
+    """
+    text = _ir_without_range().replace(
+        '##XUNITS=', '##FIRSTX=not-a-number\n##LASTX=400\n##XUNITS=', 1)
+    assert '##FIRSTX=not-a-number' in text
+    response = _post(client, '/zip_jcamp_n_img', text, 'ir.dx')
+    assert response.status_code == 422
+    error = json.loads(response.data)['error']
+    assert 'x range' in error
+    assert 'has no' not in error
+
+
 def test_a_half_reading_does_not_hide_a_valid_firstx_lastx(client):
     """FIRST without LAST used to set one end and skip the FIRSTX/LASTX
     reading, so a file with a valid range was refused. Each reading now gives
