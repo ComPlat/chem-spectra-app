@@ -586,13 +586,13 @@ class JcampTechniqueConverter:
         """
         if self.peaks_point_down == self.technique.peaks_inverted:
             return self.threshold
-        converted = getattr(self, 'absorbance_range', None)
-        if converted is not None:
-            # A conversion ran, so the fraction has to travel through it.
-            # The complement is a linear mirror and %T is not linear in A:
-            # 0.05 of the absorbance maximum means "above 5 mAU" on a
-            # 100 mAU chromatogram, while 0.95 of the %T maximum means
-            # "deeper than about 24 mAU", and every small peak was lost.
+        if self.converted_to_transmittance or self.transmittance_recorded:
+            # The trace is a %T conversion of absorbance, so the fraction has
+            # to travel through that conversion. The complement is a linear
+            # mirror and %T is not linear in A: 0.05 of the absorbance maximum
+            # means "above 5 mAU" on a 100 mAU chromatogram, while 0.95 of the
+            # %T maximum means "deeper than about 24 mAU", and every small
+            # peak was lost.
             #
             # The picker compares against `fraction * max(y)`, so the
             # fraction wanted is the cut over the maximum, both in %T:
@@ -601,12 +601,37 @@ class JcampTechniqueConverter:
             # whose ratio is the line below. Above 1.0 when the cut sits
             # under the baseline, which is faithful: in absorbance every
             # point would clear that cut too.
-            a_min, a_max = converted
-            return round(float(10.0 ** (a_min - self.threshold * a_max)), 6)
+            #
+            # A_min and A_max are read back off the %T trace, A = -log10(T/100),
+            # rather than kept from the conversion. They used to be, which
+            # held only on the request that converted: the same file coming
+            # back -- and re-picked on `clear`, on a shift `delta`, or with no
+            # stored auto table -- fell to the linear mirror below and picked
+            # different peaks on identical data.
+            absorbance = self.__absorbance_extremes()
+            if absorbance is not None:
+                a_min, a_max = absorbance
+                return round(float(10.0 ** (a_min - self.threshold * a_max)), 6)
         # rounded so the value stays legible wherever it is logged or
         # compared: 1.0 - 0.93 is 0.06999999999999995 in binary floating
         # point.
         return round(1.0 - self.threshold, 6)
+
+    def __absorbance_extremes(self):
+        """(A_min, A_max) recovered from the %T trace, or None.
+
+        Exact on a trace this app converted, since T = 100 * 10**(-A) was
+        computed from A in the first place. None when the trace holds a
+        value at or below zero, which no absorbance maps to: a recorded file
+        with baseline noise, for instance, keeps the linear fallback.
+        """
+        ys = np.asarray(self.ys, dtype=float)
+        if ys.size == 0 or not np.isfinite(ys).all():
+            return None
+        t_min, t_max = float(np.min(ys)), float(np.max(ys))
+        if t_min <= 0:
+            return None
+        return -np.log10(t_max / 100.0), -np.log10(t_min / 100.0)
 
     def __to_transmittance(self, ys):
         """T = 10**(-A). Refuses rather than returning a ruined spectrum.
@@ -710,10 +735,6 @@ class JcampTechniqueConverter:
 
         self.converted_to_transmittance = True
         self.transmittance_recorded = True
-        # what the peak threshold has to be mapped through: the picker's
-        # fraction is of the maximum, and the two maxima are not related
-        # linearly
-        self.absorbance_range = (y_min, y_max)
         # kept for the peak tables: they are in the file's declared unit
         # too, so they need the same scaling the trace just had
         self.absorbance_scale = scale or 1.0
