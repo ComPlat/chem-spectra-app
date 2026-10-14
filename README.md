@@ -30,8 +30,6 @@ coverage run -m pytest --disable-pytest-warnings -k ./tests/test_spectra_im.py -
 
 ## Acknowledgments
 
-This project has been funded by the **[DFG](https://www.dfg.de/en/)**.
-
-![DFG Logo](https://chemotion.net/img/logos/DFG_logo.png)
+<a href="https://www.dfg.de/en/"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/DFG-logo-blau.svg/330px-DFG-logo-blau.svg.png" alt="DFG Logo" height="60"></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.helmholtz.de/en/"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Helmholtz-Gemeinschaft_Logo_2019.svg/330px-Helmholtz-Gemeinschaft_Logo_2019.svg.png" alt="Helmholtz Logo" height="60"></a>
 
 Funded by the [Deutsche Forschungsgemeinschaft (DFG, German Research Foundation)](https://www.dfg.de/) under the [National Research Data Infrastructure – NFDI4Chem](https://nfdi4chem.de/) – Projektnummer **441958208** since 2020.
