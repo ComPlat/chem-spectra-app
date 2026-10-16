@@ -41,9 +41,7 @@ import pytest
 import chem_spectra.lib.composer.technique as technique_module
 from chem_spectra.lib.composer.technique import TechniqueComposer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.records import (
-    BLOCK_RECORDS, read_block_records,
-)
+from chem_spectra.lib.converter.jcamp.reader import read_jcamp
 from chem_spectra.lib.converter.jcamp.technique import (
     JcampTechniqueConverter, UnconvertibleSpectrum, is_transmittance_unit,
 )
@@ -978,11 +976,41 @@ def test_a_block_that_declares_no_datatype_does_not_shift_the_rest(client,
 # - - - what the guard refuses, and in which order - - -
 
 def _with_record(tmp_path, record, rows):
-    """A copy of the absorbance probe carrying one peak-table record."""
+    """A copy of the absorbance probe carrying one inline record.
+
+    For `$OBSERVEDINTEGRALS` / `$OBSERVEDMULTIPLETS` only: those really are
+    LDRs of the spectrum block, as `1H.edit.jdx` shows. A peak table is not
+    -- it is its own block -- so it has its own helper below.
+    """
     _absorbance_probe(tmp_path)
     source = tmp_path / 'absorbance.jdx'
     source.write_text(source.read_text().replace(
         '##XYPOINTS=', '##{}={}\n##XYPOINTS='.format(record, rows), 1))
+    return source
+
+
+def _with_peak_table(tmp_path, rows):
+    """A copy of the absorbance probe followed by a peak-table block.
+
+    Written as a real file writes one: `##TITLE=` opens the block, and the
+    table is its data. Injected into the spectrum block instead, it competes
+    with `##XYPOINTS=` to *be* that block's data, and the trace read back is
+    the peak table.
+    """
+    _absorbance_probe(tmp_path)
+    source = tmp_path / 'absorbance.jdx'
+    source.write_text(source.read_text().replace('##END=\n', '') + '\n'.join([
+        '##TITLE=synthetic peak table',
+        '##JCAMP-DX=5.00',
+        '##DATA TYPE=INFRARED PEAK TABLE',
+        '##DATA CLASS=PEAKTABLE',
+        '##XUNITS=1/CM',
+        '##YUNITS=ABSORBANCE',
+        '##PEAK TABLE=(XY..XY)',
+        rows,
+        '##END=',
+        '##END=',
+        '']))
     return source
 
 
@@ -1048,14 +1076,14 @@ def test_multiplets_do_not_block_a_technique_that_never_writes_them(tmp_path):
 def test_a_stored_peak_table_that_is_not_absorbance_is_refused(tmp_path):
     """100 * 10**-75 is 1e-73 and 100 * 10**400 is inf. Either was written
     into ##PEAKTABLE as a coordinate."""
-    source = _with_record(tmp_path, 'PEAK TABLE', '(XY..XY)\n420.0, 75.0')
+    source = _with_peak_table(tmp_path, '420.0, 75.0')
     with pytest.raises(UnconvertibleSpectrum, match='stored peak table'):
         JcampTechniqueConverter(
             JcampBaseConverter(str(source), {'transmittance': True}))
 
 
 def test_the_endpoint_refuses_it_with_422_not_500(client, tmp_path):
-    source = _with_record(tmp_path, 'PEAK TABLE', '(XY..XY)\n420.0, 75.0')
+    source = _with_peak_table(tmp_path, '420.0, 75.0')
     response = _post(client, str(source), transmittance='true')
     assert response.status_code == 422
     assert 'stored peak table' in json.loads(response.data)['error']
@@ -1064,7 +1092,7 @@ def test_the_endpoint_refuses_it_with_422_not_500(client, tmp_path):
 def test_peaks_str_replaces_the_stored_table_before_it_is_converted(tmp_path):
     """The stored table is discarded by this request, so refusing the
     conversion because of it would refuse over numbers on their way out."""
-    source = _with_record(tmp_path, 'PEAK TABLE', '(XY..XY)\n420.0, 75.0')
+    source = _with_peak_table(tmp_path, '420.0, 75.0')
     converter = JcampTechniqueConverter(JcampBaseConverter(
         str(source), {'transmittance': True, 'peaks_str': '480,0.6'}))
     assert converter.edit_peaks['x'] == [480.0]
@@ -1322,16 +1350,15 @@ def test_a_file_with_no_datatype_keeps_its_units(client, tmp_path, wrapped,
 
     again = tmp_path / 'nodt_again.jdx'
     again.write_text(first)
-    with caplog.at_level(logging.WARNING):
-        second = _composed_jcamp(_post(client, str(again)))
+    second = _composed_jcamp(_post(client, str(again)))
     assert '##XUNITS=NANOMETERS' in second
     assert '##YUNITS=ABSORBANCE' in second
-    # and for the right reason. This app composes `##DATA TYPE=` with no
-    # value, which nmrglue warns about and drops; recording it here as a
-    # declared datatype made the two readings disagree about every file we
-    # had written ourselves, and the units survived only because the
-    # flattened fallback happened to pick the same block.
-    assert 'is not the one nmrglue reports' not in caplog.text
+    # and for the right reason: the block the units were read from is the one
+    # holding the spectrum, not whichever block happened to come first in a
+    # merged list.
+    target = JcampBaseConverter(str(again), None).target
+    assert target.ldr('XUNITS') == 'NANOMETERS'
+    assert target.data is not None
 
 
 def _spectrum_without_datatype_beside_a_peak_table(tmp_path):
@@ -1377,11 +1404,13 @@ def test_the_units_come_from_the_block_holding_the_spectrum(client, tmp_path):
 
 
 def test_an_indented_block_is_a_block(tmp_path):
-    """nmrglue strips each line before looking for `##`, so an indented
-    child block opens a block for it. Testing the raw line here did not, and
-    the two readings of the same file then disagreed about how many blocks
-    it has -- which is the one thing that sends the lookup to the flattened
-    records.
+    """A child block may be indented, and it is still a block.
+
+    JCAMP-DX does not reserve column 1, and vendors do indent nested blocks.
+    Carried over from the second reader this file used to have, where an
+    indented `##TITLE=` opened no block and the two readings of one file then
+    disagreed about how many blocks it holds. There is one reader now, so the
+    claim is simply that the block and its records are seen.
     """
     source = tmp_path / 'indented.jdx'
     source.write_text(
@@ -1390,10 +1419,9 @@ def test_an_indented_block_is_a_block(tmp_path):
         '  ##DATA TYPE=UV/VIS SPECTRUM\n'
         '  ##XUNITS=NANOMETERS\n  ##YUNITS=ABSORBANCE\n'
         '  ##END=\n##END=\n')
-    blocks = read_block_records(str(source), BLOCK_RECORDS)
-    assert [b.get('DATATYPE') for b in blocks] == [
-        'LINK', 'UV/VIS SPECTRUM']
-    assert blocks[1]['XUNITS'] == 'NANOMETERS'
+    blocks = read_jcamp(str(source))
+    assert [b.datatype for b in blocks] == ['LINK', 'UV/VIS SPECTRUM']
+    assert blocks[1].ldr('XUNITS') == 'NANOMETERS'
 
 
 def test_the_integral_label_keeps_its_upright_anchor(tmp_path):

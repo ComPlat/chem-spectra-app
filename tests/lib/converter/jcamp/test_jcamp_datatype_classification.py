@@ -44,7 +44,8 @@ UNMAPPED = ['SQUID', 'TENSIOMETRY', 'LINEAR SWEEP VOLTAMMETRY',
 def test_unrecognised_datatype_does_not_raise(jcamp_with_datatype, datatype):
     # these raised UnboundLocalError from __index_target and surfaced as a 500
     converter = JcampTechniqueConverter(JcampBaseConverter(jcamp_with_datatype(datatype)))
-    assert converter.target_idx == 0
+    # nothing is recognised, so the file's only block is read as the curve
+    assert converter.target.datatype == datatype
 
 
 @pytest.mark.parametrize('datatype', UNMAPPED)
@@ -114,15 +115,22 @@ def test_file_order_decides_between_two_recognised_datatypes(tmp_path):
     assert JcampBaseConverter(str(target)).typ == 'LC/MS'
 
 
-@pytest.mark.parametrize('path,expected_typ,expected_idx', [
-    (source_nmr, 'NMR', 1),
-    (source_ir, 'INFRARED', 0),
-    (source_hplc, 'HPLC UVVIS', 0),
+@pytest.mark.parametrize('path,expected_typ,expected_datatype', [
+    (source_nmr, 'NMR', 'NMR SPECTRUM'),
+    (source_ir, 'INFRARED', 'INFRARED SPECTRUM'),
+    (source_hplc, 'HPLC UVVIS', 'HPLC UV/VIS SPECTRUM'),
 ])
-def test_known_files_classify_and_select_block_unchanged(path, expected_typ, expected_idx):
+def test_known_files_classify_and_select_block_unchanged(
+        path, expected_typ, expected_datatype):
+    """Named by what the chosen block declares rather than by its position.
+
+    The old assertion was an index into a merged LDR list, which is the thing
+    the block-aware read removes: for `1H.dx` that index was 1 while the block
+    is the file's third.
+    """
     base = JcampBaseConverter(path)
     assert base.typ == expected_typ
-    assert JcampTechniqueConverter(base).target_idx == expected_idx
+    assert JcampTechniqueConverter(base).target.datatype == expected_datatype
 
 
 # - - - caller-supplied mapping - - -
@@ -161,7 +169,8 @@ def test_user_mapping_replaces_the_builtin_one(user_mapping_params):
     base = JcampBaseConverter(source_hplc, user_mapping_params)
     assert base.typ == ''
     assert base.technique.key != 'NMR'
-    assert JcampTechniqueConverter(base).target_idx == 0
+    # unrecognised under this mapping, so the first block carrying data is read
+    assert JcampTechniqueConverter(base).target.datatype == 'HPLC UV/VIS SPECTRUM'
 
 
 def test_user_mapping_still_classifies_nmr(user_mapping_params):
@@ -169,7 +178,7 @@ def test_user_mapping_still_classifies_nmr(user_mapping_params):
     converter = JcampTechniqueConverter(base)
     assert base.typ == 'NMR'
     assert base.technique.key == 'NMR'
-    assert converter.target_idx == 1
+    assert converter.target.datatype == 'NMR SPECTRUM'
     assert converter.threshold == 0.005
 
 
@@ -215,8 +224,8 @@ def test_block_selection_agrees_with_classification(tmp_path):
     CHI-224_10.jdx is LINK / NMR SPECTRUM / NMR PEAK TABLE. Renaming the
     trailing auxiliary block to MASS TIC makes it a datatype that is mapped
     but sits last in the flattened value order of data_type.json, while
-    NMR SPECTRUM sits first. Before this branch __index_target took the last
-    match and selected the MASS TIC block (target_idx 1) while
+    NMR SPECTRUM sits first. Before #291 the selection took the last
+    match and chose the MASS TIC block while
     __set_datatype classified the file as NMR from the first matching key --
     the two disagreed. Both now take the first recognised block in the
     file's own order.
@@ -230,9 +239,9 @@ def test_block_selection_agrees_with_classification(tmp_path):
     base = JcampBaseConverter(str(target))
     assert base.datatypes == ['LINK', 'NMR SPECTRUM', 'MASS TIC']
     assert base.typ == 'NMR'
-    # 0 = the NMR SPECTRUM block once the single LINK entry is discounted;
-    # 1 would be the MASS TIC block that classification did not choose
-    assert JcampTechniqueConverter(base).target_idx == 0
+    # the NMR SPECTRUM block, not the MASS TIC one that classification did
+    # not choose -- now stated as the block rather than as an index
+    assert JcampTechniqueConverter(base).target.datatype == 'NMR SPECTRUM'
 
 
 def test_warning_points_at_the_mapping_that_is_actually_in_effect(

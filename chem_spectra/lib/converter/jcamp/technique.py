@@ -7,11 +7,8 @@ from scipy import signal
 
 from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
-from chem_spectra.lib.converter.jcamp.data_parse import make_ni_data_ys, make_ni_data_xs
+from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
-from chem_spectra.lib.converter.jcamp.records import (
-    HOLDS_SPECTRUM, UNIT_RECORDS,
-)
 # defined in share, re-exported here: the app's error handler
 # (chem_spectra/__init__.py), transformer.py and the tests all import it
 # from this module, which is where most of the raises are
@@ -149,12 +146,20 @@ class JcampTechniqueConverter:
         self.dataclass = base.dataclass
         self.data_format = base.data_format
         self.typ = base.typ
-        # resolved once, by __target_block_records: the records cannot
-        # change, and the mismatch warning should be said once if at all
-        self.__target_records = None
-        self.target_idx = self.__index_target()
+        # The block holding the measurement, chosen in JcampBaseConverter by
+        # file order. Everything that used to index a merged list by
+        # `target_idx` now asks this block directly.
+        self.target = base.target
         self.dic = base.dic
-        self.data = make_ni_data_ys(base, self.target_idx)
+        self.data = self.__block_ys(base.data)
+        if self.data is None:
+            # nmrglue read the file but found no data array. Raising something
+            # named lets jcamp2cvp turn it into the same "could not convert"
+            # result any other unusable file produces, rather than an
+            # AttributeError out of the request.
+            raise UnparsableJcampData(
+                'no data array could be parsed from this JCAMP file'
+            )
         self.title = base.title
         # the descriptor travels with the flags it backs; without it the
         # composer falls back to UNKNOWN_TECHNIQUE and draws every technique
@@ -169,7 +174,7 @@ class JcampTechniqueConverter:
         self.converted_to_transmittance = False
         # ...whereas the record says the data *is* transmittance, whoever
         # converted it and whenever. A file we composed earlier already
-        # carries it, and recomposing must not throw that away: see below.
+        # carries it, and recomposing must not throw that away.
         self.transmittance_recorded = self.__declared_flag('$CSTRANSMITTANCE')
         # A drawing instruction, carried to the composer and written into the
         # composed file as ##$CSINVERTY. It never reaches self.ys: inversion
@@ -180,19 +185,13 @@ class JcampTechniqueConverter:
         # Display only, so nothing computed from the data follows it: peak
         # picking, integration and the peak tables all run on self.ys, and
         # whether peaks are maxima or dips is decided by what the y axis
-        # measures (see __peaks_point_down), never by this flag. Under #298,
-        # which mirrored the array, the picker ran on the mirrored data and
-        # picked the other polarity; it no longer does.
+        # measures (see __peaks_point_down), never by this flag.
         #
-        # It is set by the request *or* by the file's own record. Without the
-        # second half the flag is write-only: every pass through this app
-        # recomposes, and a recompose carries no `invert_y`, so the record
-        # written on one request is dropped on the next. A viewing preference
-        # that does not survive a round trip is not a preference. The file's
-        # declaration is authoritative unless the request overrides it, which
-        # is the rule #312 applied to the stored point order. Overriding works
-        # both ways: `invert_y` is None when not sent, and an explicit False
-        # clears the record.
+        # Set by the request *or* by the file's own record. Without the second
+        # half the flag is write-only: every pass through this app recomposes,
+        # and a recompose carries no `invert_y`, so the record written on one
+        # request is dropped on the next. Overriding works both ways:
+        # `invert_y` is None when not sent, and an explicit False clears it.
         requested = base.params.get('invert_y')
         self.draw_y_inverted = (self.__declared_flag('$CSINVERTY')
                                 if requested is None else bool(requested))
@@ -239,69 +238,80 @@ class JcampTechniqueConverter:
         else:
             return json.loads(user_dt_mapping)['datatypes']
 
-    def __index_target(self):
-        """Index of the block holding the primary measurement.
+    @staticmethod
+    def __block_pairs(data):
+        """(x, y) columns if the block holds coordinate pairs, else None.
 
-        Only PRIMARY datatypes belong in data_type.json. Auxiliary blocks that
-        sit alongside a primary one in the same file -- NMR FID, NMR PEAK
-        TABLE, NMP PEAK ASSIGNMENTS, INFRARED PEAK TABLE, INFRARED
-        INTERFEROGRAM -- are deliberately absent from it, because this picks
-        the first RECOGNISED block and would otherwise read the auxiliary one
-        instead of the spectrum. test_auxiliary_blocks_stay_unmapped enforces
-        this. A datatype missing from the map is not an error: the file takes
-        the generic curve path and JcampBaseConverter logs it.
+        `(XY..XY)`, XYPOINTS and PEAKTABLE all come back as `(1, N, 2)`. The
+        app used to discard nmrglue's parse of these and re-read the raw text
+        itself via `XYDATA_OLD`; nmrglue's own parse is byte-identical on the
+        XRD fixtures and handles indented and signed lines the app's did not.
+
+        A coordinate table may be wider than two columns: since nmrglue
+        `0aa0aa7` an `(XYW..XYW)` table keeps its third column, the peak
+        width, so `CHI-224_10.jdx`'s peak table reads `(1, 55, 3)` where it
+        read `(1, 55, 2)`, X and Y unchanged. The first two columns are read.
+        No fixture's target block is such a table; this is so that the first
+        one does not arrive as a three-dimensional y series.
+
+        Only the three-dimensional `(1, N, k)` shape that coordinate tables
+        come back as. A plain two-dimensional array is taken only when it is
+        exactly two columns wide: the FID path hands its processed data
+        through here too, and a multi-dimensional Bruker dataset, processed
+        to `(increments, points)`, is no list of pairs -- reading its first
+        two columns as x and y would draw a curve that means nothing.
         """
-        if self.params.get('user_data_type_mapping'):
-            data_type_mappings = self.__read_user_data_type_mapping()
-            target = data_type_mappings.values()
-            target_topics = [value.upper() for values in target for value in values]
-        else:
-            with open(data_type_json, 'r') as mapping_file:
-                target = json.load(mapping_file).get("datatypes").values()
-                target_topics = [value.upper() for values in target for value in values]
+        if isinstance(data, dict) or data is None:
+            return None
+        if data.ndim == 3 and data.shape[0] == 1 and data.shape[2] >= 2:
+            return data[0][:, :2].T
+        if data.ndim == 2 and data.shape[1] == 2:
+            return data.T
+        return None
 
-        # Take the first recognised block in the file's own order. The old
-        # loop had no break, so the LAST entry of the flattened mapping won
-        # instead -- an order nobody chose, and one that could disagree with
-        # the classification in JcampBaseConverter.__set_datatype.
-        idx = None
-        for pos, dt in enumerate(self.datatypes):
-            if dt in target_topics:
-                idx = pos
-                break
+    @classmethod
+    def __block_ys(cls, data):
+        """The target block's own y series.
 
-        if idx is None:
-            # Nothing in this file is a recognised datatype. Fall back to the
-            # first block and skip the LINK offset below: it would drive the
-            # index negative and silently read the last block instead. The
-            # unrecognised datatype is logged by JcampBaseConverter.
-            #
-            # `target_idx = 0` means the first *data* block, so datatype_pos
-            # has to name the same one. Taking position 0 instead named the
-            # outer LINK wrapper, which declares no units -- so an unmapped
-            # datatype in a LINK file lost its ##XUNITS=/##YUNITS= and was
-            # relabelled PPM/ARBITRARY. Every composed file is LINK-wrapped,
-            # so a single-block file survived its first compose and lost its
-            # units on the next one.
-            # No position at all: the resolver finds the block that holds
-            # the spectrum instead. Naming the first non-LINK datatype looked
-            # equivalent and was not -- a file whose spectrum block declares
-            # no `##DATA TYPE=`, beside a peak table that does, pointed at
-            # the peak table and was relabelled with its units.
-            self.datatype_pos = None
-            return 0
+        `getdataarray` gives NTUPLES as {'real': [page, ...]}. Read per block
+        those are this block's pages, so the first is the one wanted -- where
+        the flat read returned every block's pages in one list and `target_idx`
+        had to pick among them.
+        """
+        if isinstance(data, dict):
+            pages = data.get('real') or []
+            return pages[0] if len(pages) else None
+        pairs = cls.__block_pairs(data)
+        if pairs is not None:
+            return pairs[1]
+        return data
 
-        # The position in the file's own ##DATA TYPE= sequence, which the
-        # LINK subtraction below throws away. __target_block_records needs
-        # it: nmrglue's DATATYPE list is exactly the blocks that declare one,
-        # in file order, so this indexes them directly.
-        self.datatype_pos = idx
+    # Which block the surviving `self.dic[...][0]` reads come from, since the
+    # merged dict no longer says:
+    #
+    #   BLOCKS            the LINK wrapper -- it is the only block that has one
+    #   XFACTOR/YFACTOR   the FIRST block declaring them. For an NMR LINK file
+    #   FACTOR            that is the FID, which is deliberate: factor.x for
+    #                     1H.dx is 0.0001248, the FID's, and the output
+    #                     encoding has always used it. Reading the target
+    #                     block's own factor here would change every NMR
+    #                     output, which is a separate decision from this
+    #                     migration.
+    #   $SFO1             a fallback for .OBSERVEFREQUENCY, file-wide
+    #   $CSSOLVENT*       written by this app, never read from a second block
+    #
+    # Everything that describes the measurement -- FIRST, LAST, FIRSTX, LASTX,
+    # XUNITS, YUNITS, UNITS, .OBSERVEFREQUENCY, $OFFSET -- now comes from
+    # self.target instead.
 
-        if 'LINK' in self.datatypes:
-            count_link = self.datatypes.count('LINK')
-            idx -= count_link
+    def __declared_flag(self, record):
+        """Whether the target block declares `record` true.
 
-        return max(idx, 0)
+        Asked of the block, not of flat_ldrs(): this app writes these records
+        itself, into the block it composes, and a decision names a block.
+        """
+        values = self.target.ldrs(record) if self.target else []
+        return any(str(v).strip().lower() == 'true' for v in values)
 
     def __count_block(self):
         count = 1
@@ -312,61 +322,88 @@ class JcampTechniqueConverter:
 
         return count
 
+    PAGED_NTUPLES_REASON = (
+        'this is a paged NTUPLES block (##PAGE=), which ChemSpectra reads '
+        'only as part of an LC/MS dataset, not on its own'
+    )
+
+    def __is_paged_ntuples(self):
+        """Whether the target block is an NTUPLES table read page by page."""
+        target = self.target
+        return (target is not None and 'NTUPLES' in target.dataclass
+                and target.has('PAGE'))
+
     def __read_xs(self, base):  # TBD
-        if (base.data_format == '(XY..XY)'):
-            xs = make_ni_data_xs(base)
-            return xs
+        pairs = self.__block_pairs(base.data)
+        if pairs is not None:
+            if self.__is_paged_ntuples():
+                # A paged table whose pages are coordinate lists: an LC-UV
+                # chromatogram, one (XY..XY) trace per wavelength. Read per
+                # block, nmrglue gives the first page as pairs, so an x axis
+                # is there -- but drawing that page as the spectrum would drop
+                # every other wavelength without a word. On the flat read this
+                # was refused only because no x range could be built; here it
+                # has to be refused for what it is. An NMR NTUPLES block has
+                # pages too, but they come back as a page dict, not as pairs,
+                # so it never reaches this branch.
+                raise UnconvertibleSpectrum(self.PAGED_NTUPLES_REASON)
+            return pairs[0]
 
-        idx = self.target_idx
-
-        # Each reading yields both ends or nothing. Assigning one end and then
-        # failing on the other used to leave a half range that skipped every
-        # later reading, so a file with a valid FIRSTX/LASTX could end up with
-        # no axis at all.
+        # Trap A. FIRST/LAST are in Hz and are divided by the observe frequency
+        # here; FIRSTX/LASTX are already in the axis unit and are not. Whether
+        # the Hz->ppm conversion has happened is therefore a property of which
+        # reading succeeded, and the final division below must not repeat it.
+        #
+        # This used to be arranged by accident: `__set_x_unit` read UNITS[0],
+        # the FID block's SECONDS, so `x_unit == 'HZ'` was false and the second
+        # division was skipped. Reading the target block gives the honest HZ,
+        # so the rule is explicit: each reading says whether it converted.
+        #
+        # Each reading yields both ends or nothing, so a record that gives one
+        # end and fails on the other cannot leave a half range behind.
         def first_last_shifted():
             obs_freq = self.obs_freq
-            shift = float(self.dic['$OFFSET'][idx])
-            beg = float(self.dic['FIRST'][idx].replace(' ', '').split(',')[0]) / obs_freq
-            end = float(self.dic['LAST'][idx].replace(' ', '').split(',')[0]) / obs_freq
+            shift = float(self.target.ldr('$OFFSET'))
+            beg = float(
+                self.target.ldr('FIRST').replace(' ', '').split(',')[0]
+            ) / obs_freq
+            end = float(
+                self.target.ldr('LAST').replace(' ', '').split(',')[0]
+            ) / obs_freq
             shift = beg - shift
-            return beg - shift, end - shift
+            return beg - shift, end - shift, True
 
         def first_last():  # MNova
             obs_freq = self.obs_freq
-            beg = float(self.dic['FIRST'][idx].replace(' ', '').split(',')[0]) / obs_freq
-            end = float(self.dic['LAST'][idx].replace(' ', '').split(',')[0]) / obs_freq
-            return beg, end
+            beg = float(
+                self.target.ldr('FIRST').replace(' ', '').split(',')[0]
+            ) / obs_freq
+            end = float(
+                self.target.ldr('LAST').replace(' ', '').split(',')[0]
+            ) / obs_freq
+            return beg, end, True
 
         def firstx_lastx():
-            return to_float(self.dic['FIRSTX'][idx]), to_float(self.dic['LASTX'][idx])
-
-        def firstx_lastx_padded():
-            while len(self.dic['FIRSTX']) <= idx:
-                self.dic['FIRSTX'].insert(0, '')
-            while len(self.dic['LASTX']) <= idx:
-                self.dic['LASTX'].insert(0, '')
-            return to_float(self.dic['FIRSTX'][idx]), to_float(self.dic['LASTX'][idx])
+            return (to_float(self.target.ldr('FIRSTX')),
+                    to_float(self.target.ldr('LASTX')), False)
 
         beg_pt = end_pt = None
-        for reading in (first_last_shifted, first_last, firstx_lastx, firstx_lastx_padded):
+        already_in_axis_units = False
+        for reading in (first_last_shifted, first_last, firstx_lastx):
             try:
-                beg, end = reading()
+                beg_pt, end_pt, already_in_axis_units = reading()
+                break
             except:  # noqa
                 continue
-            if beg is not None and end is not None:
-                beg_pt, end_pt = beg, end
-                break
 
         # None of the readings found both ends of the axis. Building it anyway
-        # failed on `None + delta` with a 500; say why instead.
+        # failed on `None + delta` with a 500; say why instead. Whether the
+        # block is a paged NTUPLES table is asked of the target block itself,
+        # not of every block in the file: a LINK file whose FID is paged says
+        # nothing about the spectrum beside it.
         if beg_pt is None or end_pt is None:
-            paged = (any('NTUPLES' in str(c).upper() for c in (base.dataclasses or []))
-                     and 'PAGE' in self.dic)
-            if paged:
-                raise UnconvertibleSpectrum(
-                    'this is a paged NTUPLES block (##PAGE=), which ChemSpectra '
-                    'reads only as part of an LC/MS dataset, not on its own'
-                )
+            if self.__is_paged_ntuples():
+                raise UnconvertibleSpectrum(self.PAGED_NTUPLES_REASON)
             raise UnconvertibleSpectrum(
                 'the x range of this block could not be read from its '
                 'FIRSTX/LASTX or FIRST/LAST records'
@@ -399,26 +436,10 @@ class JcampTechniqueConverter:
             endpoint=True
         )
 
-        if self.x_unit == 'HZ':
+        if self.x_unit == 'HZ' and not already_in_axis_units:
             x = x / self.obs_freq
-        
+
         return x
-
-    def __declared_flag(self, record):
-        """Whether the file carries `##<record>=true`.
-
-        Only the real record counts. The original-metadata dump re-emits it as
-        `###$CSINVERTY= true`, which parses under a different key, so reading
-        it here cannot resurrect a flag from a file that never set one.
-
-        Read from the target block, not from nmrglue's merged dict. This
-        app writes these records itself, into the block it composes, so a
-        flattened read let a `$CSINVERTY` on a peak-table block flip the
-        spectrum's viewport and a `$CSTRANSMITTANCE` there relabel
-        untouched absorbance as %T. A decision names a block.
-        """
-        value = self.__target_block_records().get(record)
-        return str(value).strip().lower() == 'true' if value else False
 
     def __read_ys(self):
         """Apply the client's processing instructions, and nothing else.
@@ -440,103 +461,34 @@ class JcampTechniqueConverter:
 
     def __declared_units(self):
         """The x and y units the *file* declares for the target block, each
-        None when it declares none. The one reader of the unit records: the
-        transmittance guard and __set_label used to read them separately, at
-        different indices, so in a LINK or multi-block file the unit the
-        guard refused on and the unit the composed file was labelled with
-        could disagree.
+        None when it declares none.
 
-        ##XUNITS=/##YUNITS= are read first, then the JCAMP 6 ##UNITS= triple,
-        which overrides them -- but only records the target block itself
-        declares. Another block's triple (an interferogram's `CM, VOLTS, ...`
-        beside an absorbance spectrum) must not relabel the spectrum. When
-        the file could not be split into blocks, the flattened nmrglue
-        lists are indexed as before. Deliberately ignores the caller's
-        `axesUnits`: that is a display preference, and the guard is about
-        what the data already is.
+        One reader for both: the transmittance guard and __set_label used to
+        read them separately, so in a multi-block file the unit the guard
+        refused on and the unit the composed file was labelled with could
+        disagree.
+
+        ##XUNITS=/##YUNITS= first, then the JCAMP 6 ##UNITS= triple, which
+        overrides them -- but only the target block's own. Deliberately
+        ignores the caller's `axesUnits`: that is a display preference, and
+        the guard is about what the data already is.
 
         Runs before __set_label, which is why the guard cannot read
         self.label.
         """
-        records = self.__target_block_records()
-        x, y = records.get('XUNITS'), records.get('YUNITS')
+        x = self.target.ldr('XUNITS') if self.target else None
+        y = self.target.ldr('YUNITS') if self.target else None
         try:
             # Split first, strip after: stripping the whole record turned
             # `% TRANSMITTANCE` into `%TRANSMITTANCE`, and that is what went
             # into ##YUNITS. Only the space around the separators is noise.
-            triple = records['UNITS'].strip()
-            # Mnova ends the record with a comma: `HZ, ARBITRARY UNITS,
-            # ARBITRARY UNITS,`. Rejecting it left the label to be taken from
-            # whichever other block declared XUNITS/YUNITS.
-            fields = [field.strip()
-                      for field in triple.rstrip(',').split(',')]
+            # Mnova ends the record with a comma, which rstrip handles.
+            triple = self.target.ldr('UNITS').strip()
+            fields = [f.strip() for f in triple.rstrip(',').split(',')]
             x, y, _ = fields
-        except (KeyError, AttributeError, ValueError):
+        except (AttributeError, ValueError):
             pass
         return {'x': x, 'y': y}
-
-    def __target_block_records(self):
-        """The unit records declared in the target block.
-
-        nmrglue's DATATYPE list is exactly the blocks that declare a
-        ##DATA TYPE=, in file order, so `datatype_pos` -- the position the
-        target was found at in that list -- indexes them directly.
-
-        The earlier `target_idx + count('LINK')` indexed *every* block
-        instead, which assumed each one declares a datatype and that the
-        LINK blocks all come first. Neither is required: an outer block that
-        declares a title and nothing else shifted the whole file by one, and
-        the spectrum was labelled from the block after it.
-
-        The two lists are compared before either is trusted. If they
-        disagree the file is shaped in a way neither reader anticipated, so
-        the flattened lists are indexed as before and the disagreement is
-        logged rather than guessed at.
-        """
-        if self.__target_records is not None:
-            return self.__target_records
-        self.__target_records = self.__resolve_target_block_records()
-        return self.__target_records
-
-    def __resolve_target_block_records(self):
-        blocks = getattr(self.base, 'block_records', None) or []
-        declaring = [b for b in blocks if b.get('DATATYPE')]
-        sequence = [b['DATATYPE'].upper() for b in declaring]
-        position = getattr(self, 'datatype_pos', None)
-        if blocks and sequence == self.datatypes:
-            if position is not None and 0 <= position < len(declaring):
-                return declaring[position]
-            # No block declares a datatype the registry knows -- which
-            # includes a file that declares none at all, a case base.py
-            # supports on purpose. There is no position to index, so the
-            # units come from the block that holds the spectrum. That block
-            # need not declare a datatype, so it is looked for among all the
-            # blocks rather than among the declaring ones.
-            for block in blocks:
-                if block.get(HOLDS_SPECTRUM):
-                    return block
-            for block in blocks:
-                if (block.get('DATATYPE') or '').upper() != 'LINK':
-                    return block
-            return {}
-        if blocks:
-            logger.warning(
-                'the ##DATA TYPE= sequence read from the file, %s, is not the '
-                'one nmrglue reports, %s; falling back to the flattened '
-                'records for %r',
-                sequence, self.datatypes, self.params.get('fname'),
-            )
-
-        def per_block(records):
-            for idx in (self.target_idx, 0):
-                try:
-                    return records[idx]
-                except (IndexError, KeyError, TypeError):
-                    continue
-            return None
-
-        found = {key: per_block(self.dic.get(key)) for key in UNIT_RECORDS}
-        return {key: value for key, value in found.items() if value}
 
     def __peaks_point_down(self):
         """Whether the bands of interest are dips in the stored trace.
@@ -856,7 +808,8 @@ class JcampTechniqueConverter:
         A data row is parenthesised and carries at least one digit, which
         no column header does.
         """
-        for value in self.dic.get(record) or []:
+        values = self.target.ldrs(record) if self.target else []
+        for value in values:
             for line in str(value).split('\n'):
                 line = line.strip()
                 if (line.startswith('(') and
@@ -914,7 +867,7 @@ class JcampTechniqueConverter:
     def __set_obs_freq(self):
         obs_freq = None
         try:
-            obs_freq = float(self.dic['.OBSERVEFREQUENCY'][self.target_idx])
+            obs_freq = float(self.target.ldr('.OBSERVEFREQUENCY'))
         except:  # noqa
             try:
                  obs_freq = float(self.dic['.OBSERVEFREQUENCY'][0])
@@ -968,22 +921,43 @@ class JcampTechniqueConverter:
             return xUnit
 
         try: # jcamp version 6
-            units = self.dic['UNITS']
-            array_unit = units[0].split(',')
+            # Trap A: this used to read UNITS[0], which for an NMR LINK file is
+            # the *FID* block's SECONDS. That wrong answer happened to be load
+            # bearing -- it stopped the Hz->ppm division below from running a
+            # second time after FIRST/LAST were already divided by the observe
+            # frequency. Reading the target block gives the honest HZ, so the
+            # single-conversion rule is now enforced by __read_xs tracking
+            # whether it has already converted, rather than by this being wrong.
+            array_unit = self.target.ldr('UNITS').split(',')
             x_unit = (array_unit[0].upper()).strip()
         except: # noqa
             pass
 
         if (x_unit is None):
             try:
-                x_unit = self.dic['XUNITS'][self.target_idx].upper()
+                x_unit = self.target.ldr('XUNITS').upper()
             except:  # noqa
-                try:
-                     x_unit = self.dic['XUNITS'][0].upper()
-                except:
-                    pass
+                pass
 
         return x_unit
+
+    def __peak_table(self, key, position):
+        """The `position`-th block carrying `key`, in file order.
+
+        The composer writes the edit table before the auto one, so the two are
+        told apart by block order. That was previously an index into the merged
+        LDR list, which gave the same answer only because the flat read
+        happened to preserve file order -- the coincidence this migration
+        removes. `test_peak_table_convention.py` pins the result against the
+        `##$CSCATEGORY=` each block declares.
+        """
+        jcamp = getattr(self.base, 'jcamp', None)
+        if jcamp is None:
+            return None
+        blocks = jcamp.blocks_carrying(key)
+        if position >= len(blocks):
+            return None
+        return blocks[position].ldr(key)
 
     def __read_auto_peaks(self):
         if self.params['clear'] or self.clear:
@@ -992,7 +966,7 @@ class JcampTechniqueConverter:
         try:  # legacy
             auto_x = []
             auto_y = []
-            pas = self.dic['PEAKASSIGNMENTS'][0].split('\n')[1:]
+            pas = self.__peak_table('PEAKASSIGNMENTS', 0).split('\n')[1:]
             for pa in pas:
                 info = pa.replace('(', '').replace(')', '') \
                             .replace(' ', '').split(',')
@@ -1008,9 +982,7 @@ class JcampTechniqueConverter:
             if self.auto_peaks is None:
                 auto_x = []
                 auto_y = []
-                if len(self.dic['PEAKTABLE']) == 0:
-                    return
-                pas = self.dic['PEAKTABLE'][1].split('\n')[1:]
+                pas = self.__peak_table('PEAKTABLE', 1).split('\n')[1:]
                 for pa in pas:
                     info = pa.replace(' ', '').split(',')
                     auto_x.append(float(info[0]))
@@ -1028,7 +1000,7 @@ class JcampTechniqueConverter:
         try:  # legacy
             edit_x = []
             edit_y = []
-            pas = self.dic['PEAKASSIGNMENTS'][1].split('\n')[1:]
+            pas = self.__peak_table('PEAKASSIGNMENTS', 1).split('\n')[1:]
             for pa in pas:
                 info = pa.replace('(', '').replace(')', '') \
                             .replace(' ', '').split(',')
@@ -1044,7 +1016,7 @@ class JcampTechniqueConverter:
             if self.edit_peaks is None:
                 edit_x = []
                 edit_y = []
-                pas = self.dic['PEAKTABLE'][0].split('\n')[1:]
+                pas = self.__peak_table('PEAKTABLE', 0).split('\n')[1:]
                 for pa in pas:
                     info = pa.replace(' ', '').split(',')
                     edit_x.append(float(info[0]))
@@ -1075,7 +1047,7 @@ class JcampTechniqueConverter:
         # the data as stored.
         max_y = np.max(self.ys)
         height = (0.2 * max_y if refresh_solvent
-                  else self.__peak_threshold() * max_y)
+                  else self.peak_threshold * max_y)
 
         corr_data_ys = self.ys
         corr_height = height

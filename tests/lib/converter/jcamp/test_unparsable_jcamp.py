@@ -18,8 +18,14 @@ import pytest
 from chem_spectra import create_app
 from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 
-# 129 data-block markers, but nmrglue yields data=None
-source_unparsable = './tests/fixtures/source/MS.dx'
+# A header block declaring no data table: nmrglue reads it and yields None.
+#
+# This was `MS.dx`, which parses on ComPlat/nmrglue@b0802a0 -- it returns a
+# (1, 3347, 2) coordinate array there. Rather than hunt for another real file
+# that happens to fail on the current lineage, the fixture is now one that is
+# unambiguously empty, so the test keeps meaning the same thing whichever
+# nmrglue is pinned.
+source_unparsable = './tests/fixtures/source/no_data_table.jdx'
 
 
 @pytest.fixture
