@@ -185,3 +185,33 @@ def test_the_peak_table_width_does_not_disturb_x_and_y():
     assert len(x) == 55 and len(y) == 55
     assert x[0] == table.data[0][0][0]
     assert y[0] == table.data[0][0][1]
+
+
+def test_a_block_with_a_spectrum_and_a_peak_table_draws_the_spectrum(tmp_path):
+    """One block may carry both `##XYPOINTS=` and `##PEAK TABLE=`. The curve
+    is the spectrum; the peak table is derived from it.
+
+    Until nmrglue `eab51ba`, `getdataarray` tried PEAKTABLE first, so on the
+    block reader such a file would have been drawn as its handful of peaks.
+    """
+    import numpy as np
+
+    from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
+    from chem_spectra.lib.converter.jcamp.technique import (
+        JcampTechniqueConverter,
+    )
+
+    xs = [400.0 + 10 * i for i in range(11)]
+    ys = [0.02] * 11
+    ys[5] = 0.9
+    spectrum = ''.join('{:.1f}, {:.3f}\n'.format(x, y) for x, y in zip(xs, ys))
+    source = tmp_path / 'both.jdx'
+    source.write_text(
+        '##TITLE=both\n##JCAMP-DX=5.00\n##DATA TYPE=UV/VIS SPECTRUM\n'
+        '##DATA CLASS=XYPOINTS\n##XUNITS=NANOMETERS\n##YUNITS=ABSORBANCE\n'
+        '##FIRSTX=400.0\n##LASTX=500.0\n##NPOINTS=11\n'
+        '##XYPOINTS=(XY..XY)\n' + spectrum +
+        '##PEAK TABLE=(XY..XY)\n450.0, 0.9\n##END=\n')
+    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    np.testing.assert_allclose(converter.xs, xs)
+    np.testing.assert_allclose(converter.ys, ys)
