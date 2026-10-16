@@ -322,60 +322,92 @@ class JcampTechniqueConverter:
 
         return count
 
+    PAGED_NTUPLES_REASON = (
+        'this is a paged NTUPLES block (##PAGE=), which ChemSpectra reads '
+        'only as part of an LC/MS dataset, not on its own'
+    )
+
+    def __is_paged_ntuples(self):
+        """Whether the target block is an NTUPLES table read page by page."""
+        target = self.target
+        return (target is not None and 'NTUPLES' in target.dataclass
+                and target.has('PAGE'))
+
     def __read_xs(self, base):  # TBD
         pairs = self.__block_pairs(base.data)
         if pairs is not None:
+            if self.__is_paged_ntuples():
+                # A paged table whose pages are coordinate lists: an LC-UV
+                # chromatogram, one (XY..XY) trace per wavelength. Read per
+                # block, nmrglue gives the first page as pairs, so an x axis
+                # is there -- but drawing that page as the spectrum would drop
+                # every other wavelength without a word. On the flat read this
+                # was refused only because no x range could be built; here it
+                # has to be refused for what it is. An NMR NTUPLES block has
+                # pages too, but they come back as a page dict, not as pairs,
+                # so it never reaches this branch.
+                raise UnconvertibleSpectrum(self.PAGED_NTUPLES_REASON)
             return pairs[0]
 
-        beg_pt = None
-        end_pt = None
         # Trap A. FIRST/LAST are in Hz and are divided by the observe frequency
         # here; FIRSTX/LASTX are already in the axis unit and are not. Whether
         # the Hz->ppm conversion has happened is therefore a property of which
-        # branch ran, and the final division below must not repeat it.
+        # reading succeeded, and the final division below must not repeat it.
         #
         # This used to be arranged by accident: `__set_x_unit` read UNITS[0],
         # the FID block's SECONDS, so `x_unit == 'HZ'` was false and the second
         # division was skipped. Reading the target block gives the honest HZ,
-        # so the rule is now explicit.
+        # so the rule is explicit: each reading says whether it converted.
+        #
+        # Each reading yields both ends or nothing, so a record that gives one
+        # end and fails on the other cannot leave a half range behind.
+        def first_last_shifted():
+            obs_freq = self.obs_freq
+            shift = float(self.target.ldr('$OFFSET'))
+            beg = float(
+                self.target.ldr('FIRST').replace(' ', '').split(',')[0]
+            ) / obs_freq
+            end = float(
+                self.target.ldr('LAST').replace(' ', '').split(',')[0]
+            ) / obs_freq
+            shift = beg - shift
+            return beg - shift, end - shift, True
+
+        def first_last():  # MNova
+            obs_freq = self.obs_freq
+            beg = float(
+                self.target.ldr('FIRST').replace(' ', '').split(',')[0]
+            ) / obs_freq
+            end = float(
+                self.target.ldr('LAST').replace(' ', '').split(',')[0]
+            ) / obs_freq
+            return beg, end, True
+
+        def firstx_lastx():
+            return (to_float(self.target.ldr('FIRSTX')),
+                    to_float(self.target.ldr('LASTX')), False)
+
+        beg_pt = end_pt = None
         already_in_axis_units = False
-
-        if beg_pt is None:
+        for reading in (first_last_shifted, first_last, firstx_lastx):
             try:
-                obs_freq = self.obs_freq
-                shift = float(self.target.ldr('$OFFSET'))
-                beg_pt = float(
-                    self.target.ldr('FIRST').replace(' ', '').split(',')[0]
-                ) / obs_freq
-                end_pt = float(
-                    self.target.ldr('LAST').replace(' ', '').split(',')[0]
-                ) / obs_freq
-                shift = beg_pt - shift
-                beg_pt = beg_pt - shift
-                end_pt = end_pt - shift
-                already_in_axis_units = True
+                beg_pt, end_pt, already_in_axis_units = reading()
+                break
             except:  # noqa
-                beg_pt = None
+                continue
 
-        if beg_pt is None:  # MNova
-            try:
-                obs_freq = self.obs_freq
-                beg_pt = float(
-                    self.target.ldr('FIRST').replace(' ', '').split(',')[0]
-                ) / obs_freq
-                end_pt = float(
-                    self.target.ldr('LAST').replace(' ', '').split(',')[0]
-                ) / obs_freq
-                already_in_axis_units = True
-            except:  # noqa
-                beg_pt = None
-
-        if beg_pt is None:
-            try:
-                beg_pt = to_float(self.target.ldr('FIRSTX'))
-                end_pt = to_float(self.target.ldr('LASTX'))
-            except:  # noqa
-                beg_pt = None
+        # None of the readings found both ends of the axis. Building it anyway
+        # failed on `None + delta` with a 500; say why instead. Whether the
+        # block is a paged NTUPLES table is asked of the target block itself,
+        # not of every block in the file: a LINK file whose FID is paged says
+        # nothing about the spectrum beside it.
+        if beg_pt is None or end_pt is None:
+            if self.__is_paged_ntuples():
+                raise UnconvertibleSpectrum(self.PAGED_NTUPLES_REASON)
+            raise UnconvertibleSpectrum(
+                'the x range of this block could not be read from its '
+                'FIRSTX/LASTX or FIRST/LAST records'
+            )
 
         # Store the points the way the technique is conventionally drawn.
         # Which way that is comes from `x_reversed`; whether it may be
@@ -506,13 +538,13 @@ class JcampTechniqueConverter:
         """
         if self.peaks_point_down == self.technique.peaks_inverted:
             return self.threshold
-        converted = getattr(self, 'absorbance_range', None)
-        if converted is not None:
-            # A conversion ran, so the fraction has to travel through it.
-            # The complement is a linear mirror and %T is not linear in A:
-            # 0.05 of the absorbance maximum means "above 5 mAU" on a
-            # 100 mAU chromatogram, while 0.95 of the %T maximum means
-            # "deeper than about 24 mAU", and every small peak was lost.
+        if self.converted_to_transmittance or self.transmittance_recorded:
+            # The trace is a %T conversion of absorbance, so the fraction has
+            # to travel through that conversion. The complement is a linear
+            # mirror and %T is not linear in A: 0.05 of the absorbance maximum
+            # means "above 5 mAU" on a 100 mAU chromatogram, while 0.95 of the
+            # %T maximum means "deeper than about 24 mAU", and every small
+            # peak was lost.
             #
             # The picker compares against `fraction * max(y)`, so the
             # fraction wanted is the cut over the maximum, both in %T:
@@ -521,12 +553,37 @@ class JcampTechniqueConverter:
             # whose ratio is the line below. Above 1.0 when the cut sits
             # under the baseline, which is faithful: in absorbance every
             # point would clear that cut too.
-            a_min, a_max = converted
-            return round(float(10.0 ** (a_min - self.threshold * a_max)), 6)
+            #
+            # A_min and A_max are read back off the %T trace, A = -log10(T/100),
+            # rather than kept from the conversion. They used to be, which
+            # held only on the request that converted: the same file coming
+            # back -- and re-picked on `clear`, on a shift `delta`, or with no
+            # stored auto table -- fell to the linear mirror below and picked
+            # different peaks on identical data.
+            absorbance = self.__absorbance_extremes()
+            if absorbance is not None:
+                a_min, a_max = absorbance
+                return round(float(10.0 ** (a_min - self.threshold * a_max)), 6)
         # rounded so the value stays legible wherever it is logged or
         # compared: 1.0 - 0.93 is 0.06999999999999995 in binary floating
         # point.
         return round(1.0 - self.threshold, 6)
+
+    def __absorbance_extremes(self):
+        """(A_min, A_max) recovered from the %T trace, or None.
+
+        Exact on a trace this app converted, since T = 100 * 10**(-A) was
+        computed from A in the first place. None when the trace holds a
+        value at or below zero, which no absorbance maps to: a recorded file
+        with baseline noise, for instance, keeps the linear fallback.
+        """
+        ys = np.asarray(self.ys, dtype=float)
+        if ys.size == 0 or not np.isfinite(ys).all():
+            return None
+        t_min, t_max = float(np.min(ys)), float(np.max(ys))
+        if t_min <= 0:
+            return None
+        return -np.log10(t_max / 100.0), -np.log10(t_min / 100.0)
 
     def __to_transmittance(self, ys):
         """T = 10**(-A). Refuses rather than returning a ruined spectrum.
@@ -630,10 +687,6 @@ class JcampTechniqueConverter:
 
         self.converted_to_transmittance = True
         self.transmittance_recorded = True
-        # what the peak threshold has to be mapped through: the picker's
-        # fraction is of the maximum, and the two maxima are not related
-        # linearly
-        self.absorbance_range = (y_min, y_max)
         # kept for the peak tables: they are in the file's declared unit
         # too, so they need the same scaling the trace just had
         self.absorbance_scale = scale or 1.0
