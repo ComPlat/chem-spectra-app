@@ -9,7 +9,7 @@ from chem_spectra.lib.converter.jcamp.base import (
     JcampBaseConverter, header_records, read_header,
 )
 from chem_spectra.lib.converter.share import (
-    UnconvertibleSpectrum, parse_params,
+    UnconvertibleSpectrum, is_jcamp_filename, parse_params,
 )
 from chem_spectra.lib.shared.misc import shorten_label
 from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
@@ -116,7 +116,7 @@ class BagItBaseConverter:
             list_file_names.extend(filenames)
             break
         if flat_layout:
-            list_file_names = [n for n in list_file_names if n.lower().endswith('.jdx')]
+            list_file_names = [n for n in list_file_names if is_jcamp_filename(n)]
         if (len(list_file_names) == 0):
             return None
 
@@ -130,7 +130,7 @@ class BagItBaseConverter:
         # the archive is judged as a whole before anything is grouped.
         detected = {}
         for file_name in list_file_names:
-            if not file_name.lower().endswith('.jdx'):
+            if not is_jcamp_filename(file_name):
                 continue
             jcamp_path = os.path.join(data_dir_path, file_name)
             try:
@@ -165,7 +165,7 @@ class BagItBaseConverter:
             )
 
         for file_name in list_file_names:
-            if not file_name.lower().endswith('.jdx'):
+            if not is_jcamp_filename(file_name):
                 continue
             jcamp_path = os.path.join(data_dir_path, file_name)
             stem = os.path.splitext(file_name)[0].replace('.', '_')
