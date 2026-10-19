@@ -219,3 +219,29 @@ def test_a_mixed_bagit_overlay_restores_the_member_it_drew(
     assert [call['draw_y_inverted'] for call in overlays] == [False]
     # the composer is kept on the converter; it must not keep the override
     assert converter._composers[0].core.draw_y_inverted is True
+
+
+# - - - the ELN's save and refresh paths - - -
+#
+# Both convert each file of `dst_list` with `jcamp_idx` set to that file's
+# own index, so each picks its own CV state and axis units. The combined
+# image is built after that loop, and used to inherit the last index: the
+# overlay landed on the last spectrum, carrying the peaks the user had edited
+# on the one they were viewing.
+
+@pytest.mark.parametrize('route', [
+    '/api/v1/chemspectra/file/save',
+    '/api/v1/chemspectra/file/refresh',
+])
+@pytest.mark.parametrize('jcamp_idx, ncl', [('0', '1H'), ('1', '13C')])
+def test_save_and_refresh_annotate_the_requested_spectrum(
+        client, overlays, route, jcamp_idx, ncl):
+    data = {
+        'src': (io.BytesIO(_read(H1)), 'a.dx'),
+        'dst_list': [(io.BytesIO(_read(H1)), 'a.dx'),
+                     (io.BytesIO(_read(C13)), 'b.dx')],
+        'jcamp_idx': jcamp_idx,
+    }
+    response = client.post(route, data=data, content_type='multipart/form-data')
+    assert response.status_code == 200
+    assert [call['ncl'] for call in overlays] == [ncl]
