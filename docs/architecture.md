@@ -56,7 +56,7 @@ It should contain:
 - Upload extraction through `FileContainer`.
 - Form parameter extraction through `extract_params()`.
 - Calling model-layer classes.
-- Response formatting through `jsonify()`, `send_file()`, ZIP helpers, or `abort(...)`.
+- Response formatting through `jsonify()`, `send_file()`, ZIP helpers, or `refuse()` (422 with `{"error": ...}`).
 - HTTP-specific behavior such as response headers.
 
 Important files:
@@ -66,6 +66,7 @@ Important files:
 - `chem_spectra/controller/inference_api.py`
 - `chem_spectra/controller/spectra_layout_api.py`
 - `chem_spectra/controller/helper/file_container.py`
+- `chem_spectra/controller/helper/refusal.py`
 - `chem_spectra/controller/helper/share.py`
 
 Logic that belongs in controllers:
@@ -755,6 +756,17 @@ When modifying related code, consider:
 - missing configuration;
 - whether tests mock external calls;
 - whether local development has the required containers running.
+
+### State and Access
+
+The app is meant to be a stateless endpoint that several ELNs may share. A request carries everything it needs, files and form parameters, the data-type mapping included. Nothing is kept for the next request: no session, no signed cookie, and therefore no `SECRET_KEY`.
+
+Two things still outlive a request, and both are deliberate:
+
+- pyplot's global figure, closed by `teardown_request`. Its `rcParams` persist.
+- the per-request msconvert working directory on the shared volume, which `MSConverter` removes in a `finally`.
+
+The app does no access control of its own. The old IP allow-list was never enforced and has been removed. Restricting who may call it belongs at the proxy, or in per-ELN API keys if a shared deployment needs them.
 
 ### File-Based Workflows
 
