@@ -174,6 +174,10 @@ def extract_params(request):
     data_type_mapping = request.form.get('data_type_mapping', default='')
     detector = request.form.get('detector', default=None)
     dsc_meta_data = request.form.get('dsc_meta_data', default=None)
+    # Client instructions for the y signal. Absent means absent: nothing is
+    # converted, inverted or relabelled unless explicitly asked for.
+    transmittance = request.form.get('transmittance', default=None)
+    invert_y = request.form.get('invert_y', default=None)
     lcms_params = extract_lcms_params(request)
 
     params = {
@@ -200,6 +204,8 @@ def extract_params(request):
         'data_type_mapping': data_type_mapping,
         'detector': detector,
         'dsc_meta_data': dsc_meta_data,
+        'transmittance': transmittance,
+        'invert_y': invert_y,
         **lcms_params,
     }
     has_params = (
@@ -218,6 +224,8 @@ def extract_params(request):
         params.get('multiplicity') or
         params.get('fname') or
         params.get('simulatenmr') or
+        params.get('transmittance') or
+        params.get('invert_y') or
         any(params.get(key) for key in LCMS_PARAM_KEYS)
     )
     if not has_params:

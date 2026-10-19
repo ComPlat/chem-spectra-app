@@ -31,7 +31,7 @@ def coupling_string(js):
     return ', ' + ' '.join([str(j) for j in js])
 
 
-def is_metadata_to_be_ignored(keyword):
+def is_metadata_to_be_ignored(keyword, is_ntuples=False):
     chemspectra_managed = {
         '$OBSERVEDINTEGRALS',
         '$OBSERVEDINTEGRALSGROUPS',
@@ -39,10 +39,28 @@ def is_metadata_to_be_ignored(keyword):
         '$OBSERVEDMULTIPLETSPEAKS',
         '$CSITAREA',
         '$CSITFACTOR',
+        # written as real records when they apply; echoing them as well left
+        # `###$CSINVERTY= true` behind after the record itself was cleared
+        '$CSINVERTY',
+        '$CSTRANSMITTANCE',
     }
-    if keyword in chemspectra_managed:
+    # `###$X` in an earlier composed file parses as `#$X`, so the echo of an
+    # echo is caught here too instead of travelling on indefinitely
+    if keyword.lstrip('#') in chemspectra_managed:
         return True
-    return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE', 'DATACLASS']
+    if keyword == 'XYPOINTS':
+        # XYPOINTS is the authoritative data table for XYPOINTS-classified
+        # spectra (e.g. HPLC) and must stay in the original-metadata dump.
+        # For NTUPLES-classified spectra (e.g. MASS SPECTRUM / LC-MS) it's
+        # a stray leftover LDR that duplicates the NTUPLES data table, so
+        # it should be suppressed like XYDATA/XYDATA_OLD already are.
+        return is_ntuples
+    # DATATABLE is the NTUPLES data table's own LDR. The flat read never
+    # surfaced it, so it was never listed; reading per block does, and without
+    # this the whole encoded spectrum lands in the original-metadata dump.
+    # XYDATA_OLD is kept in the list although nothing produces it any more:
+    # removing it would silently change any file still carrying one.
+    return keyword in ['__comments', '_comments', 'FIRST', 'LAST', 'XYDATA_OLD', 'NTUPLES', 'PEAKASSIGNMENTS', 'XYDATA', 'DATATABLE', '$CSSIMULATIONPEAKS', 'XFACTOR', 'YFACTOR', 'FIRSTX', 'FIRSTY', 'DATACLASS', 'PEAKTABLE', 'DATATYPE']
 
 
 TEXT_DATA_TABLE = '##XYDATA= (X++(Y..Y))\n'
@@ -124,21 +142,40 @@ class BaseComposer:
             TEXT_ORIGINAL_METADATA,
         ]
 
-    def gen_headers_root(self):
+    def gen_headers_root(self, block_count=1):
+        """The LINK block header. `##BLOCKS` must state how many children follow.
+
+        It was hardcoded to 1 while a 1H file carries three, so every file this
+        app produced misdeclared its own structure. The count is not knowable
+        when this runs -- the children are generated afterwards -- so callers
+        compose the body first and pass the total in; `count_child_blocks`
+        derives it.
+        """
         return [
             '##TITLE={}\n'.format(self.title),
             '##JCAMP-DX=5.0\n',
             '##DATA TYPE=LINK\n',
-            '##BLOCKS=1\n',  # TBD
+            '##BLOCKS={}\n'.format(block_count),
             '\n'
         ]
+
+    @staticmethod
+    def count_child_blocks(body):
+        """Children are the `##END=` lines, less the one closing the LINK itself.
+
+        Counted from the composed text rather than tracked as the body is
+        built, so a branch added later cannot forget to increment it.
+        """
+        endings = sum(1 for line in body if line.startswith('##END='))
+        return max(endings - 1, 1)
 
     def generate_original_metadata(self):
         content = self.__header_original_metadata()
         if self.core.dic is None: return content
 
+        is_ntuples = 'NTUPLES' in (self.core.dic.get('DATACLASS') or [])
         for key, value in self.core.dic.items():
-            if is_metadata_to_be_ignored(key):
+            if is_metadata_to_be_ignored(key, is_ntuples):
                 continue
             str_value = value
             str_key = key
@@ -230,6 +267,29 @@ class BaseComposer:
         tf.seek(0)
         return tf
 
+    def _technique(self):
+        """The core's spectrum-technique descriptor.
+
+        Converters not fed by data_type.json carry no `technique` but do set
+        `non_nmr` themselves. `NMRiumDataConverter` is the only one left:
+        tf_nmrium (model/transformer.py) hands it straight to
+        TechniqueComposer and it carries no descriptor, so this fallback is
+        what resolves it to NMR rather than the generic curve.
+
+        FID and every MS converter used to need this too. Both now set a
+        descriptor of their own, so the fallback is reached on the NMRium
+        path alone. It is kept because a converter added later may forget.
+        """
+        from chem_spectra.lib.converter.jcamp.techniques import (
+            SPECTRUM_TECHNIQUES, UNKNOWN_TECHNIQUE,
+        )
+        technique = getattr(self.core, 'technique', None)
+        if technique is not None:
+            return technique
+        if getattr(self.core, 'non_nmr', True) is False:
+            return SPECTRUM_TECHNIQUES['NMR']
+        return UNKNOWN_TECHNIQUE
+
     def prepare_itg_mpy(self):
         if not hasattr(self.core, 'params'):
             return
@@ -244,7 +304,9 @@ class BaseComposer:
         # = = = = =
         itg_stack = filter_valid_integrations(core_itg.get('stack') or [])
         self.all_itgs = itg_stack
-        if getattr(self.core, 'non_nmr', True):
+        # pairing an integration with the multiplet covering the same extent
+        # is NMR-only bookkeeping
+        if not self._technique().nmr_integration:
             self.itgs = list(itg_stack)
             return
 
@@ -260,15 +322,16 @@ class BaseComposer:
             if not skip:
                 self.itgs.append(itg)
 
-    def _is_hplc_uv_vis(self):
-        return getattr(self.core, 'is_hplc_uv_vis', False)
+    def _uses_auc_column(self):
+        """The integration table's AUC column. HPLC UV/VIS only."""
+        return self._technique().auc_column
 
     def _supports_visual_split(self):
         """Visual integration splits are HPLC/UV-Vis only; NMR keeps legacy behavior."""
-        return self._is_hplc_uv_vis() or getattr(self.core, 'is_uv_vis', False)
+        return self._technique().visual_split
 
     def _build_integration_lines(self, items):
-        use_auc_column = integration_uses_auc_column(items, self._is_hplc_uv_vis())
+        use_auc_column = integration_uses_auc_column(items, self._uses_auc_column())
         return build_integration_lines(items, self.refArea, self.refShift, use_auc_column)
 
     def __serialize_multiplicity_stack(self, mpy_stack):
@@ -321,7 +384,7 @@ class BaseComposer:
                             if (itg['xL'] == mpy['xExtent']['xL']) and (itg['xU'] == mpy['xExtent']['xU']):     # pylint: disable=c0301
                                 return []
             return serialize_integration_stack(
-                itg_stack, self.refArea, self.refShift, self._is_hplc_uv_vis(),
+                itg_stack, self.refArea, self.refShift, self._uses_auc_column(),
             )
         return self.core.itg_table
 
@@ -349,7 +412,7 @@ class BaseComposer:
         return ['{}\n'.format(ref_area)]
 
     def gen_mpy_integ_info(self):
-        if getattr(self.core, 'non_nmr', True):
+        if not self._technique().multiplicity:
             return []
         core_mpy = self.core.params.get('multiplicity') or {}
         if len(self.mpys) > 0:
@@ -365,7 +428,7 @@ class BaseComposer:
             return self.core.mpy_itg_table
 
     def gen_mpy_peaks_info(self):
-        if getattr(self.core, 'non_nmr', True):
+        if not self._technique().multiplicity:
             return []
         core_mpy = self.core.params.get('multiplicity') or {}
         if len(self.mpys) > 0:

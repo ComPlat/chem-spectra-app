@@ -25,7 +25,23 @@ TEXT_INTEGRATION = '$$ === CHEMSPECTRA INTEGRATION ===\n'
 TEXT_MULTIPLICITY = '$$ === CHEMSPECTRA MULTIPLICITY ===\n'
 
 
-class NIComposer(BaseComposer):
+def flip_overlay_if_inverted(ax, inverted):
+    """Draw an overlay the other way up when every curve asks for it.
+
+    The overlay counterpart of the `draw_y_inverted` flip in `tf_img`: the
+    data is never mirrored, so an overlay that skipped this would draw an
+    inverted file upright beside others and inverted on its own. A figure
+    has one y axis, so it flips only when all curves agree; a mixed overlay
+    stays upright rather than misdrawing some of them. `inverted` holds one
+    flag per plotted curve. Returns whether the curves disagreed.
+    """
+    if inverted and all(inverted):
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim(ymax, ymin)
+    return any(inverted) and not all(inverted)
+
+
+class TechniqueComposer(BaseComposer):
     def __init__(self, core):
         super().__init__(core)
         self.title = core.fname
@@ -36,7 +52,7 @@ class NIComposer(BaseComposer):
         self.meta = self.__compose()
 
     def __cv_display_info(self):
-        if not getattr(self.core, 'is_cyclic_volta', False):
+        if not self._technique().cyclic_voltammetry:
             return None
 
         params = self.core.params if hasattr(self.core, 'params') else {}
@@ -163,10 +179,25 @@ class NIComposer(BaseComposer):
             '##MAXY={}\n'.format(self.core.boundary['y']['max']),
             '##MINX={}\n'.format(self.core.boundary['x']['min']),
             '##MINY={}\n'.format(self.core.boundary['y']['min'])
-        ]
+        ] + self.__header_processing()
+
+    def __header_processing(self):
+        """What the client asked us to do to the signal, if anything.
+
+        Emitted only when asked for: absence means the instruction was not
+        given, which is different from being given as false.
+        """
+        lines = []
+        # transmittance_recorded alone: a conversion on this request sets
+        # both, so the second was never the one that answered.
+        if getattr(self.core, 'transmittance_recorded', False):
+            lines.append('##$CSTRANSMITTANCE=true\n')
+        if getattr(self.core, 'draw_y_inverted', False):
+            lines.append('##$CSINVERTY=true\n')
+        return lines
 
     def __gen_headers_spectrum_orig(self):
-        if self.core.is_em_wave or self.core.non_nmr:
+        if self._technique().em_wave or not self._technique().nmr_headers:
             return self.__header_base() + self.__header_params()
         else:
             return self.__header_base() + \
@@ -229,7 +260,7 @@ class NIComposer(BaseComposer):
         return result
 
     def __gen_header_user_input_meta_data(self):
-        if self.core.is_dsc:
+        if self._technique().dsc_metadata:
             dsc_meta_data = self.core.params.get('dsc_meta_data', None)
             melting_point, tg_value = '', ''
             if dsc_meta_data is not None:
@@ -287,7 +318,7 @@ class NIComposer(BaseComposer):
 
     def __gen_cyclic_voltammetry_data_peaks(self):
         content = ['##$CSCYCLICVOLTAMMETRYDATA=\n']
-        if self.core.is_cyclic_volta:
+        if self._technique().cyclic_voltammetry:
             listMaxMinPeaks = self.core.max_min_peaks_table
             cyclicvolta_data = self.core.params['cyclicvolta']
             current_jcamp_idx = self.core.params['jcamp_idx']
@@ -346,10 +377,8 @@ class NIComposer(BaseComposer):
 
     def __compose(self):
         meta = []
-        meta.extend(self.gen_headers_root())
-
         meta.extend(self.__gen_headers_spectrum_orig())
-        if self.core.is_sec:
+        if self._technique().sec_headers:
             meta.extend(self.__gen_header_sec())
         meta.extend(self.__gen_header_user_input_meta_data())
         meta.extend(self.gen_spectrum_orig())
@@ -370,14 +399,14 @@ class NIComposer(BaseComposer):
         if csit_area:
             meta.extend(self.__gen_headers_csit_area())
             meta.extend(csit_area)
-        if not self.core.non_nmr:
+        if self._technique().multiplicity:
             meta.extend(self.__gen_headers_mpy_integ())
             meta.extend(self.gen_mpy_integ_info())
             meta.extend(self.__gen_headers_mpy_peaks())
             meta.extend(self.gen_mpy_peaks_info())
         meta.extend(self.__gen_header_simulation())
         meta.extend(self.gen_simulation_info())
-        if self.core.is_cyclic_volta:
+        if self._technique().cyclic_voltammetry:
             meta.extend(self.__gen_header_cyclic_voltammetry())
             meta.extend(self.__gen_cyclic_voltammetry_medadata())
             meta.extend(self.__gen_cyclic_voltammetry_data_peaks())
@@ -394,86 +423,141 @@ class NIComposer(BaseComposer):
         meta.extend(self.generate_original_metadata())
 
         meta.extend(self.gen_ending())
-        return meta
+        # the root header goes on last: it has to declare how many children
+        # the body turned out to have
+        return self.gen_headers_root(self.count_child_blocks(meta)) + meta
 
     def __plt_nbins(self):
         return 20
 
+    def __label_headroom(self):
+        """How far above the trace the plot extends, for the peak labels.
+
+        Upward bands carry their labels above the trace and need the room;
+        dips carry them below and do not. It follows the picker, as the
+        marker direction does: keyed on the technique, an infrared file in
+        absorbance got a dip's 1.1 and clipped its labels, and a UV/VIS trace
+        converted to %T got the reverse.
+        """
+        points_down = getattr(self.core, 'peaks_point_down', None)
+        if points_down is None:
+            points_down = self._technique().peaks_inverted
+        return 1.1 if points_down else 1.5
+
     def __fakto(self):
-        typ = self.core.typ
-        if 'INFRARED' == typ:
-            return -1
-        return 1
+        """Which way the peak marker points, on screen.
 
-    def _ensure_itg_mpy_from_core_tables(self):
-        refShift = self.refShift
-        if (len(self.all_itgs) == 0 and len(self.core.itg_table) > 0
-                and not self.core.params['integration'].get('edited')
-                and ('originStack' not in self.core.params['integration'])):
-            core_itg_table = self.core.itg_table[0]
-            for itg in core_itg_table.split('\n'):
-                clear_itg = itg.replace('(', '').replace(')', '')
-                split_itg = clear_itg.split(',')
-                if len(split_itg) > 2:
-                    self.all_itgs.append({
-                        'xL': float(split_itg[0].strip()),
-                        'xU': float(split_itg[1].strip()),
-                        'area': float(split_itg[2].strip()),
-                    })
+        It follows the picker, so a marker cannot sit on the opposite side
+        of the trace from the peak it marks; keyed on the technique, it did
+        exactly that for an infrared file in absorbance.
 
-        if (not self.core.non_nmr and len(self.mpys) == 0
-                and len(self.core.mpy_itg_table) > 0
-                and len(self.core.mpy_pks_table) > 0
-                and not self.core.params['integration'].get('edited')
-                and ('originStack' not in self.core.params['integration'])):
-            tmp_dic_mpy_peaks = {}
-            core_mpy_pks_table = self.core.mpy_pks_table[0]
-            for peak in core_mpy_pks_table.split('\n'):
-                clear_peak = peak.replace('(', '').replace(')', '')
-                split_peak = clear_peak.split(',')
-                if len(split_peak) < 3:
-                    continue
-                idx_peakStr = split_peak[0].strip()
-                if idx_peakStr not in tmp_dic_mpy_peaks:
-                    tmp_dic_mpy_peaks[idx_peakStr] = []
-                tmp_dic_mpy_peaks[idx_peakStr].append({
-                    'x': float(split_peak[1].strip()),
-                    'y': float(split_peak[2].strip()),
-                })
+        And it follows the viewport. `draw_y_inverted` flips the y axis, so
+        a trace that dips in the data rises on screen -- but the marker is
+        a Path in points, which the flip does not touch. It kept pointing
+        the way it had, straight into the body of the peak.
+        """
+        points_down = getattr(self.core, 'peaks_point_down', None)
+        if points_down is None:
+            points_down = 'INFRARED' == self.core.typ
+        if getattr(self.core, 'draw_y_inverted', False):
+            points_down = not points_down
+        return -1 if points_down else 1
 
-            for mpy in self.core.mpy_itg_table[0].split('\n'):
-                clear_mpy = mpy.replace('(', '').replace(')', '')
-                split_mpy = clear_mpy.split(',')
-                if len(split_mpy) <= 7:
-                    continue
-                idxStr = split_mpy[0].strip()
-                peaks = tmp_dic_mpy_peaks.get(idxStr, [])
-                if not peaks:
-                    # calc_mpy_center divides by the peak count, so a
-                    # multiplet without matching peaks cannot be drawn
-                    continue
-                mpy_item = {
-                    'mpyType': split_mpy[6].strip(),
-                    'xExtent': {
-                        'xL': float(split_mpy[1].strip()) + refShift,
-                        'xU': float(split_mpy[2].strip()) + refShift,
-                    },
-                    'yExtent': {
-                        'yL': float(split_mpy[3].strip()) + refShift,
-                        'yU': float(split_mpy[4].strip()) + refShift,
-                    },
-                    'peaks': peaks,
-                    'area': 1.0,
-                }
-                self.mpys.append(mpy_item)
+    def __rotated_anchor(self):
+        """`ha`/`va` for the rotated data labels, the way the viewport shows
+        them.
 
-    def plot_overlays(self, plt, y_values=None, adjust_xlim=True):
-        y_values = self.core.ys if y_values is None else y_values
+        The multiplet and integral labels sit just below their feature in
+        *data* space and are anchored `right`/`top` in *screen* space, which
+        the inverted ylim does not touch. Unflipped, `7.111 (m)` ran across
+        the cluster it names and the integral value reached into the trace
+        instead of its margin.
+
+        With `rotation=90` and `rotation_mode='anchor'` the two alignments
+        swap axes: `ha` places the text vertically on screen and `va` places
+        it horizontally (measured: `right`/`top` sits +0..+10.3 px across and
+        -48..0 px down; `left`/`bottom` sits -10.3..0 across and 0..+48 down).
+        Only the vertical side belongs to the flip -- `invert_y` inverts the
+        y axis, not the x -- so `va` stays `top` and the label keeps its side
+        of its own centre line. This is the defect the integral label had.
+        """
+        if getattr(self.core, 'draw_y_inverted', False):
+            return {'ha': 'left', 'va': 'top'}
+        return {'ha': 'right', 'va': 'top'}
+
+    def __integral_anchor(self):
+        """The same, for the integral value label, which carried no `va` at
+        all and so used matplotlib's `baseline`.
+
+        Its own pair rather than the multiplet's: giving it `va='top'`
+        upright moved every integral label across its centre line on every
+        upright preview, which is the common case and nothing to do with
+        inversion.
+        """
+        if getattr(self.core, 'draw_y_inverted', False):
+            return {'ha': 'left'}
+        return {'ha': 'right'}
+
+    def __label_offset(self, points):
+        """A label offset in points, the way the viewport shows it.
+
+        The annotations sit beyond the peak in *data* space, which the
+        inverted ylim carries along with everything else, and are then
+        nudged outwards by an offset in *screen* space, which it does not.
+        Unflipped, that nudge pulled every label back over the peak it
+        names.
+        """
+        if getattr(self.core, 'draw_y_inverted', False):
+            return (0, -points)
+        return (0, points)
+
+    def tf_img(self):
+        plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['figure.dpi'] = 200
+        plt.rcParams['font.size'] = 14
+
+        cv_info = self.__cv_display_info() if self._technique().cyclic_voltammetry else None
+        self._cv_density_scale = 1.0
+        if cv_info:
+            cv_display = cv_info.get('cv_display') or {}
+            scale_val = cv_display.get('yScaleFactor', 1.0) if isinstance(cv_display, dict) else 1.0
+            try:
+                self._cv_density_scale = float(scale_val)
+            except Exception:
+                self._cv_density_scale = 1.0
+
+        # PLOT data
+        y_values = self.core.ys
+        if self._technique().cyclic_voltammetry and self._cv_density_scale != 1.0:
+            y_values = self.core.ys * self._cv_density_scale
+        plt.plot(self.core.xs, y_values)
+        x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
+
+        # high -> low is the NMR/IR convention; every other technique reads
+        # forward. This was a twelve-flag or-chain that had to be extended by
+        # hand for each new technique -- and was not, which is how DSC and
+        # LC/MS came to be drawn reversed (BUG-6, BUG-7). Both read forward
+        # now: the descriptor carries the orientation, so there is no chain
+        # left to forget to extend.
+        if self._technique().x_reversed:
+            plt.xlim(x_max, x_min)
+        else:
+            plt.xlim(x_min, x_max)
         y_max, y_min = np.max(y_values), np.min(y_values)
         h = y_max - y_min
-        w = self.core.boundary['x']['max'] - self.core.boundary['x']['min']
+        w = x_max - x_min
+        y_boundary_min = y_min - h * 0.2
         y_boundary_max = y_max + h * 0.5
 
+        if self._technique().cyclic_voltammetry:
+            ymax_abs = max(abs(y_min), abs(y_max))
+            if ymax_abs > 0:
+                self._cv_axis_exp = int(np.floor(np.log10(ymax_abs)))
+            else:
+                self._cv_axis_exp = 0
+            self._cv_axis_base = (10.0 ** self._cv_axis_exp) if self._cv_axis_exp != 0 else 1.0
+
+        # PLOT peaks
         faktor = self.__fakto()
         path_data = [
             (mpath.Path.MOVETO, (0, faktor * 5)),
@@ -487,7 +571,8 @@ class NIComposer(BaseComposer):
         cirle_codes = np.concatenate([circle.codes, codes])
         cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
 
-        x_peaks, y_peaks = [], []
+        x_peaks = []
+        y_peaks = []
         if self.core.edit_peaks:
             x_peaks = self.core.edit_peaks['x']
             y_peaks = self.core.edit_peaks['y']
@@ -495,38 +580,52 @@ class NIComposer(BaseComposer):
             x_peaks = self.core.auto_peaks['x']
             y_peaks = self.core.auto_peaks['y']
 
-        x_peckers, y_peckers = [], []
+        x_peckers = []
+        y_peckers = []
         x_peaks_ref, y_peaks_ref = [], []
-        if self.core.is_cyclic_volta:
+        if self._technique().cyclic_voltammetry:
             display_scale = getattr(self, '_cv_density_scale', 1.0)
-            x_peaks, y_peaks = [], []
-            listMaxMinPeaks = self.core.params['list_max_min_peaks'] or []
+            x_peaks = []
+            y_peaks = []
+            listMaxMinPeaks = []
+            if self.core.params['list_max_min_peaks'] is not None:
+                listMaxMinPeaks = self.core.params['list_max_min_peaks']
+
             for peak in listMaxMinPeaks:
-                max_peak = peak.get('max')
-                min_peak = peak.get('min')
+                max_peak, min_peak = None, None
+                if 'max' in peak:
+                    max_peak = peak['max']
+                if 'min' in peak:
+                    min_peak = peak['min']
                 x_max_peak, y_max_peak = self.__get_xy_of_peak(max_peak)
                 x_min_peak, y_min_peak = self.__get_xy_of_peak(min_peak)
-                if x_max_peak == '' and x_min_peak == '':
+
+                if (x_max_peak == '' and x_min_peak == ''):
+                    # ignore if missing both max and min peak
                     continue
-                if x_max_peak == '' and y_max_peak == '':
+
+                if (x_max_peak == '' and y_max_peak == ''):
                     x_peaks.extend([x_min_peak])
                     y_peaks.extend([y_min_peak])
-                elif x_min_peak == '' and y_min_peak == '':
+                elif (x_min_peak == '' and y_min_peak == ''):
                     x_peaks.extend([x_max_peak])
                     y_peaks.extend([y_max_peak])
                 else:
-                    is_ref = peak.get('isRef', False)
+                    is_ref = peak.get('isRef', False) if 'isRef' in peak else False
                     if is_ref:
                         x_peaks_ref.extend([x_max_peak, x_min_peak])
                         y_peaks_ref.extend([y_max_peak, y_min_peak])
                     else:
                         x_peaks.extend([x_max_peak, x_min_peak])
                         y_peaks.extend([y_max_peak, y_min_peak])
-                if peak.get('pecker') is not None:
-                    pecker = peak['pecker']
-                    x_peckers.append(pecker['x'])
-                    y_peckers.append(pecker['y'])
 
+                if 'pecker' in peak and peak['pecker'] is not None:
+                    pecker = peak['pecker']
+                    x_pecker, y_pecker = pecker['x'], pecker['y']
+                    x_peckers.append(x_pecker)
+                    y_peckers.append(y_pecker)
+
+            # display x value of peak for cyclic voltammetry
             if display_scale != 1.0:
                 y_peaks = [y * display_scale for y in y_peaks]
                 y_peckers = [y * display_scale for y in y_peckers]
@@ -535,128 +634,154 @@ class NIComposer(BaseComposer):
             for i in range(len(x_peaks)):
                 x_pos = x_peaks[i]
                 y_pos = y_peaks[i] + h * 0.1
-                peak_label = 'x: {x}\ny: {y}'.format(
-                    x='{:.2e}'.format(x_pos), y='{:.2e}'.format(y_peaks[i]),
-                )
+                x_float = '{:.2e}'.format(x_pos)
+                y_float = '{:.2e}'.format(y_peaks[i])
+                peak_label = 'x: {x}\ny: {y}'.format(x=x_float, y=y_float)
                 plt.text(x_pos, y_pos, peak_label)
 
+            # display x value of ref peak for cyclic voltammetry
             for i in range(len(x_peaks_ref)):
                 x_pos = x_peaks_ref[i]
                 y_pos = y_peaks_ref[i] + h * 0.1
-                peak_label = 'x: {x}\ny: {y}'.format(
-                    x='{:.2e}'.format(x_pos), y='{:.2e}'.format(y_peaks_ref[i]),
-                )
+                x_float = '{:.2e}'.format(x_pos)
+                y_float = '{:.2e}'.format(y_peaks_ref[i])
+                peak_label = 'x: {x}\ny: {y}'.format(x=x_float, y=y_float)
                 plt.text(x_pos, y_pos, peak_label)
 
-        if x_peaks:
-            plt.plot(x_peaks, y_peaks, 'r', ls='', marker=marker, markersize=50)
-        if x_peckers:
-            plt.plot(x_peckers, y_peckers, 'g', ls='', marker=marker, markersize=50)
-        if x_peaks_ref:
-            plt.plot(x_peaks_ref, y_peaks_ref, 'r', ls='', marker=cut_star_marker, markersize=50)
-
-        refShift, refArea = self.refShift, self.refArea
-        self._ensure_itg_mpy_from_core_tables()
-
-        itg_value_position_y = y_min - h * 0.25
-        if len(self.mpys) == 0:
-            itg_value_position_y = y_min - h * 0.05
-        y_boundary_max = self.__draw_integrals(
-            plt, refShift, refArea, y_max, h, itg_value_position_y,
+        plt.plot(
+            x_peaks,
+            y_peaks,
+            'r',
+            ls='',
+            marker=marker,
+            markersize=50,
         )
-        y_boundary_min = itg_value_position_y - h * 0.1
 
-        if not self.core.non_nmr:
+        plt.plot(
+            x_peckers,
+            y_peckers,
+            'g',
+            ls='',
+            marker=marker,
+            markersize=50,
+        )
+
+        plt.plot(
+            x_peaks_ref,
+            y_peaks_ref,
+            'r',
+            ls='',
+            marker=cut_star_marker,
+            markersize=50,
+        )
+
+        # ----- Calculate integration -----
+        refShift, refArea = self.refShift, self.refArea
+        if (len(self.all_itgs) == 0 and len(self.core.itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
+            core_itg_table = self.core.itg_table[0]
+            itg_table = core_itg_table.split('\n')
+            for itg in itg_table:
+                clear_itg = itg.replace('(', '')
+                clear_itg = clear_itg.replace(')', '')
+                split_itg = clear_itg.split(',')
+                if (len(split_itg) > 2):
+                    xLStr = split_itg[0].strip()
+                    xUStr = split_itg[1].strip()
+                    areaStr = split_itg[2].strip()
+                    self.all_itgs.append({'xL': float(xLStr), 'xU': float(xUStr), 'area': float(areaStr)})    # noqa: E501
+        
+
+        # ----- Calculate multiplicity (NMR only) -----
+        if (self._technique().multiplicity and len(self.mpys) == 0 and len(self.core.mpy_itg_table) > 0 and not self.core.params['integration'].get('edited') and ('originStack' not in self.core.params['integration'])):
+            core_mpy_pks_table = self.core.mpy_pks_table[0]
+            mpy_pks_table = core_mpy_pks_table.split('\n')
+            tmp_dic_mpy_peaks = {}
+            for peak in mpy_pks_table:
+                clear_peak = peak.replace('(', '')
+                clear_peak = clear_peak.replace(')', '')
+                split_peak = clear_peak.split(',')
+                idx_peakStr = split_peak[0].strip()
+                xStr = split_peak[1].strip()
+                yStr = split_peak[2].strip()
+                if idx_peakStr not in tmp_dic_mpy_peaks:
+                    tmp_dic_mpy_peaks[idx_peakStr] = []
+                
+                tmp_dic_mpy_peaks[idx_peakStr].append({'x': float(xStr), 'y': float(yStr)})
+
+            core_mpy_itg_table = self.core.mpy_itg_table[0]
+            mpy_itg_table = core_mpy_itg_table.split('\n')
+            for mpy in mpy_itg_table:
+                clear_mpy = mpy.replace('(', '')
+                clear_mpy = clear_mpy.replace(')', '')
+                split_mpy = clear_mpy.split(',')
+                mpy_item = { 'mpyType': '', 'xExtent': {'xL': 0.0, 'xU': 0.0}, 'yExtent': {'yL': 0.0, 'yU': 0.0}, 'peaks': [], 'area': 1.0 }
+                if (len(split_mpy) > 7):
+                    idxStr = split_mpy[0].strip()
+                    xLStr = split_mpy[1].strip()
+                    xUStr = split_mpy[2].strip()
+                    mpy_item['xExtent']['xL'] = float(xLStr) + refShift
+                    mpy_item['xExtent']['xU'] = float(xUStr) + refShift
+                    yLStr = split_mpy[3].strip()
+                    yUStr = split_mpy[4].strip()
+                    mpy_item['yExtent']['yL'] = float(yLStr) + refShift
+                    mpy_item['yExtent']['yU'] = float(yUStr) + refShift
+                    typeStr = split_mpy[6].strip()
+                    mpy_item['mpyType'] = typeStr
+                    mpy_item['peaks'] = tmp_dic_mpy_peaks[idxStr]
+                    self.mpys.append(mpy_item)
+
+        # ----- PLOT integration -----
+        itg_h = y_max + h * 0.6
+        itg_h = itg_h + itg_h * 0.1
+        itg_value_position_y = y_min - h * 0.25
+        if (len(self.mpys) == 0):
+            itg_value_position_y =  y_min - h * 0.05
+        y_boundary_max = self.__draw_integrals(plt, refShift, refArea, y_max, h, itg_value_position_y)
+        y_boundary_min = itg_value_position_y - h * 0.1
+        
+        # ----- PLOT multiplicity (NMR only) -----
+        if self._technique().multiplicity:
             mpy_h = y_min - h * 0.03
             for mpy in self.mpys:
-                xL = mpy['xExtent']['xL'] - refShift
-                xU = mpy['xExtent']['xU'] - refShift
-                typ = mpy['mpyType']
+                xL, xU, area, typ, peaks = mpy['xExtent']['xL'] - refShift, mpy['xExtent']['xU'] - refShift, mpy['area'] * refArea, mpy['mpyType'], mpy['peaks']    # noqa: E501
                 plt.plot([xL, xU], [mpy_h, mpy_h], color='#DA70D6')
-                plt.plot([xL, xL], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')
-                plt.plot([xU, xU], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')
-                plt.text(
-                    (xL + xU) / 2, mpy_h - h * 0.01,
-                    '{:0.3f} ({})'.format(calc_mpy_center(mpy['peaks'], refShift, typ), typ),
-                    color='#DA70D6', size=7, rotation=90., ha='right', va='top',
-                    rotation_mode='anchor',
-                )
-                for p in mpy['peaks']:
-                    x = p['x'] - refShift
-                    plt.plot([x, x], [mpy_h, mpy_h + h * 0.02], color='#DA70D6')
-
-        self.__generate_info_box(plt)
-        y_boundary_max = self.__draw_peaks(
-            plt, x_peaks, y_peaks, h, w,
-            y_boundary_max * (1.1 if self.core.is_ir else 1.5),
-            adjust_xlim=adjust_xlim,
-        )
-        return y_boundary_min, y_boundary_max
-
-    def tf_img(self):
-        plt.rcParams['figure.figsize'] = [16, 9]
-        plt.rcParams['figure.dpi'] = 200
-        plt.rcParams['font.size'] = 14
-
-        cv_info = self.__cv_display_info() if self.core.is_cyclic_volta else None
-        self._cv_density_scale = 1.0
-        if cv_info:
-            cv_display = cv_info.get('cv_display') or {}
-            scale_val = cv_display.get('yScaleFactor', 1.0) if isinstance(cv_display, dict) else 1.0
-            try:
-                self._cv_density_scale = float(scale_val)
-            except Exception:
-                self._cv_density_scale = 1.0
-
-        # PLOT data
-        y_values = self.core.ys
-        if self.core.is_cyclic_volta and self._cv_density_scale != 1.0:
-            y_values = self.core.ys * self._cv_density_scale
-        plt.plot(self.core.xs, y_values)
-        x_max, x_min = self.core.boundary['x']['max'], self.core.boundary['x']['min']   # noqa: E501
-
-        xlim_left, xlim_right = [x_min, x_max] if (self.core.is_tga or self.core.is_gc or self.core.is_uv_vis or self.core.is_hplc_uv_vis or self.core.is_xrd or self.core.is_cyclic_volta or self.core.is_sec or self.core.is_cds or self.core.is_aif or self.core.is_emissions or self.core.is_dls_acf or self.core.is_dls_intensity) else [x_max, x_min]    # noqa: E501
-        plt.xlim(xlim_left, xlim_right)
-        y_max, y_min = np.max(y_values), np.min(y_values)
-
-        if self.core.is_cyclic_volta:
-            ymax_abs = max(abs(y_min), abs(y_max))
-            if ymax_abs > 0:
-                self._cv_axis_exp = int(np.floor(np.log10(ymax_abs)))
-            else:
-                self._cv_axis_exp = 0
-            self._cv_axis_base = (10.0 ** self._cv_axis_exp) if self._cv_axis_exp != 0 else 1.0
-
-        y_boundary_min, y_boundary_max = self.plot_overlays(plt, y_values, adjust_xlim=True)
+                plt.plot([xL, xL], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
+                plt.plot([xU, xU], [mpy_h + h * 0.01, mpy_h - h * 0.01], color='#DA70D6')   # noqa: E501
+                plt.text((xL + xU) / 2, mpy_h - h * 0.01, '{:0.3f} ({})'.format(calc_mpy_center(mpy['peaks'], refShift, mpy['mpyType']), typ), color='#DA70D6', size=7, rotation=90., rotation_mode='anchor', **self.__rotated_anchor())  # noqa: E501
+                for p in peaks:
+                    x = p['x']
+                    plt.plot([x - refShift, x - refShift], [mpy_h, mpy_h + h * 0.02], color='#DA70D6')  # noqa: E501
 
         # PLOT label
-        if (self.core.is_xrd):
+        if self._technique().x_axis == 'xrd':
             waveLength = self.core.params['waveLength']
             label = "X ({}), WL={} nm".format(self.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
             plt.xlabel((label), fontsize=18)
-        elif (self.core.is_cyclic_volta):
-            plt.xlabel("{}".format(self.core.label['x']), fontsize=18)
-        elif (self.core.non_nmr == False):
-            plt.xlabel("Chemical shift ({})".format(self.core.label['x'].lower()), fontsize=18)
         else:
-            plt.xlabel("X ({})".format(self.core.label['x']), fontsize=18)
+            plt.xlabel(self.__x_label(), fontsize=18)
 
-        if (self.core.is_cyclic_volta):
-            plt.ylabel("{}".format(self.core.label['y']), fontsize=18)
-        elif (self.core.non_nmr == False):
-            plt.ylabel("Intensity ({})".format(self.core.label['y'].lower()), fontsize=18)
-        else:
-            plt.ylabel("Y ({})".format(self.core.label['y']), fontsize=18)
+        plt.ylabel(self.__y_label(), fontsize=18)
         plt.locator_params(nbins=self.__plt_nbins())
         plt.grid(False)
 
-        plt.ylim(
-            y_boundary_min,
-            y_boundary_max,
-        )
+        self.__generate_info_box(plt)
+
+        y_boundary_max = self.__draw_peaks(plt, x_peaks, y_peaks, h, w, y_boundary_max * self.__label_headroom())
+
+
+        # Drawn the other way up when asked. The data is untouched, so the
+        # axis ticks and the peak table still read in the units the file
+        # declares -- this only changes which end of the plot is at the top.
+        # Standard practice where the convention is regional or the signal is
+        # a dip: DSC exo-up against exo-down, cyclic voltammetry's IUPAC
+        # against Texas sign, indirect photometric HPLC.
+        if getattr(self.core, 'draw_y_inverted', False):
+            plt.ylim(y_boundary_max, y_boundary_min)
+        else:
+            plt.ylim(y_boundary_min, y_boundary_max)
 
         ax = plt.gca()
-        if self.core.is_cyclic_volta:
+        if self._technique().cyclic_voltammetry:
             ymax_abs = max(abs(y_boundary_min), abs(y_boundary_max))
             if ymax_abs > 0:
                 self._cv_axis_exp = int(np.floor(np.log10(ymax_abs)))
@@ -682,7 +807,7 @@ class NIComposer(BaseComposer):
             fmt.set_scientific(True)
             fmt.set_powerlimits((-1, 1))
             ax.yaxis.set_major_formatter(fmt)
-
+                    
         # Save
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')
@@ -690,10 +815,26 @@ class NIComposer(BaseComposer):
         plt.clf()
         plt.cla()
         return tf_img
+    
 
+    def __x_label(self):
+        style = self._technique().x_axis
+        if style == 'raw':
+            return "{}".format(self.core.label['x'])
+        if style == 'chemical_shift':
+            return "Chemical shift ({})".format(self.core.label['x'].lower())
+        return "X ({})".format(self.core.label['x'])
+
+    def __y_label(self):
+        style = self._technique().y_axis
+        if style == 'raw':
+            return "{}".format(self.core.label['y'])
+        if style == 'intensity':
+            return "Intensity ({})".format(self.core.label['y'].lower())
+        return "Y ({})".format(self.core.label['y'])
 
     def __uses_auc_drawing(self):
-        return self.core.is_hplc_uv_vis or self.core.is_uv_vis
+        return self._technique().visual_split
 
     def __baseline_y_at(self, x, x_left, y_left, x_right, y_right):
         if x_right == x_left:
@@ -760,7 +901,7 @@ class NIComposer(BaseComposer):
                 plt.plot([itg_xL, itg_xU], [itg_value_position_y, itg_value_position_y], color='#228B22')
                 plt.plot([itg_xL, itg_xL], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
                 plt.plot([itg_xU, itg_xU], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
-                plt.text((itg_xL + itg_xU) / 2, itg_value_position_y - h * 0.01, '{:0.2f}'.format(itg_area), color='#228B22', ha='right', rotation_mode='anchor', size=7, rotation=90.)   # noqa: E501
+                plt.text((itg_xL + itg_xU) / 2, itg_value_position_y - h * 0.01, '{:0.2f}'.format(itg_area), color='#228B22', rotation_mode='anchor', size=7, rotation=90., **self.__integral_anchor())   # noqa: E501
 
             cys = (ks[iL:iU] - ref) * 1.5 + h * 0.15
             plt.plot(cxs, cys, color='#228B22')
@@ -773,8 +914,8 @@ class NIComposer(BaseComposer):
         return y_boundary_max
         
 
-    def __draw_peaks(self, plt, x_peaks, y_peaks, h, w, y_boundary_max, adjust_xlim=True):
-        if self.core.non_nmr == True or len(x_peaks) == 0:
+    def __draw_peaks(self, plt, x_peaks, y_peaks, h, w, y_boundary_max):
+        if not self._technique().peak_annotation or len(x_peaks) == 0:
             return y_boundary_max
 
         params = self.core.params
@@ -837,7 +978,7 @@ class NIComposer(BaseComposer):
 
                     ax.annotate(peak_label,
                         xy=(gap_value + x_text, max_current_group  + h * 0.11), xycoords='data',
-                        xytext=(0, 12), textcoords='offset points',
+                        xytext=self.__label_offset(12), textcoords='offset points',
                         arrowprops=dict(arrowstyle="-", linewidth=0.2),
                         rotation=90, size=6)
 
@@ -849,7 +990,7 @@ class NIComposer(BaseComposer):
                 peak_label = '{x}'.format(x=x_float)
                 ax.annotate(peak_label,
                     xy=(x_pos, y_pos), xycoords='data',
-                    xytext=(0, 20), textcoords='offset points',
+                    xytext=self.__label_offset(20), textcoords='offset points',
                     arrowprops=dict(arrowstyle="-", linewidth=0.2),
                     rotation=90, size=6)
 
@@ -863,22 +1004,21 @@ class NIComposer(BaseComposer):
         elif self.core.ncl == '1H':
             x_boundary_min = min(x_boundary_min, -0.2)
             x_boundary_max = max(x_boundary_max, 9.0)
-        if adjust_xlim:
-            plt.xlim(
-                x_boundary_max,
-                x_boundary_min,
-            )
+        plt.xlim(
+            x_boundary_max,
+            x_boundary_min,
+        )
         y_boundary_max = min(y_boundary_max, highest_peak_anotation)
         
         return y_boundary_max
 
 
     def __generate_info_box(self, plotlib):
-        if not (self.core.is_sec or self.core.is_dsc):
+        if not self._technique().info_box:
             return
         core_dic = self.core.dic
         result = []
-        if self.core.is_sec:
+        if self._technique().info_box == 'sec':
             sec_data_key = ['MN', 'MW', 'MP', 'D']
             for key in sec_data_key:
                 dic_value = core_dic.get(key, [])
@@ -934,7 +1074,7 @@ class NIComposer(BaseComposer):
         })
 
     def tf_csv(self):
-        if self.core.is_cyclic_volta == False:
+        if not self._technique().cyclic_voltammetry:
             return None
         tf_csv = tempfile.NamedTemporaryFile(suffix='.csv')
         tf_csv.flush()

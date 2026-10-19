@@ -1,3 +1,4 @@
+import re
 import tempfile
 import json
 import logging
@@ -24,6 +25,39 @@ _UVVIS_DATA_TYPE_TOKENS = (
 )
 
 _MARKER_SCAN_CHUNK = 65536
+
+# jcampconverter (the frontend's JCAMP parser, react-spectra-editor's
+# ExtractJcamp) doesn't support the ##XYPOINTS= LDR, only
+# ##XYDATA=/##DATA TABLE=/##PEAK TABLE=. TechniqueComposer/MSComposer always
+# regenerate their primary data block as ##XYDATA=, so the frontend never
+# sees ##XYPOINTS= from those paths. This LC/MS path instead passes source
+# bytes through verbatim, so a source file that uses ##XYPOINTS= (as
+# chemotion-converter-app does for some LC/MS traces, e.g. TIC) breaks
+# client-side rendering. Normalize it here to match the other paths.
+_XYPOINTS_LDR_RE = re.compile(r'(?im)^(##\s*)XYPOINTS(\s*=)')
+_DATACLASS_XYPOINTS_RE = re.compile(r'(?im)^(##\s*DATA\s*CLASS\s*=\s*)XYPOINTS\b')
+
+
+def _normalize_xypoints_ldr(path: Optional[str]) -> None:
+    if not path:
+        return
+    try:
+        with open(path, 'r', encoding='utf-8', errors='ignore') as handle:
+            content = handle.read()
+    except OSError:
+        return
+
+    if not _XYPOINTS_LDR_RE.search(content):
+        return
+
+    updated = _XYPOINTS_LDR_RE.sub(r'\1XYDATA\2', content)
+    updated = _DATACLASS_XYPOINTS_RE.sub(r'\1XYDATA', updated)
+
+    try:
+        with open(path, 'w', encoding='utf-8') as handle:
+            handle.write(updated)
+    except OSError:
+        pass
 
 
 def has_uvvis_peak_marker(path: Optional[str]) -> bool:
@@ -52,14 +86,26 @@ class LCMSConverterAppComposer:
         self._image = image
         self.params = params
         self._peaks_applied = False
+        for jdx_file in self.data:
+            _normalize_xypoints_ldr(getattr(jdx_file, 'name', None))
         self._ensure_uvvis_peak_file()
 
     @staticmethod
     def _has_lcms_edits(params: Optional[Dict]) -> bool:
         if not params:
             return False
+        # `is not None` distinguishes "cleared" from "never sent", and the
+        # controller preserves that distinction: request.form.get(default=None)
+        # gives None when the field is absent and "" when the client sent an
+        # empty list. Grouping "" with None made a cleared peak list invisible,
+        # so with no integrations either this returned False, the jcamp was
+        # never refreshed, and tf_jcamp handed back the stored peak file
+        # unchanged -- the peaks the user deleted came straight back.
+        #
+        # #289 fixed exactly this on the curve path and did not reach here;
+        # jcamp/technique.py guards __parse_edit with the same `is not None`.
         peaks = params.get("peaks_str")
-        if peaks not in (None, "", [], {}):
+        if peaks is not None:
             return True
 
         integration = params.get("integration")

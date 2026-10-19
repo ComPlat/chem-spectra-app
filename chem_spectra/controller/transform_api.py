@@ -2,13 +2,14 @@ import collections.abc
 import json
 
 from flask import (
-    Blueprint, request, send_file, make_response, abort
+    Blueprint, request, send_file, make_response
 )
 # from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.share import (
     to_zip_response, extract_params, to_zip_flat_bagit_response,
 )
+from chem_spectra.controller.helper.refusal import refuse, uploaded_file
 from chem_spectra.controller.helper.lcms_response import (
     build_lcms_zip_response_from_uploads,
 )
@@ -41,206 +42,229 @@ def zip_jcamp_n_img():
             extract_params(request),
         )
 
-    file = FileContainer(request.files['file'])
+    uploaded = uploaded_file(request)
+    if not uploaded:
+        return refuse('no file was uploaded')
+    file = FileContainer(uploaded)
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
-    if file:  # and allowed_file(file):
-        transform_model = TraModel(file, molfile=molfile, params=params)
-        cmpsr, invalid_molfile = transform_model.to_composer()
-        if (not cmpsr):
-            abort(403)
+    transform_model = TraModel(file, molfile=molfile, params=params)
+    cmpsr, invalid_molfile = transform_model.to_composer()
+    if (not cmpsr):
+        return refuse(
+            'this file could not be read as a spectrum. It may be a '
+            'format this service does not support, or it may carry no '
+            'data table.')
 
-        if isinstance(cmpsr, BagItBaseConverter):
-            # Flat zip at root (no curve_N/ folders) so ELN keeps one attachment group.
-            list_jcamps, list_images, list_csv, combined_image = cmpsr.data, cmpsr.images, cmpsr.list_csv, cmpsr.combined_image
-            dst_list = []
-            for idx in range(len(list_jcamps)):
-                tf_jcamp = list_jcamps[idx]
-                tf_img = list_images[idx]
-                tf_csv = list_csv[idx]
-                tf_arr = [tf_jcamp, tf_img, tf_csv]
-                dst_list.append(tf_arr)
+    if isinstance(cmpsr, BagItBaseConverter):
+        # Flat zip at root (no curve_N/ folders) so ELN keeps one attachment group.
+        list_jcamps, list_images, list_csv, combined_image = cmpsr.data, cmpsr.images, cmpsr.list_csv, cmpsr.combined_image
+        dst_list = []
+        for idx in range(len(list_jcamps)):
+            tf_jcamp = list_jcamps[idx]
+            tf_img = list_images[idx]
+            tf_csv = list_csv[idx]
+            tf_arr = [tf_jcamp, tf_img, tf_csv]
+            dst_list.append(tf_arr)
 
-            if combined_image is not None:
-                dst_list.append(combined_image)
+        if combined_image is not None:
+            dst_list.append(combined_image)
 
-            archive_fname = getattr(file, 'name', None) or (
-                (params.get('fname') if isinstance(params, dict) else None) or 'spectrum'
+        archive_fname = getattr(file, 'name', None) or (
+            (params.get('fname') if isinstance(params, dict) else None) or 'spectrum'
+        )
+        memory = to_zip_flat_bagit_response(
+            dst_list, archive_fname, cmpsr.archive_entry_stems,
+        )
+        rsp = make_response(
+            send_file(
+                memory,
+                download_name='spectrum.zip',
+                as_attachment=True
             )
-            memory = to_zip_flat_bagit_response(
-                dst_list, archive_fname, cmpsr.archive_entry_stems,
-            )
-            rsp = make_response(
-                send_file(
-                    memory,
-                    download_name='spectrum.zip',
-                    as_attachment=True
-                )
-            )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': cmpsr.spc_type, 'invalid_molfile': invalid_molfile})
-        elif isinstance(cmpsr, collections.abc.Sequence):
-            dst_list = []
-            spc_type = ''
-            for composer in cmpsr:
-                spc_type = composer.core.ncl if composer.core.typ == 'NMR' else composer.core.typ
-                tf_jcamp, tf_img = composer.tf_jcamp(), composer.tf_img()
-                tf_arr = [tf_jcamp, tf_img]
-                dst_list.extend(tf_arr)
+        )
+        rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': cmpsr.spc_type, 'invalid_molfile': invalid_molfile})
+    elif isinstance(cmpsr, collections.abc.Sequence):
+        dst_list = []
+        spc_type = ''
+        for composer in cmpsr:
+            spc_type = composer.core.ncl if composer.core.typ == 'NMR' else composer.core.typ
+            tf_jcamp, tf_img = composer.tf_jcamp(), composer.tf_img()
+            tf_arr = [tf_jcamp, tf_img]
+            dst_list.extend(tf_arr)
                 
-            memory = to_zip_response(dst_list)
-            rsp = make_response(
-                send_file(
-                    memory,
-                    download_name='spectrum.zip',
-                    as_attachment=True
-                )
+        memory = to_zip_response(dst_list)
+        rsp = make_response(
+            send_file(
+                memory,
+                download_name='spectrum.zip',
+                as_attachment=True
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
-        elif isinstance(cmpsr, LCMSConverterAppComposer):
-            tf_jcamp = cmpsr.tf_jcamp()
-            tf_img = cmpsr.tf_img()
-            tf_csv = cmpsr.tf_csv()
-            spc_type = 'lcms'
-            if (tf_csv is not None and tf_csv != False):
-                memory = to_zip_response([tf_jcamp, tf_img, tf_csv])
-            else:
-                memory = to_zip_response([tf_jcamp, tf_img])
-            for handle in (cmpsr.data or []):
-                try:
-                    handle.close()
-                except Exception:
-                    pass
-            rsp = make_response(
-                send_file(
-                    memory,
-                    download_name='spectrum.zip',
-                    as_attachment=True
-                )
-            )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps(
-                {'spc_type': spc_type, 'invalid_molfile': invalid_molfile}
-            )
+        )
+        rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
+    elif isinstance(cmpsr, LCMSConverterAppComposer):
+        tf_jcamp = cmpsr.tf_jcamp()
+        tf_img = cmpsr.tf_img()
+        tf_csv = cmpsr.tf_csv()
+        spc_type = 'lcms'
+        if (tf_csv is not None and tf_csv != False):
+            memory = to_zip_response([tf_jcamp, tf_img, tf_csv])
         else:
-            tf_jcamp, tf_img, tf_csv = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
-
-            spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
-            if (tf_csv is not None and tf_csv != False):
-                memory = to_zip_response([tf_jcamp, tf_img, tf_csv])
-            else:
-                memory = to_zip_response([tf_jcamp, tf_img])
-            rsp = make_response(
-                send_file(
-                    memory,
-                    download_name='spectrum.zip',
-                    as_attachment=True
-                )
+            memory = to_zip_response([tf_jcamp, tf_img])
+        for handle in (cmpsr.data or []):
+            try:
+                handle.close()
+            except Exception:
+                pass
+        rsp = make_response(
+            send_file(
+                memory,
+                download_name='spectrum.zip',
+                as_attachment=True
             )
-            rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
+        )
+        rsp.headers['X-Extra-Info-JSON'] = json.dumps(
+            {'spc_type': spc_type, 'invalid_molfile': invalid_molfile}
+        )
+    else:
+        tf_jcamp, tf_img, tf_csv = cmpsr.tf_jcamp(), cmpsr.tf_img(), cmpsr.tf_csv()
 
-        return rsp
+        spc_type = cmpsr.core.ncl if cmpsr.core.typ == 'NMR' else cmpsr.core.typ
+        if (tf_csv is not None and tf_csv != False):
+            memory = to_zip_response([tf_jcamp, tf_img, tf_csv])
+        else:
+            memory = to_zip_response([tf_jcamp, tf_img])
+        rsp = make_response(
+            send_file(
+                memory,
+                download_name='spectrum.zip',
+                as_attachment=True
+            )
+        )
+        rsp.headers['X-Extra-Info-JSON'] = json.dumps({'spc_type': spc_type, 'invalid_molfile': invalid_molfile})
+
+    return rsp
 
 
 @trans_api.route('/zip_jcamp', methods=['POST'])
 def zip_jcamp():
-    file = FileContainer(request.files['file'])
+    uploaded = uploaded_file(request)
+    if not uploaded:
+        return refuse('no file was uploaded')
+    file = FileContainer(uploaded)
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
-    if file:  # and allowed_file(file):
-        tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
-        if isinstance(tf_jcamp, BagItBaseConverter):
-            list_jcamps = tf_jcamp.data
-            dst_list = []
-            for jcamp in list_jcamps:
-                tf_arr = [jcamp]
-                dst_list.append(tf_arr)
+    tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
+    if not tf_jcamp:
+        return refuse('this file could not be converted to JCAMP-DX')
+    if isinstance(tf_jcamp, BagItBaseConverter):
+        list_jcamps = tf_jcamp.data
+        dst_list = []
+        for jcamp in list_jcamps:
+            tf_arr = [jcamp]
+            dst_list.append(tf_arr)
 
-            archive_fname = getattr(file, 'name', None) or 'spectrum'
-            memory = to_zip_flat_bagit_response(
-                dst_list, archive_fname, tf_jcamp.archive_entry_stems,
-            )
-        else:
-            memory = to_zip_response([tf_jcamp])
-        return send_file(
-            memory,
-            download_name='spectrum.zip',
-            as_attachment=True
+        archive_fname = getattr(file, 'name', None) or 'spectrum'
+        memory = to_zip_flat_bagit_response(
+            dst_list, archive_fname, tf_jcamp.archive_entry_stems,
         )
+    else:
+        memory = to_zip_response([tf_jcamp])
+    return send_file(
+        memory,
+        download_name='spectrum.zip',
+        as_attachment=True
+    )
 
 
 @trans_api.route('/zip_image', methods=['POST'])
 def zip_image():
-    file = FileContainer(request.files['file'])
+    uploaded = uploaded_file(request)
+    if not uploaded:
+        return refuse('no file was uploaded')
+    file = FileContainer(uploaded)
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
-    if file:  # and allowed_file(file):
-        tf_img = TraModel(file, molfile=molfile, params=params).convert2img()
-        if isinstance(tf_img, BagItBaseConverter):
-            list_images = tf_img.images
-            dst_list = []
-            for img in list_images:
-                tf_arr = [img]
-                dst_list.append(tf_arr)
+    tf_img = TraModel(file, molfile=molfile, params=params).convert2img()
+    if not tf_img:
+        return refuse('this file could not be rendered as an image')
+    if isinstance(tf_img, BagItBaseConverter):
+        list_images = tf_img.images
+        dst_list = []
+        for img in list_images:
+            tf_arr = [img]
+            dst_list.append(tf_arr)
 
-            archive_fname = getattr(file, 'name', None) or 'spectrum'
-            memory = to_zip_flat_bagit_response(
-                dst_list, archive_fname, tf_img.archive_entry_stems,
-            )
-        else:
-            memory = to_zip_response([tf_img])
-        return send_file(
-            memory,
-            download_name='spectrum.zip',
-            as_attachment=True
+        archive_fname = getattr(file, 'name', None) or 'spectrum'
+        memory = to_zip_flat_bagit_response(
+            dst_list, archive_fname, tf_img.archive_entry_stems,
         )
+    else:
+        memory = to_zip_response([tf_img])
+    return send_file(
+        memory,
+        download_name='spectrum.zip',
+        as_attachment=True
+    )
 
 
 @trans_api.route('/jcamp', methods=['POST'])
 def jcamp():
-    file = FileContainer(request.files['file'])
+    uploaded = uploaded_file(request)
+    if not uploaded:
+        return refuse('no file was uploaded')
+    file = FileContainer(uploaded)
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
-    if file:  # and allowed_file(file):
-        tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
-        return send_file(
-            tf_jcamp,
-            download_name='spectrum.jdx',
-            as_attachment=True
-        )
+    tf_jcamp = TraModel(file, molfile=molfile, params=params).convert2jcamp()
+    if not tf_jcamp:
+        return refuse('this file could not be converted to JCAMP-DX')
+    return send_file(
+        tf_jcamp,
+        download_name='spectrum.jdx',
+        as_attachment=True
+    )
 
 
 @trans_api.route('/image', methods=['POST'])
 def image():
-    file = FileContainer(request.files['file'])
+    uploaded = uploaded_file(request)
+    if not uploaded:
+        return refuse('no file was uploaded')
+    file = FileContainer(uploaded)
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
-    if file:  # and allowed_file(file):
-        tf_img = TraModel(file, molfile=molfile, params=params).convert2img()
-        return send_file(
-            tf_img,
-            download_name='spectrum.png',
-            as_attachment=True,
-            mimetype='image/png'
-        )
+    tf_img = TraModel(file, molfile=molfile, params=params).convert2img()
+    if not tf_img:
+        return refuse('this file could not be rendered as an image')
+    return send_file(
+        tf_img,
+        download_name='spectrum.png',
+        as_attachment=True,
+        mimetype='image/png'
+    )
 
 @trans_api.route('/nmrium', methods=['POST'])
 def nmrium():
-    nmriumFile = FileContainer(request.files['file'])
-    if nmriumFile:
-        transformModel = TraModel(file=nmriumFile)
-        transformedData = transformModel.tf_nmrium()
-        if transformedData is None:
-            abort(404)
-        return send_file(
-            transformedData,
-            download_name='spectrum.jdx',
-            as_attachment=True
-        )
+    uploaded = uploaded_file(request)
+    if not uploaded:
+        return refuse('no file was uploaded')
+    nmriumFile = FileContainer(uploaded)
+    transformModel = TraModel(file=nmriumFile)
+    transformedData = transformModel.tf_nmrium()
+    if transformedData is None:
+        return refuse('this file could not be read as NMRium data')
+    return send_file(
+        transformedData,
+        download_name='spectrum.jdx',
+        as_attachment=True
+    )
 
 @trans_api.route('/combine_images', methods=['POST'])
 def combine_images():
     request_files = request.files
     if (not request_files):
-        abort(400)
+        return refuse('no files were uploaded to combine')
         
     list_files = []
     for file in request_files.getlist('files[]'):
@@ -253,7 +277,7 @@ def combine_images():
     transform_model = TraModel(None, params=params, multiple_files=list_files)
     tf_combine = transform_model.tf_combine(list_file_names=params['list_file_names'], extraParams=extras)
     if (not tf_combine):
-        abort(400)
+        return refuse('these files could not be combined into one image')
     
     memory = to_zip_response([tf_combine])
     return send_file(

@@ -1,4 +1,51 @@
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class UnconvertibleSpectrum(ValueError):
+    """The client asked for a conversion this data, or this request, cannot
+    support. Mapped to 422 with a JSON body naming the reason."""
+
+
+TRUE_STRINGS = ('true', '1', 'yes')
+FALSE_STRINGS = ('false', '0', 'no')
+
+
+def _as_bool(value):
+    """Multipart form values arrive as strings, JSON payloads as booleans.
+
+    Shares TRUE_STRINGS with _as_tristate: two lists of the same words drift,
+    and then `transmittance` and `invert_y` disagree about what true means.
+    """
+    if isinstance(value, str):
+        return value.strip().lower() in TRUE_STRINGS
+    return bool(value)
+
+
+def _as_tristate(value, name):
+    """True, False, or None for "not given".
+
+    For instructions where an explicit false does something -- `invert_y`
+    clears the file's record -- so only a recognised false may produce one.
+    Anything unrecognised is None, the same as not sending it: `undefined`
+    and `null` are what JS FormData makes of a missing value, and must not
+    clear a record the user never touched.
+    """
+    if value is None or isinstance(value, bool):
+        return value
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
+    text = str(value).strip().lower()
+    if text in TRUE_STRINGS:
+        return True
+    if text in FALSE_STRINGS:
+        return False
+    if text:
+        logger.warning('unrecognised %s=%r; treating it as not sent',
+                       name, value)
+    return None
 
 
 def parse_params(params):
@@ -29,6 +76,8 @@ def parse_params(params):
             'lcms_uvvis_wavelength': None,
             'lcms_mz_page': None,
             'lcms_mz_page_data': None,
+            'transmittance': False,
+            'invert_y': None,
         }
 
     select_x = params.get('select_x', None)
@@ -55,10 +104,7 @@ def parse_params(params):
     waveLength = json.loads(waveLength) if waveLength else default_wavelength
 
     jcamp_idx = params.get('jcamp_idx', 0)
-    try:
-        jcamp_idx = int(jcamp_idx) if jcamp_idx else 0
-    except (TypeError, ValueError):
-        jcamp_idx = 0
+    jcamp_idx = jcamp_idx if jcamp_idx else 0
     axesUnitsJson = params.get('axesUnits')
     axesUnitsDic = json.loads(axesUnitsJson) if axesUnitsJson else None
     axesUnits = None
@@ -80,11 +126,28 @@ def parse_params(params):
     lcms_uvvis_wavelength = params.get('lcms_uvvis_wavelength')
     lcms_mz_page = params.get('lcms_mz_page')
     lcms_mz_page_data = params.get('lcms_mz_page_data')
+    # Client instructions, not descriptions of the file. Absent means absent:
+    # nothing is converted, inverted or relabelled unless explicitly asked for.
+    transmittance = _as_bool(params.get('transmittance'))
+    # `invert_y` asks for the axis to be drawn the other way up. It does not
+    # touch the data, so it does not conflict with `transmittance`, which
+    # does: converting to %T already puts absorbance bands downward, and a
+    # caller wanting them up is asking about the picture, not the numbers.
+    #
+    # Unlike `transmittance` it is tri-state. A file can already carry the
+    # preference (##$CSINVERTY), so "not sent" means "keep what the file
+    # says" and only an explicit false may clear it. Collapsing absent into
+    # False made an inverted file impossible to un-invert.
+    invert_y = _as_tristate(params.get('invert_y'), 'invert_y')
     if (cyclicvolta is not None):
-        spectraList = cyclicvolta['spectraList']
-        if (len(spectraList) > 0):
-            spectra = spectraList[jcamp_idx]
-            listMaxMinPeaks = spectra['list']
+        # The ELN does not guarantee these keys: ViewSpectra.js reads
+        # `spectraList?.[curveIdx]` and bails when it is missing. Subscripting
+        # them unconditionally made the backend stricter than the contract the
+        # frontend honours, so a partial payload was a 500.
+        spectraList = cyclicvolta.get('spectraList') or []
+        if 0 <= jcamp_idx < len(spectraList):
+            spectra = spectraList[jcamp_idx] or {}
+            listMaxMinPeaks = spectra.get('list')
 
     try:
         if select_x and float(select_x) != 0.0 and ref_name != '- - -':
@@ -117,6 +180,8 @@ def parse_params(params):
         'lcms_uvvis_wavelength': lcms_uvvis_wavelength,
         'lcms_mz_page': lcms_mz_page,
         'lcms_mz_page_data': lcms_mz_page_data,
+        'transmittance': transmittance,
+        'invert_y': invert_y,
     }
 
 

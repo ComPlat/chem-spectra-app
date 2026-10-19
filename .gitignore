@@ -21,3 +21,8 @@ build/
 !/chem_spectra/tmp/.keep
 
 /src/
+
+CLAUDE.md
+
+*.zip
+!tests/fixtures/**/*.zip
