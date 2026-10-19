@@ -1,5 +1,6 @@
-# ChemSpectra with its msconvert sidecar, deployed as a Dokploy "Docker
-# Compose" application.
+# ChemSpectra with its msconvert sidecar, for developer deployments of a
+# branch as a Dokploy "Docker Compose" application. Production runs the
+# bakery-built ptrxyz/chemotion:spectra image from ChemOrc's compose file instead.
 #
 # - Route a domain to the `app` service, port 4000, in Dokploy's Domains tab.
 #   Dokploy adds the Traefik labels and attaches `app` to dokploy-network at

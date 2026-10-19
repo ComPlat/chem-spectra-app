@@ -626,7 +626,7 @@ Used in: `chem_spectra/lib/converter/ms.py`
 `MSConverter` depends on an external msconvert service for RAW mass spectrometry conversion. It reaches it two ways, with the same command:
 
 - **Locally** (`just msconvert`), `docker exec` really runs in a ProteoWizard container named `msconvert_docker`, with `./chem_spectra/tmp` mounted as `/data`.
-- **Deployed** (`Dockerfile.p2d`, `docker-compose.p2d.yml`), `/bin/docker` is a shim that POSTs the command to the `msconvert` sidecar (`MSC_HOST`, `MSC_PORT=4000`). Both containers mount the shared `spectra` volume at `/shared`, which each links to its own working path.
+- **In the container images** -- production's bakery-built `ptrxyz/chemotion:spectra` (deployed with ChemOrc) and the developer `Dockerfile.p2d` -- `/bin/docker` is a shim that POSTs the command to the `msconvert` sidecar (`MSC_HOST`, `MSC_PORT=4000`). Both containers mount the shared `spectra` volume at `/shared`, which each links to its own working path.
 
 The command is built in `__build_cmd_msconvert()` and uses:
 
@@ -642,7 +642,7 @@ The local temporary path is `./chem_spectra/tmp`.
 Operational requirements:
 
 - `chem_spectra/tmp` must exist and be mounted into the container as `/data`.
-- Locally, a running container named `msconvert_docker` is expected; deployed, the `msconvert` service.
+- Locally, a running container named `msconvert_docker` is expected; in the container images, the `msconvert` service.
 - RAW conversion runs with `subprocess.run(..., timeout=SIDECAR_TIMEOUT)`,
   currently 30s. It must stay above the ceiling the sidecar imposes on itself
   (`mscrunner.py` runs msconvert under `timeout=10`), or the sidecar's own
@@ -746,7 +746,7 @@ Prediction and RAW conversion depend on services outside the Flask process:
 
 - `URL_NSHIFTDB` for NMR prediction;
 - `URL_DEEPIR` for IR prediction;
-- msconvert (`msconvert_docker` locally, the `msconvert` sidecar when deployed) for RAW conversion.
+- msconvert (`msconvert_docker` locally, the `msconvert` sidecar in the container images) for RAW conversion.
 
 When modifying related code, consider:
 

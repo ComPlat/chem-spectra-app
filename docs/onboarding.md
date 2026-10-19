@@ -62,8 +62,8 @@ Important external integrations:
 
 - `URL_NSHIFTDB` is used by `chem_spectra/model/inferencer.py` for NMR predictions.
 - `URL_DEEPIR` is used by `chem_spectra/model/inferencer.py` for IR predictions.
-- msconvert is called by `chem_spectra/lib/converter/ms.py` for RAW mass spectrometry conversion: `msconvert_docker` locally, the `msconvert` sidecar when deployed.
-- `Dockerfile.p2d` and `docker-compose.p2d.yml` describe a containerized setup with an app service and an `msconvert` service.
+- msconvert is called by `chem_spectra/lib/converter/ms.py` for RAW mass spectrometry conversion: `msconvert_docker` locally, the `msconvert` sidecar in the container images.
+- `Dockerfile.p2d` and `docker-compose.p2d.yml` describe the developer deployment (Dokploy): an app service and an `msconvert` service. Production runs the bakery-built image through ChemOrc.
 
 ## 3. High-level architecture
 

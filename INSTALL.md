@@ -74,18 +74,27 @@ with `{"error": "<reason>"}`; see `docs/api-reference.md`.
 
 ## 5. Deployment
 
-`docker-compose.p2d.yml` builds this app from `Dockerfile.p2d` and runs it beside
-the `ptrxyz/chemotion:msconvert-3.1.2` sidecar. It is deployed as a Dokploy
-*Docker Compose* application:
+**Production** is the Chemotion stack, deployed with
+[ChemOrc](https://github.com/Chemotion/ChemOrc). Its compose file runs the
+`ptrxyz/chemotion:spectra-<version>` image, built by `chemotion-bakery` and not
+from this repository's Dockerfile. That image sits beside the
+`ptrxyz/chemotion:msconvert-<version>` sidecar, on the stack's network, with a
+shared `spectra` volume.
+
+**Developer deployments** of a branch use this repository's
+`docker-compose.p2d.yml`. It builds the app from `Dockerfile.p2d` and runs it
+beside the same msconvert sidecar, as a Dokploy *Docker Compose* application:
 - route a domain to the `app` service on port 4000 in the Domains tab;
 - set environment variables in the UI. They reach the container through
   `.env`, which the compose file loads.
 
-In that image `/bin/docker` is a shim. It POSTs the msconvert command to the
-sidecar (`MSC_HOST=msconvert`, `MSC_PORT=4000`), and the two services exchange
-files through the shared `spectra` volume.
+**Both images** wire msconvert the same way:
+- `/bin/docker` is a shim that POSTs the msconvert command to the sidecar
+  (`MSC_HOST=msconvert`, `MSC_PORT=4000`);
+- the two containers exchange files through the shared volume, mounted at
+  `/shared`.
 
-`just image` builds the same image locally.
+`just image` builds the developer image locally.
 
 ## 6. Tests and checks
 
