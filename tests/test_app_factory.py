@@ -35,7 +35,7 @@ def test_building_several_apps_leaves_one_handler():
     before = list(logger.handlers)
     try:
         for _ in range(3):
-            create_app({'IP_WHITE_LIST': ''})
+            create_app({'TESTING': True})
         installed = [h for h in logger.handlers
                      if getattr(h, '_chem_spectra_file_handler', False)]
         assert len(installed) == 1
@@ -56,7 +56,7 @@ def test_the_package_logger_is_the_one_flask_exposes():
 
     If this ever stops holding, `_configure_logging` is configuring a logger
     that no longer sees the application's own records."""
-    app = create_app({'IP_WHITE_LIST': ''})
+    app = create_app({'TESTING': True})
     assert app.name == 'chem_spectra'
     assert app.logger is logging.getLogger('chem_spectra')
 
@@ -65,18 +65,16 @@ def test_the_package_logger_is_the_one_flask_exposes():
 
 def test_no_secret_key_is_shipped(no_flask_env, instance_config):
     """The factory used to set `SECRET_KEY='dev'`, copied from the Flask
-    tutorial. Nothing in this app uses sessions, flashing or signed cookies --
-    grep finds no other mention of it -- so the constant bought nothing and
-    would have signed cookies with a publicly known value the moment someone
-    added a session.
+    tutorial. The app is a stateless API: nothing uses sessions, flashing or
+    signed cookies, so a key signs nothing. A shipped constant would sign
+    cookies with a publicly known value the moment someone added a session.
 
     Absent, Flask raises at the point of use with a message that says exactly
     what is missing, which is the loud failure the constant was hiding.
 
-    Production is unaffected: the deployed `instance/config.py` sets a real
-    random SECRET_KEY of its own. `instance_config` here writes a file that
-    does not, so this asserts the factory's own default and not a local one."""
-    instance_config("IP_WHITE_LIST = ''\n")
+    `instance_config` writes a file without one, so this asserts the
+    factory's own default and not a local one."""
+    instance_config("URL_DEEPIR = ''\n")
     app = create_app()
     assert app.config['SECRET_KEY'] is None
 
@@ -86,7 +84,7 @@ def test_no_secret_key_is_shipped(no_flask_env, instance_config):
 @pytest.fixture
 def instance_config(request):
     """Write instance/config.py for one test, refusing to clobber a real one."""
-    app = create_app({'IP_WHITE_LIST': ''})
+    app = create_app({'TESTING': True})
     os.makedirs(app.instance_path, exist_ok=True)
     path = os.path.join(app.instance_path, 'config.py')
     if os.path.exists(path):
@@ -104,16 +102,16 @@ def test_the_environment_overrides_the_instance_file(instance_config, monkeypatc
     production image bakes instance/config.py in at build time, so a baked
     value could not be overridden per deployment. Measured on the old order --
     with both set, the file won."""
-    instance_config("IP_WHITE_LIST = 'from-file'\n")
-    monkeypatch.setenv('FLASK_IP_WHITE_LIST', 'from-env')
-    assert create_app().config['IP_WHITE_LIST'] == 'from-env'
+    instance_config("URL_DEEPIR = 'from-file'\n")
+    monkeypatch.setenv('FLASK_URL_DEEPIR', 'from-env')
+    assert create_app().config['URL_DEEPIR'] == 'from-env'
 
 
 def test_the_instance_file_still_applies_when_the_environment_is_silent(
         instance_config, no_flask_env):
     """Reversing the order must not stop the file being read at all."""
-    instance_config("IP_WHITE_LIST = 'from-file'\n")
-    assert create_app().config['IP_WHITE_LIST'] == 'from-file'
+    instance_config("URL_DEEPIR = 'from-file'\n")
+    assert create_app().config['URL_DEEPIR'] == 'from-file'
 
 
 def test_a_test_configuration_ignores_the_environment(monkeypatch):
@@ -122,9 +120,9 @@ def test_a_test_configuration_ignores_the_environment(monkeypatch):
     what the suite tests. Previously the environment was read first, so it
     leaked into every key the test config did not set."""
     monkeypatch.setenv('FLASK_LOGS_FILE', '/nonexistent/should-not-be-used.log')
-    app = create_app({'IP_WHITE_LIST': '127.0.0.1'})
+    app = create_app({'URL_DEEPIR': 'http://from-test'})
     assert 'LOGS_FILE' not in app.config
-    assert app.config['IP_WHITE_LIST'] == '127.0.0.1'
+    assert app.config['URL_DEEPIR'] == 'http://from-test'
 
 
 # - - - the instance directory - - -
@@ -134,7 +132,7 @@ def test_the_instance_directory_is_created_and_errors_are_not_swallowed(monkeypa
     failures, leaving the app running with no writable instance path and the
     file handler about to fail. `exist_ok=True` handles the one case that was
     meant to be tolerated and lets the rest surface."""
-    app = create_app({'IP_WHITE_LIST': ''})
+    app = create_app({'TESTING': True})
     assert os.path.isdir(app.instance_path)
 
     def refuse(*args, **kwargs):
@@ -142,7 +140,7 @@ def test_the_instance_directory_is_created_and_errors_are_not_swallowed(monkeypa
 
     monkeypatch.setattr(os, 'makedirs', refuse)
     with pytest.raises(PermissionError):
-        create_app({'IP_WHITE_LIST': ''})
+        create_app({'TESTING': True})
 
 
 def _installed(logger):
@@ -184,7 +182,7 @@ def test_the_log_file_follows_the_instance_directory_not_the_cwd(monkeypatch,
     """
     monkeypatch.chdir(tmp_path)
     with _handlers_restored() as logger:
-        app = create_app({'IP_WHITE_LIST': ''})
+        app = create_app({'TESTING': True})
         installed = _installed(logger)
         assert installed, 'no handler was installed'
         assert installed[0].baseFilename == os.path.join(
@@ -198,5 +196,5 @@ def test_an_explicit_logs_file_still_wins(tmp_path):
     instance-relative default must not displace it."""
     target = tmp_path / 'custom.log'
     with _handlers_restored() as logger:
-        create_app({'IP_WHITE_LIST': '', 'LOGS_FILE': str(target)})
+        create_app({'TESTING': True, 'LOGS_FILE': str(target)})
         assert _installed(logger)[0].baseFilename == str(target)

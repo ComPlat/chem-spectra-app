@@ -4,7 +4,6 @@ import json
 from flask import (
     Blueprint, request, send_file, make_response
 )
-# from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.share import (
     to_zip_response, extract_params, to_zip_flat_bagit_response,
@@ -20,14 +19,6 @@ from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppCompose
 
 
 trans_api = Blueprint('transform_api', __name__)
-
-
-@trans_api.before_app_request
-def filter_remote_ip():
-    pass
-    # trusted_servers = get_ip_white_list()
-    # if request.remote_addr not in trusted_servers:
-    #     abort(403)
 
 
 @trans_api.route('/zip_jcamp_n_img', methods=['POST'])

@@ -3,7 +3,6 @@ from flask import (
     Blueprint, request, jsonify, send_file,
 )
 
-# from chem_spectra.controller.helper.settings import get_ip_white_list
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.share import (
     to_zip_response, extract_params, to_zip_bag_it_response
