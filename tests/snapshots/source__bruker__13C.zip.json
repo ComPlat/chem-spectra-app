@@ -23,8 +23,8 @@
   },
   "itg_table": [],
   "jcamp": {
-    "len": 222328,
-    "sha1": "2326cdd960ffdaa28794f1dc70fd19632cde88de"
+    "len": 222181,
+    "sha1": "15742e05be63652f3f4c773f128c2740a2635271"
   },
   "label": {
     "x": "PPM",
@@ -36,7 +36,7 @@
     "datatype": "NMR SPECTRUM"
   },
   "threshold": 0.005,
-  "title": "FID /tmp/claude-1000/-home-harivyasi-work-projects-chem-spectra-app/85bc3919-5e74-4f25-bcea-0b6f431bbb9c/scratchpad/wsnap/tests/fixtures/source/bruker/13C",
+  "title": "FID 13C",
   "typ": "NMR",
   "xs": {
     "first": 229.46009036,

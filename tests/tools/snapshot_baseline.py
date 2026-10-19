@@ -188,12 +188,17 @@ def record(path):
     ext = path.suffix.lower().lstrip('.')
     # to_converter reads params['ext'] unconditionally, so it is always set.
     params = {'ext': ext}
+    # A bare filename, as an upload carries. `FileStorage(handle)` alone takes
+    # `handle.name`, the absolute path, and the Bruker path writes it into the
+    # title -- so the record named the machine it was made on and failed
+    # everywhere else.
     with open(path, 'rb') as handle:
-        container = FileContainer(FileStorage(handle))
+        container = FileContainer(FileStorage(handle, filename=path.name))
         molfile = None
         if ext == 'zip' and MOLFILE.exists():
             with open(MOLFILE, 'rb') as molhandle:
-                molfile = FileContainer(FileStorage(molhandle))
+                molfile = FileContainer(
+                    FileStorage(molhandle, filename=MOLFILE.name))
                 return _drive(container, molfile, params)
         return _drive(container, molfile, params)
 
