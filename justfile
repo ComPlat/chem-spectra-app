@@ -43,13 +43,15 @@ static: lint mypy
 # the local gate: lint + types + tests
 check: lint mypy test
 
-# start the msconvert container the RAW fixtures need
+# start the msconvert container the RAW fixtures need. Pinned to the build CI
+# uses (.github/workflows/unit_test.yml): `latest` moved to 4.0 on 2026-10-09,
+# which reports success without writing the mzML.
 msconvert:
     mkdir -p chem_spectra/tmp && chmod -R 777 chem_spectra/tmp
     docker run --detach --name msconvert_docker --rm -it \
         -e WINEDEBUG=-all \
         -v {{justfile_directory()}}/chem_spectra/tmp:/data \
-        proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses bash
+        proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses:3.0.26121-ed8dc8a@sha256:52d830174eec595fc9fb17628effbbacec8b931fc13620a87fb44c77263daaef bash
 
 # stop it again
 msconvert-stop:

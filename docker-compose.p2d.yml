@@ -1,5 +1,17 @@
+# ChemSpectra with its msconvert sidecar, deployed as a Dokploy "Docker
+# Compose" application.
+#
+# - Route a domain to the `app` service, port 4000, in Dokploy's Domains tab.
+#   Dokploy adds the Traefik labels and attaches `app` to dokploy-network at
+#   deploy time. `msconvert` stays on the internal network only.
+# - Environment variables set in Dokploy's UI are written to `.env` but are not
+#   injected into containers unless the file is listed here. `FLASK_*`
+#   variables override instance/config.py (e.g. FLASK_URL_DEEPIR,
+#   FLASK_MAX_ZIP_SIZE); `MSC_*` configure the /bin/docker shim.
 services:
   msconvert:
+    # mscrunner on :4000 with a /ping healthcheck; it links /shared to /data,
+    # the path the app's msconvert command names.
     image: ptrxyz/chemotion:msconvert-3.1.2
     restart: unless-stopped
     hostname: msconvert
@@ -13,6 +25,9 @@ services:
       context: .
       dockerfile: Dockerfile.p2d
     restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
     volumes:
       - spectra:/shared:rw
     depends_on:
@@ -20,11 +35,14 @@ services:
         condition: service_healthy
     networks:
       - spectra-internal
-    ports:
-      - 4000
+    # Reached through Dokploy's Traefik, not a host port.
+    expose:
+      - "4000"
 
 networks:
   spectra-internal:
 
 volumes:
+  # Uploads and msconvert's output, shared by both services. Scratch only:
+  # every request cleans up its own directory.
   spectra:
