@@ -1,0 +1,1067 @@
+{
+  "auto_peaks": null,
+  "boundary": null,
+  "edit_peaks": null,
+  "factor": null,
+  "itg_table": null,
+  "jcamp": {
+    "len": 681896,
+    "sha1": "35e25a0b9d3f9cb13780f4b942156120a5e805e7"
+  },
+  "label": null,
+  "mpy_itg_table": null,
+  "ms": {
+    "auto_scan": 1,
+    "exact_mz": 0,
+    "n_datatables": 74,
+    "n_spectra": 74,
+    "runs": [
+      {
+        "intensity": {
+          "first": 4862.0,
+          "last": 684.0,
+          "len": 543,
+          "sha1": "0ffb0a7ad6c342ff5489c223b6267d67c4b7ab4a"
+        },
+        "mz": {
+          "first": 90.50701,
+          "last": 862.843427,
+          "len": 543,
+          "sha1": "ddd697f5649559a04f7817a9d684e54c04b07f86"
+        }
+      },
+      {
+        "intensity": {
+          "first": 4534.0,
+          "last": 755.0,
+          "len": 528,
+          "sha1": "7c830e7d3350e92ee3c7199729ca24c6b2f3f9a5"
+        },
+        "mz": {
+          "first": 90.507033,
+          "last": 862.842415,
+          "len": 528,
+          "sha1": "dc8e4d3db635e6904000b7b7a939b4127bfaf36f"
+        }
+      },
+      {
+        "intensity": {
+          "first": 4389.0,
+          "last": 799.0,
+          "len": 581,
+          "sha1": "27c72cd4f04b3fcbf1d02b7bb31609fd7f2761d9"
+        },
+        "mz": {
+          "first": 90.507028,
+          "last": 862.842675,
+          "len": 581,
+          "sha1": "47eb6233c6bf73981fe9bf3f83e058235f7d88f4"
+        }
+      },
+      {
+        "intensity": {
+          "first": 4254.0,
+          "last": 533.0,
+          "len": 585,
+          "sha1": "a60386dd01e50b27ccc1d5b0ccff7f1716def9ab"
+        },
+        "mz": {
+          "first": 90.507001,
+          "last": 940.5461,
+          "len": 585,
+          "sha1": "e4f511ea47fd8747fde3138d1fd0a8f81e87c4fd"
+        }
+      },
+      {
+        "intensity": {
+          "first": 5014.0,
+          "last": 565.0,
+          "len": 628,
+          "sha1": "23bc4bd1b0eef9c02d5dbacbf00114ed01e7be2c"
+        },
+        "mz": {
+          "first": 90.50702,
+          "last": 940.547282,
+          "len": 628,
+          "sha1": "08d8c83c3f0ff432110f2d5657d4e2a763bf4c3a"
+        }
+      },
+      {
+        "intensity": {
+          "first": 5868.0,
+          "last": 643.0,
+          "len": 619,
+          "sha1": "f288f7dd892a7a96d869e7e38ee36c34492f107c"
+        },
+        "mz": {
+          "first": 90.506979,
+          "last": 940.546071,
+          "len": 619,
+          "sha1": "741ae7e5ab2b13e797e3859e695e8fae457d7669"
+        }
+      },
+      {
+        "intensity": {
+          "first": 5772.0,
+          "last": 588.0,
+          "len": 588,
+          "sha1": "2be3cfae29deb4ec670aa0655a88aa02e145aa00"
+        },
+        "mz": {
+          "first": 90.507008,
+          "last": 940.545639,
+          "len": 588,
+          "sha1": "1aaabae3b0ba1ca8d0d6c7c89181b24b0bda3605"
+        }
+      },
+      {
+        "intensity": {
+          "first": 616.0,
+          "last": 537.0,
+          "len": 566,
+          "sha1": "aeb65973ab9524039c254364ce55873254fa6827"
+        },
+        "mz": {
+          "first": 87.509588,
+          "last": 940.546214,
+          "len": 566,
+          "sha1": "dad35227f84b95a5c6826055fd968fb5760a0b64"
+        }
+      },
+      {
+        "intensity": {
+          "first": 688.0,
+          "last": 543.0,
+          "len": 518,
+          "sha1": "914fd51ba3e84a51ec8fa5c525e92e902df1bc2d"
+        },
+        "mz": {
+          "first": 87.509674,
+          "last": 940.546539,
+          "len": 518,
+          "sha1": "04cd9a95c4b034a03acd52975bc4a53aec7a017b"
+        }
+      },
+      {
+        "intensity": {
+          "first": 656.0,
+          "last": 549.0,
+          "len": 504,
+          "sha1": "d40c012822e4bb84539e1d40a4acc6a4eeb3dbd2"
+        },
+        "mz": {
+          "first": 87.50974,
+          "last": 940.547468,
+          "len": 504,
+          "sha1": "3860af50c8e848c7cf5de1657e8c94f5e0fe68d4"
+        }
+      },
+      {
+        "intensity": {
+          "first": 582.0,
+          "last": 544.0,
+          "len": 467,
+          "sha1": "f0adb2e55c0b1a13047ebf14306f22ae83a72712"
+        },
+        "mz": {
+          "first": 87.509745,
+          "last": 862.843983,
+          "len": 467,
+          "sha1": "b1c2f235d57dca3d9fe0f3371335a0045a4ece2e"
+        }
+      },
+      {
+        "intensity": {
+          "first": 5235.0,
+          "last": 576.0,
+          "len": 472,
+          "sha1": "d78068108f3250ae3a0efdf3b8b4dc23ec49ad51"
+        },
+        "mz": {
+          "first": 90.507035,
+          "last": 940.547301,
+          "len": 472,
+          "sha1": "ebbf21ad0610050bc96386637fd3c6a452c40271"
+        }
+      },
+      {
+        "intensity": {
+          "first": 5508.0,
+          "last": 642.0,
+          "len": 456,
+          "sha1": "6d9c91b189ced26189b9ea95bcfb418407960a4f"
+        },
+        "mz": {
+          "first": 90.507017,
+          "last": 940.545899,
+          "len": 456,
+          "sha1": "3ada67bb20ecb0a65055cb61629dd5a5d23a0ae3"
+        }
+      },
+      {
+        "intensity": {
+          "first": 5822.0,
+          "last": 603.0,
+          "len": 449,
+          "sha1": "5ad61622379f05c9e3ef540e31a0e97dc5bfc632"
+        },
+        "mz": {
+          "first": 90.50705,
+          "last": 940.546999,
+          "len": 449,
+          "sha1": "75ce237498eaabbff53d46ca6e3d5f0de8331bae"
+        }
+      },
+      {
+        "intensity": {
+          "first": 5711.0,
+          "last": 587.0,
+          "len": 438,
+          "sha1": "39f31ec3a93709233269cc739eac40ded3959a94"
+        },
+        "mz": {
+          "first": 90.50709,
+          "last": 940.546116,
+          "len": 438,
+          "sha1": "3d980169f3abc018b98efc81d3919791cde76a44"
+        }
+      },
+      {
+        "intensity": {
+          "first": 5719.0,
+          "last": 538.0,
+          "len": 442,
+          "sha1": "09787653cfdd09a7c33c4b3569ce5b4e2c20c7a1"
+        },
+        "mz": {
+          "first": 90.507111,
+          "last": 940.546027,
+          "len": 442,
+          "sha1": "4ed0a8bae6322482e5eb7d4f1156d0ea5eca3614"
+        }
+      },
+      {
+        "intensity": {
+          "first": 621.0,
+          "last": 587.0,
+          "len": 450,
+          "sha1": "b10178448d9233c85c43c49eb92e5ea32923f492"
+        },
+        "mz": {
+          "first": 87.50977,
+          "last": 940.547593,
+          "len": 450,
+          "sha1": "86ec8fa3901b35e5c1f3d011f368983c0544696a"
+        }
+      },
+      {
+        "intensity": {
+          "first": 601.0,
+          "last": 599.0,
+          "len": 450,
+          "sha1": "f25a357475f4923df50968b9baa81de12cd3f697"
+        },
+        "mz": {
+          "first": 87.509728,
+          "last": 940.547627,
+          "len": 450,
+          "sha1": "bc2ce355d7afa5a5f65e70f00fc46c3c2ccb0725"
+        }
+      },
+      {
+        "intensity": {
+          "first": 677.0,
+          "last": 679.0,
+          "len": 444,
+          "sha1": "edaa5e8ae041833601381c7ed93792c0e7a3906c"
+        },
+        "mz": {
+          "first": 87.509708,
+          "last": 940.546009,
+          "len": 444,
+          "sha1": "96e0dbcf8ddffcb58c281f1da2e5116721be8a6e"
+        }
+      },
+      {
+        "intensity": {
+          "first": 703.0,
+          "last": 619.0,
+          "len": 434,
+          "sha1": "b6af0ea8049c3fde9e40f6105385f3339089ba2a"
+        },
+        "mz": {
+          "first": 87.50976,
+          "last": 940.546415,
+          "len": 434,
+          "sha1": "0dd2309165513aaa9feba722f697fd3b4d3a18e8"
+        }
+      },
+      {
+        "intensity": {
+          "first": 757.0,
+          "last": 624.0,
+          "len": 422,
+          "sha1": "eaf4cbaefc82f534389dac137c5adc4e59852ebe"
+        },
+        "mz": {
+          "first": 87.509746,
+          "last": 940.546533,
+          "len": 422,
+          "sha1": "9be0be2ea78075a5c58694241d84ffe7f4145f3e"
+        }
+      },
+      {
+        "intensity": {
+          "first": 830.0,
+          "last": 650.0,
+          "len": 427,
+          "sha1": "4587d0ae139f42e5cde3d6f288518ded9dcb6730"
+        },
+        "mz": {
+          "first": 87.509779,
+          "last": 940.545946,
+          "len": 427,
+          "sha1": "effd49ccac7b1ffcb4838ee3cf7f0133d97351f4"
+        }
+      },
+      {
+        "intensity": {
+          "first": 728.0,
+          "last": 575.0,
+          "len": 418,
+          "sha1": "d616d9c4587fbf1f13c9afd6849b7e3574c5706a"
+        },
+        "mz": {
+          "first": 87.509828,
+          "last": 940.547742,
+          "len": 418,
+          "sha1": "c875f9cc03294124379ff3f20df48c8a7edf6ce2"
+        }
+      },
+      {
+        "intensity": {
+          "first": 660.0,
+          "last": 719.0,
+          "len": 417,
+          "sha1": "5bb5384d7a6b8a76fb5fd64c230b8295c69c302b"
+        },
+        "mz": {
+          "first": 87.509792,
+          "last": 940.54649,
+          "len": 417,
+          "sha1": "8880d770f6cf09bf69393697860b6a67d58a6176"
+        }
+      },
+      {
+        "intensity": {
+          "first": 656.0,
+          "last": 709.0,
+          "len": 417,
+          "sha1": "db6a07633d23f529436155687b3cb4d0842f8bd9"
+        },
+        "mz": {
+          "first": 87.509757,
+          "last": 940.547855,
+          "len": 417,
+          "sha1": "8f47f17b2dbf0ee60f09f2884e277512ecd16ef1"
+        }
+      },
+      {
+        "intensity": {
+          "first": 763.0,
+          "last": 720.0,
+          "len": 428,
+          "sha1": "b54aafff6e3f742c790dbf1a85776cf979a23141"
+        },
+        "mz": {
+          "first": 87.509539,
+          "last": 940.547396,
+          "len": 428,
+          "sha1": "7b0256cde100ee67bca4779c5a86d3d1760a367e"
+        }
+      },
+      {
+        "intensity": {
+          "first": 680.0,
+          "last": 665.0,
+          "len": 430,
+          "sha1": "475c87ec7b0206836a0902271078012fde55c153"
+        },
+        "mz": {
+          "first": 87.50961,
+          "last": 940.547385,
+          "len": 430,
+          "sha1": "78d957e914c91873f4170584f902261c3f81f67c"
+        }
+      },
+      {
+        "intensity": {
+          "first": 694.0,
+          "last": 657.0,
+          "len": 426,
+          "sha1": "d0285fbbdfa83c23fca222cfa1dc7eb86ce5ab38"
+        },
+        "mz": {
+          "first": 87.509724,
+          "last": 940.546981,
+          "len": 426,
+          "sha1": "9a732fa2a9dff4ea677b0989a409fc515f8a552d"
+        }
+      },
+      {
+        "intensity": {
+          "first": 692.0,
+          "last": 608.0,
+          "len": 419,
+          "sha1": "ff695c820920e45fecfcd380bbc3e85f15226a6c"
+        },
+        "mz": {
+          "first": 87.509632,
+          "last": 940.546632,
+          "len": 419,
+          "sha1": "3e2bec0ea25b5521090c333c6129fe1a16c783ba"
+        }
+      },
+      {
+        "intensity": {
+          "first": 736.0,
+          "last": 561.0,
+          "len": 421,
+          "sha1": "b4c70677a30b87d5038167e767dbab787ef6f39a"
+        },
+        "mz": {
+          "first": 87.509718,
+          "last": 940.546867,
+          "len": 421,
+          "sha1": "f3b3cbbc7aa303f4270619b784ee6e128e8a2197"
+        }
+      },
+      {
+        "intensity": {
+          "first": 586.0,
+          "last": 814.0,
+          "len": 425,
+          "sha1": "ecc4e885126ad23223f04cf1d637d9ae717b8d99"
+        },
+        "mz": {
+          "first": 87.509715,
+          "last": 940.546436,
+          "len": 425,
+          "sha1": "6526463c8148752e39b950a59dffe0939d8024de"
+        }
+      },
+      {
+        "intensity": {
+          "first": 706.0,
+          "last": 656.0,
+          "len": 412,
+          "sha1": "4277180212941fcd6ef951ab00bc971dcb927ac0"
+        },
+        "mz": {
+          "first": 87.509662,
+          "last": 940.547069,
+          "len": 412,
+          "sha1": "1ea1406836b58ff970b400da4f444621be4e0722"
+        }
+      },
+      {
+        "intensity": {
+          "first": 584.0,
+          "last": 571.0,
+          "len": 418,
+          "sha1": "c9ee1ece64e3b1f62bce9c7d31c6c3bc51649c5e"
+        },
+        "mz": {
+          "first": 87.509708,
+          "last": 940.54684,
+          "len": 418,
+          "sha1": "890a7954ab7b890cd66584e321f59cc9468eefa5"
+        }
+      },
+      {
+        "intensity": {
+          "first": 676.0,
+          "last": 649.0,
+          "len": 427,
+          "sha1": "714f1e0a0464767f8987421e6514c1979fb6d09f"
+        },
+        "mz": {
+          "first": 87.509894,
+          "last": 940.546522,
+          "len": 427,
+          "sha1": "734b2a9197a539d8ea2d83d0b5481425c065f350"
+        }
+      },
+      {
+        "intensity": {
+          "first": 634.0,
+          "last": 685.0,
+          "len": 413,
+          "sha1": "d9a657be56f7c2ead3c679d07676240b3b60e059"
+        },
+        "mz": {
+          "first": 87.509776,
+          "last": 940.546232,
+          "len": 413,
+          "sha1": "f1403925184d51d649088eb3c625eb8527e064f8"
+        }
+      },
+      {
+        "intensity": {
+          "first": 743.0,
+          "last": 691.0,
+          "len": 426,
+          "sha1": "d6a8a7904c2e43badb4c4b4e4d6dbd465757cffc"
+        },
+        "mz": {
+          "first": 87.50981,
+          "last": 940.547244,
+          "len": 426,
+          "sha1": "c8b8acf4a2f47706db93caeb0cef98c73f9eaa64"
+        }
+      },
+      {
+        "intensity": {
+          "first": 676.0,
+          "last": 713.0,
+          "len": 431,
+          "sha1": "85c47f4e623df1e6d96b5a6837085c5ed9b72c52"
+        },
+        "mz": {
+          "first": 87.509913,
+          "last": 940.546205,
+          "len": 431,
+          "sha1": "ef1f3a1868bdcb3fced2b0919d22749bc198734c"
+        }
+      },
+      {
+        "intensity": {
+          "first": 653.0,
+          "last": 745.0,
+          "len": 423,
+          "sha1": "acbf1532edc7bef604e90ee0fcded698fc4786d4"
+        },
+        "mz": {
+          "first": 87.509917,
+          "last": 940.545373,
+          "len": 423,
+          "sha1": "5f501bff17ababb93fede99c236e0c5ac58d992a"
+        }
+      },
+      {
+        "intensity": {
+          "first": 606.0,
+          "last": 786.0,
+          "len": 422,
+          "sha1": "09c78f9da165b2c49453ae0081327805dc9b523f"
+        },
+        "mz": {
+          "first": 87.509809,
+          "last": 940.544786,
+          "len": 422,
+          "sha1": "dbbf4432b0a48de033966e0b70a25e7248873c42"
+        }
+      },
+      {
+        "intensity": {
+          "first": 577.0,
+          "last": 786.0,
+          "len": 419,
+          "sha1": "98d47e1e14c1780dc1ad21f9f9e4729cde969029"
+        },
+        "mz": {
+          "first": 87.509748,
+          "last": 940.544953,
+          "len": 419,
+          "sha1": "c90a370a5b05a1d37bf9cb7120b330abcf2ff2b6"
+        }
+      },
+      {
+        "intensity": {
+          "first": 547.0,
+          "last": 789.0,
+          "len": 423,
+          "sha1": "5f5d2251c2f2f457480c2370f906989b78609c4f"
+        },
+        "mz": {
+          "first": 87.509767,
+          "last": 940.545962,
+          "len": 423,
+          "sha1": "b7ec5a17e2d21471b4585201224f610c69cb4d44"
+        }
+      },
+      {
+        "intensity": {
+          "first": 590.0,
+          "last": 675.0,
+          "len": 436,
+          "sha1": "0b4607ef5a21a957d8e6106efebe78086e4626eb"
+        },
+        "mz": {
+          "first": 87.50962,
+          "last": 940.546536,
+          "len": 436,
+          "sha1": "0877b643f504d46fbbe0e64db6fe83fd2b92e71b"
+        }
+      },
+      {
+        "intensity": {
+          "first": 601.0,
+          "last": 770.0,
+          "len": 438,
+          "sha1": "7763d314b1547bb3211dc740fe80c11fd0463ce1"
+        },
+        "mz": {
+          "first": 87.50965,
+          "last": 940.54575,
+          "len": 438,
+          "sha1": "27ad6f41288817231784d02582a1c72b08ae0ac8"
+        }
+      },
+      {
+        "intensity": {
+          "first": 620.0,
+          "last": 592.0,
+          "len": 446,
+          "sha1": "39fd02b7638fcfd0ce211230c46f44603c850d59"
+        },
+        "mz": {
+          "first": 87.509674,
+          "last": 940.54675,
+          "len": 446,
+          "sha1": "1618ebda20e18a643f83802b63033774aa365272"
+        }
+      },
+      {
+        "intensity": {
+          "first": 606.0,
+          "last": 756.0,
+          "len": 459,
+          "sha1": "7392420c59273dcef19e459cbbba67440d4abe6f"
+        },
+        "mz": {
+          "first": 87.509723,
+          "last": 940.545659,
+          "len": 459,
+          "sha1": "9e4cf75e50b5d5c01cf5df7448788ca20a779ad2"
+        }
+      },
+      {
+        "intensity": {
+          "first": 644.0,
+          "last": 791.0,
+          "len": 467,
+          "sha1": "adba9b2dc1236e17b7f35b654f18fea73a6e73fd"
+        },
+        "mz": {
+          "first": 87.509752,
+          "last": 940.54569,
+          "len": 467,
+          "sha1": "d25fbae9cb8c0b42e4a1f3a58bddc937a3e1cb0f"
+        }
+      },
+      {
+        "intensity": {
+          "first": 656.0,
+          "last": 720.0,
+          "len": 471,
+          "sha1": "c62417cf602f0418a6989a8ff61a2626258e7751"
+        },
+        "mz": {
+          "first": 87.509775,
+          "last": 940.546152,
+          "len": 471,
+          "sha1": "e630edf9939344e8b6d93264f3dfdba0e0b07c91"
+        }
+      },
+      {
+        "intensity": {
+          "first": 613.0,
+          "last": 592.0,
+          "len": 473,
+          "sha1": "28750f9d830a2b97013f6403e13b9517b0ecaf55"
+        },
+        "mz": {
+          "first": 87.509831,
+          "last": 940.547909,
+          "len": 473,
+          "sha1": "b40fe59d352a416284486e4d26829f100aabe0a6"
+        }
+      },
+      {
+        "intensity": {
+          "first": 710.0,
+          "last": 667.0,
+          "len": 487,
+          "sha1": "df3d8723b11b7c2aa9772aba7df4a43228ddb51c"
+        },
+        "mz": {
+          "first": 87.509923,
+          "last": 940.547866,
+          "len": 487,
+          "sha1": "8e6ed191801a88bd1100fbb4ff9fe379e82c2944"
+        }
+      },
+      {
+        "intensity": {
+          "first": 616.0,
+          "last": 729.0,
+          "len": 493,
+          "sha1": "69c3b3597d7cb9eee7a2ad78b0c28aeacfa7c903"
+        },
+        "mz": {
+          "first": 87.50987,
+          "last": 940.547286,
+          "len": 493,
+          "sha1": "08da1b3a4bdbe014cc2cec16a9a0ede46faa4673"
+        }
+      },
+      {
+        "intensity": {
+          "first": 647.0,
+          "last": 749.0,
+          "len": 514,
+          "sha1": "09a52adbc7bb872966e1fa07211bfd08299bc1f3"
+        },
+        "mz": {
+          "first": 87.509859,
+          "last": 940.54819,
+          "len": 514,
+          "sha1": "6de275c364e59063007541b7718328569efc79f1"
+        }
+      },
+      {
+        "intensity": {
+          "first": 539.0,
+          "last": 750.0,
+          "len": 526,
+          "sha1": "71d712811577d018c65de14d2fd49ddd3df4b536"
+        },
+        "mz": {
+          "first": 87.50983,
+          "last": 940.549112,
+          "len": 526,
+          "sha1": "75654ab258a9c71fb16b32af0e9d3a5b2df0d1c1"
+        }
+      },
+      {
+        "intensity": {
+          "first": 537.0,
+          "last": 633.0,
+          "len": 534,
+          "sha1": "f026e290412686ee56ad58e3069043c0a253eae8"
+        },
+        "mz": {
+          "first": 87.509808,
+          "last": 940.548255,
+          "len": 534,
+          "sha1": "bb3dfff8555fbfa52af110f48bae46ca5ad15ec8"
+        }
+      },
+      {
+        "intensity": {
+          "first": 5240.0,
+          "last": 726.0,
+          "len": 556,
+          "sha1": "fe24c4b4bf7e364e429b52eaf7a2bdc7bddea734"
+        },
+        "mz": {
+          "first": 90.507145,
+          "last": 940.548101,
+          "len": 556,
+          "sha1": "1dc45986d3fb7e0e6bf722beb1a9bb3291bfef45"
+        }
+      },
+      {
+        "intensity": {
+          "first": 605.0,
+          "last": 617.0,
+          "len": 563,
+          "sha1": "0e2109227b1f5e9777b604bf3c68bd511c6ed135"
+        },
+        "mz": {
+          "first": 87.509698,
+          "last": 940.547522,
+          "len": 563,
+          "sha1": "a5ba7f47ae875db83b1be7c0e35676a09557d1d4"
+        }
+      },
+      {
+        "intensity": {
+          "first": 651.0,
+          "last": 672.0,
+          "len": 584,
+          "sha1": "2cc34821aa8e73afa5efd913f091752ce9537bb6"
+        },
+        "mz": {
+          "first": 87.509661,
+          "last": 940.548181,
+          "len": 584,
+          "sha1": "3002e1e4d2c14d530055178b09ec470009531ab3"
+        }
+      },
+      {
+        "intensity": {
+          "first": 680.0,
+          "last": 672.0,
+          "len": 591,
+          "sha1": "ce41c965edec84b83d20021fecf412a7cc21d9e9"
+        },
+        "mz": {
+          "first": 87.509718,
+          "last": 940.547135,
+          "len": 591,
+          "sha1": "4edcd407e7295ca9a1003f9b179afe477b648dcb"
+        }
+      },
+      {
+        "intensity": {
+          "first": 584.0,
+          "last": 707.0,
+          "len": 597,
+          "sha1": "036833809174d488b738365f936004ad16350870"
+        },
+        "mz": {
+          "first": 87.509563,
+          "last": 940.54708,
+          "len": 597,
+          "sha1": "4f0ab20b9be1404a4376ca8671a7e689377d11ba"
+        }
+      },
+      {
+        "intensity": {
+          "first": 696.0,
+          "last": 710.0,
+          "len": 597,
+          "sha1": "59ad82c50e3f0ef7f8c145223254cb7c40a76bac"
+        },
+        "mz": {
+          "first": 87.509642,
+          "last": 940.547231,
+          "len": 597,
+          "sha1": "89ede07abb37f76ad492755ecea8b644deba9761"
+        }
+      },
+      {
+        "intensity": {
+          "first": 820.0,
+          "last": 611.0,
+          "len": 591,
+          "sha1": "f1d172659e141fb8258eb70784d4cc5080f17a4c"
+        },
+        "mz": {
+          "first": 87.509763,
+          "last": 940.54784,
+          "len": 591,
+          "sha1": "c1597be015d7c61dc3b30b7fc82f7d273448e5a0"
+        }
+      },
+      {
+        "intensity": {
+          "first": 812.0,
+          "last": 709.0,
+          "len": 586,
+          "sha1": "c19577c9621e25d244151dd874d7b3d9fdbce13b"
+        },
+        "mz": {
+          "first": 87.509743,
+          "last": 940.54723,
+          "len": 586,
+          "sha1": "2ba07d0e8269109983b8cf10297223fbb5cca4ba"
+        }
+      },
+      {
+        "intensity": {
+          "first": 808.0,
+          "last": 708.0,
+          "len": 573,
+          "sha1": "ccfb3c4c2a916f326fd9d48045eb6463e56d6a3d"
+        },
+        "mz": {
+          "first": 87.509634,
+          "last": 940.547542,
+          "len": 573,
+          "sha1": "43e597a37e62f301c9f9fe3d448074afaccfdc3b"
+        }
+      },
+      {
+        "intensity": {
+          "first": 790.0,
+          "last": 701.0,
+          "len": 552,
+          "sha1": "88ffea8ab23c2fd427462fbe4b41f7e7c7bc0801"
+        },
+        "mz": {
+          "first": 87.509644,
+          "last": 940.547466,
+          "len": 552,
+          "sha1": "942b102223a62f812ef0305e4644da4adfec60f7"
+        }
+      },
+      {
+        "intensity": {
+          "first": 742.0,
+          "last": 719.0,
+          "len": 545,
+          "sha1": "7ba9a8f273d9502b835f9e166a606ef0e7304a6a"
+        },
+        "mz": {
+          "first": 87.509756,
+          "last": 940.546305,
+          "len": 545,
+          "sha1": "39e6da8103e7481f79d1cb430a7ac62515c40dba"
+        }
+      },
+      {
+        "intensity": {
+          "first": 672.0,
+          "last": 718.0,
+          "len": 522,
+          "sha1": "0bb891c67983c854dff90953713df227bd0b0c31"
+        },
+        "mz": {
+          "first": 87.509906,
+          "last": 940.546168,
+          "len": 522,
+          "sha1": "ebb480e00cf8af87e6221da2179e29bdc3b36c43"
+        }
+      },
+      {
+        "intensity": {
+          "first": 727.0,
+          "last": 655.0,
+          "len": 514,
+          "sha1": "266cad7c9633523f1f08fc9102727e3dd4dfbb87"
+        },
+        "mz": {
+          "first": 87.509841,
+          "last": 940.546532,
+          "len": 514,
+          "sha1": "3910d4f5bad3400ace544014ada102a8b9b93b3d"
+        }
+      },
+      {
+        "intensity": {
+          "first": 695.0,
+          "last": 644.0,
+          "len": 519,
+          "sha1": "1983b91688e65db279c2cf9d4e3bb3aa8ec5848b"
+        },
+        "mz": {
+          "first": 87.509756,
+          "last": 940.547501,
+          "len": 519,
+          "sha1": "e17b3be9f720ebc0351e07af9f031fd8fc7fe951"
+        }
+      },
+      {
+        "intensity": {
+          "first": 717.0,
+          "last": 624.0,
+          "len": 515,
+          "sha1": "d0e469a739ff9f86a4570284f5820c4a71f9a592"
+        },
+        "mz": {
+          "first": 87.509683,
+          "last": 940.546557,
+          "len": 515,
+          "sha1": "2f1b0e5c9e3cfede79eefbee39620b9d9ae260bb"
+        }
+      },
+      {
+        "intensity": {
+          "first": 751.0,
+          "last": 628.0,
+          "len": 509,
+          "sha1": "f067cf73bb212657d6084a03a303c653f6b66ea2"
+        },
+        "mz": {
+          "first": 87.509653,
+          "last": 940.547086,
+          "len": 509,
+          "sha1": "8f9b7a8d7e708eee901880e4fa0a40b001c15eaa"
+        }
+      },
+      {
+        "intensity": {
+          "first": 726.0,
+          "last": 578.0,
+          "len": 513,
+          "sha1": "9b0e8a94aec5482007c3f37e55b3f494cc8721d3"
+        },
+        "mz": {
+          "first": 87.509657,
+          "last": 940.546458,
+          "len": 513,
+          "sha1": "0860b62bc92322b6320cb03e2108d7ec5938df69"
+        }
+      },
+      {
+        "intensity": {
+          "first": 694.0,
+          "last": 626.0,
+          "len": 516,
+          "sha1": "ee6f3f07708d88b4bb15a1c6a56c8fc8d2602b5f"
+        },
+        "mz": {
+          "first": 87.509602,
+          "last": 940.545314,
+          "len": 516,
+          "sha1": "3c7e1cb78cfae48e9a30dd7b2958854c066d3102"
+        }
+      },
+      {
+        "intensity": {
+          "first": 650.0,
+          "last": 574.0,
+          "len": 515,
+          "sha1": "2babbfb72f79fbf21f6c961a43b9778dbb22bf23"
+        },
+        "mz": {
+          "first": 87.50962,
+          "last": 940.546466,
+          "len": 515,
+          "sha1": "77296f0520c76ba27196631b8a4afe9a10877072"
+        }
+      },
+      {
+        "intensity": {
+          "first": 631.0,
+          "last": 631.0,
+          "len": 525,
+          "sha1": "5bc0e4ea337cc9fbff602214e1d502797028fe64"
+        },
+        "mz": {
+          "first": 87.509704,
+          "last": 940.547065,
+          "len": 525,
+          "sha1": "9364294701d1ee9c7748ecbd27d53d7f9929209c"
+        }
+      },
+      {
+        "intensity": {
+          "first": 669.0,
+          "last": 686.0,
+          "len": 509,
+          "sha1": "5252c0a056aa4f96fa99577a21601e15c8d4c45f"
+        },
+        "mz": {
+          "first": 87.509802,
+          "last": 940.546404,
+          "len": 509,
+          "sha1": "9461a567f0aafa825b751eb8504183f9b9f6cec2"
+        }
+      }
+    ],
+    "thres": 5.0
+  },
+  "target": {
+    "dataclass": null,
+    "datatype": "MASS SPECTRUM"
+  },
+  "threshold": null,
+  "title": "Test1 (1)",
+  "typ": "MS",
+  "xs": null,
+  "ys": null
+}
