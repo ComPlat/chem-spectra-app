@@ -107,8 +107,10 @@ def test_meta_SVS_790A_13C_jdx():
 def test_auto_peaks_exclude_13c_solvent_peaks():
     core = __generated_core(SVS_790A_13C_jdx)
     assert core.auto_peaks is not None
-    solvent_auto_peaks = [peak_x for peak_x in core.auto_peaks['x'] if 74.16 < peak_x < 80.16]
-    solvent_edit_peaks = [peak_x for peak_x in core.edit_peaks['x'] if 74.16 < peak_x < 80.16]
+    # the chloroform triplet, +-32 Hz at 100 MHz; the window (74.16-80.16)
+    # also holds sample peaks at 79.3 and 79.8, which stay
+    solvent_auto_peaks = [peak_x for peak_x in core.auto_peaks['x'] if 76.4 < peak_x < 77.9]
+    solvent_edit_peaks = [peak_x for peak_x in core.edit_peaks['x'] if 76.4 < peak_x < 77.9]
     assert len(solvent_auto_peaks) == 1
     assert len(solvent_edit_peaks) == 1
     assert abs(solvent_auto_peaks[0] - 77.16) < 0.2
@@ -134,6 +136,26 @@ def test_solvent_filter_keeps_most_intense_peak_in_range():
     assert kept_solvent_peaks[0]['x'] == 77.24
     assert kept_solvent_peaks[0]['y'] == 100.0
 
+
+
+def test_solvent_filter_keeps_a_sample_peak_elsewhere_in_the_window():
+    # the 13C chloroform window is +-3 ppm; only the triplet (+-32 Hz at
+    # 100 MHz) is the solvent, not a sample signal 2.3 ppm away
+    converter = JcampTechniqueConverter.__new__(JcampTechniqueConverter)
+    converter.solv_peaks = [(74.16, 80.16)]
+    converter.ncl = '13C'
+    converter.obs_freq = 100.6
+
+    peaks = [
+        {'x': 77.00, 'y': 100.0},
+        {'x': 77.32, 'y': 95.0},
+        {'x': 76.68, 'y': 94.0},
+        {'x': 79.30, 'y': 40.0},
+    ]
+
+    filtered = converter._JcampTechniqueConverter__filter_solvent_peaks(peaks)
+
+    assert sorted(peak['x'] for peak in filtered) == [77.00, 79.30]
 
 def test_meta_MS_jdx():
     pass

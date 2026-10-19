@@ -292,6 +292,47 @@ def test_parse_solvent_falls_back_when_existing_ref_is_auto_offset():
     assert base.dic['$CSSOLVENTX'] == ['0']
 
 
+def test_parse_solvent_an_explicit_unsupported_reference_turns_filtering_off():
+    # the request's reference outranks the file's, even when it names no
+    # solvent with known ranges
+    base = type('MockBase', (), {
+        'ncl': '1H',
+        'params': {'ref_name': 'TMS'},
+        'dic': {
+            '$CSSOLVENTNAME': ['DMSO-d6 (quin)'],
+            '$CSSOLVENTVALUE': ['2.5'],
+            '$CSSOLVENTX': ['0'],
+        },
+        'solv_peaks': [],
+    })()
+
+    parse_solvent(base)
+
+    assert base.solv_peaks == []
+    assert base.dic['$CSSOLVENTNAME'] == ['DMSO-d6 (quin)']
+
+
+def test_parse_solvent_auto_offset_without_a_bruker_solvent():
+    # an acqus without SOLVENT leaves both fields None
+    base = type('MockBase', (), {
+        'ncl': '1H',
+        'params': {'ref_name': None},
+        'dic': {
+            '$CSSOLVENTNAME': ['AUTO-OFFSET'],
+            '$CSSOLVENTVALUE': ['0.000000'],
+            '$CSSOLVENTX': ['4.009459'],
+            '.SOLVENTNAME': None,
+            '.SHIFTREFERENCE': None,
+        },
+        'solv_peaks': [],
+    })()
+
+    parse_solvent(base)
+
+    assert base.solv_peaks == []
+    assert base.dic['$CSSOLVENTNAME'] == ['AUTO-OFFSET']
+
+
 def test_parse_dsc_meta_data():
     params = {'dsc_meta_data': '{"meltingPoint": "1.0", "tg": "1.0"}'}
     parsed_data = parse_params(params)

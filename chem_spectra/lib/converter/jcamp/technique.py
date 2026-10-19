@@ -1065,9 +1065,27 @@ class JcampTechniqueConverter:
             peak_idxs = np.unique(np.concatenate((peak_idxs, dept_peak_idxs)))
         return peak_idxs
 
+    # Half-width of the widest deuterated-solvent multiplet, in Hz: the 13C
+    # septets of DMSO-d6, methanol-d4 and acetonitrile-d3 reach +-64 Hz
+    # (3 x J(C,D) ~ 21 Hz). In Hz, not ppm, because the spread in ppm
+    # depends on the spectrometer.
+    SOLVENT_MULTIPLET_HALF_WIDTH_HZ = 75.0
+
     def __filter_solvent_peaks(self, peaks):
+        """Collapse each solvent multiplet to its strongest peak.
+
+        The solvent window is wide (+-3 ppm for 13C) so that a spectrum
+        referenced off by a little still finds its solvent. A peak in the
+        window counts as solvent only if it also lies within one multiplet
+        half-width of the window's strongest peak; a sample signal elsewhere
+        in the window is kept. Without an observe frequency the half-width
+        cannot be put in ppm, and the whole window counts.
+        """
         if not self.solv_peaks:
             return peaks
+        obs_freq = getattr(self, 'obs_freq', None)
+        half_width = (self.SOLVENT_MULTIPLET_HALF_WIDTH_HZ / obs_freq
+                      if obs_freq else None)
 
         assigned_peak_indices = set()
         kept_solvent_peaks = []
@@ -1088,7 +1106,11 @@ class JcampTechniqueConverter:
                     abs(item[1]['x'] - range_center),
                 ),
             )
-            assigned_peak_indices.update(idx for idx, _ in peaks_in_range)
+            assigned_peak_indices.update(
+                idx for idx, peak in peaks_in_range
+                if half_width is None
+                or abs(peak['x'] - keep_peak['x']) <= half_width
+            )
             kept_solvent_peaks.append((keep_idx, keep_peak))
 
         filtered_peaks = [

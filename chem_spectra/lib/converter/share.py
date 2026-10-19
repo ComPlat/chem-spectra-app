@@ -286,19 +286,20 @@ def parse_solvent(base):
 
         if _apply_solvent_config(base, _solvent_config(base.ncl, param_ref_name)):
             return
+        if not _is_placeholder_solvent_name(param_ref_name):
+            # an explicit reference outranks the file's, even one with no
+            # known solvent ranges (TMS, say): no filtering then
+            return
         if _apply_solvent_config(base, _solvent_config(base.ncl, existing_ref_name)):
             return
-        if (
-            not _is_placeholder_solvent_name(param_ref_name)
-        ) or (
-            not _is_placeholder_solvent_name(existing_ref_name)
-        ):
+        if not _is_placeholder_solvent_name(existing_ref_name):
             return
 
         sn = base.dic.get('.SOLVENTNAME', [''])
         sr = base.dic.get('.SHIFTREFERENCE', [''])
-        sn = sn if isinstance(sn, str) else sn[0]
-        sr = sr if isinstance(sr, str) else sr[0]
+        # a Bruker acqus without SOLVENT leaves these None
+        sn = sn if isinstance(sn, str) else (sn or [''])[0] or ''
+        sr = sr if isinstance(sr, str) else (sr or [''])[0] or ''
         orig_solv = (sn + sr).lower()
         _apply_solvent_config(
             base,
