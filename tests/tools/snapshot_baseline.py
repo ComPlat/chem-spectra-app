@@ -74,8 +74,9 @@ def _array(values, exact=True):
         'last': round(float(seq[-1]), 8),
     }
     if exact:
+        # separated, or [0, 1, 23] and [0, 12, 3] hash alike
         summary['sha1'] = hashlib.sha1(
-            b''.join(f'{float(v):.10g}'.encode() for v in seq)
+            b','.join(f'{float(v):.10g}'.encode() for v in seq)
         ).hexdigest()
     return summary
 
@@ -219,16 +220,24 @@ def _drive(container, molfile, params, exact=True):
     y hash, the peak hashes and the composed JCAMP's hash. Those are left out
     for an FID; everything that agreed is kept. A JCAMP is read, not
     optimised, and keeps every hash.
+
+    A Bruker zip with processed data returns a list: the raw FID first,
+    phased as above, then one spectrum per processed `pdata` directory, which
+    is read and baseline-corrected rather than optimised. Each is recorded,
+    in order, under `spectra`, so a changed or dropped output is noticed;
+    `exact` applies to the raw FID alone.
     """
     model = TransformerModel(container, molfile=molfile, params=params)
     converter = model.to_converter()
     composer, _ = model.to_composer()
-    # The zip and LC/MS paths hand back lists; the first entry is the one the
-    # endpoints render.
+    if isinstance(composer, list):
+        # the endpoints render every entry (transform_api's sequence branch)
+        return {'spectra': [
+            _observables(c.core, c, exact=exact if idx == 0 else True)
+            for idx, c in enumerate(composer)
+        ]}
     if isinstance(converter, list):
         converter = converter[0] if converter else None
-    if isinstance(composer, list):
-        composer = composer[0] if composer else None
     if converter is None or converter is False:
         return {'error': 'no converter'}
     # The zip/FID path hands back a `FidBaseConverter`, which carries none of
