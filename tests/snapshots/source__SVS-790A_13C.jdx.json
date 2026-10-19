@@ -1,0 +1,53 @@
+{
+  "auto_peaks": {
+    "n": 100,
+    "sha1": "e7e35b508df7b0b3"
+  },
+  "boundary": {
+    "x": {
+      "max": 235.42958469635613,
+      "min": -15.55002660199098
+    },
+    "y": {
+      "max": 4433183.5,
+      "min": -40480.090000000004
+    }
+  },
+  "edit_peaks": {
+    "n": 50,
+    "sha1": "9b804c3ca4516317"
+  },
+  "factor": {
+    "x": 1.0,
+    "y": 0.01
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 227575,
+    "sha1": "d4c90f25f668da2f3ed1b2cd0e4015dfbf9c8085"
+  },
+  "label": {
+    "x": "PPM",
+    "y": "ARBITRARY"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "XYDATA",
+    "datatype": "NMR SPECTRUM"
+  },
+  "threshold": 0.005,
+  "title": "13C_ns512 CDCl3 /opt/topspin3.5pl6/data/complat/nmr SVS 49",
+  "typ": "NMR",
+  "xs": {
+    "first": 235.4295847,
+    "last": -15.5500266,
+    "len": 32768,
+    "sha1": "7b83373cc1ba455e156c8d09495a360b2fac5bc9"
+  },
+  "ys": {
+    "first": -10401.44,
+    "last": 3041.16,
+    "len": 32768,
+    "sha1": "fa50c83e8e9976cb59b44db8e3606d12971664b4"
+  }
+}

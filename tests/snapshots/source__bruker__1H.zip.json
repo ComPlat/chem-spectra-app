@@ -1,0 +1,103 @@
+{
+  "spectra": [
+    {
+      "auto_peaks": {
+        "n": 100
+      },
+      "boundary": {
+        "x": {
+          "max": 16.00945939662455,
+          "min": -4.00945939662455
+        },
+        "y": {
+          "max": 132633789.340564,
+          "min": -6060116.499992815
+        }
+      },
+      "edit_peaks": {
+        "n": 100
+      },
+      "factor": {
+        "x": 1.0,
+        "y": 132.633789340564
+      },
+      "itg_table": [],
+      "label": {
+        "x": "PPM",
+        "y": "ARBITRARY"
+      },
+      "mpy_itg_table": [],
+      "target": {
+        "dataclass": null,
+        "datatype": "NMR SPECTRUM"
+      },
+      "threshold": 0.005,
+      "title": "FID 1H",
+      "typ": "NMR",
+      "xs": {
+        "first": 16.0094594,
+        "last": -4.0094594,
+        "len": 12032,
+        "sha1": "e6735a38bfaa66e2f1e879e2fd4d666c20177034"
+      },
+      "ys": {
+        "first": 2712367.13333552,
+        "last": -2581318.13356596,
+        "len": 12032
+      }
+    },
+    {
+      "auto_peaks": {
+        "n": 100,
+        "sha1": "f7ae8660a116526d"
+      },
+      "boundary": {
+        "x": {
+          "max": 16.00945939662455,
+          "min": -4.00945939662455
+        },
+        "y": {
+          "max": 26398765.20446055,
+          "min": -324666.20078397205
+        }
+      },
+      "edit_peaks": {
+        "n": 100,
+        "sha1": "f7ae8660a116526d"
+      },
+      "factor": {
+        "x": 1.0,
+        "y": 26.39876520446055
+      },
+      "itg_table": [],
+      "jcamp": {
+        "len": 272730,
+        "sha1": "c4340bc94d53912e881424970dba419cb9e0a6e0"
+      },
+      "label": {
+        "x": "PPM",
+        "y": "ARBITRARY"
+      },
+      "mpy_itg_table": [],
+      "target": {
+        "dataclass": null,
+        "datatype": "NMR SPECTRUM"
+      },
+      "threshold": 0.005,
+      "title": "FID 1H",
+      "typ": "NMR",
+      "xs": {
+        "first": 16.0094594,
+        "last": -4.0094594,
+        "len": 65536,
+        "sha1": "6fa391b0bbaed04d9dad688be55bd3067472c7db"
+      },
+      "ys": {
+        "first": 20246.23325893,
+        "last": 8724.98928571,
+        "len": 65536,
+        "sha1": "b93b6f18d837b6bb2041c5ecc1008fa5ce685904"
+      }
+    }
+  ]
+}

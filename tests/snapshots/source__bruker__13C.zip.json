@@ -1,0 +1,103 @@
+{
+  "spectra": [
+    {
+      "auto_peaks": {
+        "n": 100
+      },
+      "boundary": {
+        "x": {
+          "max": 229.46009036116953,
+          "min": -9.460090361169492
+        },
+        "y": {
+          "max": 440438583.7595174,
+          "min": -66775606.639499046
+        }
+      },
+      "edit_peaks": {
+        "n": 50
+      },
+      "factor": {
+        "x": 1.0,
+        "y": 440.43858375951737
+      },
+      "itg_table": [],
+      "label": {
+        "x": "PPM",
+        "y": "ARBITRARY"
+      },
+      "mpy_itg_table": [],
+      "target": {
+        "dataclass": null,
+        "datatype": "NMR SPECTRUM"
+      },
+      "threshold": 0.005,
+      "title": "FID 13C",
+      "typ": "NMR",
+      "xs": {
+        "first": 229.46009036,
+        "last": -9.46009036,
+        "len": 53994,
+        "sha1": "a8de0f4ba046120bb74794145f08c005f685ab67"
+      },
+      "ys": {
+        "first": 224608.20126725,
+        "last": -470234.83645995,
+        "len": 53994
+      }
+    },
+    {
+      "auto_peaks": {
+        "n": 38,
+        "sha1": "cb7fee1c0b20ba33"
+      },
+      "boundary": {
+        "x": {
+          "max": 229.46009036116953,
+          "min": -9.460090361169492
+        },
+        "y": {
+          "max": 5913419.728664039,
+          "min": -13942.779017857143
+        }
+      },
+      "edit_peaks": {
+        "n": 38,
+        "sha1": "cb7fee1c0b20ba33"
+      },
+      "factor": {
+        "x": 1.0,
+        "y": 5.913419728664039
+      },
+      "itg_table": [],
+      "jcamp": {
+        "len": 860813,
+        "sha1": "a946a30c58102e391c4276a8ff34267c09c1a5ac"
+      },
+      "label": {
+        "x": "PPM",
+        "y": "ARBITRARY"
+      },
+      "mpy_itg_table": [],
+      "target": {
+        "dataclass": null,
+        "datatype": "NMR SPECTRUM"
+      },
+      "threshold": 0.005,
+      "title": "FID 13C",
+      "typ": "NMR",
+      "xs": {
+        "first": 229.46009036,
+        "last": -9.46009036,
+        "len": 262144,
+        "sha1": "4f2476ab1e319f78347f9298e4958e28dd0bba77"
+      },
+      "ys": {
+        "first": -510.078125,
+        "last": -453.84375,
+        "len": 262144,
+        "sha1": "74e8e079457bb22429801bae2f53944d7b88471f"
+      }
+    }
+  ]
+}
