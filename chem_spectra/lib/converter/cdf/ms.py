@@ -1,5 +1,7 @@
 import numpy as np
 
+from chem_spectra.lib.converter.jcamp.techniques import technique_for
+
 MARGIN = 1
 THRESHOLD_MS = 0.05
 
@@ -13,6 +15,10 @@ class CdfMSConverter:  # nmr & IR
         self.datatype = base.datatype
         self.title = base.title
         self.typ = base.typ
+        # CdfBaseConverter hardcodes typ='MS', so the descriptor is known
+        # here without consulting data_type.json -- this path never goes
+        # through JCAMP classification at all.
+        self.technique = technique_for(self.typ)
         # - - - - - - - - - - -
         self.exact_mz, self.edit_scan, self.thres = self.__set_params(base.params)  # noqa
         self.bound_high = self.exact_mz + MARGIN

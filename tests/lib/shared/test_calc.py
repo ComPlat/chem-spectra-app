@@ -50,8 +50,11 @@ def test_calc_mpy_center_t_typ_three_values():
     assert center_x == 2.0
 
 def test_get_curve_endpoint():
-    #TODO: implement later
-    pass
+    xs = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
+    ys = np.array([0.0, 1.0, 2.0, 1.0, 0.0])
+    iL, iU = get_curve_endpoint(xs, ys, 2.0, 4.0)
+    assert iL == 2
+    assert iU == 5
 
 def test_to_float_with_int_value():
     float_value = to_float(10)

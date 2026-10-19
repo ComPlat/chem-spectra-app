@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS base
+FROM python:3.14-slim AS base
 
 # Install any additional OS packages you want in addition to sudo, git and nano
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=apt-cache \
@@ -6,8 +6,15 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=apt-cache \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     sudo git nano \
+# the task runner; every recipe in ./justfile shells out to uv
+    just \
 # required 
     gcc g++ libxrender1 libxext6 libglib2.0-0
+
+# uv owns the environment. Installed as root, before USER below, because it
+# lands in /usr/local/bin. Pinned rather than :latest so a rebuild does not
+# pick up a different resolver than the one that wrote uv.lock.
+COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /usr/local/bin/uv
 
 ARG USERNAME=debian
 
@@ -17,14 +24,7 @@ RUN useradd -m --shell /bin/bash $USERNAME && passwd -d ${USERNAME} && adduser $
 USER $USERNAME
 WORKDIR /home/${USERNAME}
 
-ENV PIP_CACHE_DIR=./.cache/pip
-ENV PIP_USER=1
-ENV PIP_NO_WARN_SCRIPT_LOCATION=1
-
-RUN mkdir -p ${PIP_CACHE_DIR}
-
-# to be replaced later by ADD git#branch if needed
-COPY pyproject.toml .
-
-RUN --mount=type=cache,target=${PIP_CACHE_DIR},sharing=locked,id=pip-cache \
-    touch README.md && pip install --upgrade pip && pip install .[dev] && rm -rf README.md pyproject.toml build *.egg-info
+# Nothing is installed at build time any more. The environment is created from
+# the workspace's own uv.lock once the bind mount exists -- devcontainer.json's
+# postStartCommand runs `uv sync --frozen --all-groups`. Installing here as
+# well would have produced a second, stale copy of the dependency set.

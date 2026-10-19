@@ -1,0 +1,43 @@
+flowchart TB
+  Client["Client or ELN backend"]
+
+  subgraph app [Flask App]
+    FlaskApp["create_app()"]
+    Controllers["Controller layer\nfile_api / transform_api\ninference_api / spectra_layout_api"]
+  end
+
+  subgraph model [Model Layer]
+    Models["TransformerModel\nInferencerModel\nMoleculeModel"]
+  end
+
+  subgraph lib [Lib Layer]
+    Lib["converters\ncomposers\nchem / shared / data_pipeline"]
+  end
+
+  subgraph external [External Services]
+    ExternalServices["NMRShiftDB\nDeepIR\nmsconvert"]
+  end
+
+  Outputs["Generated outputs\nJCAMP / PNG / CSV / ZIP / JSON / SVG"]
+
+  Client --> FlaskApp
+  FlaskApp --> Controllers
+  Controllers --> Models
+  Models --> Lib
+  Models -.-> ExternalServices
+  Lib --> Outputs
+  Models --> Outputs
+
+  classDef client fill:#eef5ff,stroke:#4c78a8,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef lib fill:#f2efff,stroke:#8f63c6,stroke-width:1px
+  classDef external fill:#fff4e6,stroke:#f28e2b,stroke-width:1px
+  classDef output fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+
+  class Client client
+  class FlaskApp,Controllers controller
+  class Models model
+  class Lib lib
+  class ExternalServices external
+  class Outputs output

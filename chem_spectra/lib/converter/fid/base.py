@@ -2,21 +2,35 @@ import nmrglue as ng
 import numpy as np  # noqa: F401
 
 from chem_spectra.lib.converter.share import parse_params, parse_solvent
+from chem_spectra.lib.converter.jcamp.techniques import SPECTRUM_TECHNIQUES
+from chem_spectra.lib.converter.jcamp.reader import block_from_headers
 
 
 class FidBaseConverter:
-    def __init__(self, target_dir, params=False, fname=''):
-        self.params = parse_params(params)
-        self.dic, self.data = self.__read(target_dir, fname)
-        self.__set_properties()
-
     def __init__(self, dic, data, params=False, fname=''):
         self.params = params
         self.dic = dic
         self.data = data
         self.__set_properties()
 
-    def __read(self, target_dir, fname):
+    @classmethod
+    def from_directory(cls, target_dir, params=False, fname=''):
+        """Read a raw Bruker directory -- an upload with no processed data.
+
+        This logic was written and then unreachable. A second `__init__`
+        shadowed the one that called it, so the reader below was dead and the
+        only caller, `zip2cvp`, passed `(target_dir, params, fname)` into the
+        surviving `(dic, data, params, fname)` signature -- binding a path
+        string to `dic`. A Bruker zip carrying no `pdata` therefore raised
+        AttributeError out of the request. Both fixtures here ship processed
+        data, so no test reached it.
+        """
+        params = parse_params(params)
+        dic, data = cls._read_directory(params, target_dir, fname)
+        return cls(dic, data, params, fname)
+
+    @staticmethod
+    def _read_directory(params, target_dir, fname):
         dic, data = ng.bruker.read(target_dir)
         udic = ng.bruker.guess_udic(dic, data).get(0) or {}
         # process dic
@@ -44,7 +58,10 @@ class FidBaseConverter:
         data = ng.proc_base.fft(data)               # Fourier transform
         # p0, p1 = ng.process.proc_autophase.manual_ps(data)
         # data = ng.proc_base.ps(data, p0=-60, p1=200)
-        if 'dept' not in dic['.PULSESEQUENCE']:
+        # `PULPROG` only decides whether the DEPT phasing applies. An `acqus`
+        # that does not name one is not a DEPT experiment as far as anything
+        # here can tell, so it takes the ordinary phasing.
+        if 'dept' not in (dic['.PULSESEQUENCE'] or ''):
             data_am = ng.process.proc_autophase.autops(data, 'acme')  # phase correction    # noqa: E501
             data_pm = ng.process.proc_autophase.autops(data, 'peak_minima')  # phase correction     # noqa: E501
             data = data_am if (data_am.min() > data_pm.min()) else data_pm
@@ -57,13 +74,21 @@ class FidBaseConverter:
         data = ng.proc_base.rev(data)               # reverse the data
         return dic, data
 
+
     def __set_properties(self):
         self.datatypes = ['NMR SPECTRUM']
         self.datatype = 'NMR SPECTRUM'
+        # Not a JCAMP file: this core's own header dict is its only block.
+        self.target = block_from_headers(self.dic)
         self.dataclass = None
         self.data_format = None
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = 'NMR'
+        # A FID is NMR by construction, so the descriptor is known here
+        # without consulting data_type.json. It has to be set: this converter
+        # is handed to JcampTechniqueConverter (model/transformer.py:213),
+        # which reads the descriptor off whatever base it is given.
+        self.technique = SPECTRUM_TECHNIQUES['NMR']
         self.fname = '.'.join(self.params.get('fname').split('.')[:-1])
         self.is_em_wave = self.__is_em_wave()
         self.is_ir = self.__is_ir()
@@ -74,18 +99,18 @@ class FidBaseConverter:
         self.is_xrd = self.__is_xrd()
         self.is_cyclic_volta = self.__is_cyclic_volta()
         self.is_cds = self.__is_cds()
-        self.non_nmr = self.__non_nmr()
+        # A free induction decay is an NMR measurement by definition, and
+        # self.typ is the literal 'NMR' above. This used to call a predicate
+        # testing typ against ten other techniques, which could never match:
+        # dead code that read like live dispatch.
+        self.non_nmr = False
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
         self.solv_peaks = []
-        self.is_dept = self.__is_dept()
         self.__read_solvent()
 
     def __is_em_wave(self):
         return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
-
-    def __non_nmr(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS', 'HPLC UVVIS', 'THERMOGRAVIMETRIC ANALYSIS', 'MS', 'X-RAY DIFFRACTION', 'CYCLIC VOLTAMMETRY', 'CIRCULAR DICHROISM SPECTROSCOPY', 'GAS CHROMATOGRAPHY']  # noqa: E501
 
     def __is_ir(self):
         return self.typ in ['INFRARED']
@@ -140,15 +165,3 @@ class FidBaseConverter:
     def __read_solvent(self):
         parse_solvent(self)
 
-    def __is_dept(self):
-        if not self.ncl == '13C':
-            return False
-
-        try:  # TBD
-            for p in (self.dic.get('.PULSESEQUENCE', []) + self.dic.get('.PULSE SEQUENCE', [])):    # noqa: E501
-                if 'dept' in p:
-                    return True
-        except:  # noqa: E722
-            pass
-
-        return False

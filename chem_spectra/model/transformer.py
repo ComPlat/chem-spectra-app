@@ -1,29 +1,41 @@
 import json
+import logging
 import zipfile
 import tempfile
 import glob     # noqa: F401
 import os
 
 from chem_spectra.lib.shared.buffer import store_str_in_tmp, store_byte_in_tmp
-from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.ni import JcampNIConverter
+from chem_spectra.lib.converter.jcamp.base import (
+    HEADER_BYTES, JcampBaseConverter, header_from_text,
+    refuse_if_multi_dimensional,
+)
+from chem_spectra.lib.shared.misc import shorten_label
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.converter.cdf.base import CdfBaseConverter
 from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
+from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
+from chem_spectra.lib.converter.bagit.lcms_builder import build_lcms_composer
 from chem_spectra.lib.converter.ms import MSConverter
-from chem_spectra.lib.composer.ni import NIComposer
+from chem_spectra.lib.composer.technique import (
+    TechniqueComposer, flip_overlay_if_inverted,
+)
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
+from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.path as mpath  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib import ticker  # noqa: E402
 
 from chem_spectra.model.concern.property import decorate_sim_property
+
+logger = logging.getLogger(__name__)
 
 
 def find_dir(path, name):
@@ -57,12 +69,65 @@ def find_and_get_dir(path, name):
             return os.path.join(root, name)
     return False
 
+def find_dirs(path, name):
+    """Every directory under `path` holding a file called `name`, sorted.
+
+    `find_dir` returns the first and stops, which is right when looking for
+    the one `fid` in a Bruker upload. For BagIt it silently decided which of
+    several archives to process -- see `search_bag_it_file`.
+    """
+    found = []
+    for root, _, files in os.walk(path):
+        if name in files:
+            found.append(root)
+    return sorted(found)
+
+
 def search_bag_it_file(td):
+    """The single BagIt root in this upload, or False.
+
+    Raises when there is more than one. A BagIt archive is a dataset, so two
+    of them in one upload are two datasets; merging them into one attachment
+    group would be wrong, and picking one -- which is what happened, whichever
+    `os.walk` reached first -- silently discarded the rest. Issue #244, where
+    the reporter asked for exactly this: "ELN needs to send feedback / warning
+    to user, to ask them to create additional Datasets".
+    """
     try:
-        target_dir = find_dir(td, 'bagit.txt')
-        return target_dir
+        roots = find_dirs(td, 'bagit.txt')
     except:     # noqa: E722
         return False
+    if len(roots) > 1:
+        raise UnconvertibleSpectrum(
+            'this upload contains {} BagIt archives. Each one is a separate '
+            'dataset, so they cannot be combined into a single attachment — '
+            'please upload them one at a time.'.format(len(roots)))
+    return roots[0] if roots else False
+
+
+def search_jdx_dir(td):
+    try:
+        def _has_jdx(path):
+            try:
+                return any(
+                    name.lower().endswith('.jdx')
+                    for name in os.listdir(path)
+                    if os.path.isfile(os.path.join(path, name))
+                )
+            except OSError:
+                return False
+
+        if _has_jdx(td):
+            return td
+        subdirs = []
+        for entry in os.listdir(td):
+            sub = os.path.join(td, entry)
+            if os.path.isdir(sub) and _has_jdx(sub):
+                subdirs.append(sub)
+        return subdirs[0] if len(subdirs) == 1 else False
+    except OSError:
+        return False
+    return False
 
 
 class TransformerModel:
@@ -74,12 +139,16 @@ class TransformerModel:
 
     def convert2jcamp(self):
         cmpsr, _ = self.to_composer()
+        if not cmpsr:
+            return False
         if isinstance(cmpsr, BagItBaseConverter):
             return cmpsr
         return cmpsr.tf_jcamp()
 
     def convert2img(self):
         cmpsr, _ = self.to_composer()
+        if not cmpsr:
+            return False
         if isinstance(cmpsr, BagItBaseConverter):
             return cmpsr
         return cmpsr.tf_img()
@@ -124,10 +193,12 @@ class TransformerModel:
             cv, _ = self.cdf2cvp()
             return cv
         if is_zip or is_zip_by_params:
-            cv, _ = self.zip2cvp()
+            cv, _, _ = self.zip2cvp()
             return cv
         else:
-            cv, _ = self.jcamp2cvp()
+            # jcamp2cvp returns (converter, composer, invalid_molfile);
+            # unpacking two of them raised ValueError on every JCAMP file
+            cv, _, _ = self.jcamp2cvp()
             return cv
 
     def ms2composer(self):
@@ -145,45 +216,52 @@ class TransformerModel:
         return mscv, mscp
 
     def zip2cvp(self):
-        fbcv = False
         with tempfile.TemporaryDirectory() as td:
-            tz = store_byte_in_tmp(self.file.bcore, suffix='.zip')
-            with zipfile.ZipFile(tz.name, 'r') as z:
-                z.extractall(td)
+            with store_byte_in_tmp(self.file.bcore, suffix='.zip') as tz:
+                with zipfile.ZipFile(tz.name, 'r') as z:
+                    # Guard against Zip Slip (directory traversal) attacks.
+                    td_real = os.path.realpath(td) + os.sep
+                    for member in z.infolist():
+                        member_path = os.path.realpath(
+                            os.path.join(td, member.filename)
+                        )
+                        if not member_path.startswith(td_real):
+                            return False, False, False
+                    z.extractall(td)
             target_dir, has_processed_files = search_brucker_binary(td)
             if target_dir:
                 # NMR data
                 if (has_processed_files):
                     return self.zip2cv_with_processed_file(target_dir, self.params, self.file.name)
+                fbcv = FidBaseConverter.from_directory(target_dir, self.params, self.file.name)
+                if not fbcv:
+                    return False, False, False
+
+                isSimulateNMR = False
+                if self.params and 'simulatenmr' in self.params:
+                    isSimulateNMR = self.params['simulatenmr']
+                decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNMR)   # noqa: E501
+                invalid_molfile = False
+                if self.molfile is None:
+                    invalid_molfile = True
+                if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
+                    invalid_molfile = True
+                    final_decorated_jbcv = decorated_jbcv['origin_jbcv']
                 else:
-                    fbcv = FidBaseConverter(target_dir, self.params, self.file.name)
-                    if not fbcv:
-                        return False, False, False
+                    final_decorated_jbcv = decorated_jbcv
+                tcv = JcampTechniqueConverter(final_decorated_jbcv)
+                tcp = TechniqueComposer(tcv)
+                return tcv, tcp, invalid_molfile
 
-                    isSimulateNMR = False
-                    if self.params and 'simulatenmr' in self.params:
-                        isSimulateNMR = self.params['simulatenmr']
-                    decorated_jbcv = decorate_sim_property(fbcv, self.molfile, isSimulateNMR)   # noqa: E501
+            is_bagit = search_bag_it_file(td)
+            if is_bagit:
+                bagcv = BagItBaseConverter(is_bagit, self.params, self.file.name)
+                return bagcv, bagcv, False
 
-                    # if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
-                    #     # return if molfile is invalid
-                    #     return None, decorated_jbcv
-                    invalid_molfile = False
-                    if self.molfile is None:
-                        invalid_molfile = True
-                    if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
-                        invalid_molfile = True
-                        final_decorated_jbcv = decorated_jbcv['origin_jbcv']
-                    else:
-                        final_decorated_jbcv = decorated_jbcv
-                    nicv = JcampNIConverter(final_decorated_jbcv)
-                    nicp = NIComposer(nicv)
-                    return nicv, nicp, invalid_molfile
-            else:
-                is_bagit = search_bag_it_file(td)
-                if is_bagit:
-                    bagcv = BagItBaseConverter(td, self.params, self.file.name)
-                    return bagcv, bagcv, False
+            jdx_dir = search_jdx_dir(td)
+            if jdx_dir:
+                bagcv = BagItBaseConverter(jdx_dir, self.params, self.file.name)
+                return bagcv, bagcv, False
 
         return False, False, False
 
@@ -221,36 +299,56 @@ class TransformerModel:
         #         final_decorated_jbcv.simu_peaks = decorated_jbcv.simu_peaks
 
             list_decorated_converters.append(final_decorated_jbcv)
-            nicv = JcampNIConverter(final_decorated_jbcv)
-            nicp = NIComposer(nicv)
-            list_decorated_composers.append(nicp)
+            tcv = JcampTechniqueConverter(final_decorated_jbcv)
+            tcp = TechniqueComposer(tcv)
+            list_decorated_composers.append(tcp)
         return list_decorated_converters, list_decorated_composers, invalid_molfile
 
     def jcamp2cvp(self):
         tf = store_str_in_tmp(self.file.core)
         jbcv = JcampBaseConverter(tf.name, self.params)
-        tf.close()
         invalid_molfile = False
         # conversion
         if jbcv.typ == 'MS':
+            tf.close()
             mscv = JcampMSConverter(jbcv)
             mscp = MSComposer(mscv)
             return mscv, mscp, invalid_molfile
+        if jbcv.typ == 'LC/MS':
+            lcms_cp = build_lcms_composer([tf.name], self.params)
+            tf.close()
+            if lcms_cp is not None:
+                return lcms_cp, lcms_cp, invalid_molfile
+            tf = store_str_in_tmp(self.file.core)
+            jbcv = JcampBaseConverter(tf.name, self.params)
+            tf.close()
         else:
-            isSimulateNMR = False
-            if self.params and 'simulatenmr' in self.params:
-                isSimulateNMR = self.params['simulatenmr']
-            decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNMR)   # noqa: E501
-            
-            if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
-                invalid_molfile = True
-                final_decorated_jbcv = decorated_jbcv['origin_jbcv']
-            else:
-                final_decorated_jbcv = decorated_jbcv
+            tf.close()
+        # NI path (NMR & autres, ou repli si build LCMS seul fichier a échoué)
+        isSimulateNMR = False
+        if self.params and 'simulatenmr' in self.params:
+            isSimulateNMR = self.params['simulatenmr']
+        decorated_jbcv = decorate_sim_property(jbcv, self.molfile, isSimulateNMR)   # noqa: E501
 
-            nicv = JcampNIConverter(final_decorated_jbcv)
-            nicp = NIComposer(nicv)
-            return nicv, nicp, invalid_molfile
+        if ((type(decorated_jbcv) is dict) and "invalid_molfile" in decorated_jbcv):
+            invalid_molfile = True
+            final_decorated_jbcv = decorated_jbcv['origin_jbcv']
+        else:
+            final_decorated_jbcv = decorated_jbcv
+
+        try:
+            tcv = JcampTechniqueConverter(final_decorated_jbcv)
+        except UnparsableJcampData:
+            # Same shape as zip2cvp's failure return, so the controllers'
+            # existing `if not cmpsr: abort(...)` handles it rather than the
+            # exception escaping as a 500.
+            logger.warning(
+                'no parsable data in %r; treating it as unconvertible',
+                getattr(self.file, 'name', None),
+            )
+            return False, False, invalid_molfile
+        tcp = TechniqueComposer(tcv)
+        return tcv, tcp, invalid_molfile
 
     def tf_predict(self):
         target = json.loads(self.params['predict'])
@@ -268,8 +366,8 @@ class TransformerModel:
         converter = NMRiumDataConverter(self.file)
         if converter.is_2d == True or converter.data is None:
             return None
-        nicp = NIComposer(converter)
-        tf_jcamp = nicp.tf_jcamp()
+        tcp = TechniqueComposer(converter)
+        tf_jcamp = tcp.tf_jcamp()
         return tf_jcamp
 
     def __get_cyclic_volta_ref_peaks(self, curve_idx, extraParams):
@@ -324,21 +422,52 @@ class TransformerModel:
                 self.multiple_files[idx] = file
 
         self.multiple_files.sort(key=lambda file: file.name)
-        
+
+        # Before anything is drawn. The converter refuses a 2D file too, but
+        # it does so from inside the loop below, after earlier files have
+        # already been plotted onto the module-global pyplot figure -- and
+        # nothing on the raising path clears it. The curves then stayed on
+        # `plt.gca()` and appeared in the *next* image this worker rendered,
+        # for a different request, which the ELN stores as that spectrum's
+        # attachment image. Asking every file first also saves converting and
+        # rendering the members before the one that will be refused.
+        for file in self.multiple_files:
+            refuse_if_multi_dimensional(
+                header_from_text(file.core[:HEADER_BYTES]),
+                shorten_label(file.name),
+            )
+
+        plotted_any = False
+        # one entry per plotted curve: whether its file asks to be drawn the
+        # other way up (##$CSINVERTY or the request's `invert_y`)
+        inverted = []
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
-            filename = file.name
+            filename = shorten_label(file.name)
             if jbcv.typ == 'MS':
                 mscv = JcampMSConverter(jbcv)
                 mscp = MSComposer(mscv)
                 plt.plot(mscp.core.xs, mscp.core.ys, label=filename)
+                plotted_any = True
+                inverted.append(False)
             else:
-                nicv = JcampNIConverter(jbcv)
-                nicp = NIComposer(nicv)
-                xs, ys = nicp.core.xs, nicp.core.ys
+                try:
+                    tcv = JcampTechniqueConverter(jbcv)
+                except UnparsableJcampData:
+                    # one unusable file should not lose the whole overlay;
+                    # if every file is unusable nothing is plotted and the
+                    # controller's `if not tf_combine: abort(400)` fires
+                    logger.warning(
+                        'no parsable data in %r; leaving it out of the '
+                        'combined image', filename,
+                    )
+                    tf.close()
+                    continue
+                tcp = TechniqueComposer(tcv)
+                xs, ys = tcp.core.xs, tcp.core.ys
                 y_values = ys
-                if nicp.core.is_cyclic_volta:
+                if tcp._technique().cyclic_voltammetry:
                     cv_state = {}
                     if extraParams:
                         try:
@@ -352,9 +481,9 @@ class TransformerModel:
                         ) or {}
                     if not cv_state:
                         cv_state = (
-                            nicp.core.params.get('cyclicvoltaSt')
-                            or nicp.core.params.get('cyclicvolta')
-                            or nicp.core.params.get('cyclic_volta')
+                            tcp.core.params.get('cyclicvoltaSt')
+                            or tcp.core.params.get('cyclicvolta')
+                            or tcp.core.params.get('cyclic_volta')
                         ) or {}
                     if isinstance(cv_state, str):
                         try:
@@ -390,7 +519,7 @@ class TransformerModel:
                     except Exception:
                         pass
                 marker = ''
-                if nicp.core.is_aif:
+                if tcp._technique().sorption_branches:
                     first_x, last_x = xs[0], xs[len(xs)-1]
                     if first_x <= last_x:
                         filename = 'ADSORPTION'
@@ -399,11 +528,13 @@ class TransformerModel:
                         filename = 'DESORPTION'
                         marker = 'v'
                 plt.plot(xs, y_values, label=filename, marker=marker)
+                plotted_any = True
+                inverted.append(bool(getattr(tcp.core, 'draw_y_inverted', False)))
 
                 # PLOT label
-                core_label_x = nicp.core.label['x']
-                core_label_y = nicp.core.label['y']
-                if nicp.core.is_cyclic_volta:
+                core_label_x = tcp.core.label['x']
+                core_label_y = tcp.core.label['y']
+                if tcp._technique().cyclic_voltammetry:
                     x_peaks, y_peaks = self.__get_cyclic_volta_ref_peaks(curve_idx, extraParams)
                     if y_peaks and y_values is not ys:
                         y_peaks = [y * scale for y in y_peaks]
@@ -426,6 +557,9 @@ class TransformerModel:
                     if (idx == len(self.multiple_files) - 1):
                         xlabel = ', '.join(xlabel_set)
                         ylabel = ', '.join(ylabel_set)
+                elif tcp._technique().x_axis == 'chemical_shift':
+                    xlabel = "Chemical shift ({})".format(core_label_x.lower())
+                    ylabel = "Intensity ({})".format(core_label_y.lower())
                 else:
                     xlabel = "X ({})".format(core_label_x)
                     ylabel = "Y ({})".format(core_label_y)
@@ -435,6 +569,11 @@ class TransformerModel:
         plt.xlabel(xlabel, fontsize=18)
         plt.ylabel(ylabel, fontsize=18)
         ax = plt.gca()
+        if flip_overlay_if_inverted(ax, inverted):
+            logger.info(
+                'overlay mixes inverted and upright spectra; drawing it '
+                'upright',
+            )
         if cv_mode:
             ymin, ymax = ax.get_ylim()
             cv_abs_max = max(abs(ymin), abs(ymax))
@@ -456,6 +595,14 @@ class TransformerModel:
                     fontsize=14,
                     clip_on=False
                 )
+        if not plotted_any:
+            # every file was unusable; an empty image would look like a
+            # successful overlay of nothing. Returning False lets the
+            # controller's `if not tf_combine: abort(400)` reject it.
+            logger.warning('no usable spectra to combine; rejecting the request')
+            plt.clf()
+            plt.cla()
+            return False
         plt.legend()
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')

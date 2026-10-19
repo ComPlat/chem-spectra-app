@@ -54,6 +54,10 @@ def chemspectra_predict_by_peaks_form():
         spectrum = FileContainer(request.files['spectrum'])
         if spectrum and layout == '13C':
             cv = TraModel(spectrum, molfile=molfile, params={'ext': 'jdx'}).to_converter()
+            if not cv:
+                # the upload could not be converted -- same rejection this
+                # endpoint already gives for missing peaks or molfile
+                abort(400)
             peaks = parse_array_to_dict_xys(cv.edit_peaks)
 
     if (not peaks) or (not molfile):

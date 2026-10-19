@@ -1,39 +1,79 @@
+import logging
 import os
 
-from flask import Flask
+from flask import Flask, jsonify
 
-import logging
+# Marks the handler this module installs, so a second create_app() replaces it
+# instead of stacking another one beside it. See _configure_logging.
+_OURS = '_chem_spectra_file_handler'
+
+# Joined to app.instance_path, not to the process working directory.
+# As a CWD-relative path this crashed the factory whenever the two
+# differed: os.makedirs(app.instance_path) created the right directory
+# and FileHandler then opened <cwd>/instance/logging.log, which need not
+# exist.
+DEFAULT_LOG_NAME = 'logging.log'
+
+
+def _configure_logging(app):
+    """Attach exactly one file handler, however often create_app() is called.
+
+    The logger is `logging.getLogger('chem_spectra')` -- which is the very
+    object Flask exposes as `app.logger`, since `app.name` is this package's
+    name. Every `chem_spectra.*` module logger propagates up to it, which is
+    why one handler here covers the whole package.
+
+    It is addressed by name rather than as `app.logger` on purpose: reading
+    that property runs Flask's `create_logger`, which installs its own stderr
+    handler when the logger has none yet. That would be a second sink nobody
+    asked for on this branch.
+
+    This used to call `addHandler` unconditionally, so a process that built
+    several apps -- the test suite builds one per fixture -- ended up with one
+    handler per call and wrote every record that many times over. Measured
+    before the fix: 3 handlers after 3 calls.
+    """
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    for stale in [h for h in logger.handlers if getattr(h, _OURS, False)]:
+        logger.removeHandler(stale)
+        stale.close()
+
+    log_file = (app.config.get('LOGS_FILE')
+                or os.path.join(app.instance_path, DEFAULT_LOG_NAME))
+    handler = logging.FileHandler(log_file)
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    setattr(handler, _OURS, True)
+    logger.addHandler(handler)
+
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY='dev',
         IP_WHITE_LIST=''
     )
-    
-    app.config.from_prefixed_env()
 
     if test_config is None:
+        # Deployment config first, environment second, so the environment can
+        # override it. The production image bakes instance/config.py in at
+        # build time (Dockerfile.p2d ADDs it from the payload server), so the
+        # environment is the only per-deployment knob there is -- and with the
+        # order reversed, as it was, a baked value could not be overridden at
+        # all. Measured: with both set, the file won.
         app.config.from_pyfile('config.py', silent=True)
+        app.config.from_prefixed_env()
     else:
+        # An explicit test configuration wins outright, and the environment is
+        # deliberately not consulted: a stray FLASK_* variable in a developer's
+        # shell should not change what the suite tests.
         app.config.from_mapping(test_config)
 
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
-    
-    #create logging
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-    log_file = app.config.get('LOGS_FILE')
-    if not log_file:
-        log_file = './instance/logging.log'
-    ch = logging.FileHandler(log_file)
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    os.makedirs(app.instance_path, exist_ok=True)
+
+    _configure_logging(app)
 
     # ping api
     @app.route('/ping')
@@ -55,5 +95,40 @@ def create_app(test_config=None):
     # spectra layout api
     from chem_spectra.controller.spectra_layout_api import spectra_layout_api
     app.register_blueprint(spectra_layout_api)
+
+    # A conversion the client asked for that this data cannot support is a bad
+    # request, not a server fault, and the reason is worth returning -- the
+    # alternative is silently producing a ruined spectrum.
+    from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
+
+    @app.errorhandler(UnconvertibleSpectrum)
+    def _unconvertible_spectrum(err):
+        return jsonify(error=str(err)), 422
+
+    # Same shape, so the ELN can show the reason. `Jcamp::Create.spectrum`
+    # reaches "Chemspectra response missing metadata header" whenever the body
+    # is not JSON, which is what an unhandled exception here used to produce.
+    # The status comes off the exception: 422 when the upload cannot be
+    # processed, 502 when the converter is the thing that is unavailable.
+    from chem_spectra.lib.converter.ms import MSConversionFailed
+
+    @app.errorhandler(MSConversionFailed)
+    def _ms_conversion_failed(err):
+        return jsonify(error=str(err)), getattr(err, 'status', 422)
+
+    # Every image is drawn on pyplot's module-global figure, and a worker
+    # serves one request after another with the same one. A request that
+    # stops partway -- a refusal raised after some curves were already
+    # plotted, or any exception -- used to leave them there, and the next
+    # image this worker rendered, for somebody else's spectrum, carried them.
+    # Closed after every request, whichever way it ended. pyplot is not
+    # imported here if nothing has imported it yet: importing it first would
+    # fix the backend before the composers choose Agg.
+    @app.teardown_request
+    def _close_figures(_exc):
+        import sys
+        pyplot = sys.modules.get('matplotlib.pyplot')
+        if pyplot is not None:
+            pyplot.close('all')
 
     return app

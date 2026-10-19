@@ -1,6 +1,6 @@
 services:
   msconvert:
-    image: ptrxyz/chemotion:msconvert-2.0.1
+    image: ptrxyz/chemotion:msconvert-3.1.2
     restart: unless-stopped
     hostname: msconvert
     volumes:

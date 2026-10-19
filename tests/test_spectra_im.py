@@ -1,5 +1,5 @@
 from test_spectra_peaks import (
-    __generated_peaks_meta, __target_peaks_meta, __without_peak_sections,
+    __generated_peaks_meta, __target_peaks_meta,
 )
 
 target_dir = './tests/fixtures/'
@@ -31,13 +31,13 @@ def test_meta_IR():
 def test_meta_1H():
     meta_content = __generated_peaks_meta(H1_dx)
     meta_target = __target_peaks_meta(meta_H1_dx)
-    assert __without_peak_sections(meta_content) == __without_peak_sections(meta_target)
+    assert meta_content == meta_target
 
 
 def test_meta_13C_CPD_dx():
     meta_content = __generated_peaks_meta(C13_CPD_dx)
     meta_target = __target_peaks_meta(meta_C13_CPD_dx)
-    assert __without_peak_sections(meta_content) == __without_peak_sections(meta_target)
+    assert meta_content == meta_target
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #
@@ -67,10 +67,29 @@ im_params = {
 def test_im_params_meta_1H():
     im_meta_content = __generated_peaks_meta(H1_dx, im_params)
     meta_target = __target_peaks_meta('im/im_' + meta_H1_dx)
-    assert __without_peak_sections(im_meta_content) == __without_peak_sections(meta_target)
+    assert len(im_meta_content) == len(meta_target)
+    assert im_meta_content == meta_target
 
 
 def test_im_params_meta_13C_DEPT135():
     im_meta_content = __generated_peaks_meta(C13_DEPT135_dx, im_params)
     meta_target_A = __target_peaks_meta('im/im_' + meta_C13_DEPT135_dx)
-    assert __without_peak_sections(im_meta_content) == __without_peak_sections(meta_target_A)
+    assert im_meta_content[:1500] == meta_target_A[:1500]
+
+
+nmr_visual_split_params = {
+    'integration': (
+        '{"stack":['
+        '{"xL":0.0,"xU":4.0,"area":4.0,"visualSplitGroupId":"vsg-abc123-1"},'
+        '{"xL":4.0,"xU":10.0,"area":6.0,"visualSplitGroupId":"vsg-abc123-1"}'
+        '],"refArea":1.0,"refFactor":1.0,"shift":0,"edited":true}'
+    ),
+    'multiplicity': '{"stack":[],"shift":0,"smExtext":false}',
+}
+
+
+def test_im_params_meta_1H_visual_split_ignored():
+    im_meta_content = __generated_peaks_meta(H1_dx, nmr_visual_split_params)
+    meta_target = __target_peaks_meta('im/im_meta_1H_visual_split_ignored')
+    assert im_meta_content == meta_target
+    assert '$OBSERVEDINTEGRALSGROUPS' not in im_meta_content

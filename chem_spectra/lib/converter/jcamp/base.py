@@ -1,58 +1,270 @@
-import nmrglue as ng
 import json
+import logging
+import re
 
-from chem_spectra.lib.converter.share import parse_params, parse_solvent
+from chem_spectra.lib.converter.share import (
+    UnconvertibleSpectrum, parse_params, parse_solvent,
+)
+from chem_spectra.lib.converter.jcamp.techniques import technique_for
+from chem_spectra.lib.converter.jcamp.reader import read_jcamp
 import os
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
+logger = logging.getLogger(__name__)
+
+# Techniques with their own converter and composer, which never reach
+# JcampTechniqueConverter and so cannot answer a `transmittance` request.
+NON_ABSORBING_TYPES = ('MS', 'LC/MS')
+
+# Enough to reach the records; a JCAMP header is a few hundred bytes and the
+# rest of the file is numbers. The same window chemotion_ELN reads.
+HEADER_BYTES = 64 * 1024
+
+# JCAMP-DX 4.24 (5.1): a label is compared with spaces, dashes, underscores
+# and slashes removed, and without regard to case. Anywhere in the label, not
+# only between its words -- so `##N-UM D/IM=` is `##NUMDIM=`. Normalising the
+# whole label is both closer to the spec and simpler than matching each
+# spelling.
+LABEL_NOISE_RE = re.compile(r'[\s_/-]')
+
+# `nD` is the JCAMP-DX 6 spelling; some vendors write the number instead.
+ND_VALUE_RE = re.compile(r'^\s*([2-9]|n)\s*D\s+NMR', re.IGNORECASE)
+
+
+def header_records(header_text):
+    """Every `##LABEL= value` in the text, label normalised, in file order."""
+    for line in header_text.split('\n'):
+        if not line.startswith('##'):
+            continue
+        label, sep, value = line[2:].partition('=')
+        if not sep:
+            continue
+        yield LABEL_NOISE_RE.sub('', label).upper(), value.strip()
+
+
+def declared_dimensions(header_text):
+    """How many dimensions the header declares, or None if it does not say.
+
+    Read from the text rather than from nmrglue's result. Not because nmrglue
+    drops the records -- it keeps them on a small file -- but because a real
+    2D dataset is large and need not parse at all, and there is no reason to
+    spend that read on a file that will be refused either way.
+
+    An explicit `##NUM DIM=` decides. Failing that, the datatype is read: it
+    says `nD` or `2D` without always saying which n, so two is the least it
+    can mean.
+    """
+    from_datatype = None
+    for label, value in header_records(header_text):
+        if label == 'NUMDIM':
+            try:
+                return int(value.split()[0])
+            except (ValueError, IndexError):
+                continue
+        if label == 'DATATYPE' and from_datatype is None:
+            match = ND_VALUE_RE.match(value)
+            if match:
+                head = match.group(1)
+                from_datatype = 2 if head.lower() == 'n' else int(head)
+    return from_datatype
+
+
+def declares_nmr(header_text):
+    """Whether the header says this is NMR at all.
+
+    Only used to word the refusal -- an NMR file can be opened in NMRium,
+    anything else cannot. The refusal itself does not depend on it: no
+    technique here can hold a second dimension.
+    """
+    for label, value in header_records(header_text):
+        if label == 'DATATYPE' and 'NMR' in value.upper():
+            return True
+        if label in ('.OBSERVENUCLEUS', 'OBSERVENUCLEUS'):
+            return True
+    return False
+
+
+def read_header(path):
+    """The first HEADER_BYTES of the file, as text.
+
+    latin-1 because it maps every byte and so cannot raise: this runs before
+    anything has established the file is even a JCAMP.
+    """
+    try:
+        with open(path, 'rb') as handle:
+            raw = handle.read(HEADER_BYTES).decode('latin-1')
+    except (OSError, TypeError, ValueError):
+        return ''
+    return header_from_text(raw)
+
+
+def header_from_text(raw):
+    """The same normalisation, for callers that already hold the text.
+
+    Line endings are normalised by hand rather than with `str.splitlines()`,
+    which also breaks on `\x85` and other latin-1 control characters: a byte
+    that is data to one instrument would silently become a line break here,
+    and a record could be split in half. A CR-only file -- classic Mac, and
+    some instrument exports -- would otherwise arrive as one long line, and
+    every record after the first would be invisible.
+    """
+    return raw.replace('\r\n', '\n').replace('\r', '\n')
+
+
+def refuse_if_multi_dimensional(header, what=None):
+    """Raise unless `header` describes one dimension, or says nothing.
+
+    Module level so a caller that already holds the text, or that must decide
+    before it starts drawing, can ask the same question the converter asks.
+    `what` names the file when the answer is about one member of an upload
+    rather than about the upload itself.
+    """
+    dimensions = declared_dimensions(header)
+    if dimensions is None or dimensions <= 1:
+        return
+    where = '{}: '.format(what) if what else ''
+    if declares_nmr(header):
+        raise UnconvertibleSpectrum(
+            where + 'this is a {}D NMR file. ChemSpectra reads '
+            'one-dimensional spectra only; open it in NMRium '
+            'instead'.format(dimensions)
+        )
+    raise UnconvertibleSpectrum(
+        where + 'this file declares {} dimensions. ChemSpectra reads '
+        'one-dimensional spectra only'.format(dimensions)
+    )
+
 class JcampBaseConverter:
     def __init__(self, path, params=False):
         self.params = parse_params(params)
-        self.dic, self.data = self.__read(path)
-        self.datatypes = self.dic['DATATYPE']
-        self.datatypes = [datatype.upper() for datatype in self.datatypes]
+        # Before the file is read at all: the guard works on the header as
+        # text, and a real multi-dimensional dataset is large enough that
+        # parsing it to refuse it is wasted.
+        self.__refuse_multi_dimensional(path)
+        self.jcamp = read_jcamp(path)
+        # Flat only for the original-metadata dump, which is specified to write
+        # every LDR in the file back out. Nothing that makes a decision should
+        # read this -- decisions name a block.
+        self.dic = self.jcamp.flat_ldrs()
+        # A file with no ##DATA TYPE= at all raised KeyError straight out of
+        # the request. An absent header is no more exceptional than an
+        # unrecognised one, so it takes the same path.
+        self.datatypes = [b.datatype for b in self.jcamp if b.datatype]
+        self.target = self.__select_target()
+        self.data = self.target.data if self.target else None
         self.datatype = self.__set_datatype()
-        self.dataclasses = {}
-        if 'DATACLASS' in self.dic:
-            self.dataclasses = self.dic['DATACLASS']
         self.dataclass = self.__set_dataclass()
         self.data_format = self.__set_dataformat()
         self.title = self.dic.get('TITLE', [''])[0]
         self.typ = self.__typ()
         self.fname = self.params.get('fname')
-        self.is_em_wave = self.__is_em_wave()
-        self.is_ir = self.__is_ir()
-        self.is_tga = self.__is_tga()
-        self.is_gc = self.__is_gc()
-        self.is_uv_vis = self.__is_uv_vis()
-        self.is_hplc_uv_vis = self.__is_hplc_uv_vis()
-        self.is_xrd = self.__is_xrd()
-        self.is_cyclic_volta = self.__is_cyclic_volta()
-        self.is_sec = self.__is_sec()
-        self.is_cds = self.__is_cds()
-        self.is_aif = self.__is_aif()
-        self.is_emissions = self.__is_emissions()
-        self.is_dls_acf = self.__is_dls_acf()
-        self.is_dls_intensity = self.__is_dls_intensity()
-        self.is_dsc = self.__is_dsc()
-        self.non_nmr = self.__non_nmr()
+        self.__refuse_transmittance_where_it_cannot_run()
+        if not self.typ:
+            # a caller-supplied data_type_mapping REPLACES the built-in one,
+            # so pointing at data_type.json would be useless advice there
+            source = ('the data_type_mapping supplied with this request'
+                      if self.params.get('user_data_type_mapping')
+                      else 'data_type.json')
+            logger.warning(
+                'unrecognised ##DATA TYPE= %s in %r; processing it as a '
+                'generic curve. Add it to %s if this app should handle it '
+                'as a known technique.',
+                self.datatypes, self.fname, source,
+            )
+        self.technique = technique_for(self.typ)
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
         self.solv_peaks = []
-        self.is_dept = self.__is_dept()
         self.__read_solvent()
         self.__read_user_data_type_mapping()
 
-    def __read(self, path):
-        return ng.jcampdx.read(path, show_all_data=True, read_err='ignore')
+    def __select_target(self):
+        """The block holding the primary measurement.
+
+        #291's rule -- the first RECOGNISED datatype in the file's own order --
+        applied to blocks instead of to a merged list. Only primary datatypes
+        belong in data_type.json; auxiliary blocks that sit alongside a primary
+        one (NMR FID, the peak tables, INFRARED INTERFEROGRAM) are deliberately
+        absent from it, so this skips them.
+        `test_auxiliary_blocks_stay_unmapped` enforces that.
+
+        Nothing recognised falls back to the first block with data, then to the
+        first block, so an unrecognised file still renders as a generic curve.
+        """
+        if not len(self.jcamp):
+            return None
+        recognised = {
+            value.upper()
+            for values in self.__data_type_mappings().values()
+            for value in values
+        }
+        target = self.jcamp.first_matching(lambda b: b.datatype in recognised)
+        if target is not None:
+            return target
+        # Nothing recognised. Fall back to the first block that at least
+        # claims to be a measurement -- never a peak table or an
+        # interferogram.
+        #
+        # If there is no such block the answer is None, not "the first block
+        # anyway": a composed peak-table-only output has nothing to draw, and
+        # reading its edit-peak table as though it were the spectrum would turn
+        # a file this app refuses cleanly into a plausible-looking wrong chart.
+        return self.jcamp.first_matching(
+            lambda b: b.data is not None
+            and not self._is_auxiliary_datatype(b.datatype))
+
+    def __refuse_transmittance_where_it_cannot_run(self):
+        """`transmittance` is an instruction, so it is honoured or refused.
+
+        Every technique that reaches JcampTechniqueConverter answers it, with
+        a conversion or with a reason. Mass spectrometry and LC/MS have their
+        own converters and composers and never reach that code, so the
+        instruction was dropped on the floor and the file came back 200,
+        unconverted, indistinguishable from a conversion that had happened.
+        Both are listed: an `LC/MS` or `TOTAL ION CHROMATOGRAM` file goes to
+        build_lcms_composer on its own, without an archive around it.
+        """
+        if (not self.params.get('transmittance')
+                or self.typ not in NON_ABSORBING_TYPES):
+            return
+        raise UnconvertibleSpectrum(
+            'a transmittance conversion is not meaningful here: {} does not '
+            'measure absorption through a sample, and the file declares no '
+            'absorbance unit'.format(self.typ)
+        )
     
+    @staticmethod
+    def __refuse_multi_dimensional(path):
+        """A 2D dataset is not a curve, and this app has nowhere to put one.
+
+        Read one row of it and you get a 1D spectrum with the acquisition
+        time axis labelled as the spectrum's -- which is what happened, with
+        a 200 and no indication that the answer meant nothing. Refusing is
+        the whole fix: `xs`/`ys` cannot hold a matrix, so detecting and
+        continuing would only move the failure.
+
+        Checked before the file is parsed, in the one place every endpoint
+        goes through, so /convert, /zip_jcamp, the save and refresh paths and
+        each BagIt member are all covered by this single guard. A BagIt
+        archive carrying one such member is refused whole, as an archive
+        holding two bagits is -- processing part of an upload silently is the
+        defect, not the remedy.
+        """
+        refuse_if_multi_dimensional(read_header(path))
+
     def __read_user_data_type_mapping(self):
         user_dt_mapping = self.params.get('user_data_type_mapping')
         if user_dt_mapping == '' or user_dt_mapping is None:
             return ''
         else:
             return json.loads(user_dt_mapping)['datatypes']
+
+    def __data_type_mappings(self):
+        if self.params.get('user_data_type_mapping'):
+            return self.__read_user_data_type_mapping()
+        with open(data_type_json, 'r') as mapping_file:
+            return json.load(mapping_file)['datatypes']
 
     def __set_datatype(self):
         dts = self.datatypes
@@ -65,105 +277,107 @@ class JcampBaseConverter:
             'UVVIS': 'UV/VIS SPECTRUM',
         }
 
-        if self.params.get('user_data_type_mapping'):
-            data_type_mappings = self.__read_user_data_type_mapping()
-        else:
-            with open(data_type_json, 'r') as mapping_file:
-                data_type_mappings = json.load(mapping_file)["datatypes"]
+        data_type_mappings = self.__data_type_mappings()
 
-        for key, values in data_type_mappings.items():
-            values = [value.upper() for value in values]
-            for dt in dts:
-                if dt in values and key in dt_dict:
-                    return dt_dict[key]
-                elif dt in values and not key in dt_dict:
-                    return key
+        # The file's own block order decides, not the order data_type.json
+        # happens to list its keys in. The first recognised ##DATA TYPE= is
+        # the primary measurement; auxiliary blocks (NMR FID, peak tables)
+        # are deliberately absent from the mapping so they are skipped here.
+        for dt in dts:
+            for key, values in data_type_mappings.items():
+                if dt in [value.upper() for value in values]:
+                    return dt_dict.get(key, key)
+        # Nothing matched. Keep the file's own ##DATA TYPE= rather than
+        # returning '', because the composer writes this value straight back
+        # out (composer/technique.py) and 'DATATYPE' is suppressed from the
+        # original-metadata dump (composer/base.py) -- so '' erased the only
+        # record of what the file said it was. The spectrum still renders as a
+        # generic curve either way; what is lost is the ability to reclassify
+        # it later, which is exactly what happens when an under-specified
+        # technique is added to data_type.json after the fact.
+        return self.__unrecognised_datatype()
+
+    # Blocks that JCAMP uses structurally, or that carry a derived table
+    # rather than a measurement. None of them names the technique.
+    #
+    # Compared with spaces removed, because the same block is spelled both
+    # ways in the wild: this app composes `NMRPEAKTABLE`, while
+    # chemotion-converter-app emits `NMR PEAK TABLE`. The suffix rules cover
+    # every per-technique variant of those two -- `INFRARED PEAK TABLE`,
+    # `NMP PEAK ASSIGNMENTS` (its misspelling) and so on.
+    #
+    # `tests/lib/converter/jcamp/test_jcamp_datatype_classification.py
+    # ::test_auxiliary_blocks_stay_unmapped` holds the authoritative list of
+    # spellings, and pins that none of them is in data_type.json.
+    AUXILIARY_DATATYPES = ('LINK', 'NMRFID', 'INFRAREDINTERFEROGRAM')
+    AUXILIARY_SUFFIXES = ('PEAKTABLE', 'PEAKASSIGNMENTS')
+
+    @classmethod
+    def _is_auxiliary_datatype(cls, datatype):
+        squashed = datatype.replace(' ', '')
+        return (squashed in cls.AUXILIARY_DATATYPES
+                or squashed.endswith(cls.AUXILIARY_SUFFIXES))
+
+    def __unrecognised_datatype(self):
+        for dt in self.datatypes:
+            if self._is_auxiliary_datatype(dt):
+                continue
+            return dt
         return ''
 
     def __typ(self):
-        dt = self.datatype
+        return self.typ_of(self.datatype)
 
-        if self.params.get('user_data_type_mapping'):
-            data_type_mappings = self.__read_user_data_type_mapping()
-        else:
-            with open(data_type_json, 'r') as mapping_file:
-                data_type_mappings = json.load(mapping_file)["datatypes"]
+    def typ_of(self, datatype):
+        """The technique key `datatype` maps to, or '' if none does.
 
-        for key, values in data_type_mappings.items():
-            values = [value.upper() for value in values]
-            if dt.upper() in values:
+        By the mapping this file is read with -- the request's own, when it
+        sends one, since that replaces the built-in mapping. Public because a
+        file can hold several blocks of one technique under different
+        spellings, and whatever gathers them has to ask the same question
+        the file's own `typ` was answered by.
+        """
+        if not datatype:
+            return ''
+        for key, values in self.__data_type_mappings().items():
+            if datatype.upper() in (value.upper() for value in values):
                 return key
         return ''
 
+    # `non_nmr` is the one predicate that survives, and not as a shim.
+    # JcampMSConverter copies it (converter/jcamp/ms.py) and carries no
+    # descriptor, so BaseComposer._technique() reaches it through
+    # `getattr(self.core, 'non_nmr', True)` -- that fallback is the MS path's
+    # only route to a descriptor. It goes when MS is folded in as a
+    # technique; see DEFERRED.md item 1. The other fifteen predicates are
+    # gone: every decision they carried is a field on the descriptor.
+    @property
+    def non_nmr(self):
+        return self.technique.key != 'NMR'
+
     def __set_dataclass(self):
-        data_class = self.dataclasses
-        if 'XYPOINTS' in data_class:
-            return 'XYPOINTS'
-        elif 'XYDATA' in data_class:
-            return 'XYDATA_OLD'
-        return ''
+        """The target block's own ##DATA CLASS=.
+
+        This used to scan every block's dataclass and answer `XYDATA_OLD` for
+        any file containing an XYDATA block -- a key that existed only on the
+        old pin, holding the raw table text the app re-parsed itself. nmrglue
+        now parses those tables, so the name has nothing behind it.
+        """
+        return self.target.dataclass if self.target else ''
 
     def __set_dataformat(self):
-        try:
-            return self.dic[self.dataclass][0].split('\n')[0]
-        except: # noqa
-            pass
+        """The format line of the block's own data LDR, e.g. `(XY..XY)`.
+
+        Read from the block rather than from the merged dict, so a file whose
+        blocks differ in format no longer answers with whichever one the merge
+        happened to put first.
+        """
+        if self.target:
+            for key in ('XYPOINTS', 'XYDATA', 'PEAKTABLE', 'DATATABLE'):
+                value = self.target.ldr(key)
+                if value:
+                    return value.split('\n')[0].strip()
         return '(X++(Y..Y))'
-
-    def __is_em_wave(self):
-        return self.typ in ['INFRARED', 'RAMAN', 'UVVIS']
-
-    def __non_nmr(self):
-        if self.params.get('user_data_type_mapping'):
-            data_type_mappings = self.__read_user_data_type_mapping()
-        else:
-            with open(data_type_json, 'r') as mapping_file:
-                data_type_mappings = json.load(mapping_file).get("datatypes")
-
-        dts = [dt for dt in data_type_mappings.keys() if dt != 'NMR']
-        return self.typ in dts
-
-    def __is_ir(self):
-        return self.typ in ['INFRARED']
-
-    def __is_tga(self):
-        return self.typ in ['THERMOGRAVIMETRIC ANALYSIS']
-
-    def __is_gc(self):
-        return self.typ in ['GAS CHROMATOGRAPHY']
-
-    def __is_uv_vis(self):
-        return self.typ in ['UVVIS']
-
-    def __is_hplc_uv_vis(self):
-        return self.typ in ['HPLC UVVIS']
-
-    def __is_xrd(self):
-        return self.typ in ['X-RAY DIFFRACTION']
-
-    def __is_cyclic_volta(self):
-        return self.typ in ['CYCLIC VOLTAMMETRY']
-
-    def __is_sec(self):
-        return self.typ in ['SIZE EXCLUSION CHROMATOGRAPHY']
-    
-    def __is_cds(self):
-        return self.typ in ['CIRCULAR DICHROISM SPECTROSCOPY']
-
-    def __is_aif(self):
-        return self.typ in ['SORPTION-DESORPTION MEASUREMENT']
-        
-    def __is_emissions(self):
-        return self.typ in ['Emissions']
-    
-    def __is_dls_acf(self):
-        return self.typ in ['DLS ACF']
-
-    def __is_dls_intensity(self):
-        return self.typ in ['DLS intensity']
-    
-    def __is_dsc(self):
-        return self.typ in ['DIFFERENTIAL SCANNING CALORIMETRY']
 
     def __ncl(self):
         try:
@@ -194,12 +408,3 @@ class JcampBaseConverter:
     def __read_solvent(self):
         parse_solvent(self)
 
-    def __is_dept(self):
-        if not self.ncl == '13C':
-            return False
-
-        for p in (self.dic.get('.PULSESEQUENCE', []) + self.dic.get('.PULSE SEQUENCE', [])):
-            if 'dept' in p:
-                return True
-
-        return False

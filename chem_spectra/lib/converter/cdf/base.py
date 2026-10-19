@@ -1,6 +1,7 @@
 import netCDF4
 
 from chem_spectra.lib.converter.share import parse_params
+from chem_spectra.lib.converter.jcamp.reader import block_from_headers
 
 
 class CdfBaseConverter:
@@ -9,6 +10,8 @@ class CdfBaseConverter:
         self.dic, self.data = self.__read(path)
         self.datatypes = ['MASS SPECTRUM']
         self.datatype = 'MASS SPECTRUM'
+        # Not a JCAMP file: this core's own header dict is its only block.
+        self.target = block_from_headers(self.dic)
         self.dataclass = None
         self.data_format = None
         self.title = self.dic.get('TITLE', [''])[0]

@@ -1,0 +1,46 @@
+flowchart LR
+  Request["MS prediction request\nspectrum and molfile"]
+
+  subgraph controller [Controller]
+    Controller["inference_api.py\nMS route"]
+    Spectrum["FileContainer\nspectrum upload"]
+  end
+
+  subgraph model [Model]
+    Molecule["MoleculeModel\nmolfile parsing"]
+    Transformer["TransformerModel.to_composer()\nparams ext jdx"]
+    Inferencer["InferencerModel.predict_ms()"]
+  end
+
+  subgraph lib [Lib]
+    MSComposer["MSComposer\nmass spectrum composer"]
+    Peaks["MSComposer.prism_peaks()\nxs ys scan threshold"]
+  end
+
+  Response["JSON response\nMS peak output"]
+  Error["abort(400) or error outline"]
+
+  Request --> Controller
+  Controller --> Spectrum
+  Controller --> Molecule
+  Spectrum --> Transformer
+  Transformer --> MSComposer
+  Controller --> Inferencer
+  MSComposer --> Inferencer
+  Inferencer --> Peaks
+  Peaks --> Response
+  Inferencer --> Error
+
+  classDef request fill:#eef5ff,stroke:#4c78a8,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef lib fill:#f2efff,stroke:#8f63c6,stroke-width:1px
+  classDef output fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+  classDef error fill:#fdecea,stroke:#e15759,stroke-width:1px
+
+  class Request request
+  class Controller,Spectrum controller
+  class Molecule,Transformer,Inferencer model
+  class MSComposer,Peaks lib
+  class Response output
+  class Error error

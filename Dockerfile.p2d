@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS base
+FROM python:3.14-slim AS base
 
 # Install any additional OS packages you want in addition to sudo, git and nano
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=apt-cache \
@@ -11,6 +11,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked,id=apt-cache \
 ADD --chmod=755 https://payload.chemserv.scc.kit.edu/fake-docker.py /bin/docker
 ADD https://payload.chemserv.scc.kit.edu/spectra_config.py /app/instance/config.py
 
+# Pinned, not :latest -- the installer is part of what makes the build
+# reproducible, so it should not change under us between builds.
+COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /usr/local/bin/uv
+
 WORKDIR /app
 
 RUN mkdir -p /var/cache/pip
@@ -18,10 +22,19 @@ RUN mkdir -p /var/cache/pip
 ENV PIP_CACHE_DIR=/var/cache/pip \
     PIP_ROOT_USER_ACTION=ignore
 
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock ./
 
+# Installed from the lockfile, so the image gets the exact versions that were
+# tested rather than whatever the specs resolve to on build day. `uv export`
+# rather than `uv sync` on purpose: the app runs from /app as `server:app` and
+# installs no package of its own (py-modules = []), so there is no project to
+# put in a virtualenv -- only its dependencies, which belong in the image's own
+# site-packages where gunicorn's CMD below already finds them.
 RUN --mount=type=cache,target=/var/cache/pip,sharing=locked,id=pip-cache \
-    pip install --upgrade pip && pip install .
+    pip install --upgrade pip \
+    && uv export --frozen --no-dev --no-emit-project --format requirements.txt \
+         -o /tmp/requirements.txt \
+    && pip install --no-deps -r /tmp/requirements.txt
 
 COPY ./chem_spectra /app/chem_spectra
 COPY ./server.py /app/server.py

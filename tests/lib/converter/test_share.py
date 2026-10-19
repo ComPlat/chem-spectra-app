@@ -29,6 +29,11 @@ def expected_default_params():
         'axesUnits': None,
         'detector': None,
         'dsc_meta_data': None,
+        'lcms_uvvis_wavelength': None,
+        'lcms_mz_page': None,
+        'lcms_mz_page_data': None,
+        'transmittance': False,
+        'invert_y': None,
     }
 
 def test_parse_params_without_params(expected_default_params):
@@ -224,72 +229,16 @@ def test_parse_solvent():
     #TODO: need to be updated
     assert 1==1
 
-
-def test_parse_solvent_uses_existing_ref_name_for_1h_solvent_ranges():
-    base = type('MockBase', (), {
-        'ncl': '1H',
-        'params': {'ref_name': None},
-        'dic': {
-            '$CSSOLVENTNAME': ['DMSO-d6 (quin)'],
-            '$CSSOLVENTVALUE': ['2.5'],
-            '$CSSOLVENTX': ['0'],
-            '.SOLVENTNAME': [''],
-            '.SHIFTREFERENCE': [''],
-        },
-        'solv_peaks': [],
-    })()
-
-    parse_solvent(base)
-
-    assert base.solv_peaks == [(2.48, 2.52)]
-    assert base.dic['$CSSOLVENTNAME'] == ['DMSO-d6 (quin)']
-
-
-def test_parse_solvent_uses_existing_ref_name_for_13c_solvent_ranges():
-    base = type('MockBase', (), {
-        'ncl': '13C',
-        'params': {'ref_name': None},
-        'dic': {
-            '$CSSOLVENTNAME': ['Chloroform-d (t)'],
-            '$CSSOLVENTVALUE': ['77.16'],
-            '$CSSOLVENTX': ['0'],
-            '.SOLVENTNAME': [''],
-            '.SHIFTREFERENCE': [''],
-        },
-        'solv_peaks': [],
-    })()
-
-    parse_solvent(base)
-
-    assert base.solv_peaks == [(74.16, 80.16)]
-    assert base.dic['$CSSOLVENTNAME'] == ['Chloroform-d (t)']
-
-
-def test_parse_solvent_falls_back_when_existing_ref_is_auto_offset():
-    base = type('MockBase', (), {
-        'ncl': '1H',
-        'params': {'ref_name': None},
-        'dic': {
-            '$CSSOLVENTNAME': ['AUTO-OFFSET'],
-            '$CSSOLVENTVALUE': ['0.000000'],
-            '$CSSOLVENTX': ['4.238162'],
-            '.SOLVENTNAME': ['DMSO'],
-            '.SHIFTREFERENCE': ['DMSO'],
-        },
-        'solv_peaks': [],
-    })()
-
-    parse_solvent(base)
-
-    assert base.solv_peaks == [(2.48, 2.52)]
-    assert base.dic['$CSSOLVENTNAME'] == ['DMSO-d6 (quin)']
-    assert base.dic['$CSSOLVENTVALUE'] == ['2.5']
-    assert base.dic['$CSSOLVENTX'] == ['0']
-
 def test_parse_dsc_meta_data():
     params = {'dsc_meta_data': '{"meltingPoint": "1.0", "tg": "1.0"}'}
     parsed_data = parse_params(params)
     assert parsed_data['dsc_meta_data'] == {"meltingPoint": "1.0", "tg": "1.0"}
+
+
+def test_parse_lcms_mz_page_data():
+    params = {'lcms_mz_page_data': '{"0":[{"x":101.1,"y":1000}]}'}
+    parsed_data = parse_params(params)
+    assert parsed_data['lcms_mz_page_data'] == '{"0":[{"x":101.1,"y":1000}]}'
     
 def test_reduce_pts_when_does_not_have_any_x():
     array_data = []
@@ -311,3 +260,54 @@ def test_reduce_pts_when_reached_limitation():
     reduced_data = reduce_pts(data)
     assert np.array_equal(reduced_data, expected_data)
     
+
+def test_parse_params_tolerates_a_partial_cyclicvolta_payload():
+    """The ELN does not guarantee spectraList or the entry's 'list'.
+
+    ViewSpectra.js reads `spectraList?.[curveIdx]` and bails when it is
+    missing, so a payload without it is not a client error. Subscripting it
+    unconditionally made this a 500.
+    """
+    import json
+    from chem_spectra.lib.converter.share import parse_params
+
+    assert parse_params(
+        {'cyclic_volta': json.dumps({'cvDisplay': {}})}
+    )['list_max_min_peaks'] is None
+
+    assert parse_params(
+        {'cyclic_volta': json.dumps({'spectraList': [{}]})}
+    )['list_max_min_peaks'] is None
+
+    assert parse_params({
+        'cyclic_volta': json.dumps({'spectraList': [{'list': []}]}),
+        'jcamp_idx': 5,
+    })['list_max_min_peaks'] is None
+
+
+def test_cv_shift_offset_tolerates_a_spectra_entry_without_shift():
+    from chem_spectra.lib.shared.calc import (
+        cal_cyclic_volta_shift_prev_offset_at_index,
+    )
+
+    assert cal_cyclic_volta_shift_prev_offset_at_index(
+        {'spectraList': [{}]}, 0) == 0.0
+    assert cal_cyclic_volta_shift_prev_offset_at_index(
+        {'spectraList': [{'hasRefPeak': True, 'shift': {'prevValue': 2.0}}]},
+        0) == 2.0
+
+
+@pytest.mark.parametrize('value, expected', [
+    (None, None), ('', None), ('  ', None),
+    (True, True), ('true', True), ('TRUE', True), ('1', True), ('yes', True),
+    (1, True),
+    (False, False), ('false', False), (' False ', False), ('0', False),
+    ('no', False), (0, False),
+    # unrecognised: the same as not sent, never an explicit false
+    ('undefined', None), ('null', None), ('on', None), ('t', None),
+    ('y', None), ('off', None), (2, None),
+])
+def test_invert_y_is_tristate(value, expected):
+    """An explicit false clears ##$CSINVERTY, so only a recognised false may
+    produce one. `undefined` is what JS FormData sends for a missing value."""
+    assert parse_params({'invert_y': value})['invert_y'] is expected

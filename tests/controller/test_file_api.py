@@ -9,6 +9,9 @@ bagit_file = 'bagit/cv/File053_BagIt.zip'
 cv_file_jdx = 'cyclicvoltammetry/RCV_LSH-R444_full+Fc.jdx'
 
 def test_api_chemspectra_file_convert_without_file(client):
+    """Was a Flask HTML 400 from `request.files['file']` raising
+    BadRequestKeyError. Refusals now answer 422 with a JSON body, so the ELN
+    can surface the reason."""
     data = {}
     response = client.post(
         '/api/v1/chemspectra/file/convert',
@@ -16,7 +19,8 @@ def test_api_chemspectra_file_convert_without_file(client):
         data=data
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 422
+    assert response.get_json()['error']
 
 
 def test_api_chemspectra_file_convert(client):

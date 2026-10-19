@@ -1,0 +1,49 @@
+flowchart LR
+  Client["Client / Frontend"]
+
+  subgraph controllers [Controller Blueprints]
+    FileAPI["file_api\n/api/v1/chemspectra/file/*\nconvert, save, refresh\nmolfile/convert"]
+    TransformAPI["transform_api\n/zip_jcamp_n_img, /zip_jcamp, /zip_image\n/jcamp, /image, /nmrium, /combine_images"]
+    InferenceAPI["inference_api\nNMR peaks JSON/form\nIR prediction\nMS prediction"]
+    LayoutAPI["spectra_layout_api\n/api/v1/chemspectra/spectra_layouts"]
+  end
+
+  subgraph models [Model Layer]
+    Transformer["TransformerModel\nconversion and generated files"]
+    Inferencer["InferencerModel\nprediction workflows"]
+    Molecule["MoleculeModel\nmolfile metadata"]
+  end
+
+  subgraph outputs [Response Types]
+    JsonOut["JSON\nmetadata, base64, predictions"]
+    ZipOut["ZIP\nJCAMP, images, CSV, predictions"]
+    FileOut["Direct file\nJDX or PNG"]
+    LayoutOut["Layout JSON"]
+  end
+
+  Client --> FileAPI
+  Client --> TransformAPI
+  Client --> InferenceAPI
+  Client --> LayoutAPI
+
+  FileAPI --> Transformer
+  FileAPI --> Molecule
+  TransformAPI --> Transformer
+  InferenceAPI --> Inferencer
+  LayoutAPI --> LayoutOut
+
+  Transformer --> JsonOut
+  Transformer --> ZipOut
+  Transformer --> FileOut
+  Molecule --> JsonOut
+  Inferencer --> JsonOut
+
+  classDef client fill:#eef5ff,stroke:#4c78a8,stroke-width:1px
+  classDef controller fill:#eaf3ff,stroke:#4e79a7,stroke-width:1px
+  classDef model fill:#eef8f0,stroke:#59a14f,stroke-width:1px
+  classDef output fill:#f7f7f7,stroke:#79706e,stroke-width:1px
+
+  class Client client
+  class FileAPI,TransformAPI,InferenceAPI,LayoutAPI controller
+  class Transformer,Inferencer,Molecule model
+  class JsonOut,ZipOut,FileOut,LayoutOut output
