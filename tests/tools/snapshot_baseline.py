@@ -57,30 +57,36 @@ def _digest(value):
     return hashlib.sha1(repr(value).encode()).hexdigest()[:16]
 
 
-def _array(values):
+def _array(values, exact=True):
     """A sequence recorded so that a diff names what moved.
 
     The hash catches any change at all; first/last/len say where to look.
+    Without `exact`, the hash is left out -- see `_drive`.
     """
     if values is None:
         return None
     seq = list(values)
     if not seq:
         return {'len': 0}
-    return {
+    summary = {
         'len': len(seq),
         'first': round(float(seq[0]), 8),
         'last': round(float(seq[-1]), 8),
-        'sha1': hashlib.sha1(
-            b''.join(f'{float(v):.10g}'.encode() for v in seq)
-        ).hexdigest(),
     }
+    if exact:
+        summary['sha1'] = hashlib.sha1(
+            b''.join(f'{float(v):.10g}'.encode() for v in seq)
+        ).hexdigest()
+    return summary
 
 
-def _peaks(peaks):
+def _peaks(peaks, exact=True):
     if not peaks:
         return None
-    return {'n': len(peaks.get('x') or []), 'sha1': _digest(peaks)}
+    summary = {'n': len(peaks.get('x') or [])}
+    if exact:
+        summary['sha1'] = _digest(peaks)
+    return summary
 
 
 def _text(lines):
@@ -93,7 +99,7 @@ def _text(lines):
     return body
 
 
-def _observables(converter, composer):
+def _observables(converter, composer, exact=True):
     """The per-fixture record.
 
     `target` is how the chosen block is identified without an index: its
@@ -111,18 +117,18 @@ def _observables(converter, composer):
             'dataclass': getattr(converter, 'dataclass', None),
         },
         'xs': _array(xs),
-        'ys': _array(ys),
+        'ys': _array(ys, exact=exact),
         'factor': getattr(converter, 'factor', None),
         'boundary': getattr(converter, 'boundary', None),
         'label': getattr(converter, 'label', None),
-        'auto_peaks': _peaks(getattr(converter, 'auto_peaks', None)),
-        'edit_peaks': _peaks(getattr(converter, 'edit_peaks', None)),
+        'auto_peaks': _peaks(getattr(converter, 'auto_peaks', None), exact),
+        'edit_peaks': _peaks(getattr(converter, 'edit_peaks', None), exact),
         # Integrals live in two tables, not one attribute named for them.
         'itg_table': getattr(converter, 'itg_table', None),
         'mpy_itg_table': getattr(converter, 'mpy_itg_table', None),
     }
     record.update(_ms_observables(converter))
-    if composer is not None:
+    if composer is not None and exact:
         jcamp = _text(composer.tf_jcamp())
         record['jcamp'] = {
             'len': len(jcamp) if jcamp else 0,
@@ -199,11 +205,21 @@ def record(path):
             with open(MOLFILE, 'rb') as molhandle:
                 molfile = FileContainer(
                     FileStorage(molhandle, filename=MOLFILE.name))
-                return _drive(container, molfile, params)
-        return _drive(container, molfile, params)
+                return _drive(container, molfile, params, exact=False)
+        return _drive(container, molfile, params, exact=ext != 'zip')
 
 
-def _drive(container, molfile, params):
+def _drive(container, molfile, params, exact=True):
+    """`exact` is False for a Bruker FID, which is processed here rather than
+    read: it is phased by `autops`, an iterative optimiser whose path turns on
+    bit-level floating-point differences between builds and CPUs. Measured: CI's
+    Python 3.12 runner and this machine, with the same numpy and scipy, agree
+    on x, length, first and last y, y boundaries, factors and peak counts, and
+    disagree in the tenth significant digit of interior y values -- so in the
+    y hash, the peak hashes and the composed JCAMP's hash. Those are left out
+    for an FID; everything that agreed is kept. A JCAMP is read, not
+    optimised, and keeps every hash.
+    """
     model = TransformerModel(container, molfile=molfile, params=params)
     converter = model.to_converter()
     composer, _ = model.to_composer()
@@ -221,7 +237,7 @@ def _drive(container, molfile, params):
     # path, so read from it wherever there is one.
     subject = getattr(composer, 'core', None) if composer else None
     return _observables(subject if subject is not None else converter,
-                        composer or None)
+                        composer or None, exact=exact)
 
 
 def snapshot_path(path):
