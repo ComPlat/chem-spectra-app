@@ -69,15 +69,6 @@ def cal_slope(x1, y1, x2, y2):
         return 0
     return (y2-y1)/(x2-x1)
 
-def cal_xyIntegration(xs, ys):
-    if len(xs) != len(ys):
-        return 0
-    # REF: https://github.com/mljs/spectra-processing/blob/master/src/xy/xyIntegration.ts
-    integration = 0
-    for i in range(0, len(xs)-1):
-        integration += ((xs[i + 1] - ys[i]) * (xs[i + 1] + ys[i])) / 2
-    return integration
-
 def cal_area_multiplicity(xL, xU, data_xs, data_ys):
     y_max, y_min = np.max(data_ys), np.min(data_ys)
     h = y_max - y_min

@@ -30,7 +30,7 @@ class MoleculeModel:
             return False
         tf = store_str_in_tmp(self.moltxt, suffix='.mol')
         mol = Chem.MolFromMolFile(tf.name)
-        tf.close
+        tf.close()
 
         if self.decorate:
             mol = self.__decorate(mol)

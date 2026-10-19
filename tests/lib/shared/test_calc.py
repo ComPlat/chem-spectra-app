@@ -86,18 +86,6 @@ def test_cal_slope():
     slope = cal_slope(x1=1.0, x2=2.0, y1=1.0, y2=2.0)
     assert slope == 1.0
 
-def test_cal_xyIntegration_wrong_value():
-    xs = [1.0, 2.0, 3.0]
-    ys = [1.0, 2.0, 3.0, 4.0]
-    integration_value = cal_xyIntegration(xs=xs, ys=ys)
-    assert integration_value == 0
-
-def test_cal_xyIntegration():
-    xs = [1.0, 2.0, 3.0]
-    ys = [1.0, 2.0, 3.0]
-    integration_value = cal_xyIntegration(xs=xs, ys=ys)
-    assert integration_value == 4.0
-
 def test_cal_area_multiplicity():
     xL = 1.0
     xU = 2.0

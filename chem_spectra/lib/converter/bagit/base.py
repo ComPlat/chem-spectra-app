@@ -337,7 +337,7 @@ class BagItBaseConverter:
             # PLOT label
             if composer._technique().x_axis == 'xrd':
                 waveLength = composer.core.params['waveLength']
-                label = "X ({}), WL={} nm".format(composer.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
+                label = "X ({}), WL={} {}".format(composer.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
                 plt.xlabel((label), fontsize=18)
             elif (composer._technique().cyclic_voltammetry):
                 plt.xlabel("{}".format(composer.core.label['x']), fontsize=18)

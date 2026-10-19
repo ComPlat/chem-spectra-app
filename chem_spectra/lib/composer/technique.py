@@ -1,4 +1,5 @@
 from operator import truediv
+import json
 import matplotlib
 matplotlib.use('Agg')
 
@@ -16,7 +17,7 @@ from chem_spectra.lib.composer.base import (  # noqa: E402, F401
 )
 from chem_spectra.lib.composer.integration_utils import group_visual_splits  # noqa: E402
 from chem_spectra.lib.shared.calc import (  # noqa: E402
-    calc_mpy_center, calc_ks, get_curve_endpoint, cal_slope, cal_xyIntegration,
+    calc_mpy_center, calc_ks, get_curve_endpoint, cal_slope,
 )
 
 
@@ -755,7 +756,7 @@ class TechniqueComposer(BaseComposer):
         # PLOT label
         if self._technique().x_axis == 'xrd':
             waveLength = self.core.params['waveLength']
-            label = "X ({}), WL={} nm".format(self.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
+            label = "X ({}), WL={} {}".format(self.core.label['x'], waveLength['value'], waveLength['unit'])    # noqa: E501
             plt.xlabel((label), fontsize=18)
         else:
             plt.xlabel(self.__x_label(), fontsize=18)
