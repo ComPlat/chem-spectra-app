@@ -1,0 +1,50 @@
+{
+  "auto_peaks": {
+    "n": 0,
+    "sha1": "47ece0f6beac21aa"
+  },
+  "boundary": {
+    "x": {
+      "max": 3997.453,
+      "min": 373.96442
+    },
+    "y": {
+      "max": 1.0010615597035721,
+      "min": 0.9565154326592011
+    }
+  },
+  "edit_peaks": null,
+  "factor": {
+    "x": 1.0,
+    "y": 9.3231123e-10
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 28787,
+    "sha1": "07431375d90b6ecd00cd3bb666a12a214fba2e47"
+  },
+  "label": {
+    "x": "1/CM",
+    "y": "TRANSMITTANCE"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "",
+    "datatype": "INFRARED SPECTRUM"
+  },
+  "threshold": 0.93,
+  "title": "FDM-C175",
+  "typ": "INFRARED",
+  "xs": {
+    "first": 3997.453,
+    "last": 373.96442,
+    "len": 2559,
+    "sha1": "c91dad9fd890ad40e6386f3076201103eb2a084b"
+  },
+  "ys": {
+    "first": 0.99782741,
+    "last": 1.0,
+    "len": 2559,
+    "sha1": "8392d33b4549e89b6142fb64aa8e3ff2ec88cb43"
+  }
+}

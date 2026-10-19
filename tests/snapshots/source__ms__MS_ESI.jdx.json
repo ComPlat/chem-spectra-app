@@ -1,0 +1,45 @@
+{
+  "auto_peaks": null,
+  "boundary": null,
+  "edit_peaks": null,
+  "factor": null,
+  "itg_table": null,
+  "jcamp": {
+    "len": 77993,
+    "sha1": "379500d9c23cff6ea87d523656db3a75a59d977e"
+  },
+  "label": null,
+  "mpy_itg_table": null,
+  "ms": {
+    "auto_scan": 1,
+    "exact_mz": 0,
+    "n_datatables": 1,
+    "n_spectra": 1,
+    "runs": [
+      {
+        "intensity": {
+          "first": 25.0,
+          "last": 31.0,
+          "len": 3321,
+          "sha1": "174018ef30cdfeaaac527ed7adb710f3396795a1"
+        },
+        "mz": {
+          "first": 45.0474084,
+          "last": 3001.70906894,
+          "len": 3321,
+          "sha1": "d7f6386509e473feae33ac08ba9e67abb18c8612"
+        }
+      }
+    ],
+    "thres": 5.0
+  },
+  "target": {
+    "dataclass": null,
+    "datatype": "MASS SPECTRUM"
+  },
+  "threshold": null,
+  "title": "",
+  "typ": "MS",
+  "xs": null,
+  "ys": null
+}

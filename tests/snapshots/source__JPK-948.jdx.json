@@ -1,0 +1,50 @@
+{
+  "auto_peaks": {
+    "n": 55,
+    "sha1": "a4edbb7c759a1ec2"
+  },
+  "boundary": {
+    "x": {
+      "max": 800.563354492188,
+      "min": 250.186126708984
+    },
+    "y": {
+      "max": 6167.85230786118,
+      "min": 13.1235126174812
+    }
+  },
+  "edit_peaks": null,
+  "factor": {
+    "x": 1.0,
+    "y": 1.0
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 83473,
+    "sha1": "5a8f47e93364c26d11c98c5748db361810c59cbd"
+  },
+  "label": {
+    "x": "NANOMETERS",
+    "y": "ABSORBANCE"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "XYPOINTS",
+    "datatype": "UV/VIS SPECTRUM"
+  },
+  "threshold": 0.05,
+  "title": "Spectrum",
+  "typ": "UVVIS",
+  "xs": {
+    "first": 250.18612671,
+    "last": 800.56335449,
+    "len": 1152,
+    "sha1": "96ab4e28907fdb7115a8ee5f0bf2d6d000f70b02"
+  },
+  "ys": {
+    "first": 484.34086875,
+    "last": 21.3815912,
+    "len": 1152,
+    "sha1": "94a1c6e005f5fc63dbc119cd71d66a42046f214e"
+  }
+}

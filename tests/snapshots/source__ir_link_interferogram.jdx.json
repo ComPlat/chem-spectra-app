@@ -1,0 +1,50 @@
+{
+  "auto_peaks": {
+    "n": 1,
+    "sha1": "4561fefb781743b3"
+  },
+  "boundary": {
+    "x": {
+      "max": 790.0,
+      "min": 400.0
+    },
+    "y": {
+      "max": 1.8,
+      "min": 0.1
+    }
+  },
+  "edit_peaks": null,
+  "factor": {
+    "x": 1.0,
+    "y": 1.0
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 2469,
+    "sha1": "d1a6c83b6fbdec1738dd214e12e705268c373ca3"
+  },
+  "label": {
+    "x": "1/CM",
+    "y": "ABSORBANCE"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "XYPOINTS",
+    "datatype": "INFRARED SPECTRUM"
+  },
+  "threshold": 0.93,
+  "title": "IR spectrum with interferogram",
+  "typ": "INFRARED",
+  "xs": {
+    "first": 400.0,
+    "last": 790.0,
+    "len": 40,
+    "sha1": "c2f52ee5f1dbde8acd0658f2f8b62bea2a20b468"
+  },
+  "ys": {
+    "first": 0.1,
+    "last": 0.1,
+    "len": 40,
+    "sha1": "678d1a06e1ef2c1db00e528b19d5a44673a7ae62"
+  }
+}
