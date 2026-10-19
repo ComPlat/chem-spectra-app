@@ -25,8 +25,8 @@ just msconvert-stop
 ```
 
 Locally the app runs `docker exec … msconvert_docker wine msconvert …` for real.
-The recipe pins the ProteoWizard build CI uses: `latest` reports success
-without writing the mzML.
+Run the ProteoWizard build CI tests against: the version is pinned in
+`.github/workflows/unit_test.yml`.
 
 ### 2.2. `instance/config.py` (optional)
 
