@@ -6,9 +6,12 @@ from os.path import basename
 import collections.abc
 
 from chem_spectra.controller.helper.lcms import extract_lcms_params, LCMS_PARAM_KEYS
+from chem_spectra.lib.converter.share import JCAMP_EXTENSIONS
 
 
-ALLOWED_EXTENSIONS = set(['dx', 'jdx', 'raw', 'mzml', 'mzxml', 'jcamp'])
+ALLOWED_EXTENSIONS = (
+    {ext.lstrip('.') for ext in JCAMP_EXTENSIONS} | {'raw', 'mzml', 'mzxml'}
+)
 
 
 def allowed_file(file):
