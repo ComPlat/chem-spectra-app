@@ -27,15 +27,14 @@ pip install .
 ### 1.3. Use docker to run a supporting service
 
 ```sh
-# pinned: the build CI tests against (.github/workflows/unit_test.yml)
-docker pull proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses:4.0.26282-8321319
+docker pull proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses
 mkdir -p chem_spectra/tmp
 chmod -R 755 chem_spectra/tmp
 docker run --detach --name msconvert_docker \
     --rm -it \
     -e WINEDEBUG=-all \
     -v ./chem_spectra/tmp:/data \
-    proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses:4.0.26282-8321319 bash
+    proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses bash
 ```
 
 ### 1.4. Add `config.py`
@@ -132,7 +131,7 @@ source .venv/bin/activate
 docker run --detach --name msconvert_docker \
     --rm -it \
     -e WINEDEBUG=-all \
-    -v ./chem_spectra/tmp:/data proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses:4.0.26282-8321319 \
+    -v ./chem_spectra/tmp:/data proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses \
     bash
 gunicorn -w 4 -b 0.0.0.0:3007 server:app --daemon
 ```
