@@ -1,0 +1,50 @@
+{
+  "auto_peaks": {
+    "n": 9,
+    "sha1": "961d16d806695160"
+  },
+  "boundary": {
+    "x": {
+      "max": 599.25,
+      "min": 199.9
+    },
+    "y": {
+      "max": 194139920.0,
+      "min": 151554.0
+    }
+  },
+  "edit_peaks": null,
+  "factor": {
+    "x": 1.0,
+    "y": 1.0
+  },
+  "itg_table": [],
+  "jcamp": {
+    "len": 64313,
+    "sha1": "7150bebfad89a4074e30c760762999acdcf17b9f"
+  },
+  "label": {
+    "x": "Daltons",
+    "y": "ARBITRARY"
+  },
+  "mpy_itg_table": [],
+  "target": {
+    "dataclass": "",
+    "datatype": ""
+  },
+  "threshold": 0.5,
+  "title": "",
+  "typ": "",
+  "xs": {
+    "first": 199.9,
+    "last": 599.25,
+    "len": 3347,
+    "sha1": "1e08402847addffd476958f4b3bf637103379418"
+  },
+  "ys": {
+    "first": 1097735.0,
+    "last": 501026.0,
+    "len": 3347,
+    "sha1": "3dcdadccf8ff299d657329c16f4adb71720d8b82"
+  }
+}
