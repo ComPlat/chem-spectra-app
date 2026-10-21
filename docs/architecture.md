@@ -205,7 +205,11 @@ Its public methods are used by controllers to request different output shapes:
 - `to_converter()`
 - `tf_predict()`
 - `tf_nmrium()`
-- `tf_combine()`
+- `tf_combine()`: one image of several spectra. Every curve is drawn; the
+  spectrum `jcamp_idx` names (default `0`, counted in the order the files
+  were sent) is drawn with its annotations too: peaks, integrals,
+  multiplets, CV pairs and its info box. Combined images are rendered at
+  200 dpi, like single ones.
 
 #### Role
 
@@ -454,14 +458,17 @@ The chain is:
 ##DATA TYPE=  ->  data_type.json  ->  typ  ->  SpectrumTechnique  ->  rendering
 ```
 
-1. `JcampBaseConverter.__read()` hands `nmrglue` the file; every
-   `##DATA TYPE=` record in it lands in `self.datatypes`, uppercased, in the
-   order the blocks appear.
+1. `JcampBaseConverter` reads the file block by block, through
+   `read_jcamp()` in `converter/jcamp/reader.py` over nmrglue's
+   `read_blocks()`; every block's `##DATA TYPE=` lands in `self.datatypes`,
+   uppercased, in the order the blocks appear.
 2. `__set_datatype()` walks those datatypes **in the file's own order** and
    returns the first that appears in `data_type.json`.
 3. `__typ()` maps that back onto the mapping's key, which is `typ`.
-4. `JcampTechniqueConverter.__index_target()` independently picks the **first
-   recognised** block as the one whose numbers are read.
+4. `__select_target()` independently picks the **first recognised** block as
+   `self.target`, the one whose numbers are read. With nothing recognised it
+   takes the first block that holds data and is not a peak table or an
+   interferogram, and otherwise none.
 5. `typ` selects one `SpectrumTechnique` descriptor from
    `SPECTRUM_TECHNIQUES` in `converter/jcamp/techniques.py`, which is what
    consumers read to decide axis labels, x-orientation, peak threshold,
@@ -494,6 +501,18 @@ routinely carries a primary block plus auxiliary ones — `NMR FID`,
 Because step 4 stops at the first *recognised* block, adding any of these to
 `data_type.json` would make every affected file read the auxiliary block
 instead of its spectrum. `test_auxiliary_blocks_stay_unmapped` enforces this.
+
+**Two kinds of file are refused while reading**, with `422` and the reason
+(`UnconvertibleSpectrum`):
+
+- a multi-dimensional dataset such as 2D NMR, by
+  `refuse_if_multi_dimensional()`, from the header text alone, before the
+  file is parsed: `##NUM DIM=` above 1, or failing that a `##DATA TYPE=`
+  that says `2D` or `nD`;
+- a block whose parsed data does not have the `##NPOINTS` it declares, by
+  `refuse_if_point_count_disagrees()` in `jcamp/data_parse.py`. This is how a
+  file written with decimal commas shows up: the comma is JCAMP-DX's
+  delimiter, so each decimal splits in two and the count no longer matches.
 
 **An unrecognised datatype is not an error.** `typ` becomes `''`, a warning
 naming the datatype is logged, and the file is processed as a generic curve
@@ -718,6 +737,8 @@ Used in:
 - `chem_spectra/lib/converter/nmrium/base.py`
 
 `nmrglue` is a Python dependency used by converter code to read JCAMP, Bruker FID, and NMRium-related data. It is not an external runtime service, but it is part of the parsing boundary between uploaded scientific files and normalized converter data.
+
+It is installed from ComPlat's `chemotion-main` build of nmrglue (upstream plus the changes proposed upstream), pinned by commit in `pyproject.toml` and `uv.lock`. Pin only commits that carry a `chemotion-main/<sha7>` tag: the branch is rebuilt and force-pushed. JCAMP is read through `read_blocks()`, one dict per block; selecting and merging blocks is this app's job, in `converter/jcamp/reader.py`, not nmrglue's.
 
 ## 7. Design Decisions and Constraints
 
