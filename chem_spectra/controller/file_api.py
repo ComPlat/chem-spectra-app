@@ -58,6 +58,10 @@ def chemspectra_file_save():
         request_dst = request_files.getlist('dst_list')
         dst_list = []
         list_file_items = []
+        # The loop below sets jcamp_idx to each file's own index, so each
+        # conversion picks that curve's CV state and axis units. The combined
+        # image must annotate the spectrum the request names, not the last.
+        requested_idx = params['jcamp_idx']
         for index in range(len(request_dst)):
             item = request_dst[index]
             dst = FileContainer(item)
@@ -83,7 +87,10 @@ def chemspectra_file_save():
                     ]
                 dst_list.append(tf_arr)
 
-        transform_model = TraModel(None, params=params, multiple_files=list_file_items)
+        transform_model = TraModel(
+            None, params={**params, 'jcamp_idx': requested_idx},
+            multiple_files=list_file_items,
+        )
         tf_combined = transform_model.tf_combine()
         if tf_combined is not None:
             dst_list.append(tf_combined)
@@ -134,6 +141,10 @@ def chemspectra_file_refresh():
         request_dst = request_files.getlist('dst_list')
         dst_list = []
         list_file_items = []
+        # The loop below sets jcamp_idx to each file's own index, so each
+        # conversion picks that curve's CV state and axis units. The combined
+        # image must annotate the spectrum the request names, not the last.
+        requested_idx = params['jcamp_idx']
         for index in range(len(request_dst)):
             item = request_dst[index]
             dst = FileContainer(item)
@@ -157,7 +168,10 @@ def chemspectra_file_refresh():
                     ]
                 dst_list.append(tf_arr)
 
-        transform_model = TraModel(None, params=params, multiple_files=list_file_items)
+        transform_model = TraModel(
+            None, params={**params, 'jcamp_idx': requested_idx},
+            multiple_files=list_file_items,
+        )
         tf_combined = transform_model.tf_combine()
         if tf_combined is not None:
             dst_list.append(tf_combined)

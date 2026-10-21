@@ -30,7 +30,6 @@ from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 import matplotlib.pyplot as plt  # noqa: E402
-import matplotlib.path as mpath  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib import ticker  # noqa: E402
 
@@ -371,45 +370,20 @@ class TransformerModel:
         tf_jcamp = tcp.tf_jcamp()
         return tf_jcamp
 
-    def __get_cyclic_volta_ref_peaks(self, curve_idx, extraParams):
-        x_peaks, y_peaks = [], []
-        try:
-            extras_dict = json.loads(extraParams) if extraParams else None
-            cyclic_volta_str = extras_dict['cyclicvolta'] if extras_dict else None
-            cyclic_volta = json.loads(cyclic_volta_str) if cyclic_volta_str else None
-            spectra_list = cyclic_volta['spectraList'] if cyclic_volta else None
-            spectra_extra = spectra_list[curve_idx] if spectra_list and curve_idx < len(spectra_list) else None
-            list_peaks = spectra_extra['list'] if spectra_extra else []
-            x_peaks, y_peaks = [], []
-            for peak in list_peaks:
-                min_peak, max_peak, isRef = peak['min'], peak['max'], peak['isRef']
-                if isRef == True:
-                    x_peaks.extend([min_peak['x'], max_peak['x']])
-                    y_peaks.extend([min_peak['y'], max_peak['y']])
-        except:
-            pass
-
-        return x_peaks, y_peaks
-
     def tf_combine(self, list_file_names=None, extraParams=None):
         if not self.multiple_files:
             return False
 
-        path_data = [
-            (mpath.Path.MOVETO, (0, 5)),
-            (mpath.Path.LINETO, (0, 20)),
-        ]
-        codes, verts = zip(*path_data)
-
-        circle = mpath.Path.unit_circle()
-        cirle_verts = np.concatenate([circle.vertices, verts])
-        cirle_codes = np.concatenate([circle.codes, codes])
-        cut_star_marker = mpath.Path(cirle_verts, cirle_codes)
-          
+        # rcParams outlive the request, so a value left unset here is
+        # whatever the worker's previous image used: tf_img sets 200
         plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
         plt.rcParams['legend.loc'] = 'upper left'
-        curve_idx = self.params.get('jcamp_idx', 0)
+        try:
+            curve_idx = int(self.params.get('jcamp_idx', 0) or 0)
+        except (TypeError, ValueError):
+            curve_idx = 0
 
         xlabel, ylabel = '', ''
         xlabel_set, ylabel_set = [], []
@@ -421,6 +395,12 @@ class TransformerModel:
             if (list_file_names is not None) and idx < len(list_file_names):
                 file.name = list_file_names[idx]
                 self.multiple_files[idx] = file
+
+        # `jcamp_idx` counts files in the order they were sent, which the sort
+        # below discards. Held by identity: two uploads may share a name.
+        active_file = None
+        if 0 <= curve_idx < len(self.multiple_files):
+            active_file = self.multiple_files[curve_idx]
 
         self.multiple_files.sort(key=lambda file: file.name)
 
@@ -442,6 +422,9 @@ class TransformerModel:
         # one entry per plotted curve: whether its file asks to be drawn the
         # other way up (##$CSINVERTY or the request's `invert_y`)
         inverted = []
+        # the x range every curve spans, and whether each reads high -> low
+        x_ranges, x_reversed = [], []
+        active_tcp, active_y_values = None, None
         for idx, file in enumerate(self.multiple_files):
             tf = store_str_in_tmp(file.core)
             jbcv = JcampBaseConverter(tf.name, self.params)
@@ -452,6 +435,9 @@ class TransformerModel:
                 plt.plot(mscp.core.xs, mscp.core.ys, label=filename)
                 plotted_any = True
                 inverted.append(False)
+                if len(mscp.core.xs):
+                    x_ranges.append((np.min(mscp.core.xs), np.max(mscp.core.xs)))
+                    x_reversed.append(mscp._technique().x_reversed)
             else:
                 try:
                     tcv = JcampTechniqueConverter(jbcv)
@@ -501,19 +487,8 @@ class TransformerModel:
                         scale = float(cv_display.get('yScaleFactor', 1.0))
                     except Exception:
                         scale = 1.0
-                    print(
-                        "[combined:tf_combine] file=", filename,
-                        "cvDisplay=", cv_display,
-                        "scale=", scale,
-                        "y_max=", float(np.max(ys)) if len(ys) else None,
-                        "cv_state_source=", "extras" if extraParams else "params",
-                    )
                     if scale != 1.0:
                         y_values = ys * scale
-                        print(
-                            "[combined:tf_combine] file=", filename,
-                            "scaled_y_max=", float(np.max(y_values)) if len(y_values) else None,
-                        )
                     cv_mode = True
                     try:
                         cv_abs_max = max(cv_abs_max, float(np.max(np.abs(y_values))))
@@ -531,24 +506,27 @@ class TransformerModel:
                 plt.plot(xs, y_values, label=filename, marker=marker)
                 plotted_any = True
                 inverted.append(bool(getattr(tcp.core, 'draw_y_inverted', False)))
+                if len(xs):
+                    x_ranges.append((np.min(xs), np.max(xs)))
+                    x_reversed.append(tcp._technique().x_reversed)
+
+                if file is active_file:
+                    active_tcp, active_y_values = tcp, y_values
+                    if tcp._technique().cyclic_voltammetry:
+                        tcp._cv_density_scale = scale
+                        # the combine endpoint may send the CV state in
+                        # `extras` alone, and then parse_params left
+                        # list_max_min_peaks empty
+                        if not tcp.core.params.get('list_max_min_peaks'):
+                            spectra_list = cv_state.get('spectraList') or []
+                            if 0 <= curve_idx < len(spectra_list):
+                                tcp.core.params['list_max_min_peaks'] = \
+                                    (spectra_list[curve_idx] or {}).get('list')
 
                 # PLOT label
                 core_label_x = tcp.core.label['x']
                 core_label_y = tcp.core.label['y']
                 if tcp._technique().cyclic_voltammetry:
-                    x_peaks, y_peaks = self.__get_cyclic_volta_ref_peaks(curve_idx, extraParams)
-                    if y_peaks and y_values is not ys:
-                        y_peaks = [y * scale for y in y_peaks]
-
-                    plt.plot(
-                        x_peaks,
-                        y_peaks,
-                        'r',
-                        ls='',
-                        marker=cut_star_marker,
-                        markersize=50,
-                    )
-
                     if core_label_x not in dic_x_label:
                         xlabel_set.append(core_label_x)
                         dic_x_label[core_label_x] = 1
@@ -566,7 +544,40 @@ class TransformerModel:
                     ylabel = "Y ({})".format(core_label_y)
 
             tf.close()
-        
+
+        # One x range for every curve, read high -> low only when every
+        # curve does. Set explicitly so the overlays drawn next cannot
+        # widen it.
+        if x_ranges:
+            x_min = min(lo for lo, _ in x_ranges)
+            x_max = max(hi for _, hi in x_ranges)
+            if all(x_reversed):
+                plt.xlim(x_max, x_min)
+            else:
+                plt.xlim(x_min, x_max)
+
+        if active_tcp is not None:
+            # A figure has one y axis and flip_overlay_if_inverted turns it
+            # only when every curve asks. When it stays upright, the active
+            # spectrum is drawn upright too: its markers and labels follow
+            # draw_y_inverted, and would otherwise point into its peaks.
+            core = active_tcp.core
+            was_inverted = getattr(core, 'draw_y_inverted', False)
+            if not all(inverted):
+                core.draw_y_inverted = False
+            try:
+                y_boundary_min, y_boundary_max = active_tcp.plot_overlays(
+                    plt, active_y_values, adjust_xlim=False,
+                )
+                ymin, ymax = plt.gca().get_ylim()
+                plt.ylim(min(ymin, y_boundary_min), max(ymax, y_boundary_max))
+            except Exception:
+                logger.exception(
+                    'tf_combine: failed to draw overlays for the active spectrum'
+                )
+            finally:
+                core.draw_y_inverted = was_inverted
+
         plt.xlabel(xlabel, fontsize=18)
         plt.ylabel(ylabel, fontsize=18)
         ax = plt.gca()
@@ -581,7 +592,6 @@ class TransformerModel:
             
         if cv_mode and cv_abs_max > 0:
             exp = int(np.floor(np.log10(cv_abs_max))) if cv_abs_max > 0 else 0
-            print(f"[tf_combine] cv_abs_max={cv_abs_max}, exp={exp}")
             base = (10.0 ** exp) if exp != 0 else 1.0
             ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _:
                 f"{(y / base):.3g}"
@@ -604,6 +614,7 @@ class TransformerModel:
             plt.clf()
             plt.cla()
             return False
+        plt.grid(False)
         plt.legend()
         tf_img = tempfile.NamedTemporaryFile(suffix='.png')
         plt.savefig(tf_img, format='png')

@@ -282,11 +282,21 @@ class BagItBaseConverter:
             return None
         list_composer = non_lcms_techniques
 
+        # rcParams outlive the request, so a value left unset here is
+        # whatever the worker's previous image used: tf_img sets 200
         plt.rcParams['figure.figsize'] = [16, 9]
+        plt.rcParams['figure.dpi'] = 200
         plt.rcParams['font.size'] = 14
-        
+
         cv_mode = False
         cv_abs_max = 0.0
+        # `jcamp_idx` counts the spectra drawn here, LC/MS and MS members
+        # already left out
+        try:
+            active_idx = int(self.params.get('jcamp_idx', 0) or 0)
+        except (TypeError, ValueError):
+            active_idx = 0
+        active_composer, active_y_values = None, None
         for idx, composer in enumerate(list_composer):
             # `list_file_names` used to be a parameter here and was never
             # passed, so every BagIt legend read 0, 1, 2 ...
@@ -334,6 +344,10 @@ class BagItBaseConverter:
                     marker = 'v'
 
             plt.plot(xs, y_values, label=filename, marker=marker)
+            if idx == active_idx:
+                active_composer, active_y_values = composer, y_values
+                if composer._technique().cyclic_voltammetry:
+                    composer._cv_density_scale = scale
             # PLOT label
             if composer._technique().x_axis == 'xrd':
                 waveLength = composer.core.params['waveLength']
@@ -349,10 +363,33 @@ class BagItBaseConverter:
             else:
                 plt.ylabel("Y ({})".format(composer.core.label['y']), fontsize=18)
 
-        if flip_overlay_if_inverted(plt.gca(), [
+        inverted = [
             bool(getattr(c.core, 'draw_y_inverted', False))
             for c in list_composer
-        ]):
+        ]
+        if active_composer is not None:
+            # drawn upright unless the whole overlay is flipped below; see
+            # TransformerModel.tf_combine. Restored after: the composer is
+            # kept in self._composers.
+            core = active_composer.core
+            was_inverted = getattr(core, 'draw_y_inverted', False)
+            if not all(inverted):
+                core.draw_y_inverted = False
+            try:
+                y_boundary_min, y_boundary_max = active_composer.plot_overlays(
+                    plt, active_y_values, adjust_xlim=False,
+                )
+                ymin, ymax = plt.gca().get_ylim()
+                plt.ylim(min(ymin, y_boundary_min), max(ymax, y_boundary_max))
+            except Exception:
+                logger.exception(
+                    'combine_images: failed to draw overlays for the active '
+                    'spectrum'
+                )
+            finally:
+                core.draw_y_inverted = was_inverted
+
+        if flip_overlay_if_inverted(plt.gca(), inverted):
             logger.info(
                 'archive overlay mixes inverted and upright spectra; drawing '
                 'it upright',
