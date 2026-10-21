@@ -29,7 +29,7 @@ BAGIT_B = './tests/fixtures/source/bagit/aif/aif.zip'            # 2 curves
 
 @pytest.fixture
 def client():
-    return create_app({'IP_WHITE_LIST': ''}).test_client()
+    return create_app({'TESTING': True}).test_client()
 
 
 def _nested(*sources):

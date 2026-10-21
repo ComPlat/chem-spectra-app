@@ -52,9 +52,6 @@ def _configure_logging(app):
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
-    app.config.from_mapping(
-        IP_WHITE_LIST=''
-    )
 
     if test_config is None:
         # Deployment config first, environment second, so the environment can

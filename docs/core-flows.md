@@ -79,7 +79,7 @@ These routes share conversion primitives, but their response shapes differ.
 2. Runs `convert2jcamp_img()`.
 3. If the result is BagIt, returns JSON with `list_jcamps`.
 4. Otherwise returns JSON with base64 `jcamp` and `img`.
-5. If no JCAMP output exists and it is not BagIt, aborts with `400`.
+5. If no JCAMP output exists and it is not BagIt, refuses with `422` and a JSON reason.
 
 `POST /api/v1/chemspectra/file/save`:
 
@@ -94,7 +94,7 @@ These routes share conversion primitives, but their response shapes differ.
 1. Reads optional `molfile`, params, and either `dst` or `dst_list`.
 2. For `dst_list`, converts each item and returns a ZIP with generated outputs, predictions, optional CSV, and optional combined output.
 3. For a single `dst`, returns JSON with base64 `jcamp` and `img`.
-4. If single-file conversion has no JCAMP output, aborts with `400`.
+4. If single-file conversion has no JCAMP output, refuses with `422` and a JSON reason.
 
 `POST /api/v1/chemspectra/molfile/convert`:
 
@@ -306,7 +306,7 @@ Transform endpoints are thin wrappers around `TransformerModel`, but they return
 `POST /zip_jcamp_n_img`:
 
 1. Calls `to_composer()`.
-2. Aborts with `403` if no composer is produced.
+2. Refuses with `422` and a JSON reason if no composer is produced.
 3. If the composer is BagIt, packages BagIt JCAMP, images, CSV files, and optional combined image.
 4. If the composer is a sequence, packages each composer as JCAMP and image outputs.
 5. Otherwise packages JCAMP, image, and optional CSV from a single composer.
@@ -330,7 +330,7 @@ Direct file endpoints:
 
 - `/jcamp` returns `spectrum.jdx`.
 - `/image` returns `spectrum.png`.
-- `/nmrium` converts supported NMRium input to `spectrum.jdx`, or aborts with `404` when conversion returns `None`.
+- `/nmrium` converts supported NMRium input to `spectrum.jdx`, or refuses with `422` when conversion returns `None`.
 - `/combine_images` builds a combined image from `files[]` and returns `spectrum.zip`.
 
 Debug focus:
@@ -386,7 +386,7 @@ Unsupported format:
 - routing can fall back to JCAMP;
 - converter parsing can fail;
 - composer creation can return false-like values;
-- controllers commonly respond with `abort(400)` or `abort(403)`.
+- controllers refuse with `422` and `{"error": ...}` (`controller/helper/refusal.py`); `UnconvertibleSpectrum` raised deeper in maps to the same.
 
 External services:
 

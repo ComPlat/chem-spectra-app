@@ -56,7 +56,7 @@ It should contain:
 - Upload extraction through `FileContainer`.
 - Form parameter extraction through `extract_params()`.
 - Calling model-layer classes.
-- Response formatting through `jsonify()`, `send_file()`, ZIP helpers, or `abort(...)`.
+- Response formatting through `jsonify()`, `send_file()`, ZIP helpers, or `refuse()` (422 with `{"error": ...}`).
 - HTTP-specific behavior such as response headers.
 
 Important files:
@@ -66,6 +66,7 @@ Important files:
 - `chem_spectra/controller/inference_api.py`
 - `chem_spectra/controller/spectra_layout_api.py`
 - `chem_spectra/controller/helper/file_container.py`
+- `chem_spectra/controller/helper/refusal.py`
 - `chem_spectra/controller/helper/share.py`
 
 Logic that belongs in controllers:
@@ -623,7 +624,10 @@ Modify this layer when generated output changes.
 
 Used in: `chem_spectra/lib/converter/ms.py`
 
-`MSConverter` depends on an external Docker container named `msconvert_docker` for RAW mass spectrometry conversion.
+`MSConverter` depends on an external msconvert service for RAW mass spectrometry conversion. It reaches it two ways, with the same command:
+
+- **Locally** (`just msconvert`), `docker exec` really runs in a ProteoWizard container named `msconvert_docker`, with `./chem_spectra/tmp` mounted as `/data`.
+- **In the container images** -- production's bakery-built `ptrxyz/chemotion:spectra` (deployed with ChemOrc) and the developer `Dockerfile.p2d` -- `/bin/docker` is a shim that POSTs the command to the `msconvert` sidecar (`MSC_HOST`, `MSC_PORT=4000`). Both containers mount the shared `spectra` volume at `/shared`, which each links to its own working path.
 
 The command is built in `__build_cmd_msconvert()` and uses:
 
@@ -639,7 +643,7 @@ The local temporary path is `./chem_spectra/tmp`.
 Operational requirements:
 
 - `chem_spectra/tmp` must exist and be mounted into the container as `/data`.
-- A running container named `msconvert_docker` is expected.
+- Locally, a running container named `msconvert_docker` is expected; in the container images, the `msconvert` service.
 - RAW conversion runs with `subprocess.run(..., timeout=SIDECAR_TIMEOUT)`,
   currently 30s. It must stay above the ceiling the sidecar imposes on itself
   (`mscrunner.py` runs msconvert under `timeout=10`), or the sidecar's own
@@ -743,7 +747,7 @@ Prediction and RAW conversion depend on services outside the Flask process:
 
 - `URL_NSHIFTDB` for NMR prediction;
 - `URL_DEEPIR` for IR prediction;
-- `msconvert_docker` for RAW conversion.
+- msconvert (`msconvert_docker` locally, the `msconvert` sidecar in the container images) for RAW conversion.
 
 When modifying related code, consider:
 
@@ -752,6 +756,17 @@ When modifying related code, consider:
 - missing configuration;
 - whether tests mock external calls;
 - whether local development has the required containers running.
+
+### State and Access
+
+The app is meant to be a stateless endpoint that several ELNs may share. A request carries everything it needs, files and form parameters, the data-type mapping included. Nothing is kept for the next request: no session, no signed cookie, and therefore no `SECRET_KEY`.
+
+Two things still outlive a request, and both are deliberate:
+
+- pyplot's global figure, closed by `teardown_request`. Its `rcParams` persist.
+- the per-request msconvert working directory on the shared volume, which `MSConverter` removes in a `finally`.
+
+The app does no access control of its own. The old IP allow-list was never enforced and has been removed. Restricting who may call it belongs at the proxy, or in per-ELN API keys if a shared deployment needs them.
 
 ### File-Based Workflows
 

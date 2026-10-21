@@ -1,143 +1,122 @@
 # INSTALL
 
-This guidance is tested on Linux Ubuntu 18.04 & Ubuntu 20.04
+## 1. Requirements
 
-## 1. Installation
+- **Python ≥ 3.12.** CI tests 3.12 and 3.14; the `Dockerfile.p2d` image runs 3.14.
+- **[uv](https://docs.astral.sh/uv/)** for the environment and
+  **[just](https://just.systems/)** for the recipes (`just` lists them).
+- **Docker**, for the msconvert sidecar that converts RAW mass-spectrometry files.
 
-### 1.1. Install Python
-
-Use the file pyproject.toml to determine the version of Python required.
-
-### 1.2. Clone repository and create env
+## 2. Local setup
 
 ```sh
 git clone https://github.com/ComPlat/chem-spectra-app.git
 cd chem-spectra-app
+just sync        # uv sync --frozen --all-groups: the locked dependencies, dev tools included
 ```
 
-ALL the **FOLLOWING** commands are assumed to be executed while inside this
-`chem-spectra-app` folder.
+All commands below run from the repository root.
 
-```
-python3 -m venv .venv && .venv/bin/pip install --upgrade pip
-source .venv/bin/activate
-pip install .
-```
-
-### 1.3. Use docker to run a supporting service
+### 2.1. msconvert
 
 ```sh
-docker pull proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses
-mkdir -p chem_spectra/tmp
-chmod -R 755 chem_spectra/tmp
-docker run --detach --name msconvert_docker \
-    --rm -it \
-    -e WINEDEBUG=-all \
-    -v ./chem_spectra/tmp:/data \
-    proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses bash
+just msconvert        # starts `msconvert_docker`, mounting ./chem_spectra/tmp as /data
+just msconvert-stop
 ```
 
-### 1.4. Add `config.py`
+Locally the app runs `docker exec … msconvert_docker wine msconvert …` for real.
+Run the ProteoWizard build CI tests against: the version is pinned in
+`.github/workflows/unit_test.yml`.
 
-Generate a secret key.
+### 2.2. `instance/config.py` (optional)
 
-```sh
-python -c 'import os; print(os.urandom(16))'
->> b'T\x1d\xb3\xfe\xb6q\xef\xbf\x7f\xcaj\xcbZ\x84\x1ee'
-```
-
-Create `config.py`.
-
-```sh
-mkdir -p ./instance && touch ./instance/config.py
-nano ./instance/config.py
-```
-
-Add the following content.
+Every key has a default; create the file only to change one.
 
 ```python
-# ./instance/config.py
-SECRET_KEY = b'T\x1d\xb3\xfe\xb6q\xef\xbf\x7f\xcaj\xcbZ\x84\x1ee'
-IP_WHITE_LIST = 'xxx.xxx.xxx.xxx'
+# instance/config.py
 URL_DEEPIR = 'http://xxx.xxx.xxx.xxx:3008/infer_ir'
 URL_NSHIFTDB = 'https://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
-LOGS_FILE = './instance/logging.log' #location of logs file
-MAX_ZIP_SIZE = 100 #maximum size of a zip file in MB to prevent zip bomb, default is 100 MB
+LOGS_FILE = '/path/to/logging.log'  # default: instance/logging.log
+MAX_ZIP_SIZE = 200                  # MB, uncompressed; guards against zip bombs
 ```
 
-### 1.5. Start server
+Any key can also be set as a `FLASK_`-prefixed environment variable, which
+overrides the file: for example `FLASK_MAX_ZIP_SIZE=500`.
 
-Using only "one" of following commands.
+## 3. Run
 
 ```sh
-# run on the production server
-gunicorn -w 4 -b 0.0.0.0:3007 server:app --daemon
+# development, on the port chem-spectra-client proxies to
+FLASK_APP=chem_spectra FLASK_DEBUG=true uv run flask run --host=0.0.0.0 --port=3007
+
+# production-style
+just serve       # gunicorn -w 4 on :4000
 ```
+
+Check that it answers:
 
 ```sh
-# for local development only
-export FLASK_APP=chem_spectra && export FLASK_DEBUG=true && flask run --host=0.0.0.0 --port=3007
+curl localhost:3007/ping     # pong
 ```
 
-### 1.6 Quick test
+## 4. Usage
 
-You should receive `pong` when executing the following command from another machine.
+Send a JCAMP-DX file (`.jdx`, `.dx`, `.jcamp`), a Bruker zip, a BagIt archive,
+or a RAW / mzML file:
 
 ```sh
-curl xxx.xxx.xxx.xxx:3007/ping
+curl -F file=@target.jdx localhost:3007/zip_jcamp_n_img -o spectrum.zip
 ```
 
-## 2. Usage
+The answer is `spectrum.zip`, holding the composed JCAMP with its peak tables and
+the preview image. A file the service will not process comes back as **422**
+with `{"error": "<reason>"}`; see `docs/api-reference.md`.
 
-Send a post request with an attachment in `.dx` or `.jdx` extension.
+## 5. Deployment
 
-This web service will return a zip file containing an image and a modified jcamp file with peak tables.
+**Production** is the Chemotion stack, deployed with
+[ChemOrc](https://github.com/Chemotion/ChemOrc). Its compose file runs the
+`ptrxyz/chemotion:spectra-<version>` image, built by `chemotion-bakery` and not
+from this repository's Dockerfile. That image sits beside the
+`ptrxyz/chemotion:msconvert-<version>` sidecar, on the stack's network, with a
+shared `spectra` volume.
 
+**Developer deployments** of a branch use this repository's
+`docker-compose.p2d.yml`. It builds the app from `Dockerfile.p2d` and runs it
+beside the same msconvert sidecar, as a Dokploy *Docker Compose* application:
+- route a domain to the `app` service on port 4000 in the Domains tab;
+- set environment variables in the UI. They reach the container through
+  `.env`, which the compose file loads.
+
+**Both images** wire msconvert the same way:
+- `/bin/docker` is a shim that POSTs the msconvert command to the sidecar
+  (`MSC_HOST=msconvert`, `MSC_PORT=4000`);
+- the two containers exchange files through the shared volume, mounted at
+  `/shared`.
+
+`just image` builds the developer image locally.
+
+## 6. Tests and checks
+
+```sh
+just test        # pytest
+just check       # ruff, mypy and pytest: what CI runs
+just cov         # coverage report
 ```
-POST xxx.xxx.xxx.xxx:3007/peak_zip_jcamp_n_img
-body = { file: target.jdx }
-```
 
-### 2.1. Logging
+The RAW conversion test needs `just msconvert` running.
 
-By default, the logging file is at `./instance/logging.log`.
+## 7. Logging
 
-### 2.2. Implement a new log message
+Logs go to `instance/logging.log`, or to `LOGS_FILE` when set. Log through the
+package logger:
 
-Import `logging` package at where you want to write your log message
-
-```
+```python
 import logging
-```
 
-Write log message as
-
-```
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR) //levels: DEBUG, INFO, ERROR, WARNING, CRITICAL
-logger.error('message to log')
+logger.warning('message')
 ```
 
-Note: You need to use function as the same as your logger level, which named as lowercased of level's name, to write your log message to the logs file
-
-### 2.3. Automatic startup in crontab
-
-To make sure ChemSpectra is started on reboot you can use this BASH script in your root crontab (if required, adapt Chemotion ELN username and home directory):
-
-```sh
-#!/bin/bash
-cd /path/to/chem-spectra-app
-source .venv/bin/activate
-docker run --detach --name msconvert_docker \
-    --rm -it \
-    -e WINEDEBUG=-all \
-    -v ./chem_spectra/tmp:/data proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses \
-    bash
-gunicorn -w 4 -b 0.0.0.0:3007 server:app --daemon
-```
-
-## 3. Run test
-
-```sh
-python -m pytest
-```
+`chem_spectra.*` module loggers propagate to the one file handler the app
+factory installs.

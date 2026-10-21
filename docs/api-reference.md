@@ -4,6 +4,16 @@ This document lists the HTTP routes exposed by `chem-spectra-app`.
 
 Use `docs/architecture.md` for component boundaries and `docs/core-flows.md` for runtime behavior. This file is the compact route-level reference for handlers, main inputs, and main outputs.
 
+## Errors
+
+A request the service will not process -- no file, a file it cannot read, data it cannot convert -- is answered with **`422`** and a JSON body naming the reason:
+
+```json
+{"error": "this file could not be read as a spectrum. ..."}
+```
+
+The ELN shows `error` to the user. The same shape comes back with **`502`** when the msconvert sidecar is unavailable. The prediction routes still answer a malformed request with a bare `400`.
+
 ## `file_api`
 
 | Route | Handler | Main input | Main output |
@@ -22,7 +32,7 @@ Use `docs/architecture.md` for component boundaries and `docs/core-flows.md` for
 | `POST /zip_image` | `zip_image()` | `file`, optional `molfile`, form params | `spectrum.zip` with image files |
 | `POST /jcamp` | `jcamp()` | `file`, optional `molfile`, form params | `spectrum.jdx` |
 | `POST /image` | `image()` | `file`, optional `molfile`, form params | `spectrum.png` |
-| `POST /nmrium` | `nmrium()` | NMRium `file` | `spectrum.jdx`, or `404` if conversion fails |
+| `POST /nmrium` | `nmrium()` | NMRium `file` | `spectrum.jdx` |
 | `POST /combine_images` | `combine_images()` | `files[]`, form params, optional `extras` | `spectrum.zip` with combined image output |
 
 ## `inference_api`
