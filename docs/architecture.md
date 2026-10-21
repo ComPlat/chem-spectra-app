@@ -686,7 +686,7 @@ Supported layouts in code:
 - `13C`
 - `19F`
 
-If the service is unavailable, `predict_nmr()` catches `requests.ConnectionError`, logs the issue, and returns an outline with code `503`.
+Every call has a timeout, `PREDICT_TIMEOUT` (default 120 s). Failures come back as an outline, never as an exception: `503` when `URL_NSHIFTDB` is unset or the service cannot be reached, `504` on a timeout, `502` for an error status or an answer without `result[0].shifts`, and `400`, the editor's "Peak & Element count mismatch", when the answer is not JSON, as before. A layout outside the three above is refused with `422` before anything is sent. `docs/api-reference.md` has the table.
 
 ### DeepIR
 
@@ -706,7 +706,7 @@ Input preparation:
 - `MoleculeModel.fgs()` provides functional groups.
 - NumPy writes standardized data into an in-memory `.npz` payload.
 
-If the service is unavailable, `predict_ir()` catches `requests.ConnectionError` and returns an outline with code `503`.
+The call has the same `PREDICT_TIMEOUT`. Failures come back as an outline: `503` when `URL_DEEPIR` is unset or the service cannot be reached (production leaves it unset), `504` on a timeout, `502` for an error status, a body that is not JSON, or one without `output.result[0].fgs`, and `400` when the spectrum cannot be read.
 
 ### nmrglue
 

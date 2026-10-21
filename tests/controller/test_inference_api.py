@@ -1,12 +1,22 @@
 import io
 import json
 from unittest import mock
+
+import pytest
 from fixtures.mock_predict_nmr import RequestPredictNmr, ResponsePredictNmr
 from fixtures.mock_predict_ir import ResponsePredictIr
 
 
 target_dir = './tests/fixtures/'
 source_dir = 'source/'
+
+
+@pytest.fixture(autouse=True)
+def predictors(app):
+    # requests.post is mocked in every test that gets this far; the URLs only
+    # have to be set, since an unset one is reported as "not configured"
+    app.config['URL_NSHIFTDB'] = 'http://nmrshiftdb.test/quickcheck'
+    app.config['URL_DEEPIR'] = 'http://deepir.test/infer_ir'
 
 
 @mock.patch('requests.post', mock.Mock(return_value=ResponsePredictNmr()))

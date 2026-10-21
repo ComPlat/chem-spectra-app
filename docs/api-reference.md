@@ -12,7 +12,24 @@ A request the service will not process -- no file, a file it cannot read, data i
 {"error": "this file could not be read as a spectrum. ..."}
 ```
 
-The ELN shows `error` to the user. The same shape comes back with **`502`** when the msconvert sidecar is unavailable. The prediction routes still answer a malformed request with a bare `400`.
+The ELN shows `error` to the user. The same shape comes back with **`502`** when the msconvert sidecar is unavailable.
+
+The **prediction routes** (`/predict/*`) are different: they always answer **`200`**, with the reason in `outline`, because the ELN keeps a prediction response only when the status is 200 and the editor's forecast panel reads `outline.code`:
+
+```json
+{"outline": {"code": 503, "text": "IR prediction is not configured on this server."}}
+```
+
+| `outline.code` | meaning | the editor shows |
+|---|---|---|
+| `200` | the prediction, under `output` | the prediction |
+| `400` | the predictor could not assign these peaks to this molecule, or the IR spectrum could not be read | "Peak & Element count mismatch" |
+| `422` | nothing to ask about: no or unreadable molfile, no peaks, no spectrum, or an NMR layout other than 1H, 13C, 19F | "Unknown state" |
+| `502` | the predictor answered with an error, or with something this service cannot read | "Service is not available" |
+| `503` | the predictor is not configured here (`URL_NSHIFTDB`, `URL_DEEPIR` unset), or cannot be reached | "Service is not available" |
+| `504` | the predictor did not answer within `PREDICT_TIMEOUT` seconds (default 120) | "Service is not available" |
+
+`text` gives the reason in each case. The HTTP status is set in one place, `_respond()` in `inference_api.py`, so that it can follow `outline.code` once the ELN reads the body of a non-200 answer.
 
 ## `file_api`
 

@@ -5,6 +5,10 @@ from chem_spectra.lib.shared.buffer import store_str_in_tmp
 import chem_spectra.lib.chem.ifg as ifg
 
 
+class UnreadableMolfile(ValueError):
+    """RDKit could not build a molecule from the molfile it was given."""
+
+
 class MoleculeModel:
     def __init__(self, molfile, layout=False, decorate=False):
         is_molfile_str = type(molfile).__name__ == 'str'
@@ -31,6 +35,10 @@ class MoleculeModel:
         tf = store_str_in_tmp(self.moltxt, suffix='.mol')
         mol = Chem.MolFromMolFile(tf.name)
         tf.close()
+        if mol is None:
+            # RDKit returns None rather than raising; without this the
+            # failure surfaced later as a TypeError from MolToSmiles.
+            raise UnreadableMolfile('RDKit could not read the molfile')
 
         if self.decorate:
             mol = self.__decorate(mol)

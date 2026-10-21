@@ -42,6 +42,8 @@ response_predict_ir = {
 
 
 class ResponsePredictIr:
+    status_code = 200
+
     def __init__(self):
         pass
 
