@@ -4,10 +4,7 @@ from chem_spectra import create_app
 
 @pytest.fixture
 def app():
-    app = create_app({
-        'TESTING': True,
-        'IP_WHITE_LIST': '127.0.0.1'
-    })
+    app = create_app({'TESTING': True})
 
     yield app
 

@@ -229,7 +229,7 @@ def test_a_converter_outage_is_delivered_as_json_not_html(monkeypatch):
     from chem_spectra import create_app
 
     monkeypatch.setattr(sbp, 'run', _fake_run(returncode=1, stderr='ConnectionError'))
-    client = create_app({'IP_WHITE_LIST': ''}).test_client()
+    client = create_app({'TESTING': True}).test_client()
 
     with open(RAW, 'rb') as handle:
         response = client.post(

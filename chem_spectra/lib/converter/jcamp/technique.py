@@ -7,7 +7,9 @@ from scipy import signal
 
 from chem_spectra.lib.converter.datatable import DatatableModel
 from chem_spectra.lib.shared.calc import (to_float, cal_cyclic_volta_shift_prev_offset_at_index)
-from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
+from chem_spectra.lib.converter.jcamp.data_parse import (
+    UnparsableJcampData, refuse_if_point_count_disagrees,
+)
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
 # defined in share, re-exported here: the app's error handler
 # (chem_spectra/__init__.py), transformer.py and the tests all import it
@@ -160,6 +162,7 @@ class JcampTechniqueConverter:
             raise UnparsableJcampData(
                 'no data array could be parsed from this JCAMP file'
             )
+        refuse_if_point_count_disagrees(self.target, base.data)
         self.title = base.title
         # the descriptor travels with the flags it backs; without it the
         # composer falls back to UNKNOWN_TECHNIQUE and draws every technique

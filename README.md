@@ -1,9 +1,9 @@
 # ChemSpectra App
 
-This backend web service provides NMR/IR/MS processing for jcamp/RAW/mzML files.
+This backend web service processes spectra -- NMR, IR, UV/VIS, MS, LC/MS, XRD, CV and more -- from JCAMP-DX, Bruker, BagIt, RAW and mzML files.
 
 ![GitHub release (release name instead of tag name)](https://img.shields.io/github/v/release/ComPlat/chem-spectra-app?include_prereleases&label=version)
-![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)
+![Python 3.12 | 3.14](https://img.shields.io/badge/python-3.12%20%7C%203.14-blue.svg)
 ![Testing](https://github.com/ComPlat/chem-spectra-app/actions/workflows/unit_test.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -19,14 +19,16 @@ The frontend is provided by [chem-spectra-client](https://github.com/ComPlat/che
 6. [Diagram maintenance](docs/dev/diagrams.md)
 7. [Demo & step-by-step manual](https://github.com/ComPlat/react-spectra-editor/blob/master/DEMO_MANUAL.md)
 
-### Run test
+### Run tests
 
 ```bash
-coverage run -m pytest --disable-pytest-warnings
-coverage report
-
-coverage run -m pytest --disable-pytest-warnings -k ./tests/test_spectra_im.py -k 'test_meta_1H' -vv
+just sync        # once: the locked environment, via uv
+just check       # ruff, mypy and pytest -- what CI runs
+just cov         # coverage report
+uv run python -m pytest tests/test_spectra_im.py -k test_meta_1H -vv
 ```
+
+`just` lists every recipe; `INSTALL.md` has the rest.
 
 ## Acknowledgments
 
