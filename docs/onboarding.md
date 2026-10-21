@@ -20,7 +20,7 @@ The project solves these practical problems:
 The main data types handled by this backend are:
 
 - NMR spectra, including JCAMP and Bruker FID ZIP inputs.
-- IR spectra, including prediction support through DeepIR.
+- IR spectra, including prediction through a DeepIR service where `URL_DEEPIR` is configured. Production leaves it unset, so IR prediction answers that it is not configured.
 - MS spectra, including RAW, mzML, mzXML, CDF, and JCAMP-based MS data.
 - Other spectral or analytical data classified through `chem_spectra/lib/converter/jcamp/data_type.json`, such as XRD, cyclic voltammetry, DSC, DLS, UV/VIS, HPLC UV/VIS, Raman, and related formats.
 - Molecule files, handled with RDKit.

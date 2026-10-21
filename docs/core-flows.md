@@ -184,9 +184,10 @@ Debug focus:
 
 - missing form peaks only works for `13C`;
 - duplicate X values are slightly adjusted in `__extract_x()`;
-- unsupported layout returns `False` before a request is sent;
-- JSON decode failure becomes outline code `400`;
-- connection failure becomes outline code `503`.
+- a missing or unreadable molfile, no peaks, or a layout other than 1H, 13C, 19F become outline code `422` before a request is sent;
+- an unset `URL_NSHIFTDB` or a connection failure becomes outline code `503`, and a timeout (`PREDICT_TIMEOUT`) becomes `504`;
+- an error status or a JSON answer without `result[0].shifts` becomes `502`;
+- an answer that is not JSON becomes outline code `400`.
 
 ### 4.2 IR Prediction Flow
 
@@ -211,10 +212,10 @@ Runtime path:
 
 Debug focus:
 
-- malformed spectrum input often fails during `InfraredLib` processing;
+- malformed spectrum input often fails during `InfraredLib` processing, and becomes outline code `400`, reported even where no IR predictor is configured;
 - functional group extraction depends on molfile parsing;
-- `TypeError` becomes outline code `400`;
-- connection failure becomes outline code `503`.
+- an unset `URL_DEEPIR` (as in production) or a connection failure becomes outline code `503`, and a timeout becomes `504`;
+- an error status, a body that is not JSON, or one without `output.result[0].fgs` becomes `502`.
 
 ### 4.3 MS Prediction Flow
 
