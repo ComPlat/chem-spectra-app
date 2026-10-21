@@ -147,10 +147,14 @@ class MSConverter:
             '--simAsSpectra',
             '--32',
             '--zlib',
+            # One argv element each, so no quotes: no shell sits between this
+            # list and msconvert. ProteoWizard 3.0 stripped literal quotes
+            # itself; 4.0 rejects `"peakPicking` as an unknown filter, exits 1
+            # and writes no mzML.
             '--filter',
-            '"peakPicking true 1-"',
+            'peakPicking true 1-',
             '--filter',
-            '"zeroSamples removeExtra"',
+            'zeroSamples removeExtra',
             '--ignoreUnknownInstrumentError'
         ]
         return cmd_msconvert

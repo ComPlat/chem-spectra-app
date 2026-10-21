@@ -655,6 +655,12 @@ Operational requirements:
   (120s). In this topology it should already exist; the wait is for the
   `docker exec -d` setup in `INSTALL.md`, where the command genuinely detaches.
   mzML and mzXML uploads are not waited for at all — nothing converts them.
+- ProteoWizard is **4.0** (`4.0.26282-8321319`), pinned by tag and digest in
+  CI and in `just msconvert`. The command is an argv list, so no shell strips
+  quotes on the way: the `--filter` values must not carry literal quotes.
+  3.0 stripped them itself; 4.0 rejects `"peakPicking` as an unknown filter,
+  exits 1 and writes nothing, which the app sees only as "no mzML appeared".
+  `tests/lib/converter/test_msconvert_command.py` pins the argv.
 
 `Dockerfile.p2d` references `fake-docker.py` as part of the P2D image setup.
 
