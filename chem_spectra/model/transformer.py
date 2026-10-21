@@ -19,6 +19,7 @@ from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
+from chem_spectra.lib.converter.share import is_jcamp_filename
 from chem_spectra.lib.converter.bagit.lcms_builder import build_lcms_composer
 from chem_spectra.lib.converter.ms import MSConverter
 from chem_spectra.lib.composer.technique import (
@@ -109,7 +110,7 @@ def search_jdx_dir(td):
         def _has_jdx(path):
             try:
                 return any(
-                    name.lower().endswith('.jdx')
+                    is_jcamp_filename(name)
                     for name in os.listdir(path)
                     if os.path.isfile(os.path.join(path, name))
                 )

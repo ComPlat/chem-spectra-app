@@ -9,6 +9,16 @@ class UnconvertibleSpectrum(ValueError):
     support. Mapped to 422 with a JSON body naming the reason."""
 
 
+# The spellings of a JCAMP-DX file name. One list, because the archive readers
+# each had their own `.jdx` check: a `.dx` or `.jcamp` file converted on its
+# own and was skipped, without a word, inside a zip or a BagIt.
+JCAMP_EXTENSIONS = ('.jdx', '.dx', '.jcamp')
+
+
+def is_jcamp_filename(name):
+    return str(name).lower().endswith(JCAMP_EXTENSIONS)
+
+
 TRUE_STRINGS = ('true', '1', 'yes')
 FALSE_STRINGS = ('false', '0', 'no')
 
