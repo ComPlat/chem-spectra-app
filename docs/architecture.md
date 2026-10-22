@@ -323,10 +323,10 @@ The `tm` object is expected to be a mass spectrum composer created before callin
 
 Every prediction route answers HTTP 200, and a failure comes back as an outline with a code and a reason. The ELN keeps only a 200. The HTTP status is set in one place, `_respond()` in `inference_api.py`.
 
-- **`422`, nothing to ask about:** no or unreadable molfile, no peaks, no spectrum, or an NMR layout other than 1H, 13C, 19F. Checked before anything is sent.
-- **`503`:** the predictor's URL is unset (`PredictorNotConfigured`), or `requests.ConnectionError`.
+- **`422`, nothing to ask about:** no or unreadable molfile; peaks that are missing or not a list of objects with a numeric `x`; a `shift` that is not an object; no spectrum, an unreadable one, or (MS) one that is not a mass spectrum; an NMR layout other than 1H, 13C, 19F. Checked before anything is sent.
+- **`503`:** the predictor's URL is unset (`PredictorNotConfigured`), `requests.ConnectionError`, or msconvert unavailable (`MSConverterUnavailable`) while converting the upload.
 - **`504`:** `requests.Timeout`, after `PREDICT_TIMEOUT` seconds (default 120). Every outbound call has the timeout.
-- **`502`:** an error status, an answer that is not JSON (IR), or an answer without the expected fields.
+- **`502`:** an error status, an answer that is not JSON (IR), or one without the expected fields, including IR groups that `ArtistLib.draw_ir` could not draw. `text` quotes the answer. A predictor that sends its own `outline` keeps its code and reason (`_unreadable_answer()`).
 - **`400`, kept from before:** an NMR answer that is not JSON (the editor's "Peak & Element count mismatch"), and an IR spectrum that cannot be read (`UnconvertibleSpectrum`, `UnparsableJcampData`, `TypeError`).
 
 MS prediction handles `TypeError` with `400`.

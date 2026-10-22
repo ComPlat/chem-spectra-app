@@ -7,9 +7,10 @@ from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.controller.helper.refusal import uploaded_file
 from chem_spectra.controller.helper.share import parse_array_to_dict_xys
 
+from chem_spectra.lib.converter.ms import MSConversionFailed
 from chem_spectra.lib.converter.share import UnconvertibleSpectrum
 from chem_spectra.model.inferencer import (
-    InferencerModel as InferModel, outline, UNUSABLE_REQUEST,
+    InferencerModel as InferModel, outline, UNUSABLE_REQUEST, NOT_AVAILABLE,
 )
 from chem_spectra.model.molecule import MoleculeModel, UnreadableMolfile
 from chem_spectra.model.transformer import TransformerModel as TraModel
@@ -48,11 +49,51 @@ def _uploaded(field):
     return FileContainer(uploaded) if uploaded else None
 
 
+_UNPARSABLE = object()
+
+
 def _json_field(name, default):
+    """The form field parsed as JSON; `default` when absent or `null`."""
     try:
-        return json.loads(request.form.get(name, default=default))
+        value = json.loads(request.form.get(name, default=default))
     except ValueError:
-        return None
+        return _UNPARSABLE
+    return json.loads(default) if value is None else value
+
+
+def _peaks_problem(peaks):
+    """Why `peaks` cannot be sent to a predictor, or None."""
+    if not peaks:
+        return 'No peaks were sent.'
+    if not isinstance(peaks, list):
+        return 'peaks must be a list of {"x": ..., "y": ...} objects.'
+    for peak in peaks:
+        x = peak.get('x') if isinstance(peak, dict) else None
+        if isinstance(x, bool) or not isinstance(x, (int, float)):
+            return 'Every peak needs a numeric "x".'
+    return None
+
+
+def _conversion_failed(err):
+    """The outline for a spectrum that could not be converted."""
+    if isinstance(err, MSConversionFailed) and \
+            getattr(err, 'status', 422) >= 500:
+        return _respond(outline(NOT_AVAILABLE, str(err)))
+    return _unusable('The spectrum could not be read: {}'.format(err))
+
+
+def _predict_nmr(mm, layout, peaks, shift):
+    problem = _peaks_problem(peaks)
+    if problem:
+        return _unusable(problem)
+    if not isinstance(shift, dict):
+        return _unusable('shift must be a JSON object.')
+    return _respond(InferModel.predict_nmr(
+        mm=mm,
+        layout=layout,
+        peaks=peaks,
+        shift=shift
+    ))
 
 
 @infer_api.route('/predict/by_peaks_json', methods=['POST'])
@@ -65,21 +106,16 @@ def chemspectra_predict_by_peaks_json():
         return _unusable('The request body is not a JSON object.')
     layout = payload.get('layout')
     peaks = payload.get('peaks')
-    shift = payload.get('shift') or {}
+    shift = payload.get('shift')
+    shift = {} if shift is None else shift
     moltxt = payload.get('molfile')
-    molfile = FileContainer().from_str(moltxt) if moltxt else None
+    molfile = FileContainer().from_str(moltxt) \
+        if isinstance(moltxt, str) and moltxt else None
     mm = _molecule(molfile, layout, decorate=True)
     if not mm:
         return _unusable('No readable molfile was sent.')
-    if not peaks:
-        return _unusable('No peaks were sent.')
 
-    return _respond(InferModel.predict_nmr(
-        mm=mm,
-        layout=layout,
-        peaks=peaks,
-        shift=shift
-    ))
+    return _predict_nmr(mm, layout, peaks, shift)
 
 
 @infer_api.route('/predict/by_peaks_form', methods=['POST'])
@@ -90,7 +126,7 @@ def chemspectra_predict_by_peaks_form():
     layout = request.form.get('layout', default=None)
     peaks = _json_field('peaks', '{}')
     shift = _json_field('shift', '{}')
-    if peaks is None or shift is None:
+    if peaks is _UNPARSABLE or shift is _UNPARSABLE:
         return _unusable('peaks and shift must be JSON.')
     molfile = _uploaded('molfile')
     mm = _molecule(molfile, layout, decorate=True)
@@ -104,10 +140,8 @@ def chemspectra_predict_by_peaks_form():
                 cv = TraModel(
                     spectrum, molfile=molfile, params={'ext': 'jdx'}
                 ).to_converter()
-            except UnconvertibleSpectrum as err:
-                return _unusable(
-                    'The spectrum could not be read: {}'.format(err)
-                )
+            except (UnconvertibleSpectrum, MSConversionFailed) as err:
+                return _conversion_failed(err)
             if not cv:
                 return _unusable('The spectrum could not be read.')
             peaks = parse_array_to_dict_xys(cv.edit_peaks)
@@ -118,12 +152,7 @@ def chemspectra_predict_by_peaks_form():
             'spectrum.'
         )
 
-    return _respond(InferModel.predict_nmr(
-        mm=mm,
-        layout=layout,
-        peaks=peaks,
-        shift=shift
-    ))
+    return _predict_nmr(mm, layout, peaks, shift)
 
 
 @infer_api.route('/predict/infrared', methods=['POST'])
@@ -157,12 +186,13 @@ def chemspectra_predict_ms():
         tm, _ = TraModel(
             spectrum, molfile=None, params={'ext': 'jdx'}
         ).to_composer()
-    except UnconvertibleSpectrum as err:
-        return _unusable('The spectrum could not be read: {}'.format(err))
-    if ((type(tm) is dict) and "invalid_molfile" in tm):
-        return json.dumps(tm)
+    except (UnconvertibleSpectrum, MSConversionFailed) as err:
+        return _conversion_failed(err)
     if not tm:
         return _unusable('The spectrum could not be read.')
+    if not hasattr(tm, 'prism_peaks'):
+        # a JCAMP that converts, but not to a mass spectrum
+        return _unusable('MS prediction needs a mass spectrum.')
 
     return _respond(InferModel.predict_ms(
         mm=mm,

@@ -9,6 +9,7 @@ from chem_spectra.lib.data_pipeline.infrared import InfraredLib
 from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
 from chem_spectra.lib.converter.share import UnconvertibleSpectrum
 from chem_spectra.lib.chem.artist import ArtistLib
+from rdkit import Chem
 
 hdr_nsdb = {
     'Content-Type': 'application/json'
@@ -60,6 +61,43 @@ def _request_failed(err, service):
     return outline(BAD_ANSWER, '{} could not be asked: {}'.format(service, err))
 
 
+def _unreadable_answer(rsp, body, service):
+    """The outline for an answer from `service` without a prediction in it.
+
+    A predictor that speaks this app's convention and explains itself in an
+    `outline` keeps its code and reason. Anything else is a 502 that says what
+    came back, so the reason is not lost either.
+    """
+    theirs = body.get('outline') if isinstance(body, dict) else None
+    if isinstance(theirs, dict) and isinstance(theirs.get('code'), int) \
+            and theirs.get('code') != 200 and isinstance(theirs.get('text'), str):
+        return outline(theirs['code'], theirs['text'])
+    status = getattr(rsp, 'status_code', 200)
+    snippet = str(getattr(rsp, 'text', '') or '')[:200].strip()
+    text = '{} answered HTTP {} without a prediction this server can read.'.format(
+        service, status)
+    return outline(BAD_ANSWER, '{} {}'.format(text, snippet) if snippet else text)
+
+
+def _predicted_groups(outcome):
+    """The functional groups in an IR answer, or None if any is unusable.
+
+    `ArtistLib.draw_ir` reads each group's `sma` and parses it as SMARTS, so
+    an entry it cannot draw is caught here rather than as a 500 there.
+    """
+    try:
+        fgs = outcome['output']['result'][0]['fgs']
+    except (KeyError, IndexError, TypeError):
+        return None
+    if not isinstance(fgs, list):
+        return None
+    for group in fgs:
+        sma = group.get('sma') if isinstance(group, dict) else None
+        if not isinstance(sma, str) or Chem.MolFromSmarts(sma) is None:
+            return None
+    return fgs
+
+
 class InferencerModel:
     def __init__(
         self,
@@ -83,7 +121,7 @@ class InferencerModel:
             shift={'ref': {'label': False, 'name': '- - -', 'value': 0}, 'peak': False, 'enable': False}    # noqa: E501
         )
         try:
-            rsp = instance.__predict_nmr(timeout=120)
+            rsp = instance.__predict_nmr()
             output = rsp.json()
             logger = logging.getLogger(__name__)
             logger.setLevel(logging.INFO)
@@ -132,20 +170,18 @@ class InferencerModel:
             logging.getLogger(__name__).error('NMRShiftDB: %s', err)
             return _request_failed(err, 'NMRShiftDB')
         if rsp.status_code >= 500:
-            return outline(BAD_ANSWER, 'NMRShiftDB answered HTTP {}.'.format(
-                rsp.status_code))
+            return _unreadable_answer(rsp, None, 'NMRShiftDB')
         try:
             output = rsp.json()
-            shifts = output['result'][0]['shifts']
         except json.decoder.JSONDecodeError:
             # unchanged: an answer that is not JSON has always been reported
             # as the mismatch, which is what the editor shows for 400
             return outline(
                 400, 'Peak & Element count mismatch! Please check peak-picking.')
+        try:
+            shifts = output['result'][0]['shifts']
         except (KeyError, IndexError, TypeError):
-            return outline(
-                BAD_ANSWER, 'NMRShiftDB answered in a shape this server does '
-                'not understand.')
+            return _unreadable_answer(rsp, output, 'NMRShiftDB')
         output['result'][0]['svgs'] = ArtistLib.draw_nmr(
             mm=mm,
             layout=layout,
@@ -159,16 +195,17 @@ class InferencerModel:
             'output': output,
         }
 
-    def __predict_nmr(self, timeout=None):
+    def __predict_nmr(self):
         url = _predictor_url('URL_NSHIFTDB', 'NMR')
         peak_xs = self.__extract_x()
-        solvent = self.shift.get('ref', {}) .get('nsdb')
+        ref = self.shift.get('ref')
+        solvent = ref.get('nsdb') if isinstance(ref, dict) else None
         data = self.__build_data(NMR_LAYOUTS[self.layout], peak_xs, solvent)
         return requests.post(
             url,
             headers=hdr_nsdb,
             json=data,
-            timeout=timeout or _timeout(),
+            timeout=_timeout(),
             verify=False
         )
 
@@ -204,7 +241,7 @@ class InferencerModel:
             spectrum=spectrum
         )
         try:
-            outcome = instance.__predict_ir()
+            rsp = instance.__predict_ir()
         except PredictorNotConfigured as err:
             return outline(NOT_AVAILABLE, str(err))
         except UnconvertibleSpectrum as err:
@@ -217,20 +254,20 @@ class InferencerModel:
             # array, which is a bad upload rather than a server fault
             return outline(
                 400, 'IR Spectrum error!\nPlease feedback to System Admins.')
-        except requests.exceptions.JSONDecodeError:
-            # before RequestException, which it also is
-            return outline(
-                BAD_ANSWER, 'The IR predictor answered with something that '
-                'is not JSON.')
         except requests.RequestException as err:
             logging.getLogger(__name__).error('IR predictor: %s', err)
             return _request_failed(err, 'The IR predictor')
+        if rsp.status_code >= 500:
+            return _unreadable_answer(rsp, None, 'The IR predictor')
         try:
-            fgs = outcome['output']['result'][0]['fgs']
-        except (KeyError, IndexError, TypeError):
+            outcome = rsp.json()
+        except ValueError:
             return outline(
-                BAD_ANSWER, 'The IR predictor answered in a shape this server '
-                'does not understand.')
+                BAD_ANSWER, 'The IR predictor answered with something that '
+                'is not JSON.')
+        fgs = _predicted_groups(outcome)
+        if fgs is None:
+            return _unreadable_answer(rsp, outcome, 'The IR predictor')
         outcome['output']['result'][0]['svgs'] = ArtistLib.draw_ir(
             mm=mm,
             layout='IR',
@@ -252,16 +289,12 @@ class InferencerModel:
         file = buf.getvalue()
         files = {'file': (file)}
 
-        rsp = requests.post(
+        return requests.post(
             url,
             files=files,
             data=fgs,
             timeout=_timeout(),
         )
-        if rsp.status_code >= 500:
-            raise requests.HTTPError(
-                'it answered HTTP {}'.format(rsp.status_code))
-        return rsp.json()
 
     @classmethod
     def predict_ms(cls, mm=False, tm=False):

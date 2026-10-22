@@ -24,12 +24,12 @@ The **prediction routes** (`/predict/*`) are different: they always answer **`20
 |---|---|---|
 | `200` | the prediction, under `output` | the prediction |
 | `400` | the predictor could not assign these peaks to this molecule, or the IR spectrum could not be read | "Peak & Element count mismatch" |
-| `422` | nothing to ask about: no or unreadable molfile, no peaks, no spectrum, or an NMR layout other than 1H, 13C, 19F | "Unknown state" |
-| `502` | the predictor answered with an error, or with something this service cannot read | "Service is not available" |
-| `503` | the predictor is not configured here (`URL_NSHIFTDB`, `URL_DEEPIR` unset), or cannot be reached | "Service is not available" |
+| `422` | nothing to ask about: no or unreadable molfile; no peaks, or peaks that are not a list of objects with a numeric `x`; a `shift` that is not an object; no spectrum, or one that cannot be read (for MS prediction, one that is not a mass spectrum); an NMR layout other than 1H, 13C, 19F | "Unknown state" |
+| `502` | the predictor answered with an error, or with something this service cannot read; `text` quotes what came back | "Service is not available" |
+| `503` | the predictor is not configured here (`URL_NSHIFTDB`, `URL_DEEPIR` unset), or cannot be reached; also msconvert, when a RAW or mzML upload has to be converted first | "Service is not available" |
 | `504` | the predictor did not answer within `PREDICT_TIMEOUT` seconds (default 120) | "Service is not available" |
 
-`text` gives the reason in each case. The HTTP status is set in one place, `_respond()` in `inference_api.py`, so that it can follow `outline.code` once the ELN reads the body of a non-200 answer.
+`text` gives the reason in each case. A predictor that answers with an `outline` of its own, as DeepIR does, keeps its code and reason. The HTTP status is set in one place, `_respond()` in `inference_api.py`, so that it can follow `outline.code` once the ELN reads the body of a non-200 answer.
 
 ## `file_api`
 

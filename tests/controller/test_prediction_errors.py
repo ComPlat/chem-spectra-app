@@ -15,6 +15,11 @@ import requests
 
 from fixtures.mock_predict_nmr import request_predict_nmr, response_predict_nmr
 
+from chem_spectra.controller.helper.file_container import FileContainer
+from chem_spectra.lib.converter.ms import MSConversionFailed, MSConverterUnavailable
+from chem_spectra.model.inferencer import InferencerModel as InferModel
+from chem_spectra.model.molecule import MoleculeModel
+
 
 SOURCE = './tests/fixtures/source/'
 NMR_FORM = '/api/v1/chemspectra/predict/nmr_peaks_form'
@@ -24,14 +29,16 @@ MS = '/api/v1/chemspectra/predict/ms'
 
 
 class Answer:
+    """A predictor's answer: a JSON `body`, or a `text` that is not JSON."""
+
     def __init__(self, status_code=200, body=None, text=None):
         self.status_code = status_code
         self._body = body
-        self._text = text
+        self.text = json.dumps(body) if text is None else text
 
     def json(self):
-        if self._text is not None:
-            raise requests.exceptions.JSONDecodeError('not JSON', self._text, 0)
+        if self._body is None:
+            raise requests.exceptions.JSONDecodeError('not JSON', self.text, 0)
         return self._body
 
 
@@ -204,3 +211,131 @@ def test_ir_predictor_bad_answers(client, predictors, answer):
             'spectrum': (io.BytesIO(_read('IR.dx')), 'IR.dx'),
         }))
     assert outline['code'] == 502
+
+
+# -- review of 2026-10-22: inputs that still reached a 500 ------------------
+
+@pytest.mark.parametrize('overrides, reason', [
+    ({'peaks': '{"a": 1}'}, 'list'),
+    ({'peaks': '[{"y": 1}]'}, 'numeric "x"'),
+    ({'peaks': '[{"x": "7.2"}]'}, 'numeric "x"'),
+    ({'peaks': 'null'}, 'No peaks'),
+    ({'shift': '[1]'}, 'shift must be a JSON object'),
+])
+def test_nmr_form_refuses_malformed_peaks_and_shift(
+        client, predictors, overrides, reason):
+    with mock.patch('requests.post') as post:
+        outline = _outline(_post(client, NMR_FORM, _nmr_form(**overrides)))
+    assert outline['code'] == 422
+    assert reason in outline['text']
+    post.assert_not_called()
+
+
+@pytest.mark.parametrize('shift', ['null', '{"ref": null}', '{"ref": "x"}'])
+def test_nmr_form_takes_a_shift_without_a_usable_ref(client, predictors, shift):
+    with mock.patch('requests.post', return_value=Answer(
+            body=response_predict_nmr)) as post:
+        outline = _outline(_post(client, NMR_FORM, _nmr_form(shift=shift)))
+    assert outline['code'] == 200
+    assert post.call_args.kwargs['json']['inputs'][0]['solvent'] == 'None'
+
+
+def test_nmr_json_refuses_peaks_that_are_not_a_list(client, predictors):
+    body = json.dumps({**request_predict_nmr, 'peaks': {'x': 1}})
+    with mock.patch('requests.post') as post:
+        response = client.post(
+            NMR_JSON, content_type='application/json', data=body)
+    assert _outline(response)['code'] == 422
+    post.assert_not_called()
+
+
+def _ir(client):
+    return _post(client, IR, {
+        'molfile': _molfile(),
+        'spectrum': (io.BytesIO(_read('IR.dx')), 'IR.dx'),
+    })
+
+
+@pytest.mark.parametrize('fgs', [
+    ['C=O'],
+    [{'smarts': 'C=O'}],
+    [{'sma': 'C(=O'}],
+    'C=O',
+])
+def test_ir_answer_with_groups_that_cannot_be_drawn(client, predictors, fgs):
+    answer = Answer(body={'outline': {'code': 200}, 'output': {
+        'result': [{'type': 'ir', 'fgs': fgs}]}})
+    with mock.patch('requests.post', return_value=answer):
+        outline = _outline(_ir(client))
+    assert outline['code'] == 502
+
+
+def test_ms_refuses_a_spectrum_that_is_not_a_mass_spectrum(client, predictors):
+    outline = _outline(_post(client, MS, {
+        'molfile': _molfile(),
+        'spectrum': (io.BytesIO(_read('1H.dx')), '1H.dx'),
+    }))
+    assert outline == {'code': 422, 'text': 'MS prediction needs a mass spectrum.'}
+
+
+@pytest.mark.parametrize('error, code', [
+    (MSConverterUnavailable('msconvert did not answer'), 503),
+    (MSConversionFailed('no mzML for this upload'), 422),
+])
+def test_ms_conversion_failure_stays_in_the_outline(
+        client, predictors, error, code):
+    with mock.patch(
+            'chem_spectra.controller.inference_api.TraModel.to_composer',
+            side_effect=error):
+        outline = _outline(_post(client, MS, {
+            'molfile': _molfile(),
+            'spectrum': (io.BytesIO(b'raw'), 'x.raw'),
+        }))
+    assert outline['code'] == code
+    assert str(error) in outline['text']
+
+
+def test_13c_conversion_failure_stays_in_the_outline(client, predictors):
+    with mock.patch(
+            'chem_spectra.controller.inference_api.TraModel.to_converter',
+            side_effect=MSConverterUnavailable('msconvert did not answer')):
+        outline = _outline(_post(client, NMR_FORM, _nmr_form(
+            peaks='{}', spectrum=(io.BytesIO(b'x'), 'x.mzML'))))
+    assert outline['code'] == 503
+
+
+# -- review of 2026-10-22: answers that lost the predictor's reason ---------
+
+def test_ir_predictor_keeps_its_own_reason(client, predictors):
+    answer = Answer(status_code=400, body={
+        'outline': {'code': 400, 'text': 'unsupported molecule'}})
+    with mock.patch('requests.post', return_value=answer):
+        outline = _outline(_ir(client))
+    assert outline == {'code': 400, 'text': 'unsupported molecule'}
+
+
+def test_nmr_error_body_is_quoted(client, predictors):
+    answer = Answer(status_code=400, body={'error': 'bad solvent'})
+    with mock.patch('requests.post', return_value=answer):
+        outline = _outline(_post(client, NMR_FORM, _nmr_form()))
+    assert outline['code'] == 502
+    assert 'HTTP 400' in outline['text']
+    assert 'bad solvent' in outline['text']
+
+
+def test_ir_server_error_is_reported_as_an_answer(client, predictors):
+    with mock.patch('requests.post', return_value=Answer(
+            status_code=500, text='<html>boom</html>')):
+        outline = _outline(_ir(client))
+    assert outline['code'] == 502
+    assert 'answered HTTP 500' in outline['text']
+    assert 'could not be asked' not in outline['text']
+
+
+def test_simulation_uses_predict_timeout(app, predictors):
+    app.config['PREDICT_TIMEOUT'] = 7
+    with app.app_context():
+        mm = MoleculeModel(FileContainer().from_str(request_predict_nmr['molfile']), '13C')
+        with mock.patch('requests.post', side_effect=requests.Timeout) as post:
+            assert InferModel.simulate_nmr(mm=mm, layout='13C') == []
+    assert post.call_args.kwargs['timeout'] == 7
