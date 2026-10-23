@@ -14,7 +14,7 @@ Nothing on the ELN side branches on the status code — every check is
 convention rather than two.
 """
 
-from flask import jsonify
+from flask import current_app, jsonify, request
 
 REFUSED = 422
 
@@ -42,3 +42,14 @@ def uploaded_file(request, field='file'):
     """
     uploaded = request.files.get(field)
     return uploaded or None
+
+
+def request_too_large_reason():
+    """Why werkzeug refused this request as too large (its 413)."""
+    limit = current_app.config.get('MAX_CONTENT_LENGTH')
+    size = request.content_length
+    if limit and size and size > limit:
+        return 'the upload is {:.1f} MB; the limit is {:.1f} MB.'.format(
+            size / (1024 * 1024), limit / (1024 * 1024))
+    return ('a form field in this request is larger than the server '
+            'accepts (MAX_FORM_MEMORY_SIZE).')
