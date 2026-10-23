@@ -77,7 +77,7 @@ These routes share conversion primitives, but their response shapes differ.
 
 1. Reads `file`, optional `molfile`, and form params.
 2. Runs `convert2jcamp_img()`.
-3. If the result is BagIt, returns JSON with `list_jcamps`.
+3. If the result is BagIt, or a processed Bruker upload (several composers: the transform of the raw FID and Bruker's processed spectrum), returns JSON with `list_jcamps`.
 4. Otherwise returns JSON with base64 `jcamp` and `img`.
 5. If no JCAMP output exists and it is not BagIt, refuses with `422` and a JSON reason.
 
@@ -260,7 +260,7 @@ Runtime path:
 2. If the upload is detected as ZIP, uncompressed size is checked against `MAX_ZIP_SIZE`.
 3. `zip2cvp()` writes the bytes to a temp `.zip`.
 4. Archive content is extracted into `TemporaryDirectory`.
-5. Bruker FID detection runs first.
+5. Bruker FID detection runs first. A multi-dimensional experiment (`ser`, with `acqu2s`) is refused first by `refuse_if_bruker_multi_dimensional()`, with `422` and the reason, when the `fid` that would be converted lies inside it, or when there is a `ser` and no `fid`. A 1D experiment beside a 2D one is still converted.
 6. If Bruker exists, processed data under `pdata` changes the return shape.
 7. Otherwise, BagIt detection checks for `bagit.txt`.
 8. Unsupported ZIP shape returns `False, False, False`.
