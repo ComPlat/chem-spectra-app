@@ -105,7 +105,8 @@ def test_predict_by_peaks_form_rejects_it(client):
     """to_converter() now returns False, and the caller dereferenced it.
 
     `cv.edit_peaks` on a bool raised AttributeError
-    (controller/inference_api.py).
+    (controller/inference_api.py). The prediction routes answer 200 with the
+    reason in `outline`, since the ELN keeps only a 200.
     """
     response = client.post(
         '/predict/by_peaks_form',
@@ -119,7 +120,8 @@ def test_predict_by_peaks_form_rejects_it(client):
         },
         content_type='multipart/form-data',
     )
-    assert response.status_code == 400
+    assert response.status_code == 200
+    assert response.get_json()['outline']['code'] == 422
 
 
 def test_predict_infrared_reports_it_in_the_outline(client):

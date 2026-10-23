@@ -30,12 +30,15 @@ Run the ProteoWizard build CI tests against: the version is pinned in
 
 ### 2.2. `instance/config.py` (optional)
 
-Every key has a default; create the file only to change one.
+Every key has a default; create the file only to change one. The two
+predictor URLs default to unset, and a prediction then answers that it is not
+configured on this server.
 
 ```python
 # instance/config.py
 URL_DEEPIR = 'http://xxx.xxx.xxx.xxx:3008/infer_ir'
 URL_NSHIFTDB = 'https://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
+PREDICT_TIMEOUT = 120               # seconds to wait for either predictor
 LOGS_FILE = '/path/to/logging.log'  # default: instance/logging.log
 MAX_ZIP_SIZE = 200                  # MB, uncompressed; guards against zip bombs
 ```

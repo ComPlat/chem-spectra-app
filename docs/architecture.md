@@ -321,22 +321,19 @@ The `tm` object is expected to be a mass spectrum composer created before callin
 
 #### Error Handling
 
-NMR prediction handles:
+Every prediction route answers HTTP 200, and a failure comes back as an outline with a code and a reason. The ELN keeps only a 200. The HTTP status is set in one place, `_respond()` in `inference_api.py`.
 
-- `json.decoder.JSONDecodeError`, returning an outline with code `400`;
-- `requests.ConnectionError`, logging the connection problem and returning an outline with code `503`.
+- **`422`, nothing to ask about:** no or unreadable molfile; peaks that are missing or not a list of objects with a numeric `x`; a `shift` that is not an object; no spectrum, an unreadable one, or (MS) one that is not a mass spectrum; an NMR layout other than 1H, 13C, 19F. Checked before anything is sent.
+- **`503`:** the predictor's URL is unset (`PredictorNotConfigured`), `requests.ConnectionError`, or msconvert unavailable (`MSConverterUnavailable`) while converting the upload.
+- **`504`:** `requests.Timeout`, after `PREDICT_TIMEOUT` seconds (default 120). Every outbound call has the timeout.
+- **`502`:** an error status, an answer that is not JSON (IR), or one without the expected fields, including IR groups that `ArtistLib.draw_ir` could not draw. `text` quotes the answer. A predictor that sends its own `outline` keeps its code and reason (`_unreadable_answer()`).
+- **`400`, kept from before:** an NMR answer that is not JSON (the editor's "Peak & Element count mismatch"), and an IR spectrum that cannot be read (`UnconvertibleSpectrum`, `UnparsableJcampData`, `TypeError`).
 
-IR prediction handles:
+MS prediction handles `TypeError` with `400`.
 
-- `TypeError`, returning an outline with code `400`;
-- `requests.ConnectionError`, returning an outline with code `503`.
+`simulate_nmr()` catches broad exceptions, logs them, and returns an empty list. That includes an unset `URL_NSHIFTDB`.
 
-MS prediction handles:
-
-- `TypeError`, returning an outline with code `400`;
-- `requests.ConnectionError`, returning an outline with code `503`.
-
-`simulate_nmr()` catches broad exceptions, logs them, and returns an empty list.
+`docs/api-reference.md` has the code table, with what the editor shows for each code.
 
 #### Runtime Flow Reference
 
@@ -686,7 +683,7 @@ Supported layouts in code:
 - `13C`
 - `19F`
 
-If the service is unavailable, `predict_nmr()` catches `requests.ConnectionError`, logs the issue, and returns an outline with code `503`.
+Every call has a timeout, `PREDICT_TIMEOUT` (default 120 s). Failures come back as an outline, never as an exception: `503` when `URL_NSHIFTDB` is unset or the service cannot be reached, `504` on a timeout, `502` for an error status or an answer without `result[0].shifts`, and `400`, the editor's "Peak & Element count mismatch", when the answer is not JSON, as before. A layout outside the three above is refused with `422` before anything is sent. `docs/api-reference.md` has the table.
 
 ### DeepIR
 
@@ -706,7 +703,7 @@ Input preparation:
 - `MoleculeModel.fgs()` provides functional groups.
 - NumPy writes standardized data into an in-memory `.npz` payload.
 
-If the service is unavailable, `predict_ir()` catches `requests.ConnectionError` and returns an outline with code `503`.
+The call has the same `PREDICT_TIMEOUT`. Failures come back as an outline: `503` when `URL_DEEPIR` is unset or the service cannot be reached (production leaves it unset), `504` on a timeout, `502` for an error status, a body that is not JSON, or one without `output.result[0].fgs`, and `400` when the spectrum cannot be read.
 
 ### nmrglue
 
