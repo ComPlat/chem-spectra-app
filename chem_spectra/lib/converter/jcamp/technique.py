@@ -1068,6 +1068,62 @@ class JcampTechniqueConverter:
             peak_idxs = np.unique(np.concatenate((peak_idxs, dept_peak_idxs)))
         return peak_idxs
 
+    # Half-width of the widest deuterated-solvent multiplet, in Hz: the 13C
+    # septets of DMSO-d6, methanol-d4 and acetonitrile-d3 reach +-64 Hz
+    # (3 x J(C,D) ~ 21 Hz). In Hz, not ppm, because the spread in ppm
+    # depends on the spectrometer.
+    SOLVENT_MULTIPLET_HALF_WIDTH_HZ = 75.0
+
+    def __filter_solvent_peaks(self, peaks):
+        """Collapse each solvent multiplet to its strongest peak.
+
+        The solvent window is wide (+-3 ppm for 13C) so that a spectrum
+        referenced off by a little still finds its solvent. A peak in the
+        window counts as solvent only if it also lies within one multiplet
+        half-width of the window's strongest peak; a sample signal elsewhere
+        in the window is kept. Without an observe frequency the half-width
+        cannot be put in ppm, and the whole window counts.
+        """
+        if not self.solv_peaks:
+            return peaks
+        obs_freq = getattr(self, 'obs_freq', None)
+        half_width = (self.SOLVENT_MULTIPLET_HALF_WIDTH_HZ / obs_freq
+                      if obs_freq else None)
+
+        assigned_peak_indices = set()
+        kept_solvent_peaks = []
+
+        for lower_bound, upper_bound in self.solv_peaks:
+            peaks_in_range = [
+                (idx, peak) for idx, peak in enumerate(peaks)
+                if lower_bound < peak['x'] < upper_bound
+            ]
+            if not peaks_in_range:
+                continue
+
+            range_center = (lower_bound + upper_bound) / 2
+            keep_idx, keep_peak = min(
+                peaks_in_range,
+                key=lambda item: (
+                    -abs(item[1]['y']),
+                    abs(item[1]['x'] - range_center),
+                ),
+            )
+            assigned_peak_indices.update(
+                idx for idx, peak in peaks_in_range
+                if half_width is None
+                or abs(peak['x'] - keep_peak['x']) <= half_width
+            )
+            kept_solvent_peaks.append((keep_idx, keep_peak))
+
+        filtered_peaks = [
+            peak for idx, peak in enumerate(peaks)
+            if idx not in assigned_peak_indices
+        ]
+        filtered_peaks.extend(peak for _, peak in kept_solvent_peaks)
+        filtered_peaks.sort(key=lambda d: d['y'], reverse=True)
+        return filtered_peaks
+
     def __run_auto_pick_peak(self):
         peak_idxs = self.__exec_peak_picking_logic()
         auto_peaks = [{'x': self.xs[idx], 'y': self.ys[idx]} for idx in peak_idxs]
@@ -1080,23 +1136,15 @@ class JcampTechniqueConverter:
             simu_length = len(self.simu_peaks)
             simu_length = simu_length if simu_length > 1 else 50
             auto_peaks = auto_peaks[:200]
-            # rm solvent peaks
-            edit_non_solv_peaks = []
-            for peak in auto_peaks:
-                not_solvent = True
-                for u, v in self.solv_peaks:
-                    if u < peak['x'] < v:
-                        not_solvent = False
-                if not_solvent:
-                    edit_non_solv_peaks.append(peak)
+            auto_peaks = self.__filter_solvent_peaks(auto_peaks)
             # as - 26.90 (range: 26.80 - 26.95)
             # bs, cs - 207.1 (207.0-207.2) + 30.9 (30.8 - 31.0)
             # ds, es, fs, gs - 60.4 (60.3 - 60.5) + 14.2 (14.1 - 14.3) + 21.1 (20.9 - 21.2) + 171.3 (171.2-171.4)
             # rm impurity peaks
             imp_as, imp_bs, imp_cs, imp_ds, imp_es, imp_fs, imp_gs, edit_pure_peaks = [], [], [], [], [], [], [], []
-            i, capacity, l = 0, simu_length + 10, len(edit_non_solv_peaks)
+            i, capacity, l = 0, simu_length + 10, len(auto_peaks)
             while i < capacity and i < l:
-                target = edit_non_solv_peaks[i]
+                target = auto_peaks[i]
                 if 26.80 <= target['x'] <= 27.0:
                     imp_as.append(target)
                 elif 207.0 <= target['x'] <= 207.2:
@@ -1130,16 +1178,9 @@ class JcampTechniqueConverter:
             auto_peaks = auto_peaks[:100]
         elif self.ncl == '1H':
             auto_peaks = auto_peaks[:100]
-            edit_non_solv_peaks = []
-            for peak in auto_peaks:
-                not_solvent = True
-                for u, v in self.solv_peaks:
-                    if u < peak['x'] < v:
-                        not_solvent = False
-                if not_solvent:
-                    edit_non_solv_peaks.append(peak)
-            edit_x = [peak['x'] for peak in edit_non_solv_peaks]
-            edit_y = [peak['y'] for peak in edit_non_solv_peaks]
+            auto_peaks = self.__filter_solvent_peaks(auto_peaks)
+            edit_x = [peak['x'] for peak in auto_peaks]
+            edit_y = [peak['y'] for peak in auto_peaks]
             self.edit_peaks = {'x': edit_x, 'y': edit_y}
         else:
             auto_peaks = auto_peaks[:100]

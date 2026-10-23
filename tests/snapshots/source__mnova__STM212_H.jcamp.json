@@ -14,8 +14,8 @@
     }
   },
   "edit_peaks": {
-    "n": 8,
-    "sha1": "d49de1cb5015a79b"
+    "n": 9,
+    "sha1": "78b8703b97ec6f53"
   },
   "factor": {
     "x": 1.0,
@@ -26,8 +26,8 @@
     "\n"
   ],
   "jcamp": {
-    "len": 77641,
-    "sha1": "3d562d6fe940f1dfec3af0999f4258a03a4267a1"
+    "len": 77679,
+    "sha1": "bde03c4f16f4afab351317325648d6ab70d1a6f2"
   },
   "label": {
     "x": "PPM",

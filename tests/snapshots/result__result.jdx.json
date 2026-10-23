@@ -1,7 +1,7 @@
 {
   "auto_peaks": {
     "n": 100,
-    "sha1": "ca7663b16511ab85"
+    "sha1": "a4292e077a70f108"
   },
   "boundary": {
     "x": {
@@ -15,7 +15,7 @@
   },
   "edit_peaks": {
     "n": 50,
-    "sha1": "d15fb571dd53baa1"
+    "sha1": "1d84755edf51eb5f"
   },
   "factor": {
     "x": 3.95999999999999e-05,
@@ -23,8 +23,8 @@
   },
   "itg_table": [],
   "jcamp": {
-    "len": 256750,
-    "sha1": "d44063112e7b07b238fa18e7d116eac5e45949c8"
+    "len": 256749,
+    "sha1": "a96f7bbbe37093e14c4fd193adc835d356eee5f4"
   },
   "label": {
     "x": "PPM",

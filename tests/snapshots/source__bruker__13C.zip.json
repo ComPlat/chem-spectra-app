@@ -2,7 +2,7 @@
   "spectra": [
     {
       "auto_peaks": {
-        "n": 100
+        "n": 97
       },
       "boundary": {
         "x": {
@@ -48,8 +48,8 @@
     },
     {
       "auto_peaks": {
-        "n": 38,
-        "sha1": "cb7fee1c0b20ba33"
+        "n": 36,
+        "sha1": "e128e1959d33d789"
       },
       "boundary": {
         "x": {
@@ -62,8 +62,8 @@
         }
       },
       "edit_peaks": {
-        "n": 38,
-        "sha1": "cb7fee1c0b20ba33"
+        "n": 36,
+        "sha1": "e128e1959d33d789"
       },
       "factor": {
         "x": 1.0,
@@ -71,8 +71,8 @@
       },
       "itg_table": [],
       "jcamp": {
-        "len": 860813,
-        "sha1": "a946a30c58102e391c4276a8ff34267c09c1a5ac"
+        "len": 860653,
+        "sha1": "e5f6fa4159c286a972068f9cc312e4d30f7ae590"
       },
       "label": {
         "x": "PPM",
