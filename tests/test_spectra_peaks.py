@@ -357,3 +357,45 @@ def test_inherit_wihtout_params_1H():
     meta_target = __target_peaks_meta('edit/inherit_' + meta_H1_dx)
     assert inherit_meta_content == meta_target
 """
+
+
+def _acetone_converter(params, dic):
+    # acetone-d6 13C: the CD3 septet around 29.84 and the carbonyl at 206.26,
+    # plus one sample peak outside both windows
+    converter = JcampTechniqueConverter.__new__(JcampTechniqueConverter)
+    converter.ncl = '13C'
+    converter.obs_freq = 100.6
+    converter.solv_peaks = [(27.0, 33.0), (203.7, 209.7)]
+    converter.params = params
+    converter.dic = dic
+    step = 19.5 / 100.6
+    septet = [{'x': 29.84 + k * step, 'y': w}
+              for k, w in zip(range(-3, 4), [1.0, 3.0, 6.0, 7.0, 6.0, 3.0, 1.0])]
+    carbonyl = [{'x': 206.26, 'y': 5.0}]
+    sample = [{'x': 128.4, 'y': 9.0}]
+    return converter, septet + carbonyl + sample
+
+
+def _filtered(converter, peaks):
+    kept = converter._JcampTechniqueConverter__filter_solvent_peaks(peaks)
+    return sorted(round(peak['x'], 2) for peak in kept)
+
+
+def test_only_the_reference_solvent_signal_keeps_a_line():
+    # the reference is the CD3 septet: its line stays for the reference, and
+    # the carbonyl line, which nothing else would remove, goes
+    converter, peaks = _acetone_converter(
+        {'ref_name': None}, {'$CSSOLVENTVALUE': ['29.84']})
+    assert _filtered(converter, peaks) == [29.84, 128.4]
+
+
+def test_the_requested_reference_signal_is_the_one_kept():
+    converter, peaks = _acetone_converter(
+        {'ref_name': 'Acetone-d6 (broad)', 'ref_value': '206.26'},
+        {'$CSSOLVENTVALUE': ['29.84']})
+    assert _filtered(converter, peaks) == [128.4, 206.26]
+
+
+def test_without_a_reference_value_the_first_window_is_the_reference():
+    converter, peaks = _acetone_converter({'ref_name': None}, {})
+    assert _filtered(converter, peaks) == [29.84, 128.4]
