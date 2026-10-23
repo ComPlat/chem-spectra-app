@@ -35,7 +35,7 @@ The **prediction routes** (`/predict/*`) are different: they always answer **`20
 
 | Route | Handler | Main input | Main output |
 |---|---|---|---|
-| `POST /api/v1/chemspectra/file/convert` | `chemspectra_file_convert()` | `file`, optional `molfile`, form params | JSON with base64 `jcamp` and `img`, or BagIt `list_jcamps` |
+| `POST /api/v1/chemspectra/file/convert` | `chemspectra_file_convert()` | `file`, optional `molfile`, form params | JSON with base64 `jcamp` and `img`; or `list_jcamps` for a BagIt archive or a processed Bruker upload (one JCAMP per spectrum, as `/zip_jcamp_n_img` returns them) |
 | `POST /api/v1/chemspectra/file/save` | `chemspectra_file_save()` | `src`, `dst` or `dst_list`, optional `molfile`, form params | `spectrum.zip` containing source, generated files, predictions, optional CSV |
 | `POST /api/v1/chemspectra/file/refresh` | `chemspectra_file_refresh()` | `dst` or `dst_list`, optional `molfile`, form params | JSON with base64 `jcamp` and `img`, or `spectrum.zip` for multiple files |
 | `POST /api/v1/chemspectra/molfile/convert` | `chemspectra_molfile_convert()` | `molfile` | JSON with `smi`, `mass`, and molecule `svg` |

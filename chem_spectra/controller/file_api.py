@@ -25,7 +25,22 @@ def chemspectra_file_convert():
     file = FileContainer(uploaded)
     molfile = FileContainer(request.files.get('molfile'))
     params = extract_params(request)
-    tf_jcamp, tf_img, _ = TraModel(file, molfile=molfile, params=params).convert2jcamp_img()
+    tm = TraModel(file, molfile=molfile, params=params)
+    composers, _ = tm.to_composer()
+    if isinstance(composers, list):
+        # A processed Bruker upload yields one spectrum per processing: the
+        # transform of the raw FID and Bruker's own processed spectrum.
+        # /zip_jcamp_n_img returns them all; so does this, in the same shape
+        # as a BagIt upload, which the clients load as several curves.
+        # convert2jcamp_img() takes exactly one, and raised AttributeError.
+        return jsonify(
+            status=True,
+            list_jcamps=[
+                base64.b64encode(c.tf_jcamp().read()).decode('utf-8')
+                for c in composers
+            ],
+        )
+    tf_jcamp, tf_img, _ = TraModel.jcamp_img_of(composers)
     if not tf_jcamp:
         if isinstance(tf_img, BagItBaseConverter):
             list_jcamps = tf_img.get_base64_data()
