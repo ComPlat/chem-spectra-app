@@ -40,11 +40,19 @@ URL_DEEPIR = 'http://xxx.xxx.xxx.xxx:3008/infer_ir'
 URL_NSHIFTDB = 'https://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/quickcheck'
 PREDICT_TIMEOUT = 120               # seconds to wait for either predictor
 LOGS_FILE = '/path/to/logging.log'  # default: instance/logging.log
-MAX_ZIP_SIZE = 200                  # MB, uncompressed; guards against zip bombs
+MAX_CONTENT_LENGTH = 200 * 1024 * 1024  # bytes; the largest request body accepted
+MAX_ZIP_SIZE = 200                  # MB; the most an uploaded archive may unpack to
+MAX_ZIP_MEMBERS = 1000              # the most files an uploaded archive may hold
 ```
 
 Any key can also be set as a `FLASK_`-prefixed environment variable, which
 overrides the file: for example `FLASK_MAX_ZIP_SIZE=500`.
+
+A request over any of these limits is refused with **422** and the sizes, for
+example `{"error": "the upload is 250.0 MB; the limit is 200.0 MB."}`. The
+defaults leave room above the largest real files measured: LC/MS JCAMP exports
+of about 47 MB, mzML of 38 MB, and a BagIt LC/MS archive that unpacks to about
+120 MB.
 
 ## 3. Run
 
@@ -96,6 +104,10 @@ beside the same msconvert sidecar, as a Dokploy *Docker Compose* application:
   (`MSC_HOST=msconvert`, `MSC_PORT=4000`);
 - the two containers exchange files through the shared volume, mounted at
   `/shared`.
+
+**A deployment shared by several ELNs, or reachable from outside them**,
+should also limit request bodies and request rates at its proxy. The app
+enforces the limits above but has no rate limit of its own.
 
 `just image` builds the developer image locally.
 

@@ -539,7 +539,7 @@ Common temporary-file patterns:
 
 ZIP handling:
 
-- `FileContainer` checks ZIP file contents against `MAX_ZIP_SIZE`.
+- `FileContainer` refuses an archive over `MAX_ZIP_SIZE` or `MAX_ZIP_MEMBERS` with `UnconvertibleSpectrum` (422 and the sizes), before anything is extracted.
 - `TransformerModel.zip2cvp()` extracts ZIP content into `TemporaryDirectory`.
 - `to_zip_response()` and `to_zip_bag_it_response()` package generated temporary files into ZIP responses.
 
@@ -770,6 +770,8 @@ Two things still outlive a request, and both are deliberate:
 - the per-request msconvert working directory on the shared volume, which `MSConverter` removes in a `finally`.
 
 The app does no access control of its own. The old IP allow-list was never enforced and has been removed. Restricting who may call it belongs at the proxy, or in per-ELN API keys if a shared deployment needs them.
+
+What a single request may cost is bounded in the app: the request body by `MAX_CONTENT_LENGTH` (default 200 MB), each form field by Flask's `MAX_FORM_MEMORY_SIZE`, and an uploaded archive by `MAX_ZIP_SIZE` (uncompressed MB, default 200) and `MAX_ZIP_MEMBERS` (default 1000), checked from the archive's directory before anything is extracted (`refuse_if_archive_too_large()` in `controller/helper/file_container.py`). Each is refused with `422` and the sizes; on the prediction routes, as an outline. How many requests arrive is not bounded here: a shared or public deployment sets that, and a body-size limit, at its proxy.
 
 ### File-Based Workflows
 

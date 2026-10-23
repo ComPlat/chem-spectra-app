@@ -49,7 +49,7 @@ Runtime path:
 
 High-value decision points:
 
-- `FileContainer` can nullify `bcore` when a ZIP exceeds `MAX_ZIP_SIZE`.
+- `FileContainer` refuses a ZIP over `MAX_ZIP_SIZE` or `MAX_ZIP_MEMBERS` with a 422 that gives the sizes.
 - `extract_params()` can return `False`.
 - `to_composer()` indexes `params['ext']`; missing params can fail before parsing.
 - `to_composer()` returns different shapes depending on the input: a composer, a list of composers, a BagIt converter, or false-like values.
@@ -257,7 +257,7 @@ Debug focus:
 Runtime path:
 
 1. `FileContainer` reads ZIP bytes.
-2. If the upload is detected as ZIP, uncompressed size is checked against `MAX_ZIP_SIZE`.
+2. If the upload is detected as ZIP, its member count and uncompressed size are checked against `MAX_ZIP_MEMBERS` and `MAX_ZIP_SIZE`; over either, the request is refused with `422` and the sizes.
 3. `zip2cvp()` writes the bytes to a temp `.zip`.
 4. Archive content is extracted into `TemporaryDirectory`.
 5. Bruker FID detection runs first.
@@ -292,7 +292,6 @@ Fragile areas:
 - ZIP flow can return one composer, many composers, a BagIt converter, or false values.
 - Downstream response code must branch by return type.
 - `molfile is None` marks Bruker raw output as `invalid_molfile=True`.
-- ZIP size protection only sets `bcore=None`; later code must tolerate that.
 
 ### Transform Endpoint Output Flow
 
@@ -399,9 +398,8 @@ External services:
 ZIP too large:
 
 - size check happens in `FileContainer`;
-- uncompressed size is compared with `MAX_ZIP_SIZE`;
-- on failure, `bcore` becomes `None`;
-- downstream ZIP parsing can then fail later.
+- member count and uncompressed size are compared with `MAX_ZIP_MEMBERS` and `MAX_ZIP_SIZE`, and an archive over either is refused;
+- the refusal is a `422` naming the sizes, raised before anything is extracted.
 
 HTTP debugging:
 
