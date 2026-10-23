@@ -65,6 +65,12 @@ def _is_placeholder_solvent_name(solvent_name):
 
 
 def _solvent_config(ncl, solvent_name):
+    """(name, reference value, search windows) for a known solvent, or None.
+
+    One window per solvent signal the editor offers as a reference in
+    `react-spectra-editor`'s `list_shift.js`, whose names and values these
+    follow: acetone-d6 and acetonitrile-d3 each show two carbons in 13C.
+    """
     if _is_placeholder_solvent_name(solvent_name):
         return None
 
@@ -87,8 +93,10 @@ def _solvent_config(ncl, solvent_name):
             return ('Dichloromethane-d2 (quin)', str(peak), [(peak - delta, peak + delta)])
         if 'acetonitrile-d3' in solvent_name:
             peak = 1.32
+            nitrile = 118.26
             delta = 3
-            return ('Acetonitrile-d3 (sep)', str(peak), [(peak - delta, peak + delta)])
+            return ('Acetonitrile-d3 (sep)', str(peak), [
+                (peak - delta, peak + delta), (nitrile - delta, nitrile + delta)])
         if 'benzene' in solvent_name:
             peak = 128.06
             delta = 3
@@ -111,7 +119,7 @@ def _solvent_config(ncl, solvent_name):
             peak = 7.16
             delta = 0.01
             return ('Benzene (s)', str(peak), [(peak - delta, peak + delta)])
-        if 'deuterium' in solvent_name:
+        if 'deuterium' in solvent_name or 'd2o' in solvent_name:
             peak = 4.79
             delta = 0.01
             return ('D2O (s)', str(peak), [(peak - delta, peak + delta)])
@@ -123,6 +131,11 @@ def _solvent_config(ncl, solvent_name):
             peak = 2.50
             delta = 0.02
             return ('DMSO-d6 (quin)', str(peak), [(peak - delta, peak + delta)])
+        if 'methanol-d4' in solvent_name or 'meod' in solvent_name:
+            peak = 3.31
+            hydroxyl = 4.87
+            return ('Methanol-d4 (quin)', str(peak), [
+                (peak - 0.02, peak + 0.02), (hydroxyl - 0.05, hydroxyl + 0.05)])
         if 'chloroform-d' in solvent_name or 'cdcl3' in solvent_name:
             peak = 7.26
             delta = 0.01
