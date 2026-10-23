@@ -1322,10 +1322,10 @@ class JcampTechniqueConverter:
             diff = abs(left['x'] - right['x'])
             if 175 < diff < 177:
                 self.dic['$CSSOLVENTNAME'] = ['Acetone-d6 (sep)']
-                self.dic['$CSSOLVENTVALUE'] = ['29.920']
+                self.dic['$CSSOLVENTVALUE'] = ['29.84']
                 self.dic['$CSSOLVENTX'] = ['0']
                 self.solv_peaks = [(27.0, 33.0), (203.7, 209.7)]
-                shift = 29.920 - right['x']
+                shift = 29.84 - right['x']
                 self.xs = self.xs + shift
                 return True  # self.clear
             # is chloroform
