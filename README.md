@@ -7,7 +7,7 @@ This backend web service processes spectra -- NMR, IR, UV/VIS, MS, LC/MS, XRD, C
 ![Testing](https://github.com/ComPlat/chem-spectra-app/actions/workflows/unit_test.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-The frontend is provided by [chem-spectra-client](https://github.com/ComPlat/chem-spectra-client).
+Its main client is the [Chemotion ELN](https://github.com/ComPlat/chemotion_ELN), which displays and edits spectra with [react-spectra-editor](https://github.com/ComPlat/react-spectra-editor). [chem-spectra-client](https://github.com/ComPlat/chem-spectra-client) is a standalone page that calls this service directly.
 
 ## Documentation
 
