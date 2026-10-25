@@ -459,6 +459,9 @@ class BaseComposer:
             table = []
             for simu_peak in self.core.simu_peaks:
                 table.extend(['{}\n'.format(simu_peak)])
+            atoms = getattr(self.core, 'simu_atoms', None)
+            if atoms:
+                table.append('##$CSSIMULATIONATOMS={}\n'.format(atoms))
             return table
 
         return []

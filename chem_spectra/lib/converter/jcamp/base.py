@@ -3,7 +3,7 @@ import logging
 import re
 
 from chem_spectra.lib.converter.share import (
-    UnconvertibleSpectrum, parse_params, parse_solvent,
+    UnconvertibleSpectrum, parse_params, parse_solvent, read_simulation_atoms,
 )
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
 from chem_spectra.lib.converter.jcamp.reader import read_jcamp
@@ -175,6 +175,7 @@ class JcampBaseConverter:
         self.technique = technique_for(self.typ)
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
+        self.simu_atoms = read_simulation_atoms(self.dic)
         self.solv_peaks = []
         self.__read_solvent()
         self.__read_user_data_type_mapping()

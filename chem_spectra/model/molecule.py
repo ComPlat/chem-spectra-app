@@ -66,6 +66,12 @@ class MoleculeModel:
             if atom.HasProp('molAtomMapNumber')
         ]
 
+    def count_atoms(self, symbol):
+        """Atoms of `symbol` in the molecule; for 'H', implicit hydrogens too,
+        whether or not the molecule was built with explicit ones."""
+        mol = Chem.AddHs(self.mol) if symbol == 'H' else self.mol
+        return sum(1 for atom in mol.GetAtoms() if atom.GetSymbol() == symbol)
+
     def fgs(self):
         fg_smas = []
         fgs = ifg.identify_functional_groups(self.mol)
