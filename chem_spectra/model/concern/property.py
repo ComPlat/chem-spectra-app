@@ -1,6 +1,8 @@
 from chem_spectra.model.inferencer import InferencerModel as InferModel
 from chem_spectra.model.molecule import MoleculeModel
 
+SIMULATED_NUCLEUS = {'1H': 'H', '13C': 'C'}
+
 
 def decorate_sim_property(jbcv, molfile, isSimulateNMR=False):
     if molfile is None:
@@ -26,5 +28,13 @@ def __simulate_nmr(jbcv, molfile):
     jbcv.simu_peaks = InferModel.simulate_nmr(
         mm=mm,
         layout=layout,
+    )
+    # How many atoms of the nucleus the molecule has. NMRShiftDB predicts
+    # fewer when it leaves atoms out (exchangeable NH/OH protons), and the
+    # editor otherwise caps the signals a user may send at that smaller
+    # count (#339). Only written with a simulation to go with it.
+    jbcv.simu_atoms = (
+        mm.count_atoms(SIMULATED_NUCLEUS[layout])
+        if jbcv.simu_peaks and layout in SIMULATED_NUCLEUS else None
     )
     return jbcv

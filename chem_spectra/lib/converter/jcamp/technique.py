@@ -222,6 +222,7 @@ class JcampTechniqueConverter:
         self.boundary = self.__find_boundary()
         self.label = self.__set_label()
         self.simu_peaks = base.simu_peaks
+        self.simu_atoms = getattr(base, 'simu_atoms', None)
         self.auto_peaks = None
         self.edit_peaks = None
         self.itg_table = []

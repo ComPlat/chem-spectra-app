@@ -1,7 +1,9 @@
 import nmrglue as ng
 import numpy as np  # noqa: F401
 
-from chem_spectra.lib.converter.share import parse_params, parse_solvent
+from chem_spectra.lib.converter.share import (
+    parse_params, parse_solvent, read_simulation_atoms,
+)
 from chem_spectra.lib.converter.jcamp.techniques import SPECTRUM_TECHNIQUES
 from chem_spectra.lib.converter.jcamp.reader import block_from_headers
 
@@ -106,6 +108,7 @@ class FidBaseConverter:
         self.non_nmr = False
         self.ncl = self.__ncl()
         self.simu_peaks = self.__read_simu_peaks()
+        self.simu_atoms = read_simulation_atoms(self.dic)
         self.solv_peaks = []
         self.__read_solvent()
 

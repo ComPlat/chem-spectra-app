@@ -50,6 +50,7 @@ class NMRiumDataConverter:
         
         
         self.simu_peaks = []
+        self.simu_atoms = None
         self.is_cyclic_volta = False
         self.is_sec = False
         self.is_dsc = False

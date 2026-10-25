@@ -333,6 +333,8 @@ MS prediction handles `TypeError` with `400`.
 
 `simulate_nmr()` catches broad exceptions, logs them, and returns an empty list. That includes an unset `URL_NSHIFTDB`.
 
+A simulation is written to the composed JCAMP as `##$CSSIMULATIONPEAKS`, one predicted shift per line, in the `$$ === CHEMSPECTRA SIMULATION ===` block. Beside a non-empty simulation, `##$CSSIMULATIONATOMS=<n>` records how many atoms of the simulated nucleus (all hydrogens, implicit ones included, for 1H; carbons for 13C) the molecule has. NMRShiftDB can leave atoms out of its prediction, e.g. exchangeable NH/OH protons, so the editor uses this count, not the simulation's length, to bound how many signals a user may send for prediction. Both records are read back when a composed file is recomposed.
+
 `docs/api-reference.md` has the code table, with what the editor shows for each code.
 
 #### Runtime Flow Reference

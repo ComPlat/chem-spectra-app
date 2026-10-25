@@ -152,6 +152,16 @@ def _apply_solvent_config(base, config, overwrite_meta=False):
     return True
 
 
+def read_simulation_atoms(dic):
+    """`##$CSSIMULATIONATOMS`, the number of atoms of the simulated nucleus in
+    the molecule the simulation was computed from, or None when absent."""
+    target = dic.get('$CSSIMULATIONATOMS', [])
+    try:
+        return int(str(target[0]).strip()) if target else None
+    except (TypeError, ValueError):
+        return None
+
+
 def parse_params(params):
     default_itg = {'stack': [], 'refArea': 1, 'refFactor': 1, 'shift': 0}
     default_mpy = {'stack': [], 'smExtext': False, 'shift': 0}
