@@ -14,6 +14,8 @@ A request the service will not process -- no file, a file it cannot read, data i
 
 The ELN shows `error` to the user. The same shape comes back with **`502`** when the msconvert sidecar is unavailable.
 
+A request over the configured limits is refused the same way, with the sizes: a body over `MAX_CONTENT_LENGTH` ("the upload is 250.0 MB; the limit is 200.0 MB."), a form field over `MAX_FORM_MEMORY_SIZE`, or an archive over `MAX_ZIP_SIZE` or `MAX_ZIP_MEMBERS` ("this archive expands to 250.3 MB; the limit is 200 MB."). `INSTALL.md` lists the settings.
+
 The **prediction routes** (`/predict/*`) are different: they always answer **`200`**, with the reason in `outline`, because the ELN keeps a prediction response only when the status is 200 and the editor's forecast panel reads `outline.code`:
 
 ```json
@@ -24,7 +26,7 @@ The **prediction routes** (`/predict/*`) are different: they always answer **`20
 |---|---|---|
 | `200` | the prediction, under `output` | the prediction |
 | `400` | the predictor could not assign these peaks to this molecule, or the IR spectrum could not be read | "Peak & Element count mismatch" |
-| `422` | nothing to ask about: no or unreadable molfile; no peaks, or peaks that are not a list of objects with a numeric `x`; a `shift` that is not an object; no spectrum, or one that cannot be read (for MS prediction, one that is not a mass spectrum); an NMR layout other than 1H, 13C, 19F | "Unknown state" |
+| `422` | nothing to ask about, or over a size limit: no or unreadable molfile; no peaks, or peaks that are not a list of objects with a numeric `x`; a `shift` that is not an object; no spectrum, or one that cannot be read (for MS prediction, one that is not a mass spectrum); an NMR layout other than 1H, 13C, 19F | "Unknown state" |
 | `502` | the predictor answered with an error, or with something this service cannot read; `text` quotes what came back | "Service is not available" |
 | `503` | the predictor is not configured here (`URL_NSHIFTDB`, `URL_DEEPIR` unset), or cannot be reached; also msconvert, when a RAW or mzML upload has to be converted first | "Service is not available" |
 | `504` | the predictor did not answer within `PREDICT_TIMEOUT` seconds (default 120) | "Service is not available" |

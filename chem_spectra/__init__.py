@@ -14,6 +14,12 @@ _OURS = '_chem_spectra_file_handler'
 # exist.
 DEFAULT_LOG_NAME = 'logging.log'
 
+# Largest request body accepted, in bytes, unless `MAX_CONTENT_LENGTH` (or
+# `FLASK_MAX_CONTENT_LENGTH`) says otherwise. The same 200 MB as an archive
+# may unpack to (`MAX_ZIP_SIZE`); real LC/MS JCAMP exports reach 47 MB and
+# mzML files 38 MB.
+DEFAULT_MAX_CONTENT_LENGTH = 200 * 1024 * 1024
+
 
 def _configure_logging(app):
     """Attach exactly one file handler, however often create_app() is called.
@@ -68,6 +74,11 @@ def create_app(test_config=None):
         # shell should not change what the suite tests.
         app.config.from_mapping(test_config)
 
+    # Flask's own default config already holds the key, as None (no limit),
+    # so setdefault() would never apply ours.
+    if app.config.get('MAX_CONTENT_LENGTH') is None:
+        app.config['MAX_CONTENT_LENGTH'] = DEFAULT_MAX_CONTENT_LENGTH
+
     os.makedirs(app.instance_path, exist_ok=True)
 
     _configure_logging(app)
@@ -113,6 +124,16 @@ def create_app(test_config=None):
     def _ms_conversion_failed(err):
         return jsonify(error=str(err)), getattr(err, 'status', 422)
 
+    # werkzeug answers a body over MAX_CONTENT_LENGTH, or a form field over
+    # MAX_FORM_MEMORY_SIZE, with an HTML 413. Same refusal shape instead,
+    # with the sizes, so the reason reaches the user.
+    from werkzeug.exceptions import RequestEntityTooLarge
+    from chem_spectra.controller.helper.refusal import request_too_large_reason
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def _request_too_large(_err):
+        return jsonify(error=request_too_large_reason()), 422
+
     # Every image is drawn on pyplot's module-global figure, and a worker
     # serves one request after another with the same one. A request that
     # stops partway -- a refusal raised after some curves were already
@@ -129,3 +150,4 @@ def create_app(test_config=None):
             pyplot.close('all')
 
     return app
+
