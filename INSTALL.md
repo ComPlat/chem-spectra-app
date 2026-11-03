@@ -85,8 +85,10 @@ from this repository's Dockerfile. That image sits beside the
 shared `spectra` volume.
 
 **Developer deployments** of a branch use this repository's
-`docker-compose.p2d.yml`. It builds the app from `Dockerfile.p2d` and runs it
-beside the same msconvert sidecar, as a Dokploy *Docker Compose* application:
+`docker-compose.p2d.yml`. It builds the app from `Dockerfile.p2d`, which
+installs the locked dependencies from `uv.lock` (`uv sync --frozen`), and runs
+it beside the same msconvert sidecar, as a Dokploy *Docker Compose*
+application:
 - route a domain to the `app` service on port 4000 in the Domains tab;
 - set environment variables in the UI. They reach the container through
   `.env`, which the compose file loads.
