@@ -76,7 +76,7 @@ class MSComposer(BaseComposer):
 
         meta.extend(self.__gen_ntuples_begin())
         meta.extend(self.__gen_config())
-        meta.extend(self.__gen_ms_spectra())
+        meta.append(self.__gen_ms_spectra())
         meta.extend(self.__gen_ntuples_end())
 
         meta.extend(self.generate_original_metadata())
