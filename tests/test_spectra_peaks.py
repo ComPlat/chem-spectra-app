@@ -357,3 +357,29 @@ def test_inherit_wihtout_params_1H():
     meta_target = __target_peaks_meta('edit/inherit_' + meta_H1_dx)
     assert inherit_meta_content == meta_target
 """
+
+
+def test_an_unlabelled_acetone_spectrum_is_referenced_at_29_84():
+    # No solvent named anywhere: __refresh_solvent recognises acetone-d6 from
+    # its two strongest 13C lines lying 176.4 ppm apart, and references the
+    # CD3 line to 29.84 ppm (Gottlieb 1997, Fulmer 2010)
+    from types import SimpleNamespace
+    import numpy as np
+    converter = JcampTechniqueConverter.__new__(JcampTechniqueConverter)
+    converter.ncl = '13C'
+    converter.params = {'ref_name': None}
+    converter.dic = {}
+    converter.peaks_point_down = False
+    converter.technique = SimpleNamespace(negative_peaks=False)
+    converter.xs = np.linspace(0.0, 220.0, 22001)
+    converter.ys = np.zeros_like(converter.xs)
+    methyl, carbonyl = 29.5, 29.5 + 176.42   # 0.34 ppm off the true values
+    for x, height in ((methyl, 100.0), (carbonyl, 80.0)):
+        converter.ys[np.argmin(abs(converter.xs - x))] = height
+
+    assert converter._JcampTechniqueConverter__refresh_solvent() is True
+
+    assert converter.dic['$CSSOLVENTNAME'] == ['Acetone-d6 (sep)']
+    assert converter.dic['$CSSOLVENTVALUE'] == ['29.84']
+    picked = converter.xs[np.argmax(converter.ys)]
+    assert abs(picked - 29.84) < 0.011

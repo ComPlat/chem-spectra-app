@@ -72,7 +72,7 @@ def _solvent_config(ncl, solvent_name):
 
     if ncl == '13C':
         if 'acetone' in solvent_name:
-            return ('Acetone-d6 (sep)', '29.640', [(27.0, 33.0), (203.7, 209.7)])
+            return ('Acetone-d6 (sep)', '29.84', [(27.0, 33.0), (203.7, 209.7)])
         if 'dmso' in solvent_name:
             peak = 39.52
             delta = 3
