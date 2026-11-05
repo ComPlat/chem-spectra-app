@@ -1,6 +1,7 @@
 import numpy as np
 
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
+from chem_spectra.lib.shared.number_text import xy_lines
 
 MARGIN = 1
 THRESHOLD_MS = 0.05
@@ -122,13 +123,6 @@ class CdfMSConverter:  # nmr & IR
             xs = spc[:, 0]
             ys = spc[:, 1]
             pts = xs.shape[0]
-            dt = []
-            for idx in range(pts):
-                dt.append(
-                    '{}, {}\n'.format(
-                        xs[idx],
-                        ys[idx]
-                    )
-                )
+            dt = xy_lines(xs, ys)
             dts.append({'dt': dt, 'pts': pts})
         return dts

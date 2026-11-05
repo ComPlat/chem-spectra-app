@@ -59,24 +59,16 @@ class MSComposer(BaseComposer):
         ]
 
     def __gen_ms_spectra(self):
-        msspcs = []
-        ms_tempfile = tempfile.TemporaryFile()
+        # One join over every scan's lines. This used to write them to a
+        # temporary file, read them back, strip and re-join: the same text,
+        # held twice over, for tables that reach a hundred megabytes.
+        lines = []
         for idx, dt in enumerate(self.core.datatables):
-            msspc = [
-                '##PAGE={}\n'.format(idx + 1),
-                '##NPOINTS={}\n'.format(dt['pts']),
-                TEXT_MS_DATA_TABLE,
-            ]
-            my_content = msspc + dt['dt']
-            file_content = ''.join(my_content)
-            ms_tempfile.write(file_content.encode('utf-8'))
-
-        ms_tempfile.seek(0)
-        lines = ms_tempfile.readlines()
-        decoded_lines = [line.decode('utf-8').strip() for line in lines]
-        msspcs = '\n'.join(decoded_lines) + '\n'
-        ms_tempfile.close()
-        return msspcs
+            lines.append('##PAGE={}\n'.format(idx + 1))
+            lines.append('##NPOINTS={}\n'.format(dt['pts']))
+            lines.append(TEXT_MS_DATA_TABLE)
+            lines.extend(dt['dt'])
+        return ''.join(lines)
 
     def __compose(self):
         meta = []

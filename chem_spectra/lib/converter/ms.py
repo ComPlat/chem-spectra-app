@@ -12,6 +12,7 @@ from datetime import datetime
 
 from chem_spectra.lib.shared.buffer import store_byte_in_tmp
 from chem_spectra.lib.converter.share import reduce_pts
+from chem_spectra.lib.shared.number_text import xy_lines
 
 MARGIN = 1
 
@@ -411,14 +412,7 @@ class MSConverter:
             xs = spc[:, 0]
             ys = spc[:, 1]
             pts = xs.shape[0]
-            dt = []
-            for idx in range(pts):
-                dt.append(
-                    '{}, {}\n'.format(
-                        xs[idx],
-                        ys[idx]
-                    )
-                )
+            dt = xy_lines(xs, ys)
             dts.append({'dt': dt, 'pts': pts})
         return dts
 
