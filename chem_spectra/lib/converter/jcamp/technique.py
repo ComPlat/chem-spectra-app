@@ -129,6 +129,30 @@ logger = logging.getLogger(__name__)
 
 data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 
+def peak_table_rows(value):
+    """The data rows of an integral or multiplet record, by shape.
+
+    A data row is parenthesised and its first field is a number. That leaves
+    out the column-header lines other writers open these records with --
+    MestReNova's `(I, X, Y)` and `(I, X, Y, Hs, Vs, An, H, C, N, (J))`, and
+    ChemSpectra's own `(X Y Z)` on integrals -- and blank lines. Rows are
+    joined as the record held them, so a table that had no header comes out
+    unchanged.
+    """
+    rows = []
+    for line in str(value).split('\n'):
+        line = line.strip()
+        if not line.startswith('('):
+            continue
+        first = line[1:].replace(')', ',').split(',')[0].strip()
+        try:
+            float(first)
+        except ValueError:
+            continue
+        rows.append(line)
+    return '\n'.join(rows)
+
+
 class JcampTechniqueConverter:
     """Reads a JCAMP file for any technique dispatched by its descriptor.
 
@@ -1258,20 +1282,23 @@ class JcampTechniqueConverter:
                         self.max_min_peaks_table.append({'max': max_peak, 'min': min_peak})
 
 
+    # Read by shape, not by position: the first line used to be dropped from
+    # integrals as a header, and kept from multiplets as data. Files from
+    # MestReNova carry a header on all three records and ChemSpectra's own
+    # on integrals only, so a Mnova multiplet header reached the composer as
+    # a row and failed there as float('X').
     def __read_integration_from_file(self):
         target = self.dic.get('$OBSERVEDINTEGRALS')
         if target:
-            self.itg_table = ['\n'.join(target[0].split('\n')[1:]), '\n']
+            self.itg_table = [peak_table_rows(target[0]), '\n']
 
     def __read_multiplicity_from_file(self):
         target1 = self.dic.get('$OBSERVEDMULTIPLETS')
         if target1:
-            self.mpy_itg_table = target1
-            self.mpy_itg_table.append('\n')
+            self.mpy_itg_table = [peak_table_rows(target1[0]), '\n']
         target2 = self.dic.get('$OBSERVEDMULTIPLETSPEAKS')
         if target2:
-            self.mpy_pks_table = target2
-            self.mpy_pks_table.append('\n')
+            self.mpy_pks_table = [peak_table_rows(target2[0]), '\n']
 
     #     if self.ncl == '13C' and len(self.mpy_itg_table) == 0 and len(self.mpy_pks_table) == 0:
     #         self.__add_13C_mpy_programmatically()
