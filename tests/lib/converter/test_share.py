@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.converter.share import (
   parse_params, parse_solvent, reduce_pts
 )
@@ -415,3 +416,57 @@ def test_invert_y_is_tristate(value, expected):
     """An explicit false clears ##$CSINVERTY, so only a recognised false may
     produce one. `undefined` is what JS FormData sends for a missing value."""
     assert parse_params({'invert_y': value})['invert_y'] is expected
+
+
+# The solvents react-spectra-editor offers as a reference (`list_shift.js`)
+# that this table knows, with the editor's value for each signal. A name the
+# table does not match turns solvent filtering off, and a signal outside every
+# window is left among the sample peaks.
+EDITOR_SOLVENT_SIGNALS = [
+    ('13C', 'Acetone-d6 (sep)', 29.640),
+    ('13C', 'Acetone-d6 (broad)', 206.260),
+    ('13C', 'Acetonitrile-d3 (sep)', 1.32),
+    ('13C', 'Acetonitrile-d3 (s)', 118.26),
+    ('13C', 'Benzene (t)', 128.060),
+    ('13C', 'Chloroform-d (t)', 77.16),
+    ('13C', 'Dichloromethane-d2 (quin)', 53.84),
+    ('13C', 'DMSO-d6', 39.52),
+    ('13C', 'Methanol-d4 (sep)', 49.00),
+    ('1H', 'Acetone-d6 (quin)', 2.05),
+    ('1H', 'Acetonitrile-d3 (quin)', 1.94),
+    ('1H', 'Benzene (s)', 7.16),
+    ('1H', 'Chloroform-d (s)', 7.26),
+    ('1H', 'D2O (s)', 4.79),
+    ('1H', 'Dichloromethane-d2 (t)', 5.32),
+    ('1H', 'DMSO-d6 (quin)', 2.50),
+    ('1H', 'Methanol-d4 (quin)', 3.31),
+    ('1H', 'Methanol-d4 (s)', 4.87),
+]
+
+
+@pytest.mark.parametrize('ncl, name, value', EDITOR_SOLVENT_SIGNALS)
+def test_every_signal_the_editor_offers_has_a_window(ncl, name, value):
+    from chem_spectra.lib.converter.share import _solvent_config
+    config = _solvent_config(ncl, name)
+    assert config is not None, name
+    _, _, windows = config
+    assert any(low < value < high for low, high in windows), (name, windows)
+
+
+def test_the_acetonitrile_nitrile_line_is_collapsed_too():
+    # CD3 septet at 1.32 and the nitrile carbon at 118.26: one line kept for
+    # each, and a sample peak outside both windows kept as well
+    converter = JcampTechniqueConverter.__new__(JcampTechniqueConverter)
+    converter.ncl = '13C'
+    converter.obs_freq = 100.6
+    converter.solv_peaks = [(-1.68, 4.32), (115.26, 121.26)]
+    step = 21.0 / 100.6
+    septet = [{'x': 1.32 + k * step, 'y': w}
+              for k, w in zip(range(-3, 4), [1.0, 3.0, 6.0, 7.0, 6.0, 3.0, 1.0])]
+    nitrile = [{'x': 118.26, 'y': 4.0}]
+    sample = [{'x': 125.4, 'y': 9.0}]
+
+    filtered = converter._JcampTechniqueConverter__filter_solvent_peaks(
+        septet + nitrile + sample)
+
+    assert sorted(round(p['x'], 2) for p in filtered) == [1.32, 118.26, 125.4]
