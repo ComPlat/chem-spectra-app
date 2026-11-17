@@ -453,20 +453,33 @@ def test_every_signal_the_editor_offers_has_a_window(ncl, name, value):
     assert any(low < value < high for low, high in windows), (name, windows)
 
 
-def test_the_acetonitrile_nitrile_line_is_collapsed_too():
-    # CD3 septet at 1.32 and the nitrile carbon at 118.26: one line kept for
-    # each, and a sample peak outside both windows kept as well
+def _acetonitrile(params, dic):
+    # CD3 septet at 1.32 and the nitrile carbon at 118.26, each in its own
+    # window, and a sample peak outside both
     converter = JcampTechniqueConverter.__new__(JcampTechniqueConverter)
     converter.ncl = '13C'
     converter.obs_freq = 100.6
     converter.solv_peaks = [(-1.68, 4.32), (115.26, 121.26)]
+    converter.params = params
+    converter.dic = dic
     step = 21.0 / 100.6
     septet = [{'x': 1.32 + k * step, 'y': w}
               for k, w in zip(range(-3, 4), [1.0, 3.0, 6.0, 7.0, 6.0, 3.0, 1.0])]
     nitrile = [{'x': 118.26, 'y': 4.0}]
     sample = [{'x': 125.4, 'y': 9.0}]
-
     filtered = converter._JcampTechniqueConverter__filter_solvent_peaks(
         septet + nitrile + sample)
+    return sorted(round(p['x'], 2) for p in filtered)
 
-    assert sorted(round(p['x'], 2) for p in filtered) == [1.32, 118.26, 125.4]
+
+def test_the_acetonitrile_nitrile_line_is_collapsed_too():
+    # the reference is the CD3 septet: it keeps one line, and the nitrile,
+    # the solvent's second signal, is dropped like the rest of the solvent
+    assert _acetonitrile(
+        {'ref_name': None}, {'$CSSOLVENTVALUE': ['1.32']}) == [1.32, 125.4]
+
+
+def test_the_acetonitrile_nitrile_can_be_the_reference():
+    assert _acetonitrile(
+        {'ref_name': 'Acetonitrile-d3 (s)', 'ref_value': '118.26'},
+        {'$CSSOLVENTVALUE': ['1.32']}) == [118.26, 125.4]
