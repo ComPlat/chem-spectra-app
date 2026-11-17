@@ -2,9 +2,12 @@ import json
 from flask import (
     Blueprint, request, jsonify,
 )
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from chem_spectra.controller.helper.file_container import FileContainer
-from chem_spectra.controller.helper.refusal import uploaded_file
+from chem_spectra.controller.helper.refusal import (
+    request_too_large_reason, uploaded_file,
+)
 from chem_spectra.controller.helper.share import parse_array_to_dict_xys
 
 from chem_spectra.lib.converter.ms import MSConversionFailed
@@ -32,6 +35,18 @@ def _respond(result):
 
 def _unusable(text):
     return _respond(outline(UNUSABLE_REQUEST, text))
+
+
+# The app-wide handlers answer these with HTTP 422 and `{error}`, which the
+# ELN would drop for a prediction. Here they keep the outline contract.
+@infer_api.errorhandler(UnconvertibleSpectrum)
+def _refused(err):
+    return _unusable(str(err))
+
+
+@infer_api.errorhandler(RequestEntityTooLarge)
+def _too_large(_err):
+    return _unusable(request_too_large_reason())
 
 
 def _molecule(molfile, layout, decorate=False):

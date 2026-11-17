@@ -49,7 +49,7 @@ Runtime path:
 
 High-value decision points:
 
-- `FileContainer` can nullify `bcore` when a ZIP exceeds `MAX_ZIP_SIZE`.
+- `FileContainer` refuses a ZIP over `MAX_ZIP_SIZE` or `MAX_ZIP_MEMBERS` with a 422 that gives the sizes.
 - `extract_params()` can return `False`.
 - `to_composer()` indexes `params['ext']`; missing params can fail before parsing.
 - `to_composer()` returns different shapes depending on the input: a composer, a list of composers, a BagIt converter, or false-like values.
@@ -86,7 +86,7 @@ These routes share conversion primitives, but their response shapes differ.
 1. Reads `src`, optional `molfile`, params, and either `dst` or `dst_list`.
 2. Converts each destination file with `convert2jcamp_img()`.
 3. Adds `src.temp_file()`, generated JCAMP, image, `tf_predict()`, and optional CSV.
-4. For `dst_list`, updates `params['jcamp_idx']` per item and can append `tf_combine()`.
+4. For `dst_list`, sets `params['jcamp_idx']` per item while converting, and can append `tf_combine()`, which is given the `jcamp_idx` the request named: that spectrum carries the annotations in the combined image.
 5. Returns `spectrum.zip`.
 
 `POST /api/v1/chemspectra/file/refresh`:
@@ -105,7 +105,7 @@ These routes share conversion primitives, but their response shapes differ.
 Debug focus:
 
 - `save` preserves the uploaded source file in the returned ZIP; `refresh` does not.
-- `dst_list` paths mutate `params['jcamp_idx']` while iterating.
+- `dst_list` paths mutate `params['jcamp_idx']` while iterating; the combined image gets the requested value back, so its annotations land on the requested spectrum, not the last one converted.
 - `tf_predict()` is added to save/refresh ZIP outputs when available.
 - BagIt conversion returns a different JSON shape in `file/convert`.
 
@@ -257,7 +257,7 @@ Debug focus:
 Runtime path:
 
 1. `FileContainer` reads ZIP bytes.
-2. If the upload is detected as ZIP, uncompressed size is checked against `MAX_ZIP_SIZE`.
+2. If the upload is detected as ZIP, its member count and uncompressed size are checked against `MAX_ZIP_MEMBERS` and `MAX_ZIP_SIZE`; over either, the request is refused with `422` and the sizes.
 3. `zip2cvp()` writes the bytes to a temp `.zip`.
 4. Archive content is extracted into `TemporaryDirectory`.
 5. Bruker FID detection runs first.
@@ -292,7 +292,6 @@ Fragile areas:
 - ZIP flow can return one composer, many composers, a BagIt converter, or false values.
 - Downstream response code must branch by return type.
 - `molfile is None` marks Bruker raw output as `invalid_molfile=True`.
-- ZIP size protection only sets `bcore=None`; later code must tolerate that.
 
 ### Transform Endpoint Output Flow
 
@@ -332,7 +331,7 @@ Direct file endpoints:
 - `/jcamp` returns `spectrum.jdx`.
 - `/image` returns `spectrum.png`.
 - `/nmrium` converts supported NMRium input to `spectrum.jdx`, or refuses with `422` when conversion returns `None`.
-- `/combine_images` builds a combined image from `files[]` and returns `spectrum.zip`.
+- `/combine_images` builds a combined image from `files[]` and returns `spectrum.zip`: every curve, with the annotations of the one `jcamp_idx` names (default `0`).
 
 Debug focus:
 
@@ -357,7 +356,7 @@ Fields with high runtime impact:
 - `scan` and `thres`: affect MS peak output.
 - `integration` and `multiplicity`: affect NMR output metadata.
 - `simulatenmr`: enables simulated NMR decoration.
-- `jcamp_idx`: selects per-spectrum params in multi-spectrum contexts.
+- `jcamp_idx`: selects per-spectrum params in multi-spectrum contexts, and the spectrum whose annotations a combined image carries.
 - `axes_units`, `cyclic_volta`, `detector`, `dsc_meta_data`: affect specialized rendering or metadata.
 
 Debug focus:
@@ -399,9 +398,8 @@ External services:
 ZIP too large:
 
 - size check happens in `FileContainer`;
-- uncompressed size is compared with `MAX_ZIP_SIZE`;
-- on failure, `bcore` becomes `None`;
-- downstream ZIP parsing can then fail later.
+- member count and uncompressed size are compared with `MAX_ZIP_MEMBERS` and `MAX_ZIP_SIZE`, and an archive over either is refused;
+- the refusal is a `422` naming the sizes, raised before anything is extracted.
 
 HTTP debugging:
 

@@ -25,7 +25,11 @@ jobs:
 
   run-unit-tests:
     name: tests (${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    # Pinned: when ubuntu-latest moved to 26.04 (between 2026-11-05 and
+    # 2026-11-17), the pinned msconvert image stopped producing an mzML for
+    # the RAW fixture, with nothing else changed. Move back to ubuntu-latest
+    # once the step below shows why.
+    runs-on: ubuntu-24.04
     # Both ends of the supported range. 3.14 is what the production image runs
     # (Dockerfile.p2d); 3.12 is the floor `requires-python` still promises, and
     # a matrix is the only thing that keeps that promise honest.
@@ -66,3 +70,13 @@ jobs:
           proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses:4.0.26282-8321319@sha256:34ed787cd4c3182c2d81adcbf7514031e594609ca460abc5d3d114dc2334dae8 bash
     - name: Test with pytest
       run: uv run python -m pytest
+    - name: Show what msconvert says, if the tests failed
+      # The app starts msconvert with `docker exec -d`, so its output is
+      # lost; run the same conversion in the foreground to see it.
+      if: failure()
+      run: |
+        cp tests/fixtures/source/ms/MS_ESI.RAW chem_spectra/tmp/ci-probe.RAW
+        docker exec msconvert_docker wine msconvert /data/ci-probe.RAW \
+          -o /data --mzML --filter 'peakPicking true 1-' || true
+        ls -la chem_spectra/tmp
+        docker logs msconvert_docker || true
