@@ -45,6 +45,50 @@ def find_dir(path, name):
     return False
 
 
+def refuse_if_bruker_multi_dimensional(td):
+    """Refuse an upload whose Bruker experiment is two- or more-dimensional.
+
+    Bruker writes a multi-dimensional experiment's data to `ser` and a 1D
+    one's to `fid`. A 2D experiment can carry a 1D one inside it, e.g. a DOSY
+    with its reference proton spectrum in a subdirectory (#250), and the
+    `fid` search found that one and converted it, as though the upload were
+    1D. So refuse when the `fid` that would be converted lies inside an
+    experiment with a `ser`, or when there is a `ser` and no `fid` at all.
+    A 1D experiment that merely sits beside a 2D one is still converted.
+    """
+    top = os.path.realpath(td)
+    ser_dirs = sorted(
+        os.path.realpath(root) for root, _, files in os.walk(td)
+        if 'ser' in files
+    )
+    if not ser_dirs:
+        return
+    fid_dir = find_dir(td, 'fid')
+    if fid_dir:
+        enclosing = None
+        d = os.path.realpath(fid_dir)
+        while d.startswith(top):
+            if d in ser_dirs:
+                enclosing = d
+                break
+            if d == top:
+                break
+            d = os.path.dirname(d)
+        if enclosing is None:
+            return
+    else:
+        enclosing = ser_dirs[0]
+    files = os.listdir(enclosing)
+    dimensions = 1 + sum(
+        'acqu{}s'.format(n) in files for n in range(2, 9))
+    where = os.path.relpath(enclosing, top)
+    prefix = '' if where == '.' else '{}: '.format(where)
+    raise UnconvertibleSpectrum(
+        prefix + 'this is a {}D NMR experiment. ChemSpectra reads '
+        'one-dimensional spectra only; open it in NMRium '
+        'instead'.format(max(dimensions, 2)))
+
+
 def search_brucker_binary(td):
     try:
         has_processed_files = search_processed_file(td)
@@ -155,6 +199,12 @@ class TransformerModel:
 
     def convert2jcamp_img(self):
         cmpsr, _ = self.to_composer()
+        return self.jcamp_img_of(cmpsr)
+
+    @staticmethod
+    def jcamp_img_of(cmpsr):
+        """(jcamp, image, csv) for one composer; a BagIt converter comes back
+        as the image slot, as callers expect. Not for a list of composers."""
         if not cmpsr:
             return False, False, False
         if isinstance(cmpsr, BagItBaseConverter):
@@ -228,6 +278,7 @@ class TransformerModel:
                         if not member_path.startswith(td_real):
                             return False, False, False
                     z.extractall(td)
+            refuse_if_bruker_multi_dimensional(td)
             target_dir, has_processed_files = search_brucker_binary(td)
             if target_dir:
                 # NMR data
