@@ -283,6 +283,10 @@ class NMRiumDataConverter:
         xL, xU = rangeValue['from'], rangeValue['to']
         iL, iU = get_curve_endpoint(self.xs, self.ys, xL, xU)
         cys = self.ys[iL:iU]
+        if len(cys) == 0:
+            # The range has no points under it (it lies outside the data), so
+            # it has no extent or area to report. It raised IndexError here.
+            return None
         yL, yU = cys[0], cys[len(cys)-1]
         
         xExtent = {"xL": xL, "xU": xU}

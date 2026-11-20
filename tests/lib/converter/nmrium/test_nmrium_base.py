@@ -24,8 +24,8 @@ zip or jcamp straight to nmrium-react-wrapper and this service is not involved.
 `'data' in rawData`, and both fixtures here are real ELN documents — recovered
 from `03e3fca^`, decimated to 1024 points so the file is 110 KB rather than
 3 MB. Decimated, not truncated: the multiplicity ranges span the whole x axis,
-and cutting the tail makes `__read_range_data` raise `IndexError` on an empty
-slice.
+and cutting the tail would leave ranges with no points under them, which are
+left out (`test_a_range_outside_the_data_is_left_out`).
 """
 
 import json
@@ -112,8 +112,8 @@ def test_the_x_axis_is_ppm_and_descending_in_range(converted):
 def test_multiplicities_survive(converted):
     """The part that references x positions across the whole axis, and the
     reason the fixture is decimated rather than truncated: cutting the tail
-    leaves a range with no points in it and `__read_range_data` raises
-    `IndexError: index 0 is out of bounds` on the empty slice.
+    leaves ranges with no points in them, and those are left out (see
+    `test_a_range_outside_the_data_is_left_out`).
     """
     assert len(converted.mpy_itg_table) == 11
     for row in converted.mpy_itg_table:
@@ -184,3 +184,26 @@ def test_the_endpoint_carries_the_curve_through(client, source):
     assert '##NPOINTS=1024' in body
     assert '##XUNITS=ppm' in body
     assert '##FIRSTX=-4.0' in body and '##LASTX=15.9' in body
+
+
+def test_a_range_outside_the_data_is_left_out(tmp_path):
+    """A document whose multiplicity range has no points under it (here the
+    range at -2.7 ppm, after cutting the data below 0 ppm) raised
+    `IndexError` in `__read_range_data`, a 500. That range is left out; the
+    others are converted as before.
+    """
+    with open(FLAT) as handle:
+        document = json.load(handle)
+    spectrum = next(s for s in document['spectra'] if s['ranges']['values'])
+    data = spectrum['data']
+    keep = [i for i, x in enumerate(data['x']) if x >= 0]
+    for key in ('x', 're', 'im'):
+        data[key] = [data[key][i] for i in keep]
+    path = tmp_path / 'cut.nmrium'
+    path.write_text(json.dumps(document))
+
+    cut = _convert(str(path))
+
+    whole = _convert(FLAT)
+    assert 0 < len(cut.mpy_itg_table) < len(whole.mpy_itg_table)
+    assert not any('-2.7' in row for row in cut.mpy_itg_table)
