@@ -52,7 +52,10 @@ def chemspectra_file_convert():
             'this file could not be read as a spectrum. It may be a format '
             'this service does not support, or it may carry no data table.')
     jcamp = base64.b64encode(tf_jcamp.read()).decode("utf-8")
-    img = base64.b64encode(tf_img.read()).decode("utf-8")
+    # An LC/MS upload carrying only a TIC converts but has no preview (the
+    # LC/MS preview draws the UV/Vis and MS traces); /zip_jcamp_n_img already
+    # answers it without an image, and so does this.
+    img = base64.b64encode(tf_img.read()).decode("utf-8") if tf_img else None
     return jsonify(
         status=True,
         jcamp=jcamp,

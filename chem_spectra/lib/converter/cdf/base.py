@@ -1,6 +1,6 @@
 import netCDF4
 
-from chem_spectra.lib.converter.share import parse_params
+from chem_spectra.lib.converter.share import UnconvertibleSpectrum, parse_params
 from chem_spectra.lib.converter.jcamp.reader import block_from_headers
 
 
@@ -20,6 +20,22 @@ class CdfBaseConverter:
 
     def __read(self, path):
         cdf = netCDF4.Dataset(path)
+        if 'mass_values' not in cdf.variables:
+            # An AIA chromatography file (ANDI/CHROM: one detector trace in
+            # `ordinate_values`, e.g. a diode-array signal) shares the .cdf
+            # extension with ANDI/MS but has no mass axis. It raised
+            # KeyError: 'mass_values', a 500 on every endpoint.
+            detector = getattr(cdf, 'detector_name', None)
+            cdf.close()
+            kind = (
+                'a chromatogram (ANDI/AIA netCDF'
+                + (f', detector {detector.strip()}' if detector else '')
+                + ')'
+            )
+            raise UnconvertibleSpectrum(
+                f'this netCDF file holds {kind}, not a mass spectrum. Only '
+                'ANDI/MS netCDF files, with a mass axis, can be read.'
+            )
         data = {
             'XS': cdf.variables['mass_values'],
             'YS': cdf.variables['intensity_values'],
