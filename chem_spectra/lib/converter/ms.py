@@ -36,6 +36,13 @@ SIDECAR_TIMEOUT = 30
 # thing waiting for the conversion.
 MZML_WAIT = 120.0
 
+# pymzml looks up a measured precision for each spectrum's MS level and knows
+# only levels 0-3, so an MS^4 spectrum raised KeyError: 4 inside the reader
+# and the whole file was refused. Deeper levels get pymzml's own MSn value.
+# The precision matters only to pymzml's peak helpers; the app reads the raw
+# peaks.
+MSN_PRECISIONS = {level: 20e-6 for level in range(2, 16)}
+
 
 class MSConversionFailed(RuntimeError):
     """msconvert produced no usable mzML for this upload.
@@ -335,7 +342,9 @@ class MSConverter:
                 try:
                     elapsed += 0.2
                     time.sleep(0.2)
-                    runs = pymzml.run.Reader(mzml_file, build_index_from_scratch=True)
+                    runs = pymzml.run.Reader(
+                        mzml_file, build_index_from_scratch=True,
+                        MS_precisions=MSN_PRECISIONS)
                     spectra, auto_scan = self.__decode(runs, decoded_count)
                     break
                 except Exception as err:  # noqa
