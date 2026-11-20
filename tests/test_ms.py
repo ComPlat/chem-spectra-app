@@ -45,7 +45,9 @@ def test_ms_raw_converter_composer():
     assert '##$CSSCANEDITTARGET=20' in lines
     assert '##$CSSCANCOUNT=20' in lines
     assert '##$CSTHRESHOLD=0.05' in lines
-    assert '229.99819946289062, 5886.234375' in lines
+    # msconvert writes float32 m/z and intensity: written at that precision
+    # (229.99819946289062, 5886.234375 as float64)
+    assert '229.9982, 5886.2344' in lines
 
 def test_ms_jcamp_converter_composer():
     params = {'mass': 230.079907196}

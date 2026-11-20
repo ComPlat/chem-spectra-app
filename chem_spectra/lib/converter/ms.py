@@ -1,4 +1,5 @@
 from chem_spectra.lib.converter.jcamp.techniques import technique_for
+from chem_spectra.lib.shared.ms_scan import scan_ratios
 import hashlib
 import subprocess as sbp
 import time
@@ -12,6 +13,7 @@ from datetime import datetime
 
 from chem_spectra.lib.shared.buffer import store_byte_in_tmp
 from chem_spectra.lib.converter.share import reduce_pts
+from chem_spectra.lib.shared.number_text import xy_lines
 
 MARGIN = 1
 
@@ -200,43 +202,8 @@ class MSConverter:
         return mzml_path
 
     def __get_ratio(self, spc):
-        all_ys, ratio = [], 0
-        bLow, bHigh = self.bound_low, self.bound_high
-
-        match_base_xs, match_base_ys = [], []
-        match_seed_xs, match_seed_ys = [], []
-        match_oorg_xs, match_oorg_ys = [], []
-
-        for pk in spc:
-            all_ys.append(pk[1])
-
-            if bLow < pk[0] < bHigh:
-                match_seed_xs.append(pk[0])
-                match_seed_ys.append(pk[1])
-            elif bLow + 1 < pk[0] < bHigh + 1:
-                match_seed_xs.append(pk[0])
-                match_seed_ys.append(pk[1])
-            elif bLow + 23 < pk[0] < bHigh + 23:
-                match_seed_xs.append(pk[0])
-                match_seed_ys.append(pk[1])
-            elif bLow + 39 < pk[0] < bHigh + 39:
-                match_seed_xs.append(pk[0])
-                match_seed_ys.append(pk[1])
-
-            if pk[0] <= bHigh + 39:
-                match_base_xs.append(pk[0])
-                match_base_ys.append(pk[1])
-            elif bHigh + 39 < pk[0]:
-                match_oorg_xs.append(pk[0])
-                match_oorg_ys.append(pk[1])
-
-        max_base = max(match_base_ys, default=0.1)
-        max_seed = max(match_seed_ys, default=0)
-        max_oorg = max(match_oorg_ys, default=0)
-
-        ratio = 100 * max_seed / max_base
-        noise_ratio = 100 * max_oorg / max_base
-
+        ratio, noise_ratio, max_seed = scan_ratios(
+            spc, self.bound_low, self.bound_high)
         return ratio, noise_ratio, max_seed
     
     def __get_best_ratio(self, old_ratio, new_ratio, noise_ratio, current_index, current_backup_idx, curr_backup_ratio, old_y, new_y):
@@ -411,14 +378,7 @@ class MSConverter:
             xs = spc[:, 0]
             ys = spc[:, 1]
             pts = xs.shape[0]
-            dt = []
-            for idx in range(pts):
-                dt.append(
-                    '{}, {}\n'.format(
-                        xs[idx],
-                        ys[idx]
-                    )
-                )
+            dt = xy_lines(xs, ys)
             dts.append({'dt': dt, 'pts': pts})
         return dts
 
