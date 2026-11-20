@@ -70,8 +70,10 @@ class CdfMSConverter:  # nmr & IR
         data = self.data
         runs = []
         xs, ys, idxs = data['XS'], data['YS'], data['SCANINDEXS']
-        for i, v in enumerate(idxs[:-1]):
-            head, tail = v, idxs[i+1]
+        # scan_index holds each scan's first point; the last scan runs to the
+        # end of the data. Pairing consecutive starts alone dropped it.
+        ends = list(idxs[1:]) + [len(xs)]
+        for head, tail in zip(idxs, ends):
             dxs, dys = xs[head:tail].data, ys[head:tail].data
             ds = np.array([dxs, dys])
             ds = np.transpose(ds)
