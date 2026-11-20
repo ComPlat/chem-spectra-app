@@ -117,8 +117,24 @@ def test_combine_images_no_file(client):
     assert response.get_json()['error']
 
 def test_combine_images(client):
-    #TODO: implement later
-    pass
+    """Two spectra in, one PNG out, inside a zip."""
+    names = ['13C-DEPT135.dx', '13C-CPD.dx']
+    files = []
+    for name in names:
+        with open(target_dir + source_dir + name, 'rb') as f:
+            files.append((io.BytesIO(f.read()), name))
+    response = client.post(
+        '/combine_images',
+        content_type='multipart/form-data',
+        data={'files[]': files, 'list_file_names[]': names},
+    )
+
+    assert response.status_code == 200
+    assert response.mimetype == 'application/zip'
+    with zipfile.ZipFile(io.BytesIO(response.data)) as archive:
+        members = archive.namelist()
+        assert len(members) == 1
+        assert archive.read(members[0]).startswith(b'\x89PNG')
 
 
 def test_image(client):
