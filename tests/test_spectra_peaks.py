@@ -157,14 +157,6 @@ def test_solvent_filter_keeps_a_sample_peak_elsewhere_in_the_window():
 
     assert sorted(peak['x'] for peak in filtered) == [77.00, 79.30]
 
-def test_meta_MS_jdx():
-    pass
-    # meta_content = __generated_peaks_meta('MS.dx')
-    # import pdb; pdb.set_trace()
-    # meta_target = __target_peaks_meta(meta_SVS_790A_13C_jdx)
-    # assert meta_content == meta_target
-
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #
 # generate peaks + edit files

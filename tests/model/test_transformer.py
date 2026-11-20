@@ -1,3 +1,4 @@
+import base64
 import io
 import tempfile
 import zipfile
@@ -12,6 +13,7 @@ from chem_spectra.model.transformer import TransformerModel
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
 from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.ms import MSComposer
 
 source_dir_1h_bruker = './tests/fixtures/source/bruker/1H.zip'
 source_dir_1h_jcamp = './tests/fixtures/source/1H.dx'
@@ -20,6 +22,11 @@ params_1h_bruker = {'fname':'1H.zip', 'ext':'zip'}
 params_1h_jcamp = {'fname':'1H.dx', 'ext':'dx'}
 params_1h_bruker_check_nmr = {'fname':'1H.zip', 'ext':'zip', 'simulatenmr': True}
 params_1h_jcamp_check_nmr = {'fname':'1H.dx', 'ext':'dx', 'simulatenmr': True}
+
+source_dir_mzml = './tests/fixtures/source/ms/svs813f1.mzML'
+params_mzml = {'fname': 'svs813f1.mzML', 'ext': 'mzml', 'mass': 230.079907196}
+source_dir_bagit_cv = './tests/fixtures/source/bagit/cv/File053_BagIt.zip'
+params_bagit_cv = {'fname': 'File053_BagIt.zip', 'ext': 'zip'}
 
 source_dir_molfile = './tests/fixtures/source/molfile/svs813f1_B.mol'
 source_dir_invalid_molfile = './tests/fixtures/source/molfile/invalid_molfile.mol'
@@ -189,8 +196,15 @@ def test_to_composer_zip_valid_molfile():
     assert invalid_molfile is False
 
 def test_to_composer_mass_spectrum():
-    # TODO: implement later
-    pass
+    with open(source_dir_mzml, 'rb') as f:
+        file = FileContainer(FileStorage(f))
+
+    composer, invalid_molfile = TransformerModel(
+        file, params=params_mzml).to_composer()
+
+    assert isinstance(composer, MSComposer)
+    assert invalid_molfile is False
+    assert len(composer.core.spectra) == 24
 
 def test_to_composer_cdf():
     # TODO: implement later
@@ -208,9 +222,21 @@ def test_convert2jcamp():
     jcamp = tranform_model.convert2jcamp()
     assert jcamp is not None
 
+def _bagit_model():
+    with open(source_dir_bagit_cv, 'rb') as f:
+        file = FileContainer(FileStorage(f))
+    return TransformerModel(file, params=params_bagit_cv)
+
+
 def test_convert2jcamp_bagit():
-    # TODO: implement later
-    pass
+    """One curve per JCAMP in the archive: #244 returned three for five,
+    and a test that asserted nothing passed it."""
+    converter = _bagit_model().convert2jcamp()
+
+    assert isinstance(converter, BagItBaseConverter)
+    assert len(converter.data) == 3
+    for jcamp in converter.get_base64_data():
+        assert '##TITLE=' in base64.b64decode(jcamp).decode('utf-8')
 
 def test_convert2img():
     with open(source_dir_molfile, 'rb') as f:
@@ -225,8 +251,11 @@ def test_convert2img():
     assert image is not None
 
 def test_convert2img_bagit():
-    # TODO: implement later
-    pass
+    converter = _bagit_model().convert2img()
+
+    assert isinstance(converter, BagItBaseConverter)
+    assert len(converter.images) == 3
+    assert converter.combined_image is not None
 
 def test_convert2jcamp_img():
     with open(source_dir_molfile, 'rb') as f:
@@ -243,8 +272,12 @@ def test_convert2jcamp_img():
     assert csv is None
 
 def test_convert2jcamp_img_bagit():
-    # TODO: implement later
-    pass
+    jcamp, image, csv = _bagit_model().convert2jcamp_img()
+
+    assert jcamp is False
+    assert csv is False
+    assert isinstance(image, BagItBaseConverter)
+    assert len(image.data) == 3
 
 
 _LCMS_FLAT_JDX = """##TITLE={title}
