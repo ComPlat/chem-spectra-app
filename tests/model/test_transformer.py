@@ -192,10 +192,6 @@ def test_to_composer_mass_spectrum():
     # TODO: implement later
     pass
 
-def test_to_composer_cdf():
-    # TODO: implement later
-    pass
-
 def test_convert2jcamp():
     with open(source_dir_molfile, 'rb') as f:
         molfile = FileContainer(FileStorage(f))
