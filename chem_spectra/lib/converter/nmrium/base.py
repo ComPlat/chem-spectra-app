@@ -6,6 +6,7 @@ from chem_spectra.lib.shared.calc import (  # noqa: E402
     calc_mpy_center, get_curve_endpoint, cal_area_multiplicity
 )
 from chem_spectra.lib.converter.jcamp.reader import block_from_headers
+from chem_spectra.lib.converter.jcamp.techniques import SPECTRUM_TECHNIQUES
 
 def coupling_string(js):
     if len(js) == 0:
@@ -23,6 +24,10 @@ class NMRiumDataConverter:
         self.fname = ''
         self.is_em_wave = False
         self.non_nmr = False
+        # An NMRium document is NMR by construction, so the descriptor is
+        # known here, as for a FID. Without it this core was the only one the
+        # composer resolved through its `non_nmr` fallback.
+        self.technique = SPECTRUM_TECHNIQUES['NMR']
         self.data = None
 
         spectrum_data = self.__read_file()
@@ -283,6 +288,10 @@ class NMRiumDataConverter:
         xL, xU = rangeValue['from'], rangeValue['to']
         iL, iU = get_curve_endpoint(self.xs, self.ys, xL, xU)
         cys = self.ys[iL:iU]
+        if len(cys) == 0:
+            # The range has no points under it (it lies outside the data), so
+            # it has no extent or area to report. It raised IndexError here.
+            return None
         yL, yU = cys[0], cys[len(cys)-1]
         
         xExtent = {"xL": xL, "xU": xU}

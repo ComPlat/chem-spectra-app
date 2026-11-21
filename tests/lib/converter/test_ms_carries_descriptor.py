@@ -16,10 +16,9 @@ the other two set nothing, so all three fell through to the
 `getattr(core, 'non_nmr', True)` default and resolved to
 `UNKNOWN_TECHNIQUE`.
 
-**Coverage gap, stated rather than papered over:** `CdfMSConverter` is not
-asserted here. No `.cdf` fixture exists and `test_to_composer_cdf` in
-`tests/model/test_transformer.py` is an empty stub, so nothing in the suite
-constructs it. Its descriptor assignment is unverified by execution.
+`CdfMSConverter` is asserted in
+`tests/lib/converter/test_every_core_carries_a_descriptor.py`, on a netCDF
+built at test time.
 """
 
 from werkzeug.datastructures import FileStorage

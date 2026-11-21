@@ -270,24 +270,19 @@ class BaseComposer:
     def _technique(self):
         """The core's spectrum-technique descriptor.
 
-        Converters not fed by data_type.json carry no `technique` but do set
-        `non_nmr` themselves. `NMRiumDataConverter` is the only one left:
-        tf_nmrium (model/transformer.py) hands it straight to
-        TechniqueComposer and it carries no descriptor, so this fallback is
-        what resolves it to NMR rather than the generic curve.
-
-        FID and every MS converter used to need this too. Both now set a
-        descriptor of their own, so the fallback is reached on the NMRium
-        path alone. It is kept because a converter added later may forget.
+        Every converter handed to a composer carries one;
+        tests/lib/converter/test_every_core_carries_a_descriptor.py makes a
+        new converter declare it. A core without one is drawn as the generic
+        curve. There used to be a second fallback, NMR for a core reporting
+        `non_nmr = False`, which only the NMRium converter still needed;
+        it carries the NMR descriptor now.
         """
         from chem_spectra.lib.converter.jcamp.techniques import (
-            SPECTRUM_TECHNIQUES, UNKNOWN_TECHNIQUE,
+            UNKNOWN_TECHNIQUE,
         )
         technique = getattr(self.core, 'technique', None)
         if technique is not None:
             return technique
-        if getattr(self.core, 'non_nmr', True) is False:
-            return SPECTRUM_TECHNIQUES['NMR']
         return UNKNOWN_TECHNIQUE
 
     def prepare_itg_mpy(self):

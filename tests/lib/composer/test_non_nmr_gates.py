@@ -8,11 +8,8 @@ asserted separately here, both branches.
 The gates now read the descriptor. `JcampTechniqueConverter` no longer
 copies `non_nmr` across at all, so these assert `_technique().key` instead.
 
-`composer/base.py` still reads `getattr(self.core, 'non_nmr', True)` as its
-fallback, and that default still matters: converters not fed by
-data_type.json set the attribute themselves, and `NMRiumDataConverter` --
-which `tf_nmrium` hands straight to `TechniqueComposer` -- carries no
-descriptor, so the fallback is the only thing that resolves it to NMR.
+`composer/base.py` no longer reads `non_nmr` at all: every core carries a
+descriptor, and a core without one resolves to the generic curve.
 """
 
 import pytest
@@ -77,14 +74,14 @@ def test_multiplicity_output_is_produced_for_nmr(method):
     assert getattr(composer, method)() != []
 
 
-# - - - the getattr default - - -
+# - - - a core without a descriptor - - -
 
 def test_gates_treat_a_core_without_non_nmr_as_non_nmr():
-    """`getattr(core, 'non_nmr', True)` — the default is not incidental.
+    """A core without a descriptor takes the conservative branch.
 
-    A core that does not carry the attribute is treated as non-NMR, i.e. the
-    conservative branch that emits no multiplicity. Anything that stops
-    setting `non_nmr` inherits this, silently.
+    It is the generic curve, so it pairs no integrals and emits no
+    multiplicity. Every real core carries a descriptor
+    (tests/lib/converter/test_every_core_carries_a_descriptor.py).
     """
     class CoreWithoutNonNmr:
         params = {'integration': {'refArea': 1, 'refFactor': 1, 'shift': 0,
