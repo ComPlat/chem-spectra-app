@@ -34,6 +34,7 @@ import pytest
 from werkzeug.datastructures import FileStorage
 
 from chem_spectra.controller.helper.file_container import FileContainer
+from chem_spectra.lib.converter.jcamp.techniques import SPECTRUM_TECHNIQUES
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 
 FLAT = './tests/fixtures/source/nmrium/flat.nmrium'
@@ -78,8 +79,10 @@ def test_the_curve_is_read(converted):
 
 
 def test_it_declares_itself_nmr(converted):
-    """No descriptor is carried, so since #297 this is the only converter
-    relying on `BaseComposer._technique()`'s `non_nmr` fallback."""
+    """It carries the NMR descriptor. Until it did, it was the only converter
+    resolved to NMR through a fallback on `non_nmr` in
+    `BaseComposer._technique()`."""
+    assert converted.technique is SPECTRUM_TECHNIQUES['NMR']
     assert converted.non_nmr is False
     assert converted.is_2d is False
 
@@ -94,9 +97,9 @@ def test_datatype_comes_from_the_document_and_is_not_uppercased(converted):
     and nothing upper-cases this path the way `JcampBaseConverter.__set_datatype`
     canonicalises its own.
 
-    Harmless today: `non_nmr` is False and the composer takes the NMR branch
-    without consulting the string. It would stop being harmless the moment this
-    core carried a descriptor looked up by datatype.
+    Harmless today: the core carries the NMR descriptor directly, so nothing
+    consults the string. It would stop being harmless the moment the
+    descriptor were looked up by datatype.
     """
     assert converted.datatype == 'NMR Spectrum'
     assert converted.datatypes == ['NMR SPECTRUM']
