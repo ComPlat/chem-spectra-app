@@ -516,8 +516,9 @@ class TechniqueComposer(BaseComposer):
         """Read the integrals and multiplets the file itself carries.
 
         Only when the request brought none of its own, and it is not an
-        edit. Lines too short to hold a record are skipped, and so is a
-        multiplet with no peaks: `calc_mpy_center` divides by the peak count.
+        edit. Lines too short to hold a record, or whose numbers do not
+        parse, are skipped, and so is a multiplet with no peaks:
+        `calc_mpy_center` divides by the peak count.
         """
         refShift = self.refShift
         integration = self.core.params['integration']
@@ -527,11 +528,14 @@ class TechniqueComposer(BaseComposer):
             for itg in self.core.itg_table[0].split('\n'):
                 split_itg = itg.replace('(', '').replace(')', '').split(',')
                 if len(split_itg) > 2:
-                    self.all_itgs.append({
-                        'xL': float(split_itg[0].strip()),
-                        'xU': float(split_itg[1].strip()),
-                        'area': float(split_itg[2].strip()),
-                    })
+                    try:
+                        self.all_itgs.append({
+                            'xL': float(split_itg[0].strip()),
+                            'xU': float(split_itg[1].strip()),
+                            'area': float(split_itg[2].strip()),
+                        })
+                    except ValueError:
+                        continue  # not a data row
 
         if (self._technique().multiplicity and len(self.mpys) == 0
                 and len(self.core.mpy_itg_table) > 0
@@ -541,10 +545,14 @@ class TechniqueComposer(BaseComposer):
                 split_peak = peak.replace('(', '').replace(')', '').split(',')
                 if len(split_peak) < 3:
                     continue
-                tmp_dic_mpy_peaks.setdefault(split_peak[0].strip(), []).append({
-                    'x': float(split_peak[1].strip()),
-                    'y': float(split_peak[2].strip()),
-                })
+                try:
+                    peak_xy = {
+                        'x': float(split_peak[1].strip()),
+                        'y': float(split_peak[2].strip()),
+                    }
+                except ValueError:
+                    continue  # not a data row
+                tmp_dic_mpy_peaks.setdefault(split_peak[0].strip(), []).append(peak_xy)
 
             for mpy in self.core.mpy_itg_table[0].split('\n'):
                 split_mpy = mpy.replace('(', '').replace(')', '').split(',')
@@ -553,15 +561,19 @@ class TechniqueComposer(BaseComposer):
                 peaks = tmp_dic_mpy_peaks.get(split_mpy[0].strip(), [])
                 if not peaks:
                     continue
+                try:
+                    bounds = [float(v.strip()) for v in split_mpy[1:5]]
+                except ValueError:
+                    continue  # not a data row
                 self.mpys.append({
                     'mpyType': split_mpy[6].strip(),
                     'xExtent': {
-                        'xL': float(split_mpy[1].strip()) + refShift,
-                        'xU': float(split_mpy[2].strip()) + refShift,
+                        'xL': bounds[0] + refShift,
+                        'xU': bounds[1] + refShift,
                     },
                     'yExtent': {
-                        'yL': float(split_mpy[3].strip()) + refShift,
-                        'yU': float(split_mpy[4].strip()) + refShift,
+                        'yL': bounds[2] + refShift,
+                        'yU': bounds[3] + refShift,
                     },
                     'peaks': peaks,
                     'area': 1.0,
