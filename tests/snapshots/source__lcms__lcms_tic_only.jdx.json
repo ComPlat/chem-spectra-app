@@ -1,0 +1,22 @@
+{
+  "auto_peaks": null,
+  "boundary": null,
+  "edit_peaks": null,
+  "factor": null,
+  "itg_table": null,
+  "jcamp": {
+    "len": 850,
+    "sha1": "dafeca1865c2ddda40ae233854fceae9aeae8e7d"
+  },
+  "label": null,
+  "mpy_itg_table": null,
+  "target": {
+    "dataclass": null,
+    "datatype": null
+  },
+  "threshold": null,
+  "title": null,
+  "typ": null,
+  "xs": null,
+  "ys": null
+}
