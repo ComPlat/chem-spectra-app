@@ -26,7 +26,6 @@ FIXTURES = harness.fixtures()
 def test_the_fixture_produces_what_it_is_recorded_as_producing(path):
     stored = harness.snapshot_path(path)
     assert stored.exists(), (
-        'no record for %s; run `python -m tests.tools.snapshot_baseline`'
-        % path.name)
+        f'no record for {path.name}; run `python -m tests.tools.snapshot_baseline`')
     assert json.loads(harness.render(path)) == json.loads(
         stored.read_text(encoding='utf-8'))

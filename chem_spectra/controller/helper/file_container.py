@@ -31,14 +31,12 @@ def refuse_if_archive_too_large(archive):
     max_members = _limit('MAX_ZIP_MEMBERS', DEFAULT_MAX_ZIP_MEMBERS)
     if len(members) > max_members:
         raise UnconvertibleSpectrum(
-            'this archive holds {} files; the limit is {}.'.format(
-                len(members), max_members))
+            f'this archive holds {len(members)} files; the limit is {max_members}.')
     size_mb = sum(e.file_size for e in members) / (1024 * 1024)
     max_size_mb = _limit('MAX_ZIP_SIZE', DEFAULT_MAX_ZIP_SIZE)
     if size_mb > max_size_mb:
         raise UnconvertibleSpectrum(
-            'this archive expands to {:.1f} MB; the limit is {} MB.'.format(
-                size_mb, max_size_mb))
+            f'this archive expands to {size_mb:.1f} MB; the limit is {max_size_mb} MB.')
 
 
 class FileContainer:

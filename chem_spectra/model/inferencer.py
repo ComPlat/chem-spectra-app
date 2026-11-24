@@ -36,7 +36,7 @@ def outline(code, text):
 class PredictorNotConfigured(Exception):
     def __init__(self, what):
         super().__init__(
-            '{} prediction is not configured on this server.'.format(what)
+            f'{what} prediction is not configured on this server.'
         )
 
 
@@ -54,11 +54,10 @@ def _timeout():
 def _request_failed(err, service):
     """The outline for a request to `service` that did not get an answer."""
     if isinstance(err, requests.Timeout):
-        return outline(TIMED_OUT, '{} did not answer within {} s.'.format(
-            service, _timeout()))
+        return outline(TIMED_OUT, f'{service} did not answer within {_timeout()} s.')
     if isinstance(err, requests.ConnectionError):
         return outline(NOT_AVAILABLE, 'No Server available! Please try it later.')
-    return outline(BAD_ANSWER, '{} could not be asked: {}'.format(service, err))
+    return outline(BAD_ANSWER, f'{service} could not be asked: {err}')
 
 
 def _unreadable_answer(rsp, body, service):
@@ -74,9 +73,8 @@ def _unreadable_answer(rsp, body, service):
         return outline(theirs['code'], theirs['text'])
     status = getattr(rsp, 'status_code', 200)
     snippet = str(getattr(rsp, 'text', '') or '')[:200].strip()
-    text = '{} answered HTTP {} without a prediction this server can read.'.format(
-        service, status)
-    return outline(BAD_ANSWER, '{} {}'.format(text, snippet) if snippet else text)
+    text = f'{service} answered HTTP {status} without a prediction this server can read.'
+    return outline(BAD_ANSWER, f'{text} {snippet}' if snippet else text)
 
 
 def _predicted_groups(outcome):
@@ -125,14 +123,14 @@ class InferencerModel:
             output = rsp.json()
             logger = logging.getLogger(__name__)
             logger.setLevel(logging.INFO)
-            log_msg = 'smiles: {smi} - nmrshiftdb_result: {nmrshiftdb}'.format(smi=mm.smi, nmrshiftdb=output)   # noqa: E501
+            log_msg = f'smiles: {mm.smi} - nmrshiftdb_result: {output}'   # noqa: E501
             logger.info(log_msg)
             simulations = sorted([shift['prediction'] for shift in output['result'][0]['shifts']])  # noqa: E501
             return simulations
         except Exception as error:
             logger = logging.getLogger(__name__)
             logger.setLevel(logging.ERROR)
-            log_msg = 'smiles: {smi} - nmrshiftdb_result: {nmrshiftdb}'.format(smi=mm.smi, nmrshiftdb=error)    # noqa: E501
+            log_msg = f'smiles: {mm.smi} - nmrshiftdb_result: {error}'    # noqa: E501
             logger.error(log_msg)
             return []
 
@@ -248,7 +246,7 @@ class InferencerModel:
             # A spectrum the converter refuses (no readable x range, ...).
             # This endpoint reports errors in the body, so keep that contract
             # and pass the reason on rather than answering 422.
-            return outline(400, 'IR Spectrum error!\n{}'.format(err))
+            return outline(400, f'IR Spectrum error!\n{err}')
         except (TypeError, UnparsableJcampData):
             # UnparsableJcampData: the uploaded spectrum has no readable data
             # array, which is a bad upload rather than a server fault

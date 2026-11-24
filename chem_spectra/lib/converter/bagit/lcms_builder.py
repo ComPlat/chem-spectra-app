@@ -1,7 +1,7 @@
 import logging
 import os
 import tempfile
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from chem_spectra.lib.composer.lcms_converter_app import (
     LCMSConverterAppComposer,
@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 _HEADER_SCAN_LINES = 200
 
 
-def _read_jcamp_header(path: str) -> Tuple[Optional[str], Optional[str]]:
-    data_type: Optional[str] = None
-    scan_mode: Optional[str] = None
+def _read_jcamp_header(path: str) -> tuple[str | None, str | None]:
+    data_type: str | None = None
+    scan_mode: str | None = None
     try:
-        with open(path, 'r', encoding='utf-8', errors='ignore') as handle:
+        with open(path, encoding='utf-8', errors='ignore') as handle:
             for _ in range(_HEADER_SCAN_LINES):
                 raw = handle.readline()
                 if not raw:
@@ -46,7 +46,7 @@ def _read_jcamp_header(path: str) -> Tuple[Optional[str], Optional[str]]:
     return data_type, scan_mode
 
 
-def _scan_mode_suffix(scan_mode: Optional[str]) -> Optional[str]:
+def _scan_mode_suffix(scan_mode: str | None) -> str | None:
     if not scan_mode:
         return None
     lowered = scan_mode.lower()
@@ -57,7 +57,7 @@ def _scan_mode_suffix(scan_mode: Optional[str]) -> Optional[str]:
     return None
 
 
-def _semantic_stem_for(data_type: Optional[str], scan_mode: Optional[str]) -> Optional[str]:
+def _semantic_stem_for(data_type: str | None, scan_mode: str | None) -> str | None:
     if not data_type:
         return None
     dt = data_type.upper()
@@ -71,12 +71,12 @@ def _semantic_stem_for(data_type: Optional[str], scan_mode: Optional[str]) -> Op
     return None
 
 
-def classify_lcms_stems(jcamp_paths: List[str]) -> List[str]:
+def classify_lcms_stems(jcamp_paths: list[str]) -> list[str]:
     if not jcamp_paths:
         return []
 
     raw_stems = [os.path.splitext(os.path.basename(p))[0].replace('.', '_') for p in jcamp_paths]
-    semantic_stems: List[Optional[str]] = []
+    semantic_stems: list[str | None] = []
     for path in jcamp_paths:
         if has_uvvis_peak_marker(path):
             semantic_stems.append('lcms_uvvis.peak')
@@ -89,7 +89,7 @@ def classify_lcms_stems(jcamp_paths: List[str]) -> List[str]:
         if stem:
             counts[stem] = counts.get(stem, 0) + 1
 
-    resolved: List[str] = []
+    resolved: list[str] = []
     for raw, semantic in zip(raw_stems, semantic_stems):
         if semantic and counts[semantic] == 1:
             resolved.append(semantic)
@@ -100,7 +100,7 @@ def classify_lcms_stems(jcamp_paths: List[str]) -> List[str]:
 
 def _copy_to_named_tmp(path: str) -> tempfile.NamedTemporaryFile:
     base = os.path.basename(path)
-    suffix = '_{}'.format(base) if base else (os.path.splitext(path)[1] or '')
+    suffix = f'_{base}' if base else (os.path.splitext(path)[1] or '')
     tf = tempfile.NamedTemporaryFile(suffix=suffix)
     with open(path, 'rb') as src:
         while True:
@@ -123,13 +123,13 @@ def _close_silently(handles):
 def build_lcms_composer(
     jcamp_paths,
     params=None,
-) -> Optional[LCMSConverterAppComposer]:
+) -> LCMSConverterAppComposer | None:
     if not jcamp_paths:
         return None
 
-    ordered_paths: List[str] = sorted(jcamp_paths)
+    ordered_paths: list[str] = sorted(jcamp_paths)
 
-    tmp_files: List[tempfile.NamedTemporaryFile] = []
+    tmp_files: list[tempfile.NamedTemporaryFile] = []
     try:
         for path in ordered_paths:
             tmp_files.append(_copy_to_named_tmp(path))

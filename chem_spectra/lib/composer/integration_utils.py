@@ -22,8 +22,8 @@ def format_integral_line(itg, ref_area_factor, ref_shift, use_auc_column):
     x_l = itg['xL'] - ref_shift
     x_u = itg['xU'] - ref_shift
     if use_auc_column:
-        return '({}, {}, {}, {})\n'.format(x_l, x_u, area_stored, absolute_area)
-    return '({}, {}, {})\n'.format(x_l, x_u, area_stored)
+        return f'({x_l}, {x_u}, {area_stored}, {absolute_area})\n'
+    return f'({x_l}, {x_u}, {area_stored})\n'
 
 
 def build_integration_lines(items, ref_area_factor, ref_shift, use_auc_column):
@@ -94,5 +94,5 @@ def build_integration_groups_lines(items):
             continue
         group_id = itg.get('visualSplitGroupId')
         if group_id:
-            table.append('{}, {}\n'.format(idx, group_id))
+            table.append(f'{idx}, {group_id}\n')
     return table

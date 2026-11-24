@@ -123,16 +123,16 @@ def refuse_if_multi_dimensional(header, what=None):
     dimensions = declared_dimensions(header)
     if dimensions is None or dimensions <= 1:
         return
-    where = '{}: '.format(what) if what else ''
+    where = f'{what}: ' if what else ''
     if declares_nmr(header):
         raise UnconvertibleSpectrum(
-            where + 'this is a {}D NMR file. ChemSpectra reads '
+            where + f'this is a {dimensions}D NMR file. ChemSpectra reads '
             'one-dimensional spectra only; open it in NMRium '
-            'instead'.format(dimensions)
+            'instead'
         )
     raise UnconvertibleSpectrum(
-        where + 'this file declares {} dimensions. ChemSpectra reads '
-        'one-dimensional spectra only'.format(dimensions)
+        where + f'this file declares {dimensions} dimensions. ChemSpectra reads '
+        'one-dimensional spectra only'
     )
 
 class JcampBaseConverter:
@@ -229,9 +229,9 @@ class JcampBaseConverter:
                 or self.typ not in NON_ABSORBING_TYPES):
             return
         raise UnconvertibleSpectrum(
-            'a transmittance conversion is not meaningful here: {} does not '
+            f'a transmittance conversion is not meaningful here: {self.typ} does not '
             'measure absorption through a sample, and the file declares no '
-            'absorbance unit'.format(self.typ)
+            'absorbance unit'
         )
     
     @staticmethod
@@ -263,7 +263,7 @@ class JcampBaseConverter:
     def __data_type_mappings(self):
         if self.params.get('user_data_type_mapping'):
             return self.__read_user_data_type_mapping()
-        with open(data_type_json, 'r') as mapping_file:
+        with open(data_type_json) as mapping_file:
             return json.load(mapping_file)['datatypes']
 
     def __set_datatype(self):

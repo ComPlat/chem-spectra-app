@@ -26,7 +26,7 @@ def get_fname(abs_path, filename, is_src):
     ext = abs_path.split('.')[-1]
     header = 'orig_' if is_src else ''
 
-    return '{}{}.{}'.format(header, filename, ext)
+    return f'{header}{filename}.{ext}'
 
 
 def to_zip_response(src_tmp_arr, filename=False, src_idx=-1):

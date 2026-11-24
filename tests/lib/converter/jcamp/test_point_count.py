@@ -126,8 +126,8 @@ def test_a_spectrum_with_the_wrong_count_is_refused(tmp_path, text, parsed, decl
     with pytest.raises(UnconvertibleSpectrum) as refused:
         JcampTechniqueConverter(_base(tmp_path, text))
     reason = str(refused.value)
-    assert '{} points'.format(parsed) in reason
-    assert '##NPOINTS={}'.format(declared) in reason
+    assert f'{parsed} points' in reason
+    assert f'##NPOINTS={declared}' in reason
     if comma:
         assert comma in reason and 'decimal commas' in reason
     else:

@@ -102,7 +102,7 @@ def test_an_archive_over_the_size_limit_is_refused_with_the_sizes(app, client):
 
 def test_an_archive_over_the_member_limit_is_refused(app, client):
     app.config['MAX_ZIP_MEMBERS'] = 3
-    archive = _zip({'f{}'.format(i): b'x' for i in range(5)})
+    archive = _zip({f'f{i}': b'x' for i in range(5)})
     response = _post(client, '/zip_jcamp_n_img', file=('a.zip', archive))
     assert response.status_code == 422
     assert response.json['error'] == \
@@ -131,6 +131,6 @@ def test_the_largest_fixture_archive_is_within_the_defaults():
 
 
 def test_the_limits_apply_outside_a_request_too():
-    archive = _zip({'f{}'.format(i): b'x' for i in range(1001)})
+    archive = _zip({f'f{i}': b'x' for i in range(1001)})
     with pytest.raises(UnconvertibleSpectrum, match='holds 1001 files'):
         FileContainer(FileStorage(io.BytesIO(archive), filename='a.zip'))

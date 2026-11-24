@@ -24,7 +24,7 @@ def test_float32_data_is_written_short_and_reads_back_to_the_same_float32():
     # as float64, within half a float32 step of the original
     assert np.max(np.abs(back[:, 0] - xs) / xs) <= HALF_FLOAT32_STEP
     assert sum(map(len, lines)) < sum(
-        len('{}, {}\n'.format(x, y)) for x, y in zip(xs, ys)) * 0.75
+        len(f'{x}, {y}\n') for x, y in zip(xs, ys)) * 0.75
 
 
 def test_an_example():
@@ -36,7 +36,7 @@ def test_float64_data_is_written_as_before():
     xs = np.array([100.1807250976562, 0.1, 51.0120849609371])  # not float32
     ys = np.array([1.0, 2.5, 3.0])
     assert xy_lines(xs, ys) == [
-        '{}, {}\n'.format(x, y) for x, y in zip(xs, ys)]
+        f'{x}, {y}\n' for x, y in zip(xs, ys)]
 
 
 def test_one_float64_value_keeps_the_whole_column_as_before():
@@ -51,7 +51,7 @@ def test_one_float64_value_keeps_the_whole_column_as_before():
 ])
 def test_the_text_style_follows_repr(value, text):
     exact = float(np.float32(value))
-    assert xy_lines([exact], [1.0])[0] == '{}, 1.0\n'.format(text)
+    assert xy_lines([exact], [1.0])[0] == f'{text}, 1.0\n'
 
 
 def test_an_mzml_upload_shortens_only_what_is_float32(client):

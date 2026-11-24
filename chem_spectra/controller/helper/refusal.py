@@ -49,7 +49,6 @@ def request_too_large_reason():
     limit = current_app.config.get('MAX_CONTENT_LENGTH')
     size = request.content_length
     if limit and size and size > limit:
-        return 'the upload is {:.1f} MB; the limit is {:.1f} MB.'.format(
-            size / (1024 * 1024), limit / (1024 * 1024))
+        return f'the upload is {size / (1024 * 1024):.1f} MB; the limit is {limit / (1024 * 1024):.1f} MB.'
     return ('a form field in this request is larger than the server '
             'accepts (MAX_FORM_MEMORY_SIZE).')

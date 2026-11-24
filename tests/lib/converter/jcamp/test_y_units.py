@@ -78,19 +78,19 @@ def _absorbance_probe(tmp_path, datatype='INFRARED SPECTRUM', params=None):
         '##JCAMP-DX=5.00\n',
         '##DATA TYPE=' + datatype + '\n',
         '##DATA CLASS=XYPOINTS\n',
-        '##FIRSTX={}\n'.format(xs[0]),
-        '##LASTX={}\n'.format(xs[-1]),
-        '##MINX={}\n'.format(min(xs)),
-        '##MAXX={}\n'.format(max(xs)),
-        '##MINY={}\n'.format(min(ys)),
-        '##MAXY={}\n'.format(max(ys)),
-        '##NPOINTS={}\n'.format(len(xs)),
-        '##FIRSTY={}\n'.format(ys[0]),
+        f'##FIRSTX={xs[0]}\n',
+        f'##LASTX={xs[-1]}\n',
+        f'##MINX={min(xs)}\n',
+        f'##MAXX={max(xs)}\n',
+        f'##MINY={min(ys)}\n',
+        f'##MAXY={max(ys)}\n',
+        f'##NPOINTS={len(xs)}\n',
+        f'##FIRSTY={ys[0]}\n',
         '##XUNITS=1/CM\n',
         '##YUNITS=ABSORBANCE\n',
         '##XYPOINTS=(XY..XY)\n',
     ]
-    body += ['{:.6f}, {:.6f}\n'.format(x, y) for x, y in zip(xs, ys)]
+    body += [f'{x:.6f}, {y:.6f}\n' for x, y in zip(xs, ys)]
     body.append('##END=\n')
     target = tmp_path / 'absorbance.jdx'
     target.write_text(''.join(body))
@@ -309,13 +309,13 @@ def test_a_single_units_record_is_read_for_the_declared_unit(tmp_path):
         '##TITLE=single units record\n', '##JCAMP-DX=6.00\n',
         '##DATA TYPE=INFRARED SPECTRUM\n', '##DATA CLASS=XYPOINTS\n',
         '##UNITS=1/CM, % TRANSMITTANCE, ARBITRARY\n',
-        '##FIRSTX={}\n'.format(xs[0]), '##LASTX={}\n'.format(xs[-1]),
-        '##MINX={}\n'.format(min(xs)), '##MAXX={}\n'.format(max(xs)),
-        '##MINY={}\n'.format(min(ys)), '##MAXY={}\n'.format(max(ys)),
-        '##NPOINTS={}\n'.format(len(xs)), '##FIRSTY={}\n'.format(ys[0]),
+        f'##FIRSTX={xs[0]}\n', f'##LASTX={xs[-1]}\n',
+        f'##MINX={min(xs)}\n', f'##MAXX={max(xs)}\n',
+        f'##MINY={min(ys)}\n', f'##MAXY={max(ys)}\n',
+        f'##NPOINTS={len(xs)}\n', f'##FIRSTY={ys[0]}\n',
         '##XYPOINTS=(XY..XY)\n',
     ]
-    body += ['{:.6f}, {:.6f}\n'.format(x, y) for x, y in zip(xs, ys)]
+    body += [f'{x:.6f}, {y:.6f}\n' for x, y in zip(xs, ys)]
     body.append('##END=\n')
     target = tmp_path / 'single_units.jdx'
     target.write_text(''.join(body))
@@ -332,8 +332,7 @@ def _single_units_record(tmp_path, yunits, units_y):
     ys[40:60] = [2.0] * 20
     path = _synthetic(tmp_path, ys, yunits=yunits)
     body = open(path).read().replace(
-        '##XYPOINTS=', '##UNITS=1/CM, {}, ARBITRARY UNITS\n##XYPOINTS='.format(
-            units_y), 1)
+        '##XYPOINTS=', f'##UNITS=1/CM, {units_y}, ARBITRARY UNITS\n##XYPOINTS=', 1)
     open(path, 'w').write(body)
     return path
 
@@ -468,14 +467,14 @@ def _synthetic(tmp_path, ys, yunits='ABSORBANCE'):
     body = [
         '##TITLE=synthetic\n', '##JCAMP-DX=5.00\n',
         '##DATA TYPE=INFRARED SPECTRUM\n', '##DATA CLASS=XYPOINTS\n',
-        '##FIRSTX={}\n'.format(xs[0]), '##LASTX={}\n'.format(xs[-1]),
-        '##MINX={}\n'.format(min(xs)), '##MAXX={}\n'.format(max(xs)),
-        '##MINY={}\n'.format(min(ys)), '##MAXY={}\n'.format(max(ys)),
-        '##NPOINTS={}\n'.format(len(xs)), '##FIRSTY={}\n'.format(ys[0]),
-        '##XUNITS=1/CM\n', '##YUNITS={}\n'.format(yunits),
+        f'##FIRSTX={xs[0]}\n', f'##LASTX={xs[-1]}\n',
+        f'##MINX={min(xs)}\n', f'##MAXX={max(xs)}\n',
+        f'##MINY={min(ys)}\n', f'##MAXY={max(ys)}\n',
+        f'##NPOINTS={len(xs)}\n', f'##FIRSTY={ys[0]}\n',
+        '##XUNITS=1/CM\n', f'##YUNITS={yunits}\n',
         '##XYPOINTS=(XY..XY)\n',
     ]
-    body += ['{:.6f}, {:.6f}\n'.format(x, y) for x, y in zip(xs, ys)]
+    body += [f'{x:.6f}, {y:.6f}\n' for x, y in zip(xs, ys)]
     body.append('##END=\n')
     target = tmp_path / 'synthetic.jdx'
     target.write_text(''.join(body))
@@ -526,7 +525,7 @@ def _recompose(client, body):
 
 
 def _records(body, name):
-    return re.findall((r'^##\$%s=.*$' % name).encode(), body, re.M)
+    return re.findall((rf'^##\${name}=.*$').encode(), body, re.M)
 
 
 def _recompose_with(client, body, **form):
@@ -706,7 +705,7 @@ def _overlay_ylim(bodies):
     from chem_spectra.model.transformer import TransformerModel
 
     files = [
-        FileContainer(FileStorage(io.BytesIO(body), filename='s%d.dx' % idx))
+        FileContainer(FileStorage(io.BytesIO(body), filename=f's{idx}.dx'))
         for idx, body in enumerate(bodies)
     ]
     captured = {}
@@ -985,7 +984,7 @@ def _with_record(tmp_path, record, rows):
     _absorbance_probe(tmp_path)
     source = tmp_path / 'absorbance.jdx'
     source.write_text(source.read_text().replace(
-        '##XYPOINTS=', '##{}={}\n##XYPOINTS='.format(record, rows), 1))
+        '##XYPOINTS=', f'##{record}={rows}\n##XYPOINTS=', 1))
     return source
 
 
@@ -1192,7 +1191,7 @@ def test_arbitrary_units_still_collapses_however_it_is_spelled(tmp_path):
         _absorbance_probe(tmp_path)
         source.write_text(source.read_text().replace(
             '##YUNITS=ABSORBANCE',
-            '##UNITS= HZ, {0}, {0}'.format(spelling), 1))
+            f'##UNITS= HZ, {spelling}, {spelling}', 1))
         converter = JcampTechniqueConverter(
             JcampBaseConverter(str(source), {}))
         assert converter.label['y'] == 'ARBITRARY', spelling
@@ -1218,10 +1217,10 @@ def test_an_unmapped_datatype_keeps_its_units_through_two_composes(client,
     source.write_text('\n'.join(
         ['##TITLE=unmapped', '##JCAMP-DX=5.00', '##DATA TYPE=FOO SPECTRUM',
          '##DATA CLASS=XYPOINTS', '##XUNITS=NANOMETERS',
-         '##YUNITS=ABSORBANCE', '##FIRSTX={}'.format(xs[0]),
-         '##LASTX={}'.format(xs[-1]), '##NPOINTS=11',
-         '##FIRSTY={}'.format(ys[0]), '##XYPOINTS=(XY..XY)']
-        + ['{:.1f}, {:.3f}'.format(x, y) for x, y in zip(xs, ys)]
+         '##YUNITS=ABSORBANCE', f'##FIRSTX={xs[0]}',
+         f'##LASTX={xs[-1]}', '##NPOINTS=11',
+         f'##FIRSTY={ys[0]}', '##XYPOINTS=(XY..XY)']
+        + [f'{x:.1f}, {y:.3f}' for x, y in zip(xs, ys)]
         + ['##END=', '']))
 
     first = _composed_jcamp(_post(client, str(source)))
@@ -1308,8 +1307,8 @@ def test_the_threshold_record_keeps_the_techniques_own_value(tmp_path):
         1.0 - ir_abs.technique.threshold)
 
     meta = ''.join(TechniqueComposer(ir_abs).meta)
-    assert '##$CSTHRESHOLD={}'.format(ir_abs.technique.threshold) in meta
-    assert '##$CSTHRESHOLD={}'.format(ir_abs.peak_threshold) not in meta
+    assert f'##$CSTHRESHOLD={ir_abs.technique.threshold}' in meta
+    assert f'##$CSTHRESHOLD={ir_abs.peak_threshold}' not in meta
 
 
 def _no_datatype_file(tmp_path, name, wrapped):
@@ -1318,10 +1317,10 @@ def _no_datatype_file(tmp_path, name, wrapped):
     ys[5] = 0.6
     block = (['##TITLE=inner', '##JCAMP-DX=5.00', '##DATA CLASS=XYPOINTS',
               '##XUNITS=NANOMETERS', '##YUNITS=ABSORBANCE',
-              '##FIRSTX={}'.format(xs[0]), '##LASTX={}'.format(xs[-1]),
-              '##NPOINTS=11', '##FIRSTY={}'.format(ys[0]),
+              f'##FIRSTX={xs[0]}', f'##LASTX={xs[-1]}',
+              '##NPOINTS=11', f'##FIRSTY={ys[0]}',
               '##XYPOINTS=(XY..XY)']
-             + ['{:.1f}, {:.3f}'.format(x, y) for x, y in zip(xs, ys)]
+             + [f'{x:.1f}, {y:.3f}' for x, y in zip(xs, ys)]
              + ['##END='])
     if wrapped:
         block = (['##TITLE=outer', '##JCAMP-DX=5.00', '##DATA TYPE=LINK',
@@ -1372,10 +1371,10 @@ def _spectrum_without_datatype_beside_a_peak_table(tmp_path):
               '##BLOCKS=2', '',
               '##TITLE=spectrum', '##JCAMP-DX=5.00', '##DATA CLASS=XYPOINTS',
               '##XUNITS=NANOMETERS', '##YUNITS=ABSORBANCE',
-              '##FIRSTX={}'.format(xs[0]), '##LASTX={}'.format(xs[-1]),
-              '##NPOINTS=11', '##FIRSTY={}'.format(ys[0]),
+              f'##FIRSTX={xs[0]}', f'##LASTX={xs[-1]}',
+              '##NPOINTS=11', f'##FIRSTY={ys[0]}',
               '##XYPOINTS=(XY..XY)']
-             + ['{:.1f}, {:.3f}'.format(x, y) for x, y in zip(xs, ys)]
+             + [f'{x:.1f}, {y:.3f}' for x, y in zip(xs, ys)]
              + ['##END=',
                 '##TITLE=peaks', '##JCAMP-DX=5.00',
                 '##DATA TYPE=UV/VIS PEAK TABLE',
@@ -1492,7 +1491,7 @@ def test_milliabsorbance_is_absorbance_at_a_declared_scale(tmp_path):
     for line in source.read_text().splitlines():
         if ',' in line and not line.startswith('##'):
             x, y = line.split(',')
-            line = '{}, {:.6f}'.format(x, float(y) * 1000.0)
+            line = f'{x}, {float(y) * 1000.0:.6f}'
         scaled.append(line)
     source.write_text('\n'.join(scaled) + '\n')
 
@@ -1558,7 +1557,7 @@ def test_a_declared_absorbance_outranks_the_shape_heuristic(tmp_path):
             '##MAXX=500.0\n', '##MINY=1.8\n', '##MAXY=2.0\n',
             '##NPOINTS=101\n', '##FIRSTY=1.8\n', '##XUNITS=1/CM\n',
             '##YUNITS=ABSORBANCE\n', '##XYPOINTS=(XY..XY)\n']
-    body += ['{:.6f}, {:.6f}\n'.format(x, y) for x, y in zip(xs, ys)]
+    body += [f'{x:.6f}, {y:.6f}\n' for x, y in zip(xs, ys)]
     body.append('##END=\n')
     source.write_text(''.join(body))
     converter = JcampTechniqueConverter(
@@ -1601,12 +1600,12 @@ def _curve(tmp_path, datatype, yunits, ys, name='curve.jdx'):
     xs = [400.0 + i for i in range(len(ys))]
     head = ['##TITLE=probe', '##JCAMP-DX=5.00', '##DATA TYPE=' + datatype,
             '##DATA CLASS=XYPOINTS', '##XUNITS=1/CM', '##YUNITS=' + yunits,
-            '##FIRSTX={}'.format(xs[0]), '##LASTX={}'.format(xs[-1]),
-            '##MINX={}'.format(min(xs)), '##MAXX={}'.format(max(xs)),
-            '##MINY={}'.format(min(ys)), '##MAXY={}'.format(max(ys)),
-            '##NPOINTS={}'.format(len(xs)), '##FIRSTY={}'.format(ys[0]),
+            f'##FIRSTX={xs[0]}', f'##LASTX={xs[-1]}',
+            f'##MINX={min(xs)}', f'##MAXX={max(xs)}',
+            f'##MINY={min(ys)}', f'##MAXY={max(ys)}',
+            f'##NPOINTS={len(xs)}', f'##FIRSTY={ys[0]}',
             '##XFACTOR=1', '##YFACTOR=1', '##XYPOINTS=(XY..XY)']
-    rows = ['{:.1f}, {:.6f}'.format(x, y) for x, y in zip(xs, ys)]
+    rows = [f'{x:.1f}, {y:.6f}' for x, y in zip(xs, ys)]
     target = tmp_path / name
     target.write_text('\n'.join(head + rows + ['##END=']) + '\n')
     return target

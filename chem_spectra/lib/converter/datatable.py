@@ -29,7 +29,7 @@ class DatatableModel:
 
         if (is_xypoints):
             for idx in range(len(arr_xs)):
-                line = '{x}, {y}\n'.format(x=arr_xs[idx], y=arr_ys[idx])
+                line = f'{arr_xs[idx]}, {arr_ys[idx]}\n'
                 calculate_ys.append(line)
         else:
             ys = []

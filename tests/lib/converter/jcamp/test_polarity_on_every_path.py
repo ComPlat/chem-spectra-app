@@ -27,12 +27,12 @@ def _curve(tmp_path, datatype, yunits, ys, name, xunits='NANOMETERS'):
     head = ['##TITLE=probe', '##JCAMP-DX=5.00', '##DATA TYPE=' + datatype,
             '##DATA CLASS=XYPOINTS', '##XUNITS=' + xunits,
             '##YUNITS=' + yunits,
-            '##FIRSTX={}'.format(xs[0]), '##LASTX={}'.format(xs[-1]),
-            '##MINX={}'.format(min(xs)), '##MAXX={}'.format(max(xs)),
-            '##MINY={}'.format(min(ys)), '##MAXY={}'.format(max(ys)),
-            '##NPOINTS={}'.format(len(xs)), '##FIRSTY={}'.format(ys[0]),
+            f'##FIRSTX={xs[0]}', f'##LASTX={xs[-1]}',
+            f'##MINX={min(xs)}', f'##MAXX={max(xs)}',
+            f'##MINY={min(ys)}', f'##MAXY={max(ys)}',
+            f'##NPOINTS={len(xs)}', f'##FIRSTY={ys[0]}',
             '##XFACTOR=1', '##YFACTOR=1', '##XYPOINTS=(XY..XY)']
-    rows = ['{:.1f}, {:.6f}'.format(x, y) for x, y in zip(xs, ys)]
+    rows = [f'{x:.1f}, {y:.6f}' for x, y in zip(xs, ys)]
     target = tmp_path / name
     target.write_text('\n'.join(head + rows + ['##END=']) + '\n')
     return target

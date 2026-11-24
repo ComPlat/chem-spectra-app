@@ -39,7 +39,7 @@ def is_list_of_instance(list_data, cls):
 
 def test_init_with_single_file():
     file = open(source_dir_1h_jcamp, "rb")
-    molfile = open(source_dir_molfile, "r")
+    molfile = open(source_dir_molfile)
     tranform_model = TransformerModel(file, molfile=molfile, params=params_1h_jcamp)
     
     assert tranform_model != None
@@ -47,7 +47,7 @@ def test_init_with_single_file():
 def test_init_with_multiple_files():
     file_1 = open(source_dir_1h_jcamp, "rb")
     file_2 = open(source_dir_1h_jcamp, "rb")
-    molfile = open(source_dir_molfile, "r")
+    molfile = open(source_dir_molfile)
     tranform_model = TransformerModel(None, molfile=molfile, params=params_1h_jcamp, multiple_files=[file_1, file_2])
     
     assert tranform_model != None
@@ -59,7 +59,7 @@ def test_combine():
     with open(source_dir_1h_jcamp, 'rb') as f:
         file_2 = FileContainer(FileStorage(f))
 
-    molfile = open(source_dir_molfile, "r")
+    molfile = open(source_dir_molfile)
     tranform_model = TransformerModel(None, molfile=molfile, params=params_1h_jcamp, multiple_files=[file_1, file_2])
     
     assert tranform_model is not None

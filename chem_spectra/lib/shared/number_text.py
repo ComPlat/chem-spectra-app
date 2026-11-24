@@ -33,6 +33,6 @@ def _shortest(values):
 def xy_lines(xs, ys):
     """`x, y` lines, one per point, for an `(XY..XY)` data table."""
     return [
-        '{}, {}\n'.format(x, y)
+        f'{x}, {y}\n'
         for x, y in zip(_shortest(xs), _shortest(ys))
     ]

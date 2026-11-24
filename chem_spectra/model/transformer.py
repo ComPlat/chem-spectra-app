@@ -80,13 +80,13 @@ def refuse_if_bruker_multi_dimensional(td):
         enclosing = ser_dirs[0]
     files = os.listdir(enclosing)
     dimensions = 1 + sum(
-        'acqu{}s'.format(n) in files for n in range(2, 9))
+        f'acqu{n}s' in files for n in range(2, 9))
     where = os.path.relpath(enclosing, top)
-    prefix = '' if where == '.' else '{}: '.format(where)
+    prefix = '' if where == '.' else f'{where}: '
     raise UnconvertibleSpectrum(
-        prefix + 'this is a {}D NMR experiment. ChemSpectra reads '
+        prefix + f'this is a {max(dimensions, 2)}D NMR experiment. ChemSpectra reads '
         'one-dimensional spectra only; open it in NMRium '
-        'instead'.format(max(dimensions, 2)))
+        'instead')
 
 
 def search_brucker_binary(td):
@@ -143,9 +143,9 @@ def search_bag_it_file(td):
         return False
     if len(roots) > 1:
         raise UnconvertibleSpectrum(
-            'this upload contains {} BagIt archives. Each one is a separate '
+            f'this upload contains {len(roots)} BagIt archives. Each one is a separate '
             'dataset, so they cannot be combined into a single attachment — '
-            'please upload them one at a time.'.format(len(roots)))
+            'please upload them one at a time.')
     return roots[0] if roots else False
 
 
@@ -588,11 +588,11 @@ class TransformerModel:
                         xlabel = ', '.join(xlabel_set)
                         ylabel = ', '.join(ylabel_set)
                 elif tcp._technique().x_axis == 'chemical_shift':
-                    xlabel = "Chemical shift ({})".format(core_label_x.lower())
-                    ylabel = "Intensity ({})".format(core_label_y.lower())
+                    xlabel = f"Chemical shift ({core_label_x.lower()})"
+                    ylabel = f"Intensity ({core_label_y.lower()})"
                 else:
-                    xlabel = "X ({})".format(core_label_x)
-                    ylabel = "Y ({})".format(core_label_y)
+                    xlabel = f"X ({core_label_x})"
+                    ylabel = f"Y ({core_label_y})"
 
             tf.close()
 
@@ -651,7 +651,7 @@ class TransformerModel:
             if exp != 0:
                 ax.text(
                     0.0, 1,
-                    r"$\times 10^{%d}$" % exp,
+                    rf"$\times 10^{{{int(exp)}}}$",
                     transform=ax.transAxes,
                     ha='left', va='bottom',
                     fontsize=14,

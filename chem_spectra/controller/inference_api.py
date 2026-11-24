@@ -94,7 +94,7 @@ def _conversion_failed(err):
     if isinstance(err, MSConversionFailed) and \
             getattr(err, 'status', 422) >= 500:
         return _respond(outline(NOT_AVAILABLE, str(err)))
-    return _unusable('The spectrum could not be read: {}'.format(err))
+    return _unusable(f'The spectrum could not be read: {err}')
 
 
 def _predict_nmr(mm, layout, peaks, shift):

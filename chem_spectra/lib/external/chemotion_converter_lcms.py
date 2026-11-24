@@ -4,7 +4,7 @@ import os
 import re
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import pandas as pd
 
@@ -29,7 +29,7 @@ def _strip_lcms_tmp_prefix(name: str) -> str:
     return name
 
 
-def _normalize_lcms_preview_base(name: str) -> Optional[str]:
+def _normalize_lcms_preview_base(name: str) -> str | None:
     if not name:
         return None
     raw = os.path.basename(str(name))
@@ -39,8 +39,8 @@ def _normalize_lcms_preview_base(name: str) -> Optional[str]:
     return base or None
 
 
-def _lcms_preview_basename(paths: List[str], params: Optional[Dict]) -> Optional[str]:
-    candidates: List[str] = []
+def _lcms_preview_basename(paths: list[str], params: dict | None) -> str | None:
+    candidates: list[str] = []
     if isinstance(params, dict):
         for key in ("fname", "filename", "name"):
             value = params.get(key)
@@ -87,7 +87,7 @@ def _write_named_file(content: bytes, filename: str) -> _NamedFile:
     return _NamedFile(fp, tmp_dir)
 
 
-def _as_float(value) -> Optional[float]:
+def _as_float(value) -> float | None:
     try:
         return float(value)
     except (TypeError, ValueError):
@@ -97,7 +97,7 @@ def _as_float(value) -> Optional[float]:
 _FLOAT_RE = re.compile(r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?")
 
 
-def _float_from_label(value) -> Optional[float]:
+def _float_from_label(value) -> float | None:
     if value is None:
         return None
     text = str(value).strip().replace(",", ".")
@@ -110,7 +110,7 @@ def _float_from_label(value) -> Optional[float]:
     return _as_float(match.group(0))
 
 
-def _format_number(value: Optional[float]) -> Optional[str]:
+def _format_number(value: float | None) -> str | None:
     if value is None:
         return None
     try:
@@ -119,7 +119,7 @@ def _format_number(value: Optional[float]) -> Optional[str]:
         return None
 
 
-def _format_wavelength_label(value) -> Optional[str]:
+def _format_wavelength_label(value) -> str | None:
     numeric = _float_from_label(value)
     if numeric is not None:
         return f"{_format_number(numeric)} nm"
@@ -129,7 +129,7 @@ def _format_wavelength_label(value) -> Optional[str]:
     return f"{text} nm" if text else None
 
 
-def _format_ms_page_label(value) -> Optional[str]:
+def _format_ms_page_label(value) -> str | None:
     numeric = _float_from_label(value)
     if numeric is not None:
         return _format_number(numeric)
@@ -139,14 +139,14 @@ def _format_ms_page_label(value) -> Optional[str]:
     return text if text else None
 
 
-def _format_rt_label(value) -> Optional[str]:
+def _format_rt_label(value) -> str | None:
     numeric = _float_from_label(value)
     if numeric is None:
         return None
     return f"{_format_number(numeric)} min"
 
 
-def _extract_ms_peaks_from_param(value) -> List[Tuple[float, float]]:
+def _extract_ms_peaks_from_param(value) -> list[tuple[float, float]]:
     if not value:
         return []
 
@@ -163,7 +163,7 @@ def _extract_ms_peaks_from_param(value) -> List[Tuple[float, float]]:
     if not isinstance(data, list):
         return []
 
-    peaks: List[Tuple[float, float]] = []
+    peaks: list[tuple[float, float]] = []
     for item in data:
         if not isinstance(item, dict):
             continue
@@ -175,9 +175,9 @@ def _extract_ms_peaks_from_param(value) -> List[Tuple[float, float]]:
     return peaks
 
 
-def _extract_xy_from_lines(lines: List[str], start_idx: int) -> Tuple[List[float], List[float]]:
-    xs: List[float] = []
-    ys: List[float] = []
+def _extract_xy_from_lines(lines: list[str], start_idx: int) -> tuple[list[float], list[float]]:
+    xs: list[float] = []
+    ys: list[float] = []
     for line in lines[start_idx:]:
         stripped = line.strip()
         if not stripped:
@@ -198,7 +198,7 @@ def _extract_xy_from_lines(lines: List[str], start_idx: int) -> Tuple[List[float
     return xs, ys
 
 
-def _extract_xy_from_jdx_content(content: str) -> Tuple[List[float], List[float]]:
+def _extract_xy_from_jdx_content(content: str) -> tuple[list[float], list[float]]:
     lines = content.splitlines()
     data_start = None
     for idx, line in enumerate(lines):
@@ -216,7 +216,7 @@ def _extract_ms_page(
     target_page=None,
     *,
     first_page_only: bool = False,
-) -> Tuple[List[float], List[float], Optional[float], Optional[str]]:
+) -> tuple[list[float], list[float], float | None, str | None]:
     """Parse MS JCAMP. If ``first_page_only`` and ``target_page`` is None, return after the first spectrum block."""
     lines = content.splitlines()
     threshold = None
@@ -227,7 +227,7 @@ def _extract_ms_page(
             break
     if threshold is not None and threshold > 1.0:
         threshold = threshold / 100.0
-    pages: List[Tuple[str, List[float], List[float]]] = []
+    pages: list[tuple[str, list[float], list[float]]] = []
     current_label = None
     for idx, line in enumerate(lines):
         stripped = line.strip()
@@ -275,16 +275,16 @@ def _mz_page_param_explicit(mz_page) -> bool:
     return bool(str(mz_page).strip())
 
 
-def _extract_ms_page_first_page_from_path(path: str) -> Tuple[List[float], List[float], Optional[float], Optional[str]]:
+def _extract_ms_page_first_page_from_path(path: str) -> tuple[list[float], list[float], float | None, str | None]:
     """Read MZ JCAMP line-by-line; stop after the first spectrum block (preview / fresh upload).
 
     Avoids loading multi-hundred-MB files and parsing every ##PAGE block.
     """
-    threshold: Optional[float] = None
-    lines: List[str] = []
-    current_label: Optional[str] = None
+    threshold: float | None = None
+    lines: list[str] = []
+    current_label: str | None = None
     try:
-        with open(path, "r", encoding="utf-8", errors="ignore") as handle:
+        with open(path, encoding="utf-8", errors="ignore") as handle:
             for raw in handle:
                 line = raw.rstrip("\n\r")
                 lines.append(line)
@@ -305,8 +305,8 @@ def _extract_ms_page_first_page_from_path(path: str) -> Tuple[List[float], List[
                     or "##XYDATA" in upper
                 ):
                     # Stream the first spectrum block (avoid reading the whole file).
-                    xs: List[float] = []
-                    ys: List[float] = []
+                    xs: list[float] = []
+                    ys: list[float] = []
                     for raw_data in handle:
                         data_line = raw_data.rstrip("\n\r")
                         data_upper = data_line.strip().upper()
@@ -331,7 +331,7 @@ def _extract_ms_page_first_page_from_path(path: str) -> Tuple[List[float], List[
         pass
 
     try:
-        with open(path, "r", encoding="utf-8", errors="ignore") as handle:
+        with open(path, encoding="utf-8", errors="ignore") as handle:
             content = handle.read()
     except OSError:
         return [], [], None, None
@@ -483,7 +483,7 @@ def _extract_uvvis_from_peak_content(content: str, target_wavelength=None):
     return xs, ys, edit_peaks, integrations, wl_key
 
 
-def _pick_jdx_path(paths: List[str], primary_token: str, fallback_token: Optional[str] = None) -> Optional[str]:
+def _pick_jdx_path(paths: list[str], primary_token: str, fallback_token: str | None = None) -> str | None:
     lowered = [(p, os.path.basename(p).lower()) for p in paths]
     for p, name in lowered:
         if primary_token in name:
@@ -495,8 +495,8 @@ def _pick_jdx_path(paths: List[str], primary_token: str, fallback_token: Optiona
     return None
 
 
-def _header_from_content(content: str, limit: int = 200) -> Dict[str, str]:
-    header: Dict[str, str] = {}
+def _header_from_content(content: str, limit: int = 200) -> dict[str, str]:
+    header: dict[str, str] = {}
     for line in content.splitlines()[:limit]:
         if not line.startswith("##"):
             continue
@@ -507,13 +507,13 @@ def _header_from_content(content: str, limit: int = 200) -> Dict[str, str]:
     return header
 
 
-def _classify_lcms_content(content: str) -> Optional[str]:
+def _classify_lcms_content(content: str) -> str | None:
     header = _header_from_content(content)
     kind, _ = _classify_lcms_header(header)
     return kind
 
 
-def _normalize_params(params: Optional[Dict]) -> Dict:
+def _normalize_params(params: dict | None) -> dict:
     if not params:
         return {}
     if isinstance(params, dict):
@@ -530,10 +530,10 @@ def _normalize_params(params: Optional[Dict]) -> Dict:
         return params if isinstance(params, dict) else {}
 
 
-def _extract_uvvis_pages(content: str) -> List[Tuple[Optional[float], List[float], List[float]]]:
+def _extract_uvvis_pages(content: str) -> list[tuple[float | None, list[float], list[float]]]:
     lines = content.splitlines()
-    pages: List[Tuple[Optional[float], List[float], List[float]]] = []
-    current_page: Optional[float] = None
+    pages: list[tuple[float | None, list[float], list[float]]] = []
+    current_page: float | None = None
     for idx, line in enumerate(lines):
         stripped = line.strip()
         upper = stripped.upper()
@@ -553,23 +553,23 @@ def _extract_uvvis_pages(content: str) -> List[Tuple[Optional[float], List[float
     return [(None, xs, ys)]
 
 
-def _uvvis_units_from_content(content: str) -> Tuple[Optional[str], Optional[str]]:
+def _uvvis_units_from_content(content: str) -> tuple[str | None, str | None]:
     header = _header_from_content(content)
     return _header_value(header, "XUNITS"), _header_value(header, "YUNITS")
 
 
-def lcms_uvvis_units_from_jdx(jdx_path: str) -> Tuple[Optional[str], Optional[str]]:
+def lcms_uvvis_units_from_jdx(jdx_path: str) -> tuple[str | None, str | None]:
     if not jdx_path or not os.path.exists(jdx_path):
         return None, None
     try:
-        with open(jdx_path, "r", encoding="utf-8", errors="ignore") as handle:
+        with open(jdx_path, encoding="utf-8", errors="ignore") as handle:
             content = handle.read()
         return _uvvis_units_from_content(content)
     except Exception:
         return None, None
 
 
-def _lc_df_from_uvvis_content(content: str) -> Optional[pd.DataFrame]:
+def _lc_df_from_uvvis_content(content: str) -> pd.DataFrame | None:
     pages = _extract_uvvis_pages(content)
     if not pages:
         return None
@@ -589,14 +589,14 @@ def _lc_df_from_uvvis_content(content: str) -> Optional[pd.DataFrame]:
     return pd.DataFrame(rows, columns=["RetentionTime", "DetectorSignal", "wavelength"])
 
 
-def _header_value(header: Dict, key: str) -> Optional[str]:
+def _header_value(header: dict, key: str) -> str | None:
     for k, v in header.items():
         if str(k).strip().lower() == key.lower():
             return str(v)
     return None
 
 
-def _classify_lcms_header(header: Dict) -> Tuple[Optional[str], Optional[str]]:
+def _classify_lcms_header(header: dict) -> tuple[str | None, str | None]:
     category = _header_value(header, "$CSCATEGORY") or _header_value(header, "CSCATEGORY")
     ntuples_id = _header_value(header, "NTUPLES_ID")
     data_type = _header_value(header, "DATA TYPE")
@@ -610,7 +610,7 @@ def _classify_lcms_header(header: Dict) -> Tuple[Optional[str], Optional[str]]:
     combined = " ".join([v for v in [category, ntuples_id, data_type] if v])
     combined_upper = combined.upper()
 
-    kind: Optional[str] = None
+    kind: str | None = None
     if "UVVIS" in combined_upper or "UV/VIS" in combined_upper or "UV-VIS" in combined_upper or "UV VIS" in combined_upper:
         kind = "uvvis"
     elif "TIC" in combined_upper:
@@ -631,7 +631,7 @@ def _classify_lcms_header(header: Dict) -> Tuple[Optional[str], Optional[str]]:
     polarity_combined_upper = " ".join(
         [v for v in [combined, scan_mode, ion_mode, mode, polarity_header] if v]
     ).upper()
-    polarity: Optional[str] = None
+    polarity: str | None = None
     if "NEG" in polarity_combined_upper or "MINUS" in polarity_combined_upper:
         polarity = "minus"
     elif "POS" in polarity_combined_upper or "PLUS" in polarity_combined_upper:
@@ -640,13 +640,13 @@ def _classify_lcms_header(header: Dict) -> Tuple[Optional[str], Optional[str]]:
 
 
 def lcms_preview_image_from_jdx_files(
-    jdx_files: List,
-    params: Optional[Dict] = None,
-) -> Optional[tempfile.NamedTemporaryFile]:
+    jdx_files: list,
+    params: dict | None = None,
+) -> tempfile.NamedTemporaryFile | None:
     """Build LC/MS preview PNG."""
     if not jdx_files:
         return None
-    paths: List[str] = []
+    paths: list[str] = []
     for entry in jdx_files:
         if isinstance(entry, str):
             paths.append(entry)
@@ -670,7 +670,7 @@ def lcms_preview_image_from_jdx_files(
     if not peak_path:
         for path in paths:
             try:
-                with open(path, "r", encoding="utf-8", errors="ignore") as handle:
+                with open(path, encoding="utf-8", errors="ignore") as handle:
                     content = handle.read()
                 if "CHEMSPECTRA UVVIS PEAK TABLE" in content:
                     peak_path = path
@@ -683,7 +683,7 @@ def lcms_preview_image_from_jdx_files(
             if path == peak_path:
                 continue
             try:
-                with open(path, "r", encoding="utf-8", errors="ignore") as handle:
+                with open(path, encoding="utf-8", errors="ignore") as handle:
                     content = handle.read()
                 kind = _classify_lcms_content(content)
                 if kind == "mz" and not mz_path:
@@ -696,7 +696,7 @@ def lcms_preview_image_from_jdx_files(
     uvvis_x_units = None
     if peak_path:
         try:
-            with open(peak_path, "r", encoding="utf-8", errors="ignore") as handle:
+            with open(peak_path, encoding="utf-8", errors="ignore") as handle:
                 uvvis_content = handle.read()
             uvvis_data = _extract_uvvis_from_peak_content(uvvis_content, uvvis_wavelength)
             if uvvis_data:
@@ -716,7 +716,7 @@ def lcms_preview_image_from_jdx_files(
                 # Pics MS déjà fournis par l'ELN : inutile de lire tout le JCAMP MZ.
                 ms_data = None
             elif _mz_page_param_explicit(mz_page):
-                with open(mz_path, "r", encoding="utf-8", errors="ignore") as handle:
+                with open(mz_path, encoding="utf-8", errors="ignore") as handle:
                     mz_content = handle.read()
                 ms_data = _extract_ms_page(mz_content, mz_page, first_page_only=False)
             else:
@@ -851,7 +851,7 @@ def lcms_preview_image_from_jdx_files(
         uvvis_ax.set_axis_off()
 
     if has_ms:
-        ms_panel_xs: List[float] = []
+        ms_panel_xs: list[float] = []
         if ms_data is not None and ms_data[0]:
             ms_xs, ms_ys, _ms_threshold, _page = ms_data
             if active_ms_threshold is not None and ms_ys:
@@ -940,12 +940,12 @@ def lcms_preview_image_from_jdx_files(
     return tf_img
 
 
-def lcms_df_from_peak_jdx(jdx_path: str) -> Optional[pd.DataFrame]:
+def lcms_df_from_peak_jdx(jdx_path: str) -> pd.DataFrame | None:
     if not jdx_path or not os.path.exists(jdx_path):
         return None
     
     try:
-        with open(jdx_path, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(jdx_path, encoding='utf-8', errors='ignore') as f:
             content = f.read()
         
         if 'CHEMSPECTRA UVVIS PEAK TABLE' not in content:
@@ -1005,11 +1005,11 @@ def lcms_df_from_peak_jdx(jdx_path: str) -> Optional[pd.DataFrame]:
         return None
 
 
-def lcms_df_from_uvvis_jdx(jdx_path: str) -> Optional[pd.DataFrame]:
+def lcms_df_from_uvvis_jdx(jdx_path: str) -> pd.DataFrame | None:
     if not jdx_path or not os.path.exists(jdx_path):
         return None
     try:
-        with open(jdx_path, "r", encoding="utf-8", errors="ignore") as handle:
+        with open(jdx_path, encoding="utf-8", errors="ignore") as handle:
             content = handle.read()
         return _lc_df_from_uvvis_content(content)
     except Exception:
@@ -1018,10 +1018,10 @@ def lcms_df_from_uvvis_jdx(jdx_path: str) -> Optional[pd.DataFrame]:
 def lcms_uvvis_peak_jcamp_from_df(
     lc_df: pd.DataFrame,
     title: str,
-    params: Optional[Dict] = None,
-    x_units: Optional[str] = None,
-    y_units: Optional[str] = None,
-) -> Optional[tempfile.NamedTemporaryFile]:
+    params: dict | None = None,
+    x_units: str | None = None,
+    y_units: str | None = None,
+) -> tempfile.NamedTemporaryFile | None:
     if lc_df is None or lc_df.empty or "wavelength" not in lc_df.columns:
         return None
 
@@ -1041,7 +1041,7 @@ def lcms_uvvis_peak_jcamp_from_df(
         except Exception:
             return None
 
-    def _normalize_peaks_list(value) -> List[Dict[str, float]]:
+    def _normalize_peaks_list(value) -> list[dict[str, float]]:
         if not value:
             return []
         if isinstance(value, dict):
@@ -1097,7 +1097,7 @@ def lcms_uvvis_peak_jcamp_from_df(
         wl_num = _to_float_or_none(wavelength_value)
         return key_num is not None and wl_num is not None and key_num == wl_num
 
-    def _peaks_for_page(peaks_data, page_idx, wavelength_value) -> List[Dict[str, float]]:
+    def _peaks_for_page(peaks_data, page_idx, wavelength_value) -> list[dict[str, float]]:
         if not peaks_data:
             return []
         peaks_data = _parse_peaks_input(peaks_data)
@@ -1224,7 +1224,7 @@ def lcms_uvvis_peak_jcamp_from_df(
     resolved_x_units = x_units or "RETENTION TIME"
     resolved_y_units = y_units or "DETECTOR SIGNAL"
 
-    content: List[str] = []
+    content: list[str] = []
     for page_idx, wl in enumerate(ordered):
         group = lc_df[lc_df["wavelength"] == wl]
         xs = group["RetentionTime"].tolist()

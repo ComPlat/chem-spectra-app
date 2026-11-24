@@ -27,7 +27,7 @@ def _record(jcamp, label):
     """The value lines of `##<label>=`, up to the next record or comment."""
     lines = jcamp.split('\n')
     start = next(i for i, line in enumerate(lines)
-                 if line.startswith('##{}='.format(label)))
+                 if line.startswith(f'##{label}='))
     body = []
     for line in lines[start + 1:]:
         if line.startswith(('##', '$$')):

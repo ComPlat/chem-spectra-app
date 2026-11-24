@@ -117,9 +117,9 @@ class TechniqueComposer(BaseComposer):
         return [
             '\n',
             TEXT_SPECTRUM_ORIG,
-            '##TITLE={}\n'.format(self.title),
+            f'##TITLE={self.title}\n',
             '##JCAMP-DX=5.00\n',
-            '##DATA TYPE={}\n'.format(self.core.datatype),
+            f'##DATA TYPE={self.core.datatype}\n',
             '##DATA CLASS=XYDATA\n',
             '##$CSCATEGORY=SPECTRUM\n',
             '##ORIGIN={}\n'.format(extrac_dic(self.core, 'ORIGIN')),
@@ -144,27 +144,27 @@ class TechniqueComposer(BaseComposer):
         # Append each line only if the extracted value is not empty
         observe_frequency = extrac_dic(self.core, '.OBSERVEFREQUENCY')
         if observe_frequency:
-            header_lines.append('##.OBSERVE FREQUENCY={}\n'.format(observe_frequency))
+            header_lines.append(f'##.OBSERVE FREQUENCY={observe_frequency}\n')
 
         observe_nucleus = self.__get_nucleus()
         if observe_nucleus:
-            header_lines.append('##.OBSERVE NUCLEUS={}\n'.format(observe_nucleus))
+            header_lines.append(f'##.OBSERVE NUCLEUS={observe_nucleus}\n')
 
         spectrometer_data_system = extrac_dic(self.core, 'SPECTROMETER/DATASYSTEM')
         if spectrometer_data_system:
-            header_lines.append('##SPECTROMETER/DATA SYSTEM={}\n'.format(spectrometer_data_system))
+            header_lines.append(f'##SPECTROMETER/DATA SYSTEM={spectrometer_data_system}\n')
 
         shift_reference = extrac_dic(self.core, '.SHIFTREFERENCE')
         if shift_reference:
-            header_lines.append('##.SHIFT REFERENCE={}\n'.format(shift_reference))
+            header_lines.append(f'##.SHIFT REFERENCE={shift_reference}\n')
 
         solvent_name = extrac_dic(self.core, '.SOLVENTNAME')
         if solvent_name:
-            header_lines.append('##.SOLVENT NAME={}\n'.format(solvent_name))
+            header_lines.append(f'##.SOLVENT NAME={solvent_name}\n')
 
         pulse_sequence = extrac_dic(self.core, '.PULSESEQUENCE')
         if pulse_sequence:
-            header_lines.append('##.PULSE SEQUENCE={}\n'.format(pulse_sequence))
+            header_lines.append(f'##.PULSE SEQUENCE={pulse_sequence}\n')
 
         return header_lines
 
@@ -174,8 +174,8 @@ class TechniqueComposer(BaseComposer):
             '##YUNITS={}\n'.format(self.core.label['y']),
             '##XFACTOR={}\n'.format(self.core.factor['x']),
             '##YFACTOR={}\n'.format(self.core.factor['y']),
-            '##FIRSTX={}\n'.format(self.core.first_x),
-            '##LASTX={}\n'.format(self.core.last_x),
+            f'##FIRSTX={self.core.first_x}\n',
+            f'##LASTX={self.core.last_x}\n',
             '##MAXX={}\n'.format(self.core.boundary['x']['max']),
             '##MAXY={}\n'.format(self.core.boundary['y']['max']),
             '##MINX={}\n'.format(self.core.boundary['x']['min']),
@@ -371,7 +371,7 @@ class TechniqueComposer(BaseComposer):
                 is_ref = peak.get('isRef', False)
                 is_ref_in_number = 1 if is_ref else 0
                 content.append(
-                    '({x_max}, {y_max}, {x_min}, {y_min}, {ratio}, {delta}, {x_pecker}, {y_pecker}, {is_ref})\n'.format(x_max=x_max_peak, y_max=y_max_peak, x_min=x_min_peak, y_min=y_min_peak, ratio=ratio, delta=delta, x_pecker=x_pecker, y_pecker=y_pecker, is_ref=is_ref_in_number)  # noqa: E501
+                    f'({x_max_peak}, {y_max_peak}, {x_min_peak}, {y_min_peak}, {ratio}, {delta}, {x_pecker}, {y_pecker}, {is_ref_in_number})\n'  # noqa: E501
                 )
 
         return content
@@ -655,7 +655,7 @@ class TechniqueComposer(BaseComposer):
             for xs_, ys_ in ((x_peaks, y_peaks), (x_peaks_ref, y_peaks_ref)):
                 for x_pos, y_peak in zip(xs_, ys_):
                     peak_label = 'x: {x}\ny: {y}'.format(
-                        x='{:.2e}'.format(x_pos), y='{:.2e}'.format(y_peak),
+                        x=f'{x_pos:.2e}', y=f'{y_peak:.2e}',
                     )
                     plt.text(x_pos, y_peak + h * 0.1, peak_label)
 
@@ -780,7 +780,7 @@ class TechniqueComposer(BaseComposer):
             if self._cv_axis_exp != 0:
                 ax.text(
                     0.0, 1,
-                    r"$\times 10^{%d}$" % self._cv_axis_exp,
+                    rf"$\times 10^{{{int(self._cv_axis_exp)}}}$",
                     transform=ax.transAxes,
                     ha='left', va='bottom',
                     fontsize=14,
@@ -885,7 +885,7 @@ class TechniqueComposer(BaseComposer):
                 plt.plot([itg_xL, itg_xU], [itg_value_position_y, itg_value_position_y], color='#228B22')
                 plt.plot([itg_xL, itg_xL], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
                 plt.plot([itg_xU, itg_xU], [itg_value_position_y + h * 0.01, itg_value_position_y - h * 0.01], color='#228B22')   # noqa: E501
-                plt.text((itg_xL + itg_xU) / 2, itg_value_position_y - h * 0.01, '{:0.2f}'.format(itg_area), color='#228B22', rotation_mode='anchor', size=7, rotation=90., **self.__integral_anchor())   # noqa: E501
+                plt.text((itg_xL + itg_xU) / 2, itg_value_position_y - h * 0.01, f'{itg_area:0.2f}', color='#228B22', rotation_mode='anchor', size=7, rotation=90., **self.__integral_anchor())   # noqa: E501
 
             cys = (ks[iL:iU] - ref) * 1.5 + h * 0.15
             plt.plot(cxs, cys, color='#228B22')
@@ -947,8 +947,8 @@ class TechniqueComposer(BaseComposer):
                 for j in range(len_group_x):
                     x_pos = mygroup_x[j]
                     y_pos = mygroup_y[j] + h * 0.5
-                    x_float = '{:.2f}'.format(x_pos)
-                    peak_label = '{x}'.format(x=x_float)
+                    x_float = f'{x_pos:.2f}'
+                    peak_label = f'{x_float}'
                     if j >= middle_idx:
                         x_text = -(w * 0.01) * (middle_idx - j)
                     elif j < middle_idx:
@@ -970,8 +970,8 @@ class TechniqueComposer(BaseComposer):
             else:
                 x_pos = mygroup_x[0]
                 y_pos = mygroup_y[0] + h * 0.18
-                x_float = '{:.2f}'.format(x_pos)
-                peak_label = '{x}'.format(x=x_float)
+                x_float = f'{x_pos:.2f}'
+                peak_label = f'{x_float}'
                 ax.annotate(peak_label,
                     xy=(x_pos, y_pos), xycoords='data',
                     xytext=self.__label_offset(20), textcoords='offset points',
@@ -1120,14 +1120,14 @@ class TechniqueComposer(BaseComposer):
                         y_pecker = ''
 
                 writer.writerow({
-                    'Anodic E(V)': '{x_max}'.format(x_max=x_max_peak),
-                    'Anodic I(A)': '{y_max}'.format(y_max=y_max_peak),
-                    'Cathodic E(V)': '{x_min}'.format(x_min=x_min_peak),
-                    'Cathodic I(A)': '{y_min}'.format(y_min=y_min_peak),
-                    'I lambda0(A)': '{y_pecker}'.format(y_pecker=y_pecker),
-                    'I ratio': '{ratio}'.format(ratio=ratio),
-                    'E1/2(V)': '{e12}'.format(e12=e12),
-                    'Delta Ep(mV)': '{delta}'.format(delta=delta)
+                    'Anodic E(V)': f'{x_max_peak}',
+                    'Anodic I(A)': f'{y_max_peak}',
+                    'Cathodic E(V)': f'{x_min_peak}',
+                    'Cathodic I(A)': f'{y_min_peak}',
+                    'I lambda0(A)': f'{y_pecker}',
+                    'I ratio': f'{ratio}',
+                    'E1/2(V)': f'{e12}',
+                    'Delta Ep(mV)': f'{delta}'
                 })
         return tf_csv
 

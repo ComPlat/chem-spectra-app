@@ -59,7 +59,7 @@ def test_the_declared_dimension_count_is_read_from_the_label(header, expected):
     """JCAMP-DX ignores spaces, dashes, underscores and slashes inside a
     label, so `NUM DIM`, `NUMDIM` and `NUM_DIM` are one record. Five fixtures
     here write it `##NUMDIM=<tab>1`."""
-    text = '##TITLE=t\n{}\n##END=\n'.format(header) if header else '##TITLE=t\n'
+    text = f'##TITLE=t\n{header}\n##END=\n' if header else '##TITLE=t\n'
     assert declared_dimensions(text) == expected
 
 
@@ -67,13 +67,13 @@ def test_the_declared_dimension_count_is_read_from_the_label(header, expected):
     'nD NMR FID', 'nD NMR SPECTRUM', '2D NMR SPECTRUM', 'ND NMR FID'])
 def test_an_nd_datatype_counts_as_multi_dimensional(datatype):
     """`nD` is the JCAMP-DX 6 spelling; some vendors write the number."""
-    text = '##TITLE=t\n##DATA TYPE= {}\n##END=\n'.format(datatype)
+    text = f'##TITLE=t\n##DATA TYPE= {datatype}\n##END=\n'
     assert (declared_dimensions(text) or 0) > 1
 
 
 @pytest.mark.parametrize('datatype', ['NMR SPECTRUM', 'NMR FID', 'INFRARED SPECTRUM'])
 def test_a_one_dimensional_datatype_does_not(datatype):
-    text = '##TITLE=t\n##DATA TYPE= {}\n##END=\n'.format(datatype)
+    text = f'##TITLE=t\n##DATA TYPE= {datatype}\n##END=\n'
     assert declared_dimensions(text) in (None, 1)
 
 
@@ -246,7 +246,7 @@ def test_a_label_is_compared_with_its_separators_removed(label):
     between `NUM` and `DIM` left `##N-UM D/IM=` through, which is the same
     record.
     """
-    assert declared_dimensions('##TITLE=t\n{}= 2\n'.format(label)) == 2
+    assert declared_dimensions(f'##TITLE=t\n{label}= 2\n') == 2
 
 
 def test_the_datatype_says_how_many_when_it_knows():
@@ -254,7 +254,7 @@ def test_the_datatype_says_how_many_when_it_knows():
     say."""
     def dims(datatype):
         return declared_dimensions(
-            '##TITLE=t\n##DATA TYPE= {}\n'.format(datatype))
+            f'##TITLE=t\n##DATA TYPE= {datatype}\n')
     assert dims('nD NMR FID') == 2
     assert dims('2D NMR SPECTRUM') == 2
     assert dims('3D NMR FID') == 3
@@ -270,7 +270,7 @@ def test_the_datatype_says_how_many_when_it_knows():
     ('##DATA TYPE= MASS SPECTRUM', False),
 ])
 def test_what_counts_as_nmr_for_the_wording(header, expected):
-    assert declares_nmr('##TITLE=t\n{}\n'.format(header)) is expected
+    assert declares_nmr(f'##TITLE=t\n{header}\n') is expected
 
 
 # - - - a refusal must not leave anything behind on the shared figure - - -
@@ -309,8 +309,8 @@ def test_a_refused_overlay_leaves_the_figure_clean(client, tmp_path):
     # the refusal names the member, because the caller sent several files
     assert 'b_2d' in json.loads(response.data)['error']
     assert len(plt.gca().lines) == 0, (
-        'a refused overlay left %d curve(s) on the shared figure'
-        % len(plt.gca().lines))
+        f'a refused overlay left {len(plt.gca().lines)} curve(s) on the '
+        'shared figure')
 
 
 def test_a_refused_overlay_does_not_convert_the_other_members(client,

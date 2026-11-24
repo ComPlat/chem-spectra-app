@@ -199,7 +199,7 @@ def test_preview_pipeline_can_now_extract_uvvis(uvvis_tmp):
     )
 
     composer = LCMSConverterAppComposer([uvvis_tmp], None, None)
-    with open(composer.data[1].name, "r", encoding="utf-8", errors="ignore") as h:
+    with open(composer.data[1].name, encoding="utf-8", errors="ignore") as h:
         content = h.read()
 
     result = _extract_uvvis_from_peak_content(content)
@@ -215,7 +215,7 @@ def test_init_normalizes_xypoints_ldr_to_xydata(xypoints_tic_tmp):
     # matching what TechniqueComposer/MSComposer already normalize to.
     LCMSConverterAppComposer([xypoints_tic_tmp], None, None)
 
-    with open(xypoints_tic_tmp.name, "r", encoding="utf-8", errors="ignore") as h:
+    with open(xypoints_tic_tmp.name, encoding="utf-8", errors="ignore") as h:
         content = h.read()
 
     assert "##XYPOINTS=" not in content
@@ -228,12 +228,12 @@ def test_init_normalizes_xypoints_ldr_to_xydata(xypoints_tic_tmp):
 
 
 def test_init_leaves_non_xypoints_ldr_untouched(mass_tic_tmp):
-    with open(mass_tic_tmp.name, "r", encoding="utf-8", errors="ignore") as h:
+    with open(mass_tic_tmp.name, encoding="utf-8", errors="ignore") as h:
         before = h.read()
 
     LCMSConverterAppComposer([mass_tic_tmp], None, None)
 
-    with open(mass_tic_tmp.name, "r", encoding="utf-8", errors="ignore") as h:
+    with open(mass_tic_tmp.name, encoding="utf-8", errors="ignore") as h:
         after = h.read()
 
     assert before == after
@@ -257,7 +257,7 @@ def test_init_does_not_touch_triple_hash_xypoints_metadata_echo():
     tf = _named_tmp(content)
     try:
         LCMSConverterAppComposer([tf], None, None)
-        with open(tf.name, "r", encoding="utf-8", errors="ignore") as h:
+        with open(tf.name, encoding="utf-8", errors="ignore") as h:
             after = h.read()
         assert after == content
     finally:
