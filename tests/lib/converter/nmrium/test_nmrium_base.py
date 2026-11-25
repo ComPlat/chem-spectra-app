@@ -24,8 +24,8 @@ zip or jcamp straight to nmrium-react-wrapper and this service is not involved.
 `'data' in rawData`, and both fixtures here are real ELN documents — recovered
 from `03e3fca^`, decimated to 1024 points so the file is 110 KB rather than
 3 MB. Decimated, not truncated: the multiplicity ranges span the whole x axis,
-and cutting the tail makes `__read_range_data` raise `IndexError` on an empty
-slice.
+and cutting the tail would leave ranges with no points under them, which are
+left out (`test_a_range_outside_the_data_is_left_out`).
 """
 
 import json
@@ -34,6 +34,7 @@ import pytest
 from werkzeug.datastructures import FileStorage
 
 from chem_spectra.controller.helper.file_container import FileContainer
+from chem_spectra.lib.converter.jcamp.techniques import SPECTRUM_TECHNIQUES
 from chem_spectra.lib.converter.nmrium.base import NMRiumDataConverter
 
 FLAT = './tests/fixtures/source/nmrium/flat.nmrium'
@@ -78,8 +79,10 @@ def test_the_curve_is_read(converted):
 
 
 def test_it_declares_itself_nmr(converted):
-    """No descriptor is carried, so since #297 this is the only converter
-    relying on `BaseComposer._technique()`'s `non_nmr` fallback."""
+    """It carries the NMR descriptor. Until it did, it was the only converter
+    resolved to NMR through a fallback on `non_nmr` in
+    `BaseComposer._technique()`."""
+    assert converted.technique is SPECTRUM_TECHNIQUES['NMR']
     assert converted.non_nmr is False
     assert converted.is_2d is False
 
@@ -94,9 +97,9 @@ def test_datatype_comes_from_the_document_and_is_not_uppercased(converted):
     and nothing upper-cases this path the way `JcampBaseConverter.__set_datatype`
     canonicalises its own.
 
-    Harmless today: `non_nmr` is False and the composer takes the NMR branch
-    without consulting the string. It would stop being harmless the moment this
-    core carried a descriptor looked up by datatype.
+    Harmless today: the core carries the NMR descriptor directly, so nothing
+    consults the string. It would stop being harmless the moment the
+    descriptor were looked up by datatype.
     """
     assert converted.datatype == 'NMR Spectrum'
     assert converted.datatypes == ['NMR SPECTRUM']
@@ -112,8 +115,8 @@ def test_the_x_axis_is_ppm_and_descending_in_range(converted):
 def test_multiplicities_survive(converted):
     """The part that references x positions across the whole axis, and the
     reason the fixture is decimated rather than truncated: cutting the tail
-    leaves a range with no points in it and `__read_range_data` raises
-    `IndexError: index 0 is out of bounds` on the empty slice.
+    leaves ranges with no points in them, and those are left out (see
+    `test_a_range_outside_the_data_is_left_out`).
     """
     assert len(converted.mpy_itg_table) == 11
     for row in converted.mpy_itg_table:
@@ -184,3 +187,26 @@ def test_the_endpoint_carries_the_curve_through(client, source):
     assert '##NPOINTS=1024' in body
     assert '##XUNITS=ppm' in body
     assert '##FIRSTX=-4.0' in body and '##LASTX=15.9' in body
+
+
+def test_a_range_outside_the_data_is_left_out(tmp_path):
+    """A document whose multiplicity range has no points under it (here the
+    range at -2.7 ppm, after cutting the data below 0 ppm) raised
+    `IndexError` in `__read_range_data`, a 500. That range is left out; the
+    others are converted as before.
+    """
+    with open(FLAT) as handle:
+        document = json.load(handle)
+    spectrum = next(s for s in document['spectra'] if s['ranges']['values'])
+    data = spectrum['data']
+    keep = [i for i, x in enumerate(data['x']) if x >= 0]
+    for key in ('x', 're', 'im'):
+        data[key] = [data[key][i] for i in keep]
+    path = tmp_path / 'cut.nmrium'
+    path.write_text(json.dumps(document))
+
+    cut = _convert(str(path))
+
+    whole = _convert(FLAT)
+    assert 0 < len(cut.mpy_itg_table) < len(whole.mpy_itg_table)
+    assert not any('-2.7' in row for row in cut.mpy_itg_table)
