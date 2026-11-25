@@ -1,3 +1,7 @@
+# `tempfile.NamedTemporaryFile` is a function, so `NamedTemporaryFile | None`
+# cannot be evaluated; postponed annotations keep it a string on Python 3.12.
+from __future__ import annotations
+
 import io
 import json
 import os
