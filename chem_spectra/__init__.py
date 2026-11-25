@@ -107,7 +107,7 @@ def create_app(test_config=None):
     # A conversion the client asked for that this data cannot support is a bad
     # request, not a server fault, and the reason is worth returning -- the
     # alternative is silently producing a ruined spectrum.
-    from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
+    from chem_spectra.lib.converter.jcamp.curve import UnconvertibleSpectrum
 
     @app.errorhandler(UnconvertibleSpectrum)
     def _unconvertible_spectrum(err):

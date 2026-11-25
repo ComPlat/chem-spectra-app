@@ -25,7 +25,7 @@ from chem_spectra.lib.converter.cdf.base import CdfBaseConverter
 from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 from chem_spectra.lib.converter.jcamp.techniques import (
     SPECTRUM_TECHNIQUES, SpectrumTechnique,
 )
@@ -37,7 +37,7 @@ MS_PARAMS = {'mass': 230.079907196}
 
 
 def _jcamp_technique(_tmp_path):
-    return JcampTechniqueConverter(JcampBaseConverter(FIXTURES + '1H.dx'))
+    return JcampCurveConverter(JcampBaseConverter(FIXTURES + '1H.dx'))
 
 
 def _jcamp_ms(_tmp_path):
@@ -71,10 +71,10 @@ def _nmrium(_tmp_path):
             FileContainer(FileStorage(f, filename='spectrum.nmrium')))
 
 
-# The converters handed to TechniqueComposer or MSComposer, with what each
+# The converters handed to CurveComposer or MSComposer, with what each
 # must resolve to for the fixture it is built from.
 CORES = {
-    'JcampTechniqueConverter': (_jcamp_technique, 'NMR'),
+    'JcampCurveConverter': (_jcamp_technique, 'NMR'),
     'JcampMSConverter': (_jcamp_ms, 'MS'),
     'MSConverter': (_mzml, 'MS'),
     'CdfMSConverter': (_andi_ms, 'MS'),
@@ -83,8 +83,8 @@ CORES = {
 
 # Converters that never reach a composer themselves.
 NOT_CORES = {
-    'JcampBaseConverter': 'wrapped by JcampTechniqueConverter or JcampMSConverter',
-    'FidBaseConverter': 'wrapped by JcampTechniqueConverter, which reads its descriptor',
+    'JcampBaseConverter': 'wrapped by JcampCurveConverter or JcampMSConverter',
+    'FidBaseConverter': 'wrapped by JcampCurveConverter, which reads its descriptor',
     'CdfBaseConverter': 'wrapped by CdfMSConverter',
     'BagItBaseConverter': 'an archive of cores, not a core',
 }

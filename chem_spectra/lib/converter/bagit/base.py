@@ -13,10 +13,10 @@ from chem_spectra.lib.converter.share import (
 )
 from chem_spectra.lib.shared.misc import shorten_label
 from chem_spectra.lib.converter.jcamp.data_parse import UnparsableJcampData
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
-from chem_spectra.lib.composer.technique import (
-    TechniqueComposer, flip_overlay_if_inverted,
+from chem_spectra.lib.composer.curve import (
+    CurveComposer, flip_overlay_if_inverted,
 )
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppComposer
@@ -191,10 +191,10 @@ class BagItBaseConverter:
                     if base_cv.typ == 'MS':
                         # Standalone MS path
                         mscv = JcampMSConverter(base_cv)
-                        tcp = MSComposer(mscv)
+                        ccp = MSComposer(mscv)
                     else:
                         try:
-                            tcv = JcampTechniqueConverter(base_cv)
+                            ccv = JcampCurveConverter(base_cv)
                         except UnparsableJcampData:
                             # one unusable member should not fail the whole
                             # archive; the rest still convert
@@ -203,23 +203,23 @@ class BagItBaseConverter:
                                 'skipping it', jcamp_path,
                             )
                             continue
-                        tcp = TechniqueComposer(tcv)
+                        ccp = CurveComposer(ccv)
                 except KeyError as err:
                     print(f"Skip empty JCAMP {file_name}: {err}")
                     continue
                 # Carried on the composer rather than in a parallel list:
                 # __combine_images filters LC/MS and MS composers out again, so
                 # any index-aligned list would silently mislabel the survivors.
-                tcp.source_filename = file_name
-                list_composer.append(tcp)
-                tf_jcamp = tcp.tf_jcamp()
+                ccp.source_filename = file_name
+                list_composer.append(ccp)
+                tf_jcamp = ccp.tf_jcamp()
                 list_files.append(tf_jcamp)
-                tf_img = tcp.tf_img()
+                tf_img = ccp.tf_img()
                 list_images.append(tf_img)
                 if base_cv.typ == 'MS':
                     list_csv.append(None)
                 else:
-                    tf_csv = tcp.tf_csv()
+                    tf_csv = ccp.tf_csv()
                     list_csv.append(tf_csv)
                 archive_stems.append(stem)
 

@@ -15,7 +15,7 @@ import pytest
 from chem_spectra import create_app
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.data_parse import make_ms_data_xsys
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 from chem_spectra.lib.converter.share import UnconvertibleSpectrum
 
 IR_DECIMAL_HEADER = """##TITLE=decimal commas in the header
@@ -124,7 +124,7 @@ def _base(tmp_path, text, name='probe.jdx'):
 ], ids=['ir-header', 'ir-data', 'uv-pairs'])
 def test_a_spectrum_with_the_wrong_count_is_refused(tmp_path, text, parsed, declared, comma):
     with pytest.raises(UnconvertibleSpectrum) as refused:
-        JcampTechniqueConverter(_base(tmp_path, text))
+        JcampCurveConverter(_base(tmp_path, text))
     reason = str(refused.value)
     assert '{} points'.format(parsed) in reason
     assert '##NPOINTS={}'.format(declared) in reason

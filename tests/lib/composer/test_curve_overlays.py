@@ -1,9 +1,9 @@
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 # the composer module selects the Agg backend on import, so import pyplot after it
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.curve import CurveComposer
 import matplotlib.pyplot as plt  # noqa: E402
 
 source_nmr = './tests/fixtures/source/1H.dx'
@@ -12,8 +12,8 @@ source_nmr = './tests/fixtures/source/1H.dx'
 @pytest.fixture
 def composer():
     base_converter = JcampBaseConverter(source_nmr)
-    converter = JcampTechniqueConverter(base_converter)
-    return TechniqueComposer(converter)
+    converter = JcampCurveConverter(base_converter)
+    return CurveComposer(converter)
 
 
 def test_ensure_itg_mpy_hydrates_from_core_tables(composer):

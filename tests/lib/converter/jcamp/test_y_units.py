@@ -38,12 +38,12 @@ import re
 import numpy as np
 import pytest
 
-import chem_spectra.lib.composer.technique as technique_module
-from chem_spectra.lib.composer.technique import TechniqueComposer
+import chem_spectra.lib.composer.curve as curve_module
+from chem_spectra.lib.composer.curve import CurveComposer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
 from chem_spectra.lib.converter.jcamp.reader import read_jcamp
-from chem_spectra.lib.converter.jcamp.technique import (
-    JcampTechniqueConverter, UnconvertibleSpectrum, is_transmittance_unit,
+from chem_spectra.lib.converter.jcamp.curve import (
+    JcampCurveConverter, UnconvertibleSpectrum, is_transmittance_unit,
 )
 from chem_spectra.lib.converter.jcamp.techniques import SPECTRUM_TECHNIQUES
 
@@ -60,7 +60,7 @@ def _probe(source, datatype, tmp_path, yunits=None, params=None):
             re.search(r'##YUNITS=.*', body).group(0), '##YUNITS=' + yunits, 1)
     target = tmp_path / 'probe.jdx'
     target.write_text(body)
-    return JcampTechniqueConverter(JcampBaseConverter(str(target), params))
+    return JcampCurveConverter(JcampBaseConverter(str(target), params))
 
 
 def _absorbance_probe(tmp_path, datatype='INFRARED SPECTRUM', params=None):
@@ -94,7 +94,7 @@ def _absorbance_probe(tmp_path, datatype='INFRARED SPECTRUM', params=None):
     body.append('##END=\n')
     target = tmp_path / 'absorbance.jdx'
     target.write_text(''.join(body))
-    return JcampTechniqueConverter(JcampBaseConverter(str(target), params))
+    return JcampCurveConverter(JcampBaseConverter(str(target), params))
 
 
 # - - - with no instructions, nothing is touched - - -
@@ -128,7 +128,7 @@ def test_composed_units_agree_with_the_preserved_original(tmp_path):
     """The defect's real consequence, and what nothing asserted before."""
     converter = _probe(ABSORBANCE_SHAPED, 'HPLC UV/VIS SPECTRUM', tmp_path,
                        yunits='ABSORBANCE')
-    meta = ''.join(TechniqueComposer(converter).meta)
+    meta = ''.join(CurveComposer(converter).meta)
     ours = re.search(r'^##YUNITS=(.*)$', meta, re.M).group(1).strip()
     original = re.search(r'^###YUNITS=(.*)$', meta, re.M).group(1).strip()
     assert ours == original == 'ABSORBANCE'
@@ -141,17 +141,17 @@ def _rendered_ylim(converter):
     `tf_img` clears the figure straight after, which is why
     `test_ms_orientation.py` spies in the same place."""
     captured = {}
-    real_savefig = technique_module.plt.savefig
+    real_savefig = curve_module.plt.savefig
 
     def spy(*args, **kwargs):
-        captured['ylim'] = technique_module.plt.gca().get_ylim()
+        captured['ylim'] = curve_module.plt.gca().get_ylim()
         return real_savefig(*args, **kwargs)
 
-    technique_module.plt.savefig = spy
+    curve_module.plt.savefig = spy
     try:
-        TechniqueComposer(converter).tf_img().close()
+        CurveComposer(converter).tf_img().close()
     finally:
-        technique_module.plt.savefig = real_savefig
+        curve_module.plt.savefig = real_savefig
     return captured['ylim']
 
 
@@ -171,7 +171,7 @@ def test_invert_does_not_invent_a_unit(tmp_path):
 
 def test_the_mutation_is_gone_from_the_source():
     """Not merely unreachable from the API."""
-    source = open('chem_spectra/lib/converter/jcamp/technique.py').read()
+    source = open('chem_spectra/lib/converter/jcamp/curve.py').read()
     assert 'np.max(ys) - ys' not in source
     assert '- inverted' not in source
 
@@ -191,7 +191,7 @@ def test_invert_draws_the_axis_the_other_way_up(tmp_path):
 def test_invert_is_recorded_for_renderers_downstream(tmp_path):
     """`##$CSINVERTY` is a viewing preference now, not a claim about the
     data -- which is what makes it safe to write."""
-    composed = TechniqueComposer(
+    composed = CurveComposer(
         _absorbance_probe(tmp_path, params={'invert_y': True}))
     assert '##$CSINVERTY=true' in ''.join(composed.meta)
 
@@ -250,7 +250,7 @@ def test_every_common_spelling_of_transmittance_is_refused(yunits, tmp_path):
     ys = [0.1] * 100
     ys[40:60] = [2.0] * 20
     with pytest.raises(UnconvertibleSpectrum, match='already declares'):
-        JcampTechniqueConverter(JcampBaseConverter(
+        JcampCurveConverter(JcampBaseConverter(
             _synthetic(tmp_path, ys, yunits=yunits), {'transmittance': True}))
 
 
@@ -266,7 +266,7 @@ def test_units_that_are_not_transmittance_still_convert(yunits, tmp_path):
     """
     ys = [0.1] * 100
     ys[40:60] = [2.0] * 20
-    converter = JcampTechniqueConverter(JcampBaseConverter(
+    converter = JcampCurveConverter(JcampBaseConverter(
         _synthetic(tmp_path, ys, yunits=yunits), {'transmittance': True}))
     assert converter.label['y'] == '% TRANSMITTANCE'
 
@@ -288,7 +288,7 @@ def test_a_declared_unit_that_is_not_absorbance_is_refused(yunits, tmp_path):
     ys = [0.1] * 100
     ys[40:60] = [2.0] * 20
     with pytest.raises(UnconvertibleSpectrum, match='which is not absorbance'):
-        JcampTechniqueConverter(JcampBaseConverter(
+        JcampCurveConverter(JcampBaseConverter(
             _synthetic(tmp_path, ys, yunits=yunits), {'transmittance': True}))
 
 
@@ -321,7 +321,7 @@ def test_a_single_units_record_is_read_for_the_declared_unit(tmp_path):
     target.write_text(''.join(body))
 
     with pytest.raises(UnconvertibleSpectrum, match='already declares'):
-        JcampTechniqueConverter(
+        JcampCurveConverter(
             JcampBaseConverter(str(target), {'transmittance': True}))
 
 
@@ -343,10 +343,10 @@ def test_the_guard_and_the_label_read_the_same_record(tmp_path):
     __set_label read UNITS[1]. In a one-record file the guard refused on the
     ##UNITS= transmittance while the composed label came from ##YUNITS=."""
     path = _single_units_record(tmp_path, 'ABSORBANCE', '% TRANSMITTANCE')
-    label = JcampTechniqueConverter(JcampBaseConverter(path, None)).label
+    label = JcampCurveConverter(JcampBaseConverter(path, None)).label
     assert 'TRANSMITTANCE' in label['y'].upper()
     with pytest.raises(UnconvertibleSpectrum, match='already declares'):
-        JcampTechniqueConverter(
+        JcampCurveConverter(
             JcampBaseConverter(path, {'transmittance': True}))
 
 
@@ -355,9 +355,9 @@ def test_the_units_record_overrides_yunits_for_both(tmp_path):
     Both readers take the triple, so the label and the guard agree that this
     is absorbance and the conversion goes ahead."""
     path = _single_units_record(tmp_path, '% TRANSMITTANCE', 'ABSORBANCE')
-    assert JcampTechniqueConverter(
+    assert JcampCurveConverter(
         JcampBaseConverter(path, None)).label['y'] == 'ABSORBANCE'
-    converted = JcampTechniqueConverter(
+    converted = JcampCurveConverter(
         JcampBaseConverter(path, {'transmittance': True}))
     assert converted.label['y'] == '% TRANSMITTANCE'
 
@@ -369,7 +369,7 @@ def test_the_shape_guard_still_catches_a_file_that_declares_nothing(tmp_path):
     ys = [0.95] * 100
     ys[20] = 0.01
     with pytest.raises(UnconvertibleSpectrum, match='already appears'):
-        JcampTechniqueConverter(JcampBaseConverter(
+        JcampCurveConverter(JcampBaseConverter(
             _synthetic(tmp_path, ys, yunits='ARBITRARY'),
             {'transmittance': True}))
 
@@ -387,11 +387,11 @@ def test_transmittance_refuses_data_that_is_not_absorbance_scaled(tmp_path):
 # - - - provenance - - -
 
 def test_the_flags_are_emitted_only_when_asked_for(tmp_path):
-    plain = TechniqueComposer(_absorbance_probe(tmp_path))
+    plain = CurveComposer(_absorbance_probe(tmp_path))
     assert '##$CSTRANSMITTANCE' not in ''.join(plain.meta)
     assert '##$CSINVERTY' not in ''.join(plain.meta)
 
-    converted = TechniqueComposer(
+    converted = CurveComposer(
         _absorbance_probe(tmp_path, params={'transmittance': True}))
     assert '##$CSTRANSMITTANCE=true' in ''.join(converted.meta)
 
@@ -411,7 +411,7 @@ def test_nothing_infers_from_the_data_shape(datatype, tmp_path):
     assert float(np.min(converter.ys)) == pytest.approx(0.02)
     assert converter.draw_y_inverted is False
     assert converter.converted_to_transmittance is False
-    meta = ''.join(TechniqueComposer(converter).meta)
+    meta = ''.join(CurveComposer(converter).meta)
     assert '##$CSINVERTY' not in meta
     assert '##$CSTRANSMITTANCE' not in meta
 
@@ -493,7 +493,7 @@ def test_large_negative_values_are_refused_not_turned_into_infinity(tmp_path):
     ys[:5] = [-1.0] * 5
     path = _synthetic(tmp_path, ys)
     with pytest.raises(UnconvertibleSpectrum, match='overflow'):
-        JcampTechniqueConverter(
+        JcampCurveConverter(
             JcampBaseConverter(path, {'transmittance': True}))
 
 
@@ -501,7 +501,7 @@ def test_slightly_negative_absorbance_still_converts(tmp_path):
     """Baseline drift below zero is normal and must not be refused."""
     ys = [-0.05] * 100
     ys[20] = 1.5
-    converter = JcampTechniqueConverter(
+    converter = JcampCurveConverter(
         JcampBaseConverter(_synthetic(tmp_path, ys), {'transmittance': True}))
     assert converter.label['y'] == '% TRANSMITTANCE'
     assert all(abs(float(v)) < 1e6 for v in converter.ys)
@@ -800,13 +800,13 @@ LINK_WITH_INTERFEROGRAM = './tests/fixtures/source/ir_link_interferogram.jdx'
 
 
 def test_another_blocks_units_do_not_relabel_the_spectrum():
-    converter = JcampTechniqueConverter(
+    converter = JcampCurveConverter(
         JcampBaseConverter(LINK_WITH_INTERFEROGRAM, None))
     assert converter.label == {'x': '1/CM', 'y': 'ABSORBANCE'}
 
 
 def test_the_composed_file_keeps_the_spectrums_units():
-    composed = ''.join(TechniqueComposer(JcampTechniqueConverter(
+    composed = ''.join(CurveComposer(JcampCurveConverter(
         JcampBaseConverter(LINK_WITH_INTERFEROGRAM, None))).meta)
     assert '##XUNITS=1/CM' in composed
     assert '##YUNITS=ABSORBANCE' in composed
@@ -820,14 +820,14 @@ def test_the_guard_reads_the_spectrums_own_unit(tmp_path):
     target = tmp_path / 'link.jdx'
     target.write_text(body)
     with pytest.raises(UnconvertibleSpectrum, match='already declares'):
-        JcampTechniqueConverter(
+        JcampCurveConverter(
             JcampBaseConverter(str(target), {'transmittance': True}))
 
 
 def test_a_trailing_comma_in_the_units_record_is_accepted(tmp_path):
     """Mnova writes `HZ, ARBITRARY UNITS, ARBITRARY UNITS,`. Rejected, the
     label was taken from the peak-table block's XUNITS/YUNITS instead."""
-    converter = JcampTechniqueConverter(JcampBaseConverter(
+    converter = JcampCurveConverter(JcampBaseConverter(
         './tests/fixtures/source/mnova/STM212_H.jcamp', None))
     assert converter.label == {'x': 'PPM', 'y': 'ARBITRARY'}
 
@@ -848,7 +848,7 @@ def _composed_absorbance(client, tmp_path, **form):
 def _read_back(tmp_path, body):
     target = tmp_path / 'read_back.jdx'
     target.write_bytes(body)
-    return JcampTechniqueConverter(JcampBaseConverter(str(target), None))
+    return JcampCurveConverter(JcampBaseConverter(str(target), None))
 
 
 def test_auto_peaks_are_picked_again_on_the_converted_trace(client, tmp_path):
@@ -892,7 +892,7 @@ def test_integrals_in_the_file_refuse_the_conversion(tmp_path):
         '##XYPOINTS=',
         '##$OBSERVEDINTEGRALS= (X Y Z)\n(425.0, 415.0, 1.0)\n##XYPOINTS=', 1))
     with pytest.raises(UnconvertibleSpectrum, match='integrals'):
-        JcampTechniqueConverter(
+        JcampCurveConverter(
             JcampBaseConverter(str(source), {'transmittance': True}))
 
 
@@ -910,7 +910,7 @@ def test_an_empty_integral_table_does_not_refuse(tmp_path):
     source = tmp_path / 'absorbance.jdx'
     source.write_text(source.read_text().replace(
         '##XYPOINTS=', '##$OBSERVEDINTEGRALS= (X Y Z)\n##XYPOINTS=', 1))
-    converter = JcampTechniqueConverter(
+    converter = JcampCurveConverter(
         JcampBaseConverter(str(source), {'transmittance': True}))
     assert converter.converted_to_transmittance
 
@@ -1025,7 +1025,7 @@ def test_a_transmittance_file_is_refused_on_its_unit_not_its_integrals(
         source.read_text().replace('##YUNITS=ABSORBANCE',
                                    '##YUNITS=TRANSMITTANCE'))
     with pytest.raises(UnconvertibleSpectrum, match='already declares'):
-        JcampTechniqueConverter(
+        JcampCurveConverter(
             JcampBaseConverter(str(source), {'transmittance': True}))
 
 
@@ -1036,7 +1036,7 @@ def test_a_request_that_clears_the_integrals_may_convert(tmp_path):
                           ' (X Y Z)\n(425.0, 415.0, 1.0)')
     cleared = json.dumps({'edited': True, 'stack': [],
                           'refArea': 1, 'refFactor': 1, 'shift': 0})
-    converter = JcampTechniqueConverter(JcampBaseConverter(
+    converter = JcampCurveConverter(JcampBaseConverter(
         str(source), {'transmittance': True, 'integration': cleared}))
     assert converter.converted_to_transmittance
 
@@ -1053,8 +1053,8 @@ def test_a_header_less_single_row_is_seen(tmp_path):
     source = _with_record(
         tmp_path, '$OBSERVEDMULTIPLETS',
         '\n(1, 6.31, 8.13, 7.11, 1.08, 1, m, A)')
-    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
-    has_rows = converter._JcampTechniqueConverter__record_has_rows
+    converter = JcampCurveConverter(JcampBaseConverter(str(source), {}))
+    has_rows = converter._JcampCurveConverter__record_has_rows
     assert has_rows('$OBSERVEDMULTIPLETS') is True
     assert has_rows('$OBSERVEDINTEGRALS') is False
 
@@ -1066,7 +1066,7 @@ def test_multiplets_do_not_block_a_technique_that_never_writes_them(tmp_path):
     source = _with_record(
         tmp_path, '$OBSERVEDMULTIPLETS',
         '\n(1, 6.31, 8.13, 7.11, 1.08, 1, m, A)')
-    converter = JcampTechniqueConverter(
+    converter = JcampCurveConverter(
         JcampBaseConverter(str(source), {'transmittance': True}))
     assert converter.converted_to_transmittance
 
@@ -1078,7 +1078,7 @@ def test_a_stored_peak_table_that_is_not_absorbance_is_refused(tmp_path):
     into ##PEAKTABLE as a coordinate."""
     source = _with_peak_table(tmp_path, '420.0, 75.0')
     with pytest.raises(UnconvertibleSpectrum, match='stored peak table'):
-        JcampTechniqueConverter(
+        JcampCurveConverter(
             JcampBaseConverter(str(source), {'transmittance': True}))
 
 
@@ -1093,7 +1093,7 @@ def test_peaks_str_replaces_the_stored_table_before_it_is_converted(tmp_path):
     """The stored table is discarded by this request, so refusing the
     conversion because of it would refuse over numbers on their way out."""
     source = _with_peak_table(tmp_path, '420.0, 75.0')
-    converter = JcampTechniqueConverter(JcampBaseConverter(
+    converter = JcampCurveConverter(JcampBaseConverter(
         str(source), {'transmittance': True, 'peaks_str': '480,0.6'}))
     assert converter.edit_peaks['x'] == [480.0]
     assert converter.edit_peaks['y'] == pytest.approx([100 * 10 ** -0.6])
@@ -1141,15 +1141,15 @@ def test_nmr_follows_the_technique(tmp_path):
 
 def test_the_marker_points_the_way_the_picker_looked(tmp_path):
     """A marker on the opposite side of the trace from its own peak."""
-    composer = TechniqueComposer(
+    composer = CurveComposer(
         _absorbance_probe(tmp_path, datatype='INFRARED SPECTRUM'))
-    assert composer._TechniqueComposer__fakto() == 1
+    assert composer._CurveComposer__fakto() == 1
 
 
 # - - - an inverted viewport moves the screen-space offsets with it - - -
 
 def _ir_composer(tmp_path, **params):
-    return TechniqueComposer(_probe(TRANSMITTANCE_SHAPED, 'INFRARED SPECTRUM',
+    return CurveComposer(_probe(TRANSMITTANCE_SHAPED, 'INFRARED SPECTRUM',
                                     tmp_path, params=params))
 
 
@@ -1158,8 +1158,8 @@ def test_the_marker_turns_with_the_viewport(tmp_path):
     alone it pointed into the body of the peak it marks."""
     upright = _ir_composer(tmp_path)
     flipped = _ir_composer(tmp_path, invert_y=True)
-    assert upright._TechniqueComposer__fakto() == -1
-    assert flipped._TechniqueComposer__fakto() == 1
+    assert upright._CurveComposer__fakto() == -1
+    assert flipped._CurveComposer__fakto() == 1
 
 
 def test_the_label_nudge_turns_with_the_viewport(tmp_path):
@@ -1168,8 +1168,8 @@ def test_the_label_nudge_turns_with_the_viewport(tmp_path):
     does not. Unflipped, the nudge pulled the label back over the peak."""
     upright = _ir_composer(tmp_path)
     flipped = _ir_composer(tmp_path, invert_y=True)
-    assert upright._TechniqueComposer__label_offset(12) == (0, 12)
-    assert flipped._TechniqueComposer__label_offset(12) == (0, -12)
+    assert upright._CurveComposer__label_offset(12) == (0, 12)
+    assert flipped._CurveComposer__label_offset(12) == (0, -12)
 
 
 def test_the_units_triple_keeps_the_spaces_inside_its_fields(tmp_path):
@@ -1180,7 +1180,7 @@ def test_the_units_triple_keeps_the_spaces_inside_its_fields(tmp_path):
     source.write_text(source.read_text().replace(
         '##YUNITS=ABSORBANCE',
         '##UNITS= 1/CM, % TRANSMITTANCE, ARBITRARY', 1))
-    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    converter = JcampCurveConverter(JcampBaseConverter(str(source), {}))
     assert converter.label['y'] == '% TRANSMITTANCE'
 
 
@@ -1193,7 +1193,7 @@ def test_arbitrary_units_still_collapses_however_it_is_spelled(tmp_path):
         source.write_text(source.read_text().replace(
             '##YUNITS=ABSORBANCE',
             '##UNITS= HZ, {0}, {0}'.format(spelling), 1))
-        converter = JcampTechniqueConverter(
+        converter = JcampCurveConverter(
             JcampBaseConverter(str(source), {}))
         assert converter.label['y'] == 'ARBITRARY', spelling
 
@@ -1245,7 +1245,7 @@ def test_the_editors_way_of_removing_integrals_does_not_block(tmp_path):
                           ' (X Y Z)\n(425.0, 415.0, 1.0)')
     removed = json.dumps({'stack': [], 'originStack': [
         {'xL': 415.0, 'xU': 425.0, 'area': 1.0}]})
-    converter = JcampTechniqueConverter(JcampBaseConverter(
+    converter = JcampCurveConverter(JcampBaseConverter(
         str(source), {'transmittance': True, 'integration': removed}))
     assert converter.converted_to_transmittance
 
@@ -1257,7 +1257,7 @@ def test_integrals_still_sent_still_refuse(tmp_path):
     kept = json.dumps({'stack': [{'xL': 415.0, 'xU': 425.0, 'area': 1.0}],
                        'originStack': []})
     with pytest.raises(UnconvertibleSpectrum, match='integrals or multiplets'):
-        JcampTechniqueConverter(JcampBaseConverter(
+        JcampCurveConverter(JcampBaseConverter(
             str(source), {'transmittance': True, 'integration': kept}))
 
 
@@ -1307,7 +1307,7 @@ def test_the_threshold_record_keeps_the_techniques_own_value(tmp_path):
     assert ir_abs.peak_threshold == pytest.approx(
         1.0 - ir_abs.technique.threshold)
 
-    meta = ''.join(TechniqueComposer(ir_abs).meta)
+    meta = ''.join(CurveComposer(ir_abs).meta)
     assert '##$CSTHRESHOLD={}'.format(ir_abs.technique.threshold) in meta
     assert '##$CSTHRESHOLD={}'.format(ir_abs.peak_threshold) not in meta
 
@@ -1433,10 +1433,10 @@ def test_the_integral_label_keeps_its_upright_anchor(tmp_path):
     """
     upright = _ir_composer(tmp_path)
     flipped = _ir_composer(tmp_path, invert_y=True)
-    assert upright._TechniqueComposer__integral_anchor() == {'ha': 'right'}
-    assert flipped._TechniqueComposer__integral_anchor() == {'ha': 'left'}
+    assert upright._CurveComposer__integral_anchor() == {'ha': 'right'}
+    assert flipped._CurveComposer__integral_anchor() == {'ha': 'left'}
     # the multiplet label does carry a va, and keeps it
-    assert upright._TechniqueComposer__rotated_anchor() == {
+    assert upright._CurveComposer__rotated_anchor() == {
         'ha': 'right', 'va': 'top'}
 
 
@@ -1461,7 +1461,7 @@ def test_a_declared_absorbance_converts_whatever_the_datatype(datatype,
     this PR applies to peak polarity applies here too: the quantity decides,
     and the technique is the fallback for files whose unit says nothing."""
     source = _relabelled(tmp_path, datatype, 'ABSORBANCE')
-    converter = JcampTechniqueConverter(
+    converter = JcampCurveConverter(
         JcampBaseConverter(str(source), {'transmittance': True}))
     assert converter.converted_to_transmittance
 
@@ -1475,7 +1475,7 @@ def test_neither_absorbance_nor_transmittance_is_refused(yunits, tmp_path):
     technique and infrared passes it."""
     source = _relabelled(tmp_path, 'INFRARED SPECTRUM', yunits)
     with pytest.raises(UnconvertibleSpectrum, match='neither absorbance'):
-        JcampTechniqueConverter(
+        JcampCurveConverter(
             JcampBaseConverter(str(source), {'transmittance': True}))
 
 
@@ -1496,7 +1496,7 @@ def test_milliabsorbance_is_absorbance_at_a_declared_scale(tmp_path):
         scaled.append(line)
     source.write_text('\n'.join(scaled) + '\n')
 
-    in_mau = JcampTechniqueConverter(
+    in_mau = JcampCurveConverter(
         JcampBaseConverter(str(source), {'transmittance': True}))
     in_au = _absorbance_probe(tmp_path, datatype='HPLC UV/VIS SPECTRUM',
                               params={'transmittance': True})
@@ -1530,7 +1530,7 @@ def test_a_managed_flag_on_another_block_does_not_govern_the_spectrum(
             '##DATA TYPE=INFRARED PEAK TABLE', '##DATA CLASS=PEAKTABLE',
             '##$CSINVERTY=true', '##$CSTRANSMITTANCE=true',
             '##PEAK TABLE=(XY..XY)', '420.0, 0.5', '##END=', '##END=', '']))
-    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    converter = JcampCurveConverter(JcampBaseConverter(str(source), {}))
     assert converter.draw_y_inverted is False
     assert converter.transmittance_recorded is False
     assert converter.label['y'] == 'ABSORBANCE'
@@ -1540,7 +1540,7 @@ def test_a_scaled_absorbance_unit_is_absorbance_for_polarity_too(tmp_path):
     """`mAU` was recognised for the conversion but not for the band
     direction, so an infrared trace in mAU was searched for dips."""
     source = _relabelled(tmp_path, 'INFRARED SPECTRUM', 'mAU')
-    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    converter = JcampCurveConverter(JcampBaseConverter(str(source), {}))
     assert converter.peaks_point_down is False
 
 
@@ -1561,7 +1561,7 @@ def test_a_declared_absorbance_outranks_the_shape_heuristic(tmp_path):
     body += ['{:.6f}, {:.6f}\n'.format(x, y) for x, y in zip(xs, ys)]
     body.append('##END=\n')
     source.write_text(''.join(body))
-    converter = JcampTechniqueConverter(
+    converter = JcampCurveConverter(
         JcampBaseConverter(str(source), {'transmittance': True}))
     assert converter.converted_to_transmittance
 
@@ -1571,7 +1571,7 @@ def test_edited_peaks_carry_the_same_scale_as_the_trace(tmp_path):
     `100 * 10**-100` and was refused, so a converted chromatogram's peak
     table no longer matched its own trace."""
     source = _relabelled(tmp_path, 'HPLC UV/VIS SPECTRUM', 'mAU')
-    converter = JcampTechniqueConverter(JcampBaseConverter(
+    converter = JcampCurveConverter(JcampBaseConverter(
         str(source), {'transmittance': True, 'peaks_str': '480,100'}))
     assert converter.edit_peaks['y'] == pytest.approx([79.433], abs=0.01)
 
@@ -1590,7 +1590,7 @@ def test_multiplets_block_a_conversion_a_declared_unit_would_allow(tmp_path):
                                '(1, 6.31, 8.13, 7.11, 1.08, 1, m, A)\n'
                                '##XYPOINTS=', 1))
     with pytest.raises(UnconvertibleSpectrum, match='integrals or multiplets'):
-        JcampTechniqueConverter(
+        JcampCurveConverter(
             JcampBaseConverter(str(source), {'transmittance': True}))
 
 
@@ -1692,8 +1692,8 @@ def test_the_peak_threshold_travels_through_the_conversion(tmp_path):
     ys[29], ys[30], ys[31] = 7.0, 12.0, 7.0
     source = _curve(tmp_path, 'UV/VIS SPECTRUM', 'mAU', ys)
 
-    plain = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
-    converted = JcampTechniqueConverter(
+    plain = JcampCurveConverter(JcampBaseConverter(str(source), {}))
+    converted = JcampCurveConverter(
         JcampBaseConverter(str(source), {'transmittance': 'true'}))
 
     assert plain.peak_threshold == 0.05
@@ -1710,9 +1710,9 @@ def test_the_inverted_multiplet_label_keeps_its_horizontal_side(tmp_path):
     """
     upright = _ir_composer(tmp_path)
     flipped = _ir_composer(tmp_path, invert_y=True)
-    assert upright._TechniqueComposer__rotated_anchor() == {
+    assert upright._CurveComposer__rotated_anchor() == {
         'ha': 'right', 'va': 'top'}
-    assert flipped._TechniqueComposer__rotated_anchor() == {
+    assert flipped._CurveComposer__rotated_anchor() == {
         'ha': 'left', 'va': 'top'}
 
 
@@ -1828,7 +1828,7 @@ def test_a_relabelled_legacy_file_is_not_read_as_transmittance(tmp_path):
     technique decides, as it did before this branch.
     """
     source = _relabelled_legacy_chromatogram(tmp_path)
-    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    converter = JcampCurveConverter(JcampBaseConverter(str(source), {}))
     assert converter.peaks_point_down is False
     assert sorted(round(float(x), 1)
                   for x in converter.auto_peaks['x']) == [410.0, 430.0]
@@ -1843,7 +1843,7 @@ def test_our_own_record_still_says_the_trace_is_transmittance(tmp_path):
     source.write_text(source.read_text().replace(
         '##YUNITS=TRANSMITTANCE',
         '##YUNITS=TRANSMITTANCE\n##$CSTRANSMITTANCE=true', 1))
-    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    converter = JcampCurveConverter(JcampBaseConverter(str(source), {}))
     assert converter.peaks_point_down is True
 
 

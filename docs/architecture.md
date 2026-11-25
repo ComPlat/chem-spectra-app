@@ -241,9 +241,9 @@ The main branches are:
 |---|---|
 | `raw`, `mzml`, `mzxml` | `MSConverter` -> `MSComposer` |
 | `cdf` | `CdfBaseConverter` -> `CdfMSConverter` -> `MSComposer` |
-| `zip` with Bruker `fid` | `FidBaseConverter` or `FidHasBruckerProcessed` -> `JcampTechniqueConverter` -> `TechniqueComposer` |
+| `zip` with Bruker `fid` | `FidBaseConverter` or `FidHasBruckerProcessed` -> `JcampCurveConverter` -> `CurveComposer` |
 | `zip` with `bagit.txt` | `BagItBaseConverter` |
-| JCAMP-like input | `JcampBaseConverter` -> `JcampMSConverter`/`MSComposer` or `JcampTechniqueConverter`/`TechniqueComposer` |
+| JCAMP-like input | `JcampBaseConverter` -> `JcampMSConverter`/`MSComposer` or `JcampCurveConverter`/`CurveComposer` |
 
 The ZIP path is more complex:
 
@@ -262,7 +262,7 @@ Examples:
 - `ms2composer()` creates `MSConverter` and then wraps it in `MSComposer`.
 - `cdf2cvp()` writes the uploaded bytes to a temporary `.cdf` file, creates `CdfBaseConverter`, then `CdfMSConverter`, then `MSComposer`.
 - `jcamp2cvp()` writes the uploaded text to a temporary file, creates `JcampBaseConverter`, then branches on `jbcv.typ`.
-- Bruker ZIP conversion produces NMR-like converter data, then creates `JcampTechniqueConverter` and `TechniqueComposer`.
+- Bruker ZIP conversion produces NMR-like converter data, then creates `JcampCurveConverter` and `CurveComposer`.
 
 When modifying `TransformerModel`, be careful with return shapes. Some callers expect:
 
@@ -474,12 +474,16 @@ The chain is:
 
 **Add a technique by adding a `data_type.json` entry and a
 `SPECTRUM_TECHNIQUES` entry — not by adding a branch.** A parity test fails
-if either exists without the other. The sixteen `is_*` booleans still exist
-as properties over the descriptor, for call sites not yet migrated; do not
-add new consumers of them, and do not derive new behaviour from `typ`
-directly. Converters not fed by `data_type.json` (Bruker FID, NMRium) carry
-no descriptor, and `BaseComposer._technique()` resolves them from their own
-`non_nmr` instead.
+if either exists without the other. Do not derive new behaviour from `typ`
+directly; read the descriptor.
+
+**Every converter a composer is given carries a descriptor.** Those not fed
+by `data_type.json` set it themselves: Bruker FID and NMRium the NMR entry,
+the MS converters the MS entry. `BaseComposer._technique()` reads
+`core.technique` and nothing else; a core without one is drawn as the
+generic curve. `tests/lib/converter/test_every_core_carries_a_descriptor.py`
+makes each new `*Converter` class either show its descriptor or say why it
+never reaches a composer.
 
 Three properties of this chain are load-bearing and easy to break:
 
@@ -532,10 +536,10 @@ Composers are output-oriented. They answer: "How should this normalized data be 
 Examples:
 
 - `JcampBaseConverter` reads JCAMP and classifies the spectrum.
-- `JcampTechniqueConverter` converts non-MS JCAMP data into the shape expected by `TechniqueComposer`.
+- `JcampCurveConverter` converts non-MS JCAMP data into the shape expected by `CurveComposer`.
 - `JcampMSConverter` converts MS JCAMP data into the shape expected by `MSComposer`.
 - `MSConverter` reads or prepares mass spectrometry data from RAW, mzML, or mzXML.
-- `TechniqueComposer` writes JCAMP-like output, renders PNG images, and can produce CSV data for supported non-MS workflows.
+- `CurveComposer` writes JCAMP-like output, renders PNG images, and can produce CSV data for supported non-MS workflows.
 - `MSComposer` writes mass-spectrum JCAMP output, renders MS images, and exposes `prism_peaks()`.
 
 ### Temporary Files
@@ -629,7 +633,7 @@ Contains output-generation logic.
 Important files:
 
 - `base.py` for common JCAMP output sections, metadata, peak tables, integration, and multiplicity support.
-- `technique.py` for every non-MS technique.
+- `curve.py` for every non-MS technique.
 - `ms.py` for mass spectrum output and peak extraction.
 
 Modify this layer when generated output changes.
@@ -739,11 +743,42 @@ It is installed from ComPlat's `chemotion-main` build of nmrglue (upstream plus 
 
 ## 7. Design Decisions and Constraints
 
+### Naming: `Technique` is the whole set, `Curve` is the pair that excludes MS
+
+Two families of name sit close together and the difference between them is
+load-bearing. Mass spectrometry is a technique, but it does not go through the
+general converter and composer.
+
+**`Technique` names the descriptor registry, which covers every technique,
+mass spectrometry included.** `SpectrumTechnique`, `SPECTRUM_TECHNIQUES`,
+`technique_for`, `BaseComposer._technique()`, and
+`chem_spectra/lib/converter/jcamp/techniques.py`. MS has an entry there like
+everything else, so these names mean what they say.
+
+**`Curve` names the converter and composer pair that handles every technique
+*except* mass spectrometry.** `JcampCurveConverter` and
+`CurveComposer`, in `converter/jcamp/curve.py` and
+`composer/curve.py`. MS keeps `JcampMSConverter` and `MSComposer`.
+
+The exclusion is permanent, not pending. PR #297 measured the overlap between
+the two composers before deciding: 2 of 27 shared base methods, and `tf_img`
+21 lines against 296. Unifying them would have meant one class with two
+unrelated bodies.
+
+"Curve" is the word the code already uses for this set — `technique_for` logs
+an unrecognised `##DATA TYPE=` as *"processing it as a generic curve"* — and a
+mass spectrum is drawn as sticks rather than a curve.
+
+**When adding a technique**, the registry is almost always the only place to
+touch. Reach for a `Curve` name only when the change is about the non-MS
+pipeline specifically, and check whether `MSComposer` needs the same change.
+
+
 ### Modular Flask Monolith
 
 The codebase is structured as a single Flask application with internal modules rather than separate services.
 
-This keeps endpoint registration and deployment simple, but it means shared workflows such as `TransformerModel` and `TechniqueComposer` have a broad impact. Test changes in these areas across multiple endpoint families.
+This keeps endpoint registration and deployment simple, but it means shared workflows such as `TransformerModel` and `CurveComposer` have a broad impact. Test changes in these areas across multiple endpoint families.
 
 ### Request-Scoped Processing
 

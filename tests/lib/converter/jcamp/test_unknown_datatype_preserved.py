@@ -3,7 +3,7 @@
 Since #291 a file whose `##DATA TYPE=` is not in `data_type.json` no longer
 crashes -- it takes the generic curve path. But `__set_datatype` returned `''`
 for it, the composer writes that value straight back out
-(`composer/technique.py`), and `DATATYPE` is on the suppression list for the
+(`composer/curve.py`), and `DATATYPE` is on the suppression list for the
 original-metadata dump (`composer/base.py`). Between them, the only record of
 what the file said it was got erased at compose time.
 
@@ -22,8 +22,8 @@ import re
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
+from chem_spectra.lib.composer.curve import CurveComposer
 
 RECOGNISED = './tests/fixtures/source/IR.dx'
 
@@ -48,7 +48,7 @@ def write_with_datatype(tmp_path, datatype, name='probe.dx'):
 
 def compose(path):
     core = JcampBaseConverter(path)
-    composer = TechniqueComposer(JcampTechniqueConverter(core))
+    composer = CurveComposer(JcampCurveConverter(core))
     lines = composer.tf_jcamp()
     body = lines.read() if hasattr(lines, 'read') else ''.join(lines)
     return body.decode() if isinstance(body, bytes) else body

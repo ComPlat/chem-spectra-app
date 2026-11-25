@@ -1,6 +1,6 @@
 """The stored point order follows the descriptor, not the header shape.
 
-`JcampTechniqueConverter.__read_xs` reverses both axes when a file stores x
+`JcampCurveConverter.__read_xs` reverses both axes when a file stores x
 the other way round from how the technique is drawn. Two questions decide
 it, and they used to be answered by one field:
 
@@ -36,7 +36,7 @@ import re
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 
 SOURCE = './tests/fixtures/source/IR.dx'   # stores x descending, 3997 -> 374
 
@@ -52,7 +52,7 @@ def _probe(datatype, tmp_path, ascending=False, name='probe.dx'):
                    .replace('##DELTAX=-1.4165319', '##DELTAX=1.4165319')
     target = tmp_path / name
     target.write_text(body)
-    return JcampTechniqueConverter(JcampBaseConverter(str(target)))
+    return JcampCurveConverter(JcampBaseConverter(str(target)))
 
 
 # - - - techniques that opt in - - -
@@ -126,7 +126,7 @@ def test_a_sorption_trace_keeps_the_direction_it_was_given(tmp_path):
 ])
 def test_nmr_keeps_its_order(fixture):
     """NMR has not opted in either, and its fixtures already descend."""
-    converter = JcampTechniqueConverter(JcampBaseConverter(fixture))
+    converter = JcampCurveConverter(JcampBaseConverter(fixture))
     assert converter.xs[0] > converter.xs[-1]
 
 
@@ -136,5 +136,5 @@ def test_the_xy_pair_path_is_untouched():
     an equidistant UV-Vis file now also gets."""
     base = JcampBaseConverter('./tests/fixtures/source/JPK-948.jdx')
     assert base.data_format == '(XY..XY)'
-    converter = JcampTechniqueConverter(base)
+    converter = JcampCurveConverter(base)
     assert converter.xs[0] < converter.xs[-1]

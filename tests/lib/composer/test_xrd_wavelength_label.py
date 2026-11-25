@@ -9,12 +9,12 @@ import shutil
 
 import pytest
 
-import chem_spectra.lib.composer.technique as technique_module
+import chem_spectra.lib.composer.curve as curve_module
 import chem_spectra.lib.converter.bagit.base as bagit_module
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.curve import CurveComposer
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 
 XRD = './tests/fixtures/source/xrd/Test_data_op_001_XRD.jdx'
 ANGSTROM = {'name': 'CuKalpha', 'value': 1.5406, 'label': 'Cu K-alpha', 'unit': 'Å'}
@@ -38,9 +38,9 @@ def _xlabels(module, monkeypatch):
 ])
 def test_the_single_image_label(monkeypatch, wavelength, expected):
     params = {'waveLength': json.dumps(wavelength)} if wavelength else {}
-    labels = _xlabels(technique_module, monkeypatch)
-    composer = TechniqueComposer(
-        JcampTechniqueConverter(JcampBaseConverter(XRD, params)))
+    labels = _xlabels(curve_module, monkeypatch)
+    composer = CurveComposer(
+        JcampCurveConverter(JcampBaseConverter(XRD, params)))
     composer.tf_img().close()
     assert labels and labels[-1].endswith(expected)
 

@@ -1,8 +1,8 @@
-"""A FID must reach JcampTechniqueConverter carrying its descriptor.
+"""A FID must reach JcampCurveConverter carrying its descriptor.
 
 `FidBaseConverter` hardcodes typ='NMR' and is not fed by data_type.json, so
 nothing derives a descriptor for it. But it is handed straight to
-JcampTechniqueConverter (model/transformer.py:213), which copies
+JcampCurveConverter (model/transformer.py:213), which copies
 `getattr(base, 'technique', None)` across -- so without one set here, every
 Bruker render travelled with `technique = None`.
 
@@ -39,6 +39,6 @@ def test_fid_converter_carries_the_nmr_descriptor(fid_converter):
 
 
 def test_fid_descriptor_survives_into_the_technique_converter(fid_converter):
-    """The copy-across in JcampTechniqueConverter.__init__ must not yield None."""
+    """The copy-across in JcampCurveConverter.__init__ must not yield None."""
     assert fid_converter.technique is not None
     assert fid_converter.technique.key == 'NMR'

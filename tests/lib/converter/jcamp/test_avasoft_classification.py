@@ -32,7 +32,7 @@ import os
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 
 DATA_TYPE_JSON = os.path.join(
     os.path.dirname(
@@ -105,5 +105,5 @@ def test_an_avasoft_file_classifies_as_uv_vis(avasoft_file):
 
 def test_it_gets_the_uv_vis_threshold_not_the_generic_one(avasoft_file):
     """The observable consequence of being unclassified: 0.5 rather than 0.05."""
-    converter = JcampTechniqueConverter(JcampBaseConverter(avasoft_file))
+    converter = JcampCurveConverter(JcampBaseConverter(avasoft_file))
     assert converter.threshold == 0.05

@@ -9,7 +9,7 @@ MARGIN = 1
 THRESHOLD_MS = 0.05
 
 
-class JcampMSConverter:  # nmr & IR
+class JcampMSConverter:
     def __init__(self, base):
         self.params = base.params
         self.datatypes = base.datatypes

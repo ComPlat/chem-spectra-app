@@ -241,7 +241,7 @@ def _drive(container, molfile, params, exact=True):
     if converter is None or converter is False:
         return {'error': 'no converter'}
     # The zip/FID path hands back a `FidBaseConverter`, which carries none of
-    # the observables -- those live on the `JcampTechniqueConverter` the
+    # the observables -- those live on the `JcampCurveConverter` the
     # composer was built from. That core is the technique converter on every
     # path, so read from it wherever there is one.
     subject = getattr(composer, 'core', None) if composer else None

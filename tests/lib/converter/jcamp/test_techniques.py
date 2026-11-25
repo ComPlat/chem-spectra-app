@@ -14,7 +14,7 @@ from chem_spectra.lib.converter.jcamp import base as base_module
 from chem_spectra.lib.converter.jcamp.techniques import (
     SPECTRUM_TECHNIQUES, UNKNOWN_TECHNIQUE, SpectrumTechnique, technique_for,
 )
-from tests.lib.composer.test_technique_rendering_matrix import EXPECTED
+from tests.lib.composer.test_curve_rendering_matrix import EXPECTED
 
 
 def _mapping_keys():

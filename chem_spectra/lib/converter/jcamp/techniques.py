@@ -16,11 +16,11 @@ The axis and threshold values were extracted from the pre-refactor tree by
 execution, not by reading, and are pinned by
 `tests/lib/composer/test_technique_rendering_matrix.py`.
 
-The four NMR gates are consumed by `BaseComposer` and `TechniqueComposer`,
+The four NMR gates are consumed by `BaseComposer` and `CurveComposer`,
 and their behaviour is covered by `tests/lib/composer/test_non_nmr_gates.py`
 -- flipping any of them to the wrong value fails the suite.
 
-`threshold` is read by `converter/jcamp/technique.py`, which used to carry a
+`threshold` is read by `converter/jcamp/curve.py`, which used to carry a
 duplicate table keyed on the raw datatype string. Flipping NMR's value fails
 13 tests outside the parity file, so it is load-bearing on the peak-detection
 path, not just pinned by parity.
@@ -62,11 +62,11 @@ class SpectrumTechnique:
     # - - - the four concerns `non_nmr` gates, deliberately separate - - -
     # composer/base.py prepare_itg_mpy: pair integrations with multiplets
     nmr_integration: bool = False
-    # composer/base.py gen_mpy_*_info, composer/technique.py meta and drawing
+    # composer/base.py gen_mpy_*_info, composer/curve.py meta and drawing
     multiplicity: bool = False
-    # composer/technique.py __draw_peaks: annotate peaks on the plot
+    # composer/curve.py __draw_peaks: annotate peaks on the plot
     peak_annotation: bool = False
-    # composer/technique.py __gen_headers_spectrum_orig: the fuller NMR header
+    # composer/curve.py __gen_headers_spectrum_orig: the fuller NMR header
     nmr_headers: bool = False
 
     # - - - groupings and per-technique extras - - -
@@ -102,13 +102,13 @@ class SpectrumTechnique:
     # instruction, which otherwise recorded ##$CSTRANSMITTANCE=true on a
     # voltammogram and made it unrecoverable through the API.
     beer_lambert: bool = False
-    # converter/jcamp/technique.py __exec_peak_picking_logic and
+    # converter/jcamp/curve.py __exec_peak_picking_logic and
     # __run_auto_pick_peak: bands are troughs, so find_peaks runs on 1 - ys
-    # and the auto table keeps the *lowest* hundred. composer/technique.py
+    # and the auto table keeps the *lowest* hundred. composer/curve.py
     # also takes less headroom above the trace when drawing peak labels,
     # because for a trough spectrum the labels hang below the baseline.
     peaks_inverted: bool = False
-    # converter/jcamp/technique.py __exec_peak_picking_logic: fold in peaks
+    # converter/jcamp/curve.py __exec_peak_picking_logic: fold in peaks
     # found on the inverted series when the trace dips well below zero -- the
     # DEPT case. Infrared opts out because peaks_inverted already did that
     # work; circular dichroism opts out because its signal is genuinely
@@ -120,21 +120,21 @@ class SpectrumTechnique:
     # composer/base.py _build_integration_lines and prepare_itg_mpy: the
     # integration table gains an AUC column. HPLC UV/VIS only.
     auc_column: bool = False
-    # composer/base.py _supports_visual_split and composer/technique.py
+    # composer/base.py _supports_visual_split and composer/curve.py
     # __uses_auc_drawing: visual integration splits, and integrations drawn
     # as areas. HPLC UV/VIS *and* plain UV/VIS -- a wider set than
     # auc_column, which is why these are two fields.
     visual_split: bool = False
 
     # - - - size exclusion chromatography and differential scanning - - -
-    # composer/technique.py __generate_info_box: which annotation box is
+    # composer/curve.py __generate_info_box: which annotation box is
     # drawn on the plot. '' draws none; 'sec' lists MN/MW/MP/D, 'dsc' lists
     # the melting point and Tg. A discriminator rather than two booleans,
     # because the box has exactly one variant per technique.
     info_box: str = ''
-    # composer/technique.py __gen_header_sec: the SEC header block
+    # composer/curve.py __gen_header_sec: the SEC header block
     sec_headers: bool = False
-    # composer/technique.py __gen_header_user_input_meta_data: melting point
+    # composer/curve.py __gen_header_user_input_meta_data: melting point
     # and Tg written into the JCAMP, from params or from the file's own LDRs
     dsc_metadata: bool = False
 
@@ -164,7 +164,7 @@ SPECTRUM_TECHNIQUES = {
                              peaks_inverted=True, negative_peaks=False),
     'RAMAN': SpectrumTechnique('RAMAN', x_reversed=True, threshold=0.07,
                           em_wave=True, store_in_drawn_order=True),
-    # MS is not routed through TechniqueComposer yet: every production
+    # MS is not routed through CurveComposer yet: every production
     # `typ == 'MS'` path goes to MSComposer (transformer.py:273, :381,
     # bagit/base.py:82), which draws sticks and never calls plt.xlim, so
     # m/z renders ascending. This entry is therefore unread today, and

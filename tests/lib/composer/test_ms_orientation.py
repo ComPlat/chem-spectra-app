@@ -2,7 +2,7 @@
 
 `MS`'s `x_reversed` is already `False` -- corrected in #293 (`3bbdc2f`)
 after the rendering matrix had measured it from a path MS never takes. It is
-still unread, because nothing routes MS through `TechniqueComposer`, the
+still unread, because nothing routes MS through `CurveComposer`, the
 field's only consumer.
 
 So this pins a value rather than fixing one, and it pins it against the

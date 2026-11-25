@@ -42,7 +42,7 @@ def flip_overlay_if_inverted(ax, inverted):
     return any(inverted) and not all(inverted)
 
 
-class TechniqueComposer(BaseComposer):
+class CurveComposer(BaseComposer):
     def __init__(self, core):
         super().__init__(core)
         self.title = core.fname

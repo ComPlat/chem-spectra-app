@@ -1,7 +1,7 @@
 from werkzeug.datastructures import FileStorage
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.transformer import TransformerModel as TraModel
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 
 
 target_dir = './tests/fixtures/'
@@ -28,9 +28,9 @@ def __generated_peaks_meta(orig_filename, params=False):
     with open(target_dir + source_dir + orig_filename, 'rb') as f:
         file = FileContainer(FileStorage(f))
         molfile = FileContainer(FileStorage(None))
-        _, tcp, _ = TraModel(file, molfile, params).jcamp2cvp()
+        _, ccp, _ = TraModel(file, molfile, params).jcamp2cvp()
 
-    parts = ''.join(tcp.meta).split(separator)
+    parts = ''.join(ccp.meta).split(separator)
     assert len(parts) == 2
 
     meta_content = parts[1]
@@ -118,7 +118,7 @@ def test_auto_peaks_exclude_13c_solvent_peaks():
 
 
 def test_solvent_filter_keeps_most_intense_peak_in_range():
-    converter = JcampTechniqueConverter.__new__(JcampTechniqueConverter)
+    converter = JcampCurveConverter.__new__(JcampCurveConverter)
     converter.solv_peaks = [(74.16, 80.16)]
     converter.ncl = '13C'
 
@@ -129,7 +129,7 @@ def test_solvent_filter_keeps_most_intense_peak_in_range():
         {'x': 120.0, 'y': 70.0},
     ]
 
-    filtered_peaks = converter._JcampTechniqueConverter__filter_solvent_peaks(peaks)
+    filtered_peaks = converter._JcampCurveConverter__filter_solvent_peaks(peaks)
     kept_solvent_peaks = [peak for peak in filtered_peaks if 74.16 < peak['x'] < 80.16]
 
     assert len(kept_solvent_peaks) == 1
@@ -141,7 +141,7 @@ def test_solvent_filter_keeps_most_intense_peak_in_range():
 def test_solvent_filter_keeps_a_sample_peak_elsewhere_in_the_window():
     # the 13C chloroform window is +-3 ppm; only the triplet (+-32 Hz at
     # 100 MHz) is the solvent, not a sample signal 2.3 ppm away
-    converter = JcampTechniqueConverter.__new__(JcampTechniqueConverter)
+    converter = JcampCurveConverter.__new__(JcampCurveConverter)
     converter.solv_peaks = [(74.16, 80.16)]
     converter.ncl = '13C'
     converter.obs_freq = 100.6
@@ -153,7 +153,7 @@ def test_solvent_filter_keeps_a_sample_peak_elsewhere_in_the_window():
         {'x': 79.30, 'y': 40.0},
     ]
 
-    filtered = converter._JcampTechniqueConverter__filter_solvent_peaks(peaks)
+    filtered = converter._JcampCurveConverter__filter_solvent_peaks(peaks)
 
     assert sorted(peak['x'] for peak in filtered) == [77.00, 79.30]
 
@@ -354,7 +354,7 @@ def test_inherit_wihtout_params_1H():
 def _acetone_converter(params, dic):
     # acetone-d6 13C: the CD3 septet around 29.84 and the carbonyl at 206.26,
     # plus one sample peak outside both windows
-    converter = JcampTechniqueConverter.__new__(JcampTechniqueConverter)
+    converter = JcampCurveConverter.__new__(JcampCurveConverter)
     converter.ncl = '13C'
     converter.obs_freq = 100.6
     converter.solv_peaks = [(27.0, 33.0), (203.7, 209.7)]
@@ -369,7 +369,7 @@ def _acetone_converter(params, dic):
 
 
 def _filtered(converter, peaks):
-    kept = converter._JcampTechniqueConverter__filter_solvent_peaks(peaks)
+    kept = converter._JcampCurveConverter__filter_solvent_peaks(peaks)
     return sorted(round(peak['x'], 2) for peak in kept)
 
 
@@ -399,7 +399,7 @@ def test_an_unlabelled_acetone_spectrum_is_referenced_at_29_84():
     # CD3 line to 29.84 ppm (Gottlieb 1997, Fulmer 2010)
     from types import SimpleNamespace
     import numpy as np
-    converter = JcampTechniqueConverter.__new__(JcampTechniqueConverter)
+    converter = JcampCurveConverter.__new__(JcampCurveConverter)
     converter.ncl = '13C'
     converter.params = {'ref_name': None}
     converter.dic = {}
@@ -411,7 +411,7 @@ def test_an_unlabelled_acetone_spectrum_is_referenced_at_29_84():
     for x, height in ((methyl, 100.0), (carbonyl, 80.0)):
         converter.ys[np.argmin(abs(converter.xs - x))] = height
 
-    assert converter._JcampTechniqueConverter__refresh_solvent() is True
+    assert converter._JcampCurveConverter__refresh_solvent() is True
 
     assert converter.dic['$CSSOLVENTNAME'] == ['Acetone-d6 (sep)']
     assert converter.dic['$CSSOLVENTVALUE'] == ['29.84']

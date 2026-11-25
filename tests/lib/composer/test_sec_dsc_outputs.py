@@ -1,7 +1,7 @@
 """Size-exclusion and differential-scanning outputs, neither of which had a test.
 
 No fixture in the repo declares either technique, so the `is_sec` / `is_dsc`
-branches in TechniqueComposer were never executed by the suite -- before this
+branches in CurveComposer were never executed by the suite -- before this
 refactor as well as after. All four descriptor fields they migrated to
 reported a zero sensitivity count, which the plan treats as a gap rather than
 a pass.
@@ -16,9 +16,9 @@ one reads, and assert the four distinct outputs:
 
 import re
 
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.curve import CurveComposer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 
 SOURCE = './tests/fixtures/source/hplc/chromatogram.jdx'
 
@@ -33,7 +33,7 @@ def _composer(datatype, extra_ldrs, tmp_path, params=None):
     target = tmp_path / 'probe.jdx'
     target.write_text(body)
     base = JcampBaseConverter(str(target), params) if params else JcampBaseConverter(str(target))
-    return TechniqueComposer(JcampTechniqueConverter(base))
+    return CurveComposer(JcampCurveConverter(base))
 
 
 def _info_box_text(composer):
@@ -50,7 +50,7 @@ def _info_box_text(composer):
         def gca(self):
             return FakeAxes()
 
-    composer._TechniqueComposer__generate_info_box(FakePlot())
+    composer._CurveComposer__generate_info_box(FakePlot())
     return captured.get('text')
 
 

@@ -25,10 +25,10 @@ assertion below is a statement about the drawn axis alone, which is the
 thing the editor has to agree with.
 """
 
-import chem_spectra.lib.composer.technique as technique_module
-from chem_spectra.lib.composer.technique import TechniqueComposer
+import chem_spectra.lib.composer.curve as curve_module
+from chem_spectra.lib.composer.curve import CurveComposer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 from chem_spectra.lib.converter.jcamp.techniques import (
     SPECTRUM_TECHNIQUES, UNKNOWN_TECHNIQUE,
 )
@@ -39,22 +39,22 @@ from tests.lib.converter.jcamp.test_unknown_datatype_preserved import (
 
 def _rendered_xlim(composer):
     captured = {}
-    real_savefig = technique_module.plt.savefig
+    real_savefig = curve_module.plt.savefig
 
     def spy_savefig(*args, **kwargs):
-        captured['xlim'] = technique_module.plt.gca().get_xlim()
+        captured['xlim'] = curve_module.plt.gca().get_xlim()
         return real_savefig(*args, **kwargs)
 
-    technique_module.plt.savefig = spy_savefig
+    curve_module.plt.savefig = spy_savefig
     try:
         composer.tf_img().close()
     finally:
-        technique_module.plt.savefig = real_savefig
+        curve_module.plt.savefig = real_savefig
     return captured['xlim']
 
 
 def _compose(path):
-    return TechniqueComposer(JcampTechniqueConverter(JcampBaseConverter(path)))
+    return CurveComposer(JcampCurveConverter(JcampBaseConverter(path)))
 
 
 def test_the_registry_entry_is_not_reversed():
@@ -75,7 +75,7 @@ def test_the_stored_points_still_descend(tmp_path):
     the assertion would start passing for the wrong reason.
     """
     path = write_with_datatype(tmp_path, 'SQUID')
-    core = JcampTechniqueConverter(JcampBaseConverter(path))
+    core = JcampCurveConverter(JcampBaseConverter(path))
     assert core.technique is UNKNOWN_TECHNIQUE
     assert core.xs[0] > core.xs[-1]
 

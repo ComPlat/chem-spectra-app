@@ -20,7 +20,7 @@ from dataclasses import replace
 import numpy as np
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 
 # median well below half the maximum: sharp peaks over a low baseline
 ABSORBANCE_SHAPED = './tests/fixtures/source/1H.dx'
@@ -42,7 +42,7 @@ def _relabelled(source, datatype, tmp_path):
     header = headers[-1]
     target = tmp_path / 'probe.dx'
     target.write_text(body.replace(header, '##DATA TYPE=' + datatype, 1))
-    return JcampTechniqueConverter(JcampBaseConverter(str(target)))
+    return JcampCurveConverter(JcampBaseConverter(str(target)))
 
 
 # - - - transmittance - - -
@@ -75,12 +75,12 @@ def test_transmittance_leaves_a_trace_that_is_already_transmittance(tmp_path):
 def _peak_count(converter, negative_peaks):
     """Re-run peak picking with one field changed and nothing else."""
     converter.technique = replace(converter.technique, negative_peaks=negative_peaks)
-    return len(converter._JcampTechniqueConverter__exec_peak_picking_logic())
+    return len(converter._JcampCurveConverter__exec_peak_picking_logic())
 
 
 def test_negative_peaks_folds_in_the_inverted_series(tmp_path):
     """A DEPT trace dips below zero; those peaks are real and must be kept."""
-    converter = JcampTechniqueConverter(JcampBaseConverter(DIPPING))
+    converter = JcampCurveConverter(JcampBaseConverter(DIPPING))
     ys = np.asarray(converter.ys, dtype=float)
     assert np.max(ys) * 0.4 < -np.min(ys), 'probe no longer dips below zero'
 
@@ -107,7 +107,7 @@ def test_cds_opt_out_is_load_bearing(tmp_path):
     """Circular dichroism really would gain peaks without the opt-out."""
     converter = _relabelled(DIPPING, 'CIRCULAR DICHROISM SPECTROSCOPY', tmp_path)
     assert converter.technique.negative_peaks is False
-    baseline = len(converter._JcampTechniqueConverter__exec_peak_picking_logic())
+    baseline = len(converter._JcampCurveConverter__exec_peak_picking_logic())
     assert _peak_count(converter, True) > baseline
 
 
@@ -126,5 +126,5 @@ def test_infrared_opt_out_is_redundant_not_load_bearing(tmp_path):
     converter = _relabelled(DIPPING, 'INFRARED SPECTRUM', tmp_path)
     assert converter.technique.negative_peaks is False
     assert converter.technique.peaks_inverted is True
-    baseline = len(converter._JcampTechniqueConverter__exec_peak_picking_logic())
+    baseline = len(converter._JcampCurveConverter__exec_peak_picking_logic())
     assert _peak_count(converter, True) == baseline

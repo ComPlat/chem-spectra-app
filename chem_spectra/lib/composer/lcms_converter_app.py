@@ -28,7 +28,7 @@ _MARKER_SCAN_CHUNK = 65536
 
 # jcampconverter (the frontend's JCAMP parser, react-spectra-editor's
 # ExtractJcamp) doesn't support the ##XYPOINTS= LDR, only
-# ##XYDATA=/##DATA TABLE=/##PEAK TABLE=. TechniqueComposer/MSComposer always
+# ##XYDATA=/##DATA TABLE=/##PEAK TABLE=. CurveComposer/MSComposer always
 # regenerate their primary data block as ##XYDATA=, so the frontend never
 # sees ##XYPOINTS= from those paths. This LC/MS path instead passes source
 # bytes through verbatim, so a source file that uses ##XYPOINTS= (as
@@ -103,7 +103,7 @@ class LCMSConverterAppComposer:
         # unchanged -- the peaks the user deleted came straight back.
         #
         # #289 fixed exactly this on the curve path and did not reach here;
-        # jcamp/technique.py guards __parse_edit with the same `is not None`.
+        # jcamp/curve.py guards __parse_edit with the same `is not None`.
         peaks = params.get("peaks_str")
         if peaks is not None:
             return True
