@@ -18,9 +18,9 @@ import re
 import pytest
 
 from chem_spectra.lib.composer.base import BaseComposer
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.curve import CurveComposer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 
 SOURCES = [
     './tests/fixtures/source/1H.dx',
@@ -32,8 +32,8 @@ SOURCES = [
 
 
 def _meta(source):
-    return ''.join(TechniqueComposer(
-        JcampTechniqueConverter(JcampBaseConverter(source))).meta)
+    return ''.join(CurveComposer(
+        JcampCurveConverter(JcampBaseConverter(source))).meta)
 
 
 @pytest.mark.parametrize('source', SOURCES)

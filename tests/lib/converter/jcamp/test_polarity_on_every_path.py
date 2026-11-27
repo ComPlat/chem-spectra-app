@@ -17,9 +17,9 @@ import zipfile
 
 import pytest
 
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.curve import CurveComposer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 
 
 def _curve(tmp_path, datatype, yunits, ys, name, xunits='NANOMETERS'):
@@ -47,7 +47,7 @@ def _chromatogram(tmp_path):
 
 
 def _converter(path, **params):
-    return JcampTechniqueConverter(JcampBaseConverter(str(path), params))
+    return JcampCurveConverter(JcampBaseConverter(str(path), params))
 
 
 def _auto_x(converter):
@@ -85,7 +85,7 @@ def test_a_converted_file_picks_the_same_peaks_when_it_comes_back(
 
 def _composer(tmp_path, datatype, yunits, ys, xunits='NANOMETERS', **params):
     path = _curve(tmp_path, datatype, yunits, ys, 'c.jdx', xunits=xunits)
-    return TechniqueComposer(_converter(path, **params))
+    return CurveComposer(_converter(path, **params))
 
 
 ABSORBANCE = [0.02] * 20 + [1.0]
@@ -108,4 +108,4 @@ def test_the_label_headroom_follows_the_band_direction(
     dip's 1.1 and clipped its labels, and a converted UV/VIS trace the reverse.
     """
     composer = _composer(tmp_path, datatype, yunits, ys, xunits, **params)
-    assert composer._TechniqueComposer__label_headroom() == headroom
+    assert composer._CurveComposer__label_headroom() == headroom

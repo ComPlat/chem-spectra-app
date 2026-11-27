@@ -6,7 +6,7 @@ orientation, x-label style and y-label style.
 
 The axis assertions capture what the composer actually draws, by spying on
 `plt.xlim`/`plt.xlabel`/`plt.ylabel`, rather than re-deriving the condition
-in `TechniqueComposer.tf_img`. Re-deriving it would make the test a copy of the
+in `CurveComposer.tf_img`. Re-deriving it would make the test a copy of the
 code and it would agree with any regression.
 
 Expected values were extracted by execution, and DSC and LC/MS carry the
@@ -22,10 +22,10 @@ import os
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
-# TechniqueComposer selects the Agg backend on import, so import pyplot after it
-from chem_spectra.lib.composer.technique import TechniqueComposer
-import chem_spectra.lib.composer.technique as technique_module
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
+# CurveComposer selects the Agg backend on import, so import pyplot after it
+from chem_spectra.lib.composer.curve import CurveComposer
+import chem_spectra.lib.composer.curve as curve_module
 
 SOURCE = './tests/fixtures/source/hplc/chromatogram.jdx'
 HEADER = '##DATA TYPE=HPLC UV/VIS SPECTRUM'
@@ -71,7 +71,7 @@ def _mapping_keys():
 def render():
     """Render a spectrum of the given datatype; report what it drew."""
     template = open(SOURCE).read()
-    saved = (technique_module.plt.xlim, technique_module.plt.xlabel, technique_module.plt.ylabel)
+    saved = (curve_module.plt.xlim, curve_module.plt.xlabel, curve_module.plt.ylabel)
 
     def _render(datatype, tmp_path):
         target = tmp_path / 'probe.jdx'
@@ -93,15 +93,15 @@ def render():
             drawn['ylabel'] = text
             return real_ylabel(text, **kwargs)
 
-        technique_module.plt.xlim = spy_xlim
-        technique_module.plt.xlabel = spy_xlabel
-        technique_module.plt.ylabel = spy_ylabel
+        curve_module.plt.xlim = spy_xlim
+        curve_module.plt.xlabel = spy_xlabel
+        curve_module.plt.ylabel = spy_ylabel
         try:
-            converter = JcampTechniqueConverter(JcampBaseConverter(str(target)))
-            composer = TechniqueComposer(converter)
+            converter = JcampCurveConverter(JcampBaseConverter(str(target)))
+            composer = CurveComposer(converter)
             composer.tf_img().close()
         finally:
-            technique_module.plt.xlim, technique_module.plt.xlabel, technique_module.plt.ylabel = saved
+            curve_module.plt.xlim, curve_module.plt.xlabel, curve_module.plt.ylabel = saved
 
         low, high = drawn['xlim']
         drawn['orientation'] = 'forward' if low < high else 'reversed'
@@ -109,7 +109,7 @@ def render():
         return drawn
 
     yield _render
-    technique_module.plt.xlim, technique_module.plt.xlabel, technique_module.plt.ylabel = saved
+    curve_module.plt.xlim, curve_module.plt.xlabel, curve_module.plt.ylabel = saved
 
 
 def _x_style(label):

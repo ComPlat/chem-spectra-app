@@ -82,7 +82,7 @@ def test_an_archive_refuses_transmittance_before_converting_anything(
         composed.append(args)
         raise AssertionError('a member was composed before the refusal')
 
-    monkeypatch.setattr(bagit_base, 'TechniqueComposer', spy)
+    monkeypatch.setattr(bagit_base, 'CurveComposer', spy)
     with pytest.raises(UnconvertibleSpectrum, match='LC/MS dataset'):
         bagit_base.BagItBaseConverter(str(bag), params={'transmittance': True})
     assert composed == []

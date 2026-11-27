@@ -1,7 +1,7 @@
 """A combined image annotates one spectrum: the one `jcamp_idx` names.
 
 Peaks, integrals, multiplets and cyclic voltammetry max/min pairs are drawn
-by `TechniqueComposer.plot_overlays`, for that spectrum alone and without
+by `CurveComposer.plot_overlays`, for that spectrum alone and without
 narrowing the x range the other curves share. These tests spy on that call
 (per-file images call it too, with `adjust_xlim=True`, so only the overlay's
 calls are kept) and on the axes at the moment the image is saved.
@@ -17,7 +17,7 @@ from werkzeug.datastructures import FileStorage
 import chem_spectra.lib.converter.bagit.base as bagit_module
 import chem_spectra.model.transformer as transformer_module
 from chem_spectra.controller.helper.file_container import FileContainer
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.curve import CurveComposer
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
 from chem_spectra.model.transformer import TransformerModel
 
@@ -45,7 +45,7 @@ def _inverted(body):
 def overlays(monkeypatch):
     """Every overlay drawn onto a combined image, as the composer saw it."""
     calls = []
-    real = TechniqueComposer.plot_overlays
+    real = CurveComposer.plot_overlays
 
     def spy(self, plt, y_values=None, adjust_xlim=True):
         if not adjust_xlim:
@@ -58,7 +58,7 @@ def overlays(monkeypatch):
             })
         return real(self, plt, y_values, adjust_xlim)
 
-    monkeypatch.setattr(TechniqueComposer, 'plot_overlays', spy)
+    monkeypatch.setattr(CurveComposer, 'plot_overlays', spy)
     return calls
 
 

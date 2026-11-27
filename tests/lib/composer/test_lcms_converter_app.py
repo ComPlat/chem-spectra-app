@@ -212,7 +212,7 @@ def test_init_normalizes_xypoints_ldr_to_xydata(xypoints_tic_tmp):
     # jcampconverter (the frontend parser) can't read ##XYPOINTS=. This
     # composer passes source bytes through untouched otherwise, so it must
     # rewrite the LDR (and the DATA CLASS declaring it) to ##XYDATA=,
-    # matching what TechniqueComposer/MSComposer already normalize to.
+    # matching what CurveComposer/MSComposer already normalize to.
     LCMSConverterAppComposer([xypoints_tic_tmp], None, None)
 
     with open(xypoints_tic_tmp.name, "r", encoding="utf-8", errors="ignore") as h:
@@ -275,7 +275,7 @@ def test_init_does_not_touch_triple_hash_xypoints_metadata_echo():
 #
 # The controller keeps the two apart -- request.form.get(default=None) gives
 # None for an absent field and "" for an empty one -- and the curve path
-# already relies on it: jcamp/technique.py guards __parse_edit with
+# already relies on it: jcamp/curve.py guards __parse_edit with
 # `params['peaks_str'] is not None`. That is #289, "honor explicitly cleared
 # peaks_str instead of keeping stale edit peaks", which never reached here.
 

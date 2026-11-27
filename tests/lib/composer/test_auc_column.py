@@ -17,9 +17,9 @@ fields, and is asserted here.
 
 import re
 
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.composer.curve import CurveComposer
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 
 SOURCE = './tests/fixtures/source/hplc/chromatogram.jdx'
 
@@ -36,7 +36,7 @@ def _composer(datatype, tmp_path):
         re.search(r'##DATA TYPE=.*', body).group(0), '##DATA TYPE=' + datatype, 1)
     target = tmp_path / 'probe.jdx'
     target.write_text(body)
-    return TechniqueComposer(JcampTechniqueConverter(JcampBaseConverter(str(target))))
+    return CurveComposer(JcampCurveConverter(JcampBaseConverter(str(target))))
 
 
 def _columns(line):

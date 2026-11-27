@@ -11,19 +11,19 @@ from chem_spectra.lib.converter.jcamp.base import (
     refuse_if_multi_dimensional,
 )
 from chem_spectra.lib.shared.misc import shorten_label
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 from chem_spectra.lib.converter.jcamp.ms import JcampMSConverter
 from chem_spectra.lib.converter.cdf.base import CdfBaseConverter
 from chem_spectra.lib.converter.cdf.ms import CdfMSConverter
 from chem_spectra.lib.converter.fid.base import FidBaseConverter
 from chem_spectra.lib.converter.fid.bruker import FidHasBruckerProcessed
 from chem_spectra.lib.converter.bagit.base import BagItBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
+from chem_spectra.lib.converter.jcamp.curve import UnconvertibleSpectrum
 from chem_spectra.lib.converter.share import is_jcamp_filename
 from chem_spectra.lib.converter.bagit.lcms_builder import build_lcms_composer
 from chem_spectra.lib.converter.ms import MSConverter
-from chem_spectra.lib.composer.technique import (
-    TechniqueComposer, flip_overlay_if_inverted,
+from chem_spectra.lib.composer.curve import (
+    CurveComposer, flip_overlay_if_inverted,
 )
 from chem_spectra.lib.composer.ms import MSComposer
 from chem_spectra.lib.composer.base import BaseComposer     # noqa: F401
@@ -300,9 +300,9 @@ class TransformerModel:
                     final_decorated_jbcv = decorated_jbcv['origin_jbcv']
                 else:
                     final_decorated_jbcv = decorated_jbcv
-                tcv = JcampTechniqueConverter(final_decorated_jbcv)
-                tcp = TechniqueComposer(tcv)
-                return tcv, tcp, invalid_molfile
+                ccv = JcampCurveConverter(final_decorated_jbcv)
+                ccp = CurveComposer(ccv)
+                return ccv, ccp, invalid_molfile
 
             is_bagit = search_bag_it_file(td)
             if is_bagit:
@@ -350,9 +350,9 @@ class TransformerModel:
         #         final_decorated_jbcv.simu_peaks = decorated_jbcv.simu_peaks
 
             list_decorated_converters.append(final_decorated_jbcv)
-            tcv = JcampTechniqueConverter(final_decorated_jbcv)
-            tcp = TechniqueComposer(tcv)
-            list_decorated_composers.append(tcp)
+            ccv = JcampCurveConverter(final_decorated_jbcv)
+            ccp = CurveComposer(ccv)
+            list_decorated_composers.append(ccp)
         return list_decorated_converters, list_decorated_composers, invalid_molfile
 
     def jcamp2cvp(self):
@@ -388,7 +388,7 @@ class TransformerModel:
             final_decorated_jbcv = decorated_jbcv
 
         try:
-            tcv = JcampTechniqueConverter(final_decorated_jbcv)
+            ccv = JcampCurveConverter(final_decorated_jbcv)
         except UnparsableJcampData:
             # Same shape as zip2cvp's failure return, so the controllers'
             # existing `if not cmpsr: abort(...)` handles it rather than the
@@ -398,8 +398,8 @@ class TransformerModel:
                 getattr(self.file, 'name', None),
             )
             return False, False, invalid_molfile
-        tcp = TechniqueComposer(tcv)
-        return tcv, tcp, invalid_molfile
+        ccp = CurveComposer(ccv)
+        return ccv, ccp, invalid_molfile
 
     def tf_predict(self):
         target = json.loads(self.params['predict'])
@@ -417,8 +417,8 @@ class TransformerModel:
         converter = NMRiumDataConverter(self.file)
         if converter.is_2d == True or converter.data is None:
             return None
-        tcp = TechniqueComposer(converter)
-        tf_jcamp = tcp.tf_jcamp()
+        ccp = CurveComposer(converter)
+        tf_jcamp = ccp.tf_jcamp()
         return tf_jcamp
 
     def tf_combine(self, list_file_names=None, extraParams=None):
@@ -491,7 +491,7 @@ class TransformerModel:
                     x_reversed.append(mscp._technique().x_reversed)
             else:
                 try:
-                    tcv = JcampTechniqueConverter(jbcv)
+                    ccv = JcampCurveConverter(jbcv)
                 except UnparsableJcampData:
                     # one unusable file should not lose the whole overlay;
                     # if every file is unusable nothing is plotted and the
@@ -502,10 +502,10 @@ class TransformerModel:
                     )
                     tf.close()
                     continue
-                tcp = TechniqueComposer(tcv)
-                xs, ys = tcp.core.xs, tcp.core.ys
+                ccp = CurveComposer(ccv)
+                xs, ys = ccp.core.xs, ccp.core.ys
                 y_values = ys
-                if tcp._technique().cyclic_voltammetry:
+                if ccp._technique().cyclic_voltammetry:
                     cv_state = {}
                     if extraParams:
                         try:
@@ -519,9 +519,9 @@ class TransformerModel:
                         ) or {}
                     if not cv_state:
                         cv_state = (
-                            tcp.core.params.get('cyclicvoltaSt')
-                            or tcp.core.params.get('cyclicvolta')
-                            or tcp.core.params.get('cyclic_volta')
+                            ccp.core.params.get('cyclicvoltaSt')
+                            or ccp.core.params.get('cyclicvolta')
+                            or ccp.core.params.get('cyclic_volta')
                         ) or {}
                     if isinstance(cv_state, str):
                         try:
@@ -546,7 +546,7 @@ class TransformerModel:
                     except Exception:
                         pass
                 marker = ''
-                if tcp._technique().sorption_branches:
+                if ccp._technique().sorption_branches:
                     first_x, last_x = xs[0], xs[len(xs)-1]
                     if first_x <= last_x:
                         filename = 'ADSORPTION'
@@ -556,28 +556,28 @@ class TransformerModel:
                         marker = 'v'
                 plt.plot(xs, y_values, label=filename, marker=marker)
                 plotted_any = True
-                inverted.append(bool(getattr(tcp.core, 'draw_y_inverted', False)))
+                inverted.append(bool(getattr(ccp.core, 'draw_y_inverted', False)))
                 if len(xs):
                     x_ranges.append((np.min(xs), np.max(xs)))
-                    x_reversed.append(tcp._technique().x_reversed)
+                    x_reversed.append(ccp._technique().x_reversed)
 
                 if file is active_file:
-                    active_tcp, active_y_values = tcp, y_values
-                    if tcp._technique().cyclic_voltammetry:
-                        tcp._cv_density_scale = scale
+                    active_tcp, active_y_values = ccp, y_values
+                    if ccp._technique().cyclic_voltammetry:
+                        ccp._cv_density_scale = scale
                         # the combine endpoint may send the CV state in
                         # `extras` alone, and then parse_params left
                         # list_max_min_peaks empty
-                        if not tcp.core.params.get('list_max_min_peaks'):
+                        if not ccp.core.params.get('list_max_min_peaks'):
                             spectra_list = cv_state.get('spectraList') or []
                             if 0 <= curve_idx < len(spectra_list):
-                                tcp.core.params['list_max_min_peaks'] = \
+                                ccp.core.params['list_max_min_peaks'] = \
                                     (spectra_list[curve_idx] or {}).get('list')
 
                 # PLOT label
-                core_label_x = tcp.core.label['x']
-                core_label_y = tcp.core.label['y']
-                if tcp._technique().cyclic_voltammetry:
+                core_label_x = ccp.core.label['x']
+                core_label_y = ccp.core.label['y']
+                if ccp._technique().cyclic_voltammetry:
                     if core_label_x not in dic_x_label:
                         xlabel_set.append(core_label_x)
                         dic_x_label[core_label_x] = 1
@@ -587,7 +587,7 @@ class TransformerModel:
                     if (idx == len(self.multiple_files) - 1):
                         xlabel = ', '.join(xlabel_set)
                         ylabel = ', '.join(ylabel_set)
-                elif tcp._technique().x_axis == 'chemical_shift':
+                elif ccp._technique().x_axis == 'chemical_shift':
                     xlabel = "Chemical shift ({})".format(core_label_x.lower())
                     ylabel = "Intensity ({})".format(core_label_y.lower())
                 else:

@@ -12,7 +12,7 @@ import base64
 import io
 import re
 
-from chem_spectra.lib.converter.jcamp.technique import peak_table_rows
+from chem_spectra.lib.converter.jcamp.curve import peak_table_rows
 
 FIXTURE = './tests/fixtures/source/mnova/mnova_1h_multiplets.jdx'
 

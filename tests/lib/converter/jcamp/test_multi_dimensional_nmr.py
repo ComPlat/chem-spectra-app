@@ -23,7 +23,7 @@ import pytest
 from chem_spectra.lib.converter.jcamp.base import (
     JcampBaseConverter, declared_dimensions, declares_nmr,
 )
-from chem_spectra.lib.converter.jcamp.technique import UnconvertibleSpectrum
+from chem_spectra.lib.converter.jcamp.curve import UnconvertibleSpectrum
 
 ONE_D = './tests/fixtures/source/1H.dx'                 # no ##NUM DIM at all
 ONE_D_DECLARED = './tests/fixtures/source/mnova/STM212_H.jcamp'   # NUMDIM<tab>1
@@ -183,7 +183,7 @@ def test_an_archive_is_refused_before_any_member_is_converted(tmp_path,
         composed.append(args)
         raise AssertionError('a member was composed before the refusal')
 
-    monkeypatch.setattr(bagit_base, 'TechniqueComposer', spy)
+    monkeypatch.setattr(bagit_base, 'CurveComposer', spy)
     with pytest.raises(UnconvertibleSpectrum, match='2D'):
         bagit_base.BagItBaseConverter(str(tmp_path / 'bag'))
     assert composed == []

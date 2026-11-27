@@ -15,7 +15,7 @@ from werkzeug.datastructures import FileStorage
 
 from chem_spectra.controller.helper.file_container import FileContainer
 from chem_spectra.model.transformer import TransformerModel
-import chem_spectra.lib.composer.technique as technique_module
+import chem_spectra.lib.composer.curve as curve_module
 
 source_zip = './tests/fixtures/source/bruker/1H.zip'
 source_molfile = './tests/fixtures/source/molfile/svs813f1_B.mol'
@@ -35,7 +35,7 @@ def fid_composer():
 
 def _render_labels(composer):
     drawn = {}
-    real_xlabel, real_ylabel = technique_module.plt.xlabel, technique_module.plt.ylabel
+    real_xlabel, real_ylabel = curve_module.plt.xlabel, curve_module.plt.ylabel
 
     def spy_xlabel(text, **kwargs):
         drawn['x'] = text
@@ -45,11 +45,11 @@ def _render_labels(composer):
         drawn['y'] = text
         return real_ylabel(text, **kwargs)
 
-    technique_module.plt.xlabel, technique_module.plt.ylabel = spy_xlabel, spy_ylabel
+    curve_module.plt.xlabel, curve_module.plt.ylabel = spy_xlabel, spy_ylabel
     try:
         composer.tf_img().close()
     finally:
-        technique_module.plt.xlabel, technique_module.plt.ylabel = real_xlabel, real_ylabel
+        curve_module.plt.xlabel, curve_module.plt.ylabel = real_xlabel, real_ylabel
     return drawn
 
 

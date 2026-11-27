@@ -74,7 +74,7 @@ select = ["UP"]
 # today and any *new* kind of violation is caught.
 #
 # These are NOT fixed in this branch on purpose. All 289 are mechanical and
-# auto-fixable, but a repo-wide `ruff --fix` would rewrite technique.py,
+# auto-fixable, but a repo-wide `ruff --fix` would rewrite curve.py,
 # base.py and composer/ -- which every open PR (#299-#305) also rewrites. It
 # runs once that stack has landed.
 #
@@ -110,7 +110,7 @@ ignore_errors = true
 # The other 51 are enforced from day one and cannot regress.
 module = [
     "chem_spectra.lib.composer.lcms_converter_app",
-    "chem_spectra.lib.composer.technique",
+    "chem_spectra.lib.composer.curve",
     "chem_spectra.lib.converter.bagit.base",
     "chem_spectra.lib.converter.bagit.lcms_builder",
     "chem_spectra.lib.converter.fid.base",

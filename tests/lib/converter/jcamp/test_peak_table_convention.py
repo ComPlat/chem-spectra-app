@@ -4,7 +4,7 @@ A ChemSpectra output carries its peaks in two `##DATA CLASS=PEAKTABLE` blocks.
 Each one declares which it is -- `##$CSCATEGORY=EDIT_PEAK` or `AUTO_PEAK` --
 but the reader ignores that and goes by position: `PEAKTABLE[0]` is the edit
 table and `PEAKTABLE[1]` is the auto one, in the order the composer wrote them
-(`jcamp/technique.py`, `__read_edit_peaks` / `__read_auto_peaks`).
+(`jcamp/curve.py`, `__read_edit_peaks` / `__read_auto_peaks`).
 
 That works only because nmrglue's current flat read happens to accumulate the
 blocks in file order. The nmrglue migration replaces that read, so the
@@ -21,7 +21,7 @@ import re
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 
 SOURCE = './tests/fixtures/source/1H.edit.jdx'
 
@@ -58,7 +58,7 @@ def peaks_declared_as(category):
 
 @pytest.fixture
 def converter():
-    return JcampTechniqueConverter(JcampBaseConverter(SOURCE))
+    return JcampCurveConverter(JcampBaseConverter(SOURCE))
 
 
 def test_the_fixture_really_declares_both_tables():

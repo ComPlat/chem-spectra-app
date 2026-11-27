@@ -5,7 +5,7 @@ pairing, multiplicity output, axis-label style and peak annotation. The
 refactor must not collapse them into one registry field, so each gate is
 asserted separately here, both branches.
 
-The gates now read the descriptor. `JcampTechniqueConverter` no longer
+The gates now read the descriptor. `JcampCurveConverter` no longer
 copies `non_nmr` across at all, so these assert `_technique().key` instead.
 
 `composer/base.py` no longer reads `non_nmr` at all: every core carries a
@@ -15,8 +15,8 @@ descriptor, and a core without one resolves to the generic curve.
 import pytest
 
 from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
-from chem_spectra.lib.composer.technique import TechniqueComposer
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
+from chem_spectra.lib.composer.curve import CurveComposer
 from chem_spectra.lib.composer.base import BaseComposer
 
 source_nmr = './tests/fixtures/source/1H.dx'
@@ -29,7 +29,7 @@ MPY = {'xExtent': {'xL': 1.0, 'xU': 2.0}, 'yExtent': {'yL': 0.0, 'yU': 1.0},
 
 
 def _composer(path):
-    return TechniqueComposer(JcampTechniqueConverter(JcampBaseConverter(path)))
+    return CurveComposer(JcampCurveConverter(JcampBaseConverter(path)))
 
 
 def _repair(composer):

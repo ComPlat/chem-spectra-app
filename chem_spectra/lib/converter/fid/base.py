@@ -86,7 +86,7 @@ class FidBaseConverter:
         self.typ = 'NMR'
         # A FID is NMR by construction, so the descriptor is known here
         # without consulting data_type.json. It has to be set: this converter
-        # is handed to JcampTechniqueConverter (model/transformer.py:213),
+        # is handed to JcampCurveConverter (model/transformer.py:213),
         # which reads the descriptor off whatever base it is given.
         self.technique = SPECTRUM_TECHNIQUES['NMR']
         self.fname = '.'.join(self.params.get('fname').split('.')[:-1])

@@ -146,11 +146,11 @@ def test_a_three_column_table_gives_its_x_and_y():
     """
     import numpy as np
 
-    from chem_spectra.lib.converter.jcamp.technique import (
-        JcampTechniqueConverter,
+    from chem_spectra.lib.converter.jcamp.curve import (
+        JcampCurveConverter,
     )
 
-    pairs = JcampTechniqueConverter._JcampTechniqueConverter__block_pairs
+    pairs = JcampCurveConverter._JcampCurveConverter__block_pairs
     xy = np.array([[[1.0, 10.0], [2.0, 20.0]]])          # (1, 2, 2)
     xyw = np.array([[[1.0, 10.0, 0.5], [2.0, 20.0, 0.6]]])  # (1, 2, 3)
     for data in (xy, xyw):
@@ -171,8 +171,8 @@ def test_the_peak_table_width_does_not_disturb_x_and_y():
     composed output.
     """
     from chem_spectra.lib.converter.jcamp.reader import read_jcamp
-    from chem_spectra.lib.converter.jcamp.technique import (
-        JcampTechniqueConverter,
+    from chem_spectra.lib.converter.jcamp.curve import (
+        JcampCurveConverter,
     )
 
     blocks = read_jcamp('./tests/fixtures/source/CHI-224_10.jdx')
@@ -180,7 +180,7 @@ def test_the_peak_table_width_does_not_disturb_x_and_y():
     assert table.datatype == 'NMR PEAK TABLE'
     assert table.data.shape[:2] == (1, 55)
 
-    pairs = JcampTechniqueConverter._JcampTechniqueConverter__block_pairs
+    pairs = JcampCurveConverter._JcampCurveConverter__block_pairs
     x, y = pairs(table.data)
     assert len(x) == 55 and len(y) == 55
     assert x[0] == table.data[0][0][0]
@@ -197,8 +197,8 @@ def test_a_block_with_a_spectrum_and_a_peak_table_draws_the_spectrum(tmp_path):
     import numpy as np
 
     from chem_spectra.lib.converter.jcamp.base import JcampBaseConverter
-    from chem_spectra.lib.converter.jcamp.technique import (
-        JcampTechniqueConverter,
+    from chem_spectra.lib.converter.jcamp.curve import (
+        JcampCurveConverter,
     )
 
     xs = [400.0 + 10 * i for i in range(11)]
@@ -212,6 +212,6 @@ def test_a_block_with_a_spectrum_and_a_peak_table_draws_the_spectrum(tmp_path):
         '##FIRSTX=400.0\n##LASTX=500.0\n##NPOINTS=11\n'
         '##XYPOINTS=(XY..XY)\n' + spectrum +
         '##PEAK TABLE=(XY..XY)\n450.0, 0.9\n##END=\n')
-    converter = JcampTechniqueConverter(JcampBaseConverter(str(source), {}))
+    converter = JcampCurveConverter(JcampBaseConverter(str(source), {}))
     np.testing.assert_allclose(converter.xs, xs)
     np.testing.assert_allclose(converter.ys, ys)

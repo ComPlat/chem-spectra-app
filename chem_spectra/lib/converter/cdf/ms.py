@@ -8,7 +8,7 @@ MARGIN = 1
 THRESHOLD_MS = 0.05
 
 
-class CdfMSConverter:  # nmr & IR
+class CdfMSConverter:
     def __init__(self, base):
         self.params = base.params
         self.dic = base.dic

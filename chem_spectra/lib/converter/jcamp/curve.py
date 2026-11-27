@@ -153,15 +153,18 @@ def peak_table_rows(value):
     return '\n'.join(rows)
 
 
-class JcampTechniqueConverter:
+class JcampCurveConverter:
     """Reads a JCAMP file for any technique dispatched by its descriptor.
 
-    Formerly JcampTechniqueConverter, where NI meant "NMR & IR" -- the two
+    Formerly JcampNIConverter, where NI meant "NMR & IR" -- the two
     techniques it handled when it was written. It now covers every technique
-    in SPECTRUM_TECHNIQUES except mass spectrometry, which still has its own
-    converter and composer. The name states where the pipeline is going:
-    MS is a technique too, and folding it in is a deferred action in
-    IMPLEMENTATION-PLAN.spectrum-kind-refactor.md.
+    in SPECTRUM_TECHNIQUES except mass spectrometry, which has its own
+    converter and composer; "Curve" says so (docs/architecture.md §7).
+    MS is a technique too and is deliberately NOT handled here. #297
+    measured the overlap between the two composers and declined to unify
+    them -- 2 of 27 shared base methods, tf_img 21 lines against 296 --
+    so this is a permanent exception rather than a pending one. The
+    descriptor registry in techniques.py does cover MS.
     """
 
     def __init__(self, base):

@@ -1,6 +1,6 @@
 """A block with no readable x range is refused, not failed.
 
-`JcampTechniqueConverter.__read_xs` builds the x axis from FIRSTX/LASTX, or
+`JcampCurveConverter.__read_xs` builds the x axis from FIRSTX/LASTX, or
 from FIRST/LAST over the observe frequency. When neither gives both ends it
 built the axis from `None + delta`: a TypeError and a 500. That happened to an
 NTUPLES block read by `##PAGE=` (whichever of UV-VIS or HPLC UV-VIS it was

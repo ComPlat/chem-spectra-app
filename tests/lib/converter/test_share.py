@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from chem_spectra.lib.converter.jcamp.technique import JcampTechniqueConverter
+from chem_spectra.lib.converter.jcamp.curve import JcampCurveConverter
 from chem_spectra.lib.converter.share import (
   parse_params, parse_solvent, reduce_pts
 )
@@ -456,7 +456,7 @@ def test_every_signal_the_editor_offers_has_a_window(ncl, name, value):
 def _acetonitrile(params, dic):
     # CD3 septet at 1.32 and the nitrile carbon at 118.26, each in its own
     # window, and a sample peak outside both
-    converter = JcampTechniqueConverter.__new__(JcampTechniqueConverter)
+    converter = JcampCurveConverter.__new__(JcampCurveConverter)
     converter.ncl = '13C'
     converter.obs_freq = 100.6
     converter.solv_peaks = [(-1.68, 4.32), (115.26, 121.26)]
@@ -467,7 +467,7 @@ def _acetonitrile(params, dic):
               for k, w in zip(range(-3, 4), [1.0, 3.0, 6.0, 7.0, 6.0, 3.0, 1.0])]
     nitrile = [{'x': 118.26, 'y': 4.0}]
     sample = [{'x': 125.4, 'y': 9.0}]
-    filtered = converter._JcampTechniqueConverter__filter_solvent_peaks(
+    filtered = converter._JcampCurveConverter__filter_solvent_peaks(
         septet + nitrile + sample)
     return sorted(round(p['x'], 2) for p in filtered)
 

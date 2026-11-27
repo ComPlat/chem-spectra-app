@@ -14,7 +14,7 @@ data_type_json = os.path.join(os.path.dirname(__file__), 'data_type.json')
 logger = logging.getLogger(__name__)
 
 # Techniques with their own converter and composer, which never reach
-# JcampTechniqueConverter and so cannot answer a `transmittance` request.
+# JcampCurveConverter and so cannot answer a `transmittance` request.
 NON_ABSORBING_TYPES = ('MS', 'LC/MS')
 
 # Enough to reach the records; a JCAMP header is a few hundred bytes and the
@@ -217,7 +217,7 @@ class JcampBaseConverter:
     def __refuse_transmittance_where_it_cannot_run(self):
         """`transmittance` is an instruction, so it is honoured or refused.
 
-        Every technique that reaches JcampTechniqueConverter answers it, with
+        Every technique that reaches JcampCurveConverter answers it, with
         a conversion or with a reason. Mass spectrometry and LC/MS have their
         own converters and composers and never reach that code, so the
         instruction was dropped on the floor and the file came back 200,
@@ -289,7 +289,7 @@ class JcampBaseConverter:
                     return dt_dict.get(key, key)
         # Nothing matched. Keep the file's own ##DATA TYPE= rather than
         # returning '', because the composer writes this value straight back
-        # out (composer/technique.py) and 'DATATYPE' is suppressed from the
+        # out (composer/curve.py) and 'DATATYPE' is suppressed from the
         # original-metadata dump (composer/base.py) -- so '' erased the only
         # record of what the file said it was. The spectrum still renders as a
         # generic curve either way; what is lost is the ability to reclassify

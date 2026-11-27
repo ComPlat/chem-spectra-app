@@ -151,7 +151,7 @@ def block_from_headers(headers=None):
     `FidBaseConverter`, `NMRiumDataConverter` and `CdfMSConverter` build their
     data themselves and set the headers they need -- `FIRSTX`, `$OFFSET`,
     `.OBSERVEFREQUENCY` -- into a dict of their own. They still reach
-    `JcampTechniqueConverter`, which asks the target block for LDRs, so they
+    `JcampCurveConverter`, which asks the target block for LDRs, so they
     carry one of these: for them that dict *is* the only block.
 
     Scalars are wrapped so `.ldr()` reads them the same way as a parsed LDR;
