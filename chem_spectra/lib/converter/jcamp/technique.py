@@ -344,7 +344,7 @@ class JcampTechniqueConverter:
         count = 1
         try:
             count = int(self.dic['BLOCKS'][0])
-        except:  # noqa
+        except (KeyError, IndexError, ValueError):
             pass
 
         return count
@@ -420,7 +420,7 @@ class JcampTechniqueConverter:
             try:
                 beg_pt, end_pt, already_in_axis_units = reading()
                 break
-            except:  # noqa
+            except (AttributeError, TypeError, ValueError, ZeroDivisionError):
                 continue
 
         # None of the readings found both ends of the axis. Building it anyway
@@ -895,15 +895,15 @@ class JcampTechniqueConverter:
         obs_freq = None
         try:
             obs_freq = float(self.target.ldr('.OBSERVEFREQUENCY'))
-        except:  # noqa
+        except (TypeError, ValueError):
             try:
-                 obs_freq = float(self.dic['.OBSERVEFREQUENCY'][0])
-            except:  # noqa
-              pass
+                obs_freq = float(self.dic['.OBSERVEFREQUENCY'][0])
+            except (KeyError, IndexError, ValueError):
+                pass
         try:
             if obs_freq is None:
                 obs_freq = float(self.dic['$SFO1'][0])
-        except:  # noqa
+        except (KeyError, IndexError, ValueError):
             pass
 
         return obs_freq
@@ -922,7 +922,7 @@ class JcampTechniqueConverter:
                 'x': to_float(self.dic['XFACTOR'][0]),
                 'y': to_float(self.dic['YFACTOR'][0]),
             }
-        except:  # noqa
+        except (KeyError, IndexError, TypeError, ValueError):
             try:
                 factor_line = self.dic['FACTOR']
                 real_factor = factor_line[0].split(",")
@@ -930,7 +930,7 @@ class JcampTechniqueConverter:
                     'x': to_float(real_factor[0]),
                     'y': to_float(real_factor[1]),
                 }
-            except:
+            except (KeyError, IndexError, ValueError):
                 pass
         
         if factor['y'] == 1.0 and not isinstance(self.base.data, dict):
@@ -957,13 +957,13 @@ class JcampTechniqueConverter:
             # whether it has already converted, rather than by this being wrong.
             array_unit = self.target.ldr('UNITS').split(',')
             x_unit = (array_unit[0].upper()).strip()
-        except: # noqa
+        except AttributeError:
             pass
 
         if (x_unit is None):
             try:
                 x_unit = self.target.ldr('XUNITS').upper()
-            except:  # noqa
+            except AttributeError:
                 pass
 
         return x_unit
@@ -1002,7 +1002,7 @@ class JcampTechniqueConverter:
             if len(auto_x) == 0:
                 return
             self.auto_peaks = {'x': auto_x, 'y': auto_y}
-        except:  # noqa
+        except (AttributeError, IndexError, ValueError):
             pass
 
         try:  # mnova
@@ -1017,7 +1017,7 @@ class JcampTechniqueConverter:
                 if len(auto_x) == 0:
                     return
                 self.auto_peaks = {'x': auto_x, 'y': auto_y}
-        except:  # noqa
+        except (AttributeError, IndexError, ValueError):
             pass
 
     def __read_edit_peaks(self):
@@ -1036,7 +1036,7 @@ class JcampTechniqueConverter:
             if len(edit_x) == 0:
                 return
             self.edit_peaks = {'x': edit_x, 'y': edit_y}
-        except:  # noqa
+        except (AttributeError, IndexError, ValueError):
             pass
 
         try:  # mnova
@@ -1051,7 +1051,7 @@ class JcampTechniqueConverter:
                 if len(edit_x) == 0:
                     return
                 self.edit_peaks = {'x': edit_x, 'y': edit_y}
-        except:  # noqa
+        except (AttributeError, IndexError, ValueError):
             pass
 
     def __parse_edit(self):
