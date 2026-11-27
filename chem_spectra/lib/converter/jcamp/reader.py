@@ -79,7 +79,7 @@ class Block:
         return self._data
 
     def __repr__(self):
-        return '<Block {} {!r}>'.format(self.index, self.datatype)
+        return f'<Block {self.index} {self.datatype!r}>'
 
 
 class JcampFile:

@@ -1,8 +1,12 @@
+# `tempfile.NamedTemporaryFile` is a function, so `NamedTemporaryFile | None`
+# cannot be evaluated; postponed annotations keep it a string on Python 3.12.
+from __future__ import annotations
+
 import re
 import tempfile
 import json
 import logging
-from typing import List, Optional, Dict
+from typing import Optional
 
 from chem_spectra.lib.external.chemotion_converter_lcms import (
     lcms_preview_image_from_jdx_files,
@@ -38,11 +42,11 @@ _XYPOINTS_LDR_RE = re.compile(r'(?im)^(##\s*)XYPOINTS(\s*=)')
 _DATACLASS_XYPOINTS_RE = re.compile(r'(?im)^(##\s*DATA\s*CLASS\s*=\s*)XYPOINTS\b')
 
 
-def _normalize_xypoints_ldr(path: Optional[str]) -> None:
+def _normalize_xypoints_ldr(path: str | None) -> None:
     if not path:
         return
     try:
-        with open(path, 'r', encoding='utf-8', errors='ignore') as handle:
+        with open(path, encoding='utf-8', errors='ignore') as handle:
             content = handle.read()
     except OSError:
         return
@@ -60,11 +64,11 @@ def _normalize_xypoints_ldr(path: Optional[str]) -> None:
         pass
 
 
-def has_uvvis_peak_marker(path: Optional[str]) -> bool:
+def has_uvvis_peak_marker(path: str | None) -> bool:
     if not path:
         return False
     try:
-        with open(path, 'r', encoding='utf-8', errors='ignore') as handle:
+        with open(path, encoding='utf-8', errors='ignore') as handle:
             while True:
                 chunk = handle.read(_MARKER_SCAN_CHUNK)
                 if not chunk:
@@ -78,9 +82,9 @@ def has_uvvis_peak_marker(path: Optional[str]) -> bool:
 class LCMSConverterAppComposer:
     def __init__(
         self,
-        jcamp_files: List[tempfile.NamedTemporaryFile],
-        image: Optional[tempfile.NamedTemporaryFile] = None,
-        params: Optional[Dict] = None,
+        jcamp_files: list[tempfile.NamedTemporaryFile],
+        image: tempfile.NamedTemporaryFile | None = None,
+        params: dict | None = None,
     ):
         self.data = jcamp_files
         self._image = image
@@ -91,7 +95,7 @@ class LCMSConverterAppComposer:
         self._ensure_uvvis_peak_file()
 
     @staticmethod
-    def _has_lcms_edits(params: Optional[Dict]) -> bool:
+    def _has_lcms_edits(params: dict | None) -> bool:
         if not params:
             return False
         # `is not None` distinguishes "cleared" from "never sent", and the
@@ -131,7 +135,7 @@ class LCMSConverterAppComposer:
         return bool(integration)
 
     @staticmethod
-    def _requested_lcms_mz_page(params: Optional[Dict]) -> str:
+    def _requested_lcms_mz_page(params: dict | None) -> str:
         if not params:
             return ""
         raw_value = params.get("lcms_mz_page")
@@ -140,11 +144,11 @@ class LCMSConverterAppComposer:
         return " ".join(str(raw_value).splitlines()).strip()
 
     @staticmethod
-    def _read_lcms_mz_page_from_file(jdx_file: Optional[tempfile.NamedTemporaryFile]) -> str:
+    def _read_lcms_mz_page_from_file(jdx_file: tempfile.NamedTemporaryFile | None) -> str:
         if not jdx_file:
             return ""
         try:
-            with open(jdx_file.name, "r", encoding="utf-8", errors="ignore") as handle:
+            with open(jdx_file.name, encoding="utf-8", errors="ignore") as handle:
                 for line in handle:
                     if line.startswith("##$CSLCMSMZPAGE="):
                         return line.split("=", 1)[1].strip()
@@ -180,7 +184,7 @@ class LCMSConverterAppComposer:
                 self._image = preview
         return self._image
 
-    def _find_peak_or_edit_file(self) -> Optional[tempfile.NamedTemporaryFile]:
+    def _find_peak_or_edit_file(self) -> tempfile.NamedTemporaryFile | None:
         for jdx_file in self.data:
             if jdx_file.name.lower().endswith(('peak.jdx', 'edit.jdx')):
                 return jdx_file
@@ -192,7 +196,7 @@ class LCMSConverterAppComposer:
         if not path:
             return False
         try:
-            with open(path, 'r', encoding='utf-8', errors='ignore') as handle:
+            with open(path, encoding='utf-8', errors='ignore') as handle:
                 for _ in range(200):
                     raw = handle.readline()
                     if not raw:

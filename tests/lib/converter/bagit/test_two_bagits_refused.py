@@ -39,7 +39,7 @@ def _nested(*sources):
         for index, source in enumerate(sources):
             with zipfile.ZipFile(source) as inner:
                 for name in inner.namelist():
-                    archive.writestr('bag_%d/%s' % (index, name), inner.read(name))
+                    archive.writestr(f'bag_{index}/{name}', inner.read(name))
     out.seek(0)
     return out
 

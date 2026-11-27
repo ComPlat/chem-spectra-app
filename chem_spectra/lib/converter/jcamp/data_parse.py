@@ -49,17 +49,17 @@ def refuse_if_point_count_disagrees(block, data):
     parsed = _point_count(data)
     if parsed is None or parsed == declared:
         return
-    reason = ('the data table has {} points but the file declares '
-              '##NPOINTS={}, so its values cannot be read reliably'
-              .format(parsed, declared))
+    reason = (f'the data table has {parsed} points but the file declares '
+              f'##NPOINTS={declared}, so its values cannot be read reliably'
+              )
     commas = [
-        '##{}={}'.format(ldr, block.ldr(ldr)) for ldr in SINGLE_NUMBER_LDRS
+        f'##{ldr}={block.ldr(ldr)}' for ldr in SINGLE_NUMBER_LDRS
         if block.has(ldr) and DECIMAL_COMMA.match(str(block.ldr(ldr)))
     ]
     if commas:
-        reason += ('. Its header writes decimal commas ({}), which JCAMP-DX '
+        reason += (f'. Its header writes decimal commas ({commas[0]}), which JCAMP-DX '
                    'does not allow; export it with decimal points'
-                   .format(commas[0]))
+                   )
     raise UnconvertibleSpectrum(reason)
 
 

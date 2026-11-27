@@ -135,7 +135,7 @@ class MSConverter:
             pyopenms.MzMLFile().store(target_path, exp)
 
     def __mk_dir(self):
-        hash_str = '{}{}'.format(datetime.now(), self.fname)
+        hash_str = f'{datetime.now()}{self.fname}'
         hash_str = str.encode(hash_str)
         hash_str = hashlib.md5(hash_str).hexdigest()
         target_dir = tmp_dir / hash_str
@@ -152,7 +152,7 @@ class MSConverter:
             'msconvert',
             '/data/{}/{}'.format(self.hash_str, self.tf.name.split('/')[-1]),
             '-o',
-            '/data/{}'.format(self.hash_str),
+            f'/data/{self.hash_str}',
             '--simAsSpectra',
             '--32',
             '--zlib',
@@ -193,7 +193,7 @@ class MSConverter:
         except sbp.TimeoutExpired:
             raise MSConverterUnavailable(
                 'the msconvert service did not answer within '
-                '{}s'.format(SIDECAR_TIMEOUT))
+                f'{SIDECAR_TIMEOUT}s')
 
         if result.returncode != 0:
             detail = (result.stderr or result.stdout or '').strip()
@@ -204,7 +204,7 @@ class MSConverter:
     def __get_mzml_path(self):
         fname = ''.join(self.tf.name.split('/')[-1])
         fname = '.'.join(fname.split('.')[:-1])
-        fname = '{}.mzML'.format(fname)
+        fname = f'{fname}.mzML'
         mzml_path = self.target_dir / fname
         return mzml_path
 
@@ -369,12 +369,10 @@ class MSConverter:
         """
         if unparsable is not None:
             return MSConversionFailed(
-                '{} could not be read as mzML: {}: {}'.format(
-                    mzml_path.name, type(unparsable).__name__, unparsable))
+                f'{mzml_path.name} could not be read as mzML: {type(unparsable).__name__}: {unparsable}')
         return MSConversionFailed(
-            'no mzML was produced for this upload: {} never appeared, '
-            '{:.0f}s after msconvert reported success'.format(
-                mzml_path.name, MZML_WAIT))
+            f'no mzML was produced for this upload: {mzml_path.name} never appeared, '
+            f'{MZML_WAIT:.0f}s after msconvert reported success')
 
     def __set_datatables(self):
         dts = []

@@ -106,9 +106,9 @@ def test_every_upstream_datatype_is_mapped_or_deliberately_not(datatype):
     mapped = datatype.upper() in _mapped_values()
     deliberate = datatype in INTENTIONALLY_UNMAPPED
     assert mapped or deliberate, (
-        '%r is emitted by chemotion-converter-app but is neither mapped in '
+        f'{datatype!r} is emitted by chemotion-converter-app but is neither mapped in '
         'data_type.json nor listed in INTENTIONALLY_UNMAPPED. Map it, or '
-        'record why it should not be.' % datatype
+        'record why it should not be.'
     )
 
 
@@ -116,8 +116,7 @@ def test_a_datatype_is_not_both_mapped_and_excluded():
     """Contradiction between the mapping and the exclusion list."""
     both = {d for d in INTENTIONALLY_UNMAPPED if d.upper() in _mapped_values()}
     assert both == set(), (
-        'listed as intentionally unmapped but present in data_type.json: %s'
-        % sorted(both)
+        f'listed as intentionally unmapped but present in data_type.json: {sorted(both)}'
     )
 
 
@@ -126,7 +125,7 @@ def test_exclusions_all_still_exist_upstream():
     stale = set(INTENTIONALLY_UNMAPPED) - set(_snapshot_datatypes())
     assert stale == set(), (
         'listed as intentionally unmapped but absent from the upstream '
-        'snapshot -- upstream may have removed them: %s' % sorted(stale)
+        f'snapshot -- upstream may have removed them: {sorted(stale)}'
     )
 
 

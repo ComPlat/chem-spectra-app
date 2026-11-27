@@ -406,7 +406,7 @@ class BagItBaseConverter:
             if exp != 0:
                 ax.text(
                     0.0, 1,
-                    r"$\times 10^{%d}$" % exp,
+                    rf"$\times 10^{{{int(exp)}}}$",
                     transform=ax.transAxes,
                     ha='left', va='bottom',
                     fontsize=14,

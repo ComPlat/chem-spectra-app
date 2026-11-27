@@ -641,14 +641,14 @@ class JcampTechniqueConverter:
             # What the file says outranks what its shape suggests: this is a
             # fact, where the median test below is an inference.
             raise UnconvertibleSpectrum(
-                'the file already declares its y axis as {!r}; there is '
-                'nothing to convert'.format(declared)
+                f'the file already declares its y axis as {declared!r}; there is '
+                'nothing to convert'
             )
         if is_reflectance_unit(declared):
             raise UnconvertibleSpectrum(
-                'the file declares its y axis as {!r}, which is neither '
+                f'the file declares its y axis as {declared!r}, which is neither '
                 'absorbance nor transmittance; 10**(-y) means nothing for '
-                'it'.format(declared)
+                'it'
             )
         scale = absorbance_scale(declared)
         if (scale is None and declared
@@ -659,8 +659,8 @@ class JcampTechniqueConverter:
             # UV/VIS file whose y axis says TEMPERATURE is not absorbance,
             # and 100*10**(-t) means nothing for it.
             raise UnconvertibleSpectrum(
-                'the file declares its y axis as {!r}, which is not '
-                'absorbance; there is nothing to convert'.format(declared)
+                f'the file declares its y axis as {declared!r}, which is not '
+                'absorbance; there is nothing to convert'
             )
         if scale is None and not self.technique.beer_lambert:
             # Nothing names absorbance, so fall back to the technique.
@@ -728,7 +728,7 @@ class JcampTechniqueConverter:
         names the table when it is not the trace; the trace's own wording is
         unchanged, because it is what the API has been answering with.
         """
-        where = '{}: '.format(what) if what else ''
+        where = f'{what}: ' if what else ''
         values = np.asarray(values, dtype=float)
         if values.size == 0:
             return values
@@ -740,8 +740,8 @@ class JcampTechniqueConverter:
         y_max = float(np.max(values))
         if y_max > ABSORBANCE_CEILING:
             raise UnconvertibleSpectrum(
-                where + 'y values up to {:g} are not absorbance; '
-                'transmittance would underflow to zero'.format(y_max)
+                where + f'y values up to {y_max:g} are not absorbance; '
+                'transmittance would underflow to zero'
             )
         # Absorbance dips slightly below zero from baseline drift, but not
         # far: A = -10 already means T = 10**10, which is not a
@@ -749,8 +749,8 @@ class JcampTechniqueConverter:
         y_min = float(np.min(values))
         if y_min < -ABSORBANCE_CEILING:
             raise UnconvertibleSpectrum(
-                where + 'y values down to {:g} are not absorbance; '
-                'transmittance would overflow'.format(y_min)
+                where + f'y values down to {y_min:g} are not absorbance; '
+                'transmittance would overflow'
             )
         return values
 
@@ -758,7 +758,7 @@ class JcampTechniqueConverter:
     def __to_percent(cls, values, what=None):
         """Guarded conversion. The finiteness check on the result is a
         backstop for anything the input checks do not anticipate."""
-        where = '{}: '.format(what) if what else ''
+        where = f'{what}: ' if what else ''
         values = cls.__refuse_unless_absorbance(values, what)
         converted = absorbance_to_percent_transmittance(values)
         if converted.size and not np.isfinite(converted).all():

@@ -81,16 +81,16 @@ def avasoft_file(tmp_path):
         '##DATA TYPE= AvaSoft\n',
         '##ORIGIN=AvaSpec 7213289SP\n',
         '##OWNER=\n',
-        '##NPOINTS= {}\n'.format(len(xs)),
+        f'##NPOINTS= {len(xs)}\n',
         '##XUNITS= NANOMETERS\n',
         '##YUNITS= TRANSMITTANCE\n',
-        '##FIRSTX= {}\n'.format(xs[0]),
-        '##LASTX= {}\n'.format(xs[-1]),
+        f'##FIRSTX= {xs[0]}\n',
+        f'##LASTX= {xs[-1]}\n',
         '##XFACTOR= 1.0\n',
         '##YFACTOR= 1.0\n',
         '##XYPOINTS= (XY..XY)\n',
     ]
-    body += [' {:.2f},{:.5f}\n'.format(x, y) for x, y in zip(xs, ys)]
+    body += [f' {x:.2f},{y:.5f}\n' for x, y in zip(xs, ys)]
     body.append('##END=\n')
     target = tmp_path / 'avasoft.dx'
     target.write_text(''.join(body))

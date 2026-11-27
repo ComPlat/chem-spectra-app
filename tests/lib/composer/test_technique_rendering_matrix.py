@@ -136,10 +136,10 @@ def test_technique_rendering_contract(key, render, tmp_path):
     drawn = render(datatype, tmp_path)
     threshold, orientation, x_style, y_style = EXPECTED[key]
 
-    assert drawn['threshold'] == threshold, 'threshold for %s' % key
-    assert drawn['orientation'] == orientation, 'x-orientation for %s' % key
-    assert _x_style(drawn['xlabel']) == x_style, 'x-label style for %s (%r)' % (key, drawn['xlabel'])
-    assert _y_style(drawn['ylabel']) == y_style, 'y-label style for %s (%r)' % (key, drawn['ylabel'])
+    assert drawn['threshold'] == threshold, f'threshold for {key}'
+    assert drawn['orientation'] == orientation, f'x-orientation for {key}'
+    assert _x_style(drawn['xlabel']) == x_style, 'x-label style for {} ({!r})'.format(key, drawn['xlabel'])
+    assert _y_style(drawn['ylabel']) == y_style, 'y-label style for {} ({!r})'.format(key, drawn['ylabel'])
 
 
 def test_matrix_covers_every_mapped_technique():
@@ -160,8 +160,8 @@ def test_thermal_and_chromatographic_axes_run_forward(key, render, tmp_path):
     drawn = render(_mapping_keys()[key][0], tmp_path)
     low, high = drawn['xlim']
     assert low < high, (
-        '%s must be drawn low -> high; reversed is the NMR convention and '
-        'neither a thermal curve nor a chromatogram follows it' % key
+        f'{key} must be drawn low -> high; reversed is the NMR convention and '
+        'neither a thermal curve nor a chromatogram follows it'
     )
 
 

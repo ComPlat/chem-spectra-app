@@ -1,5 +1,6 @@
 import json
-from typing import Iterable, List, Optional
+from typing import Optional
+from collections.abc import Iterable
 
 from flask import Response, make_response, send_file
 
@@ -9,7 +10,7 @@ from chem_spectra.lib.composer.lcms_converter_app import LCMSConverterAppCompose
 from chem_spectra.lib.converter.bagit.lcms_builder import classify_lcms_stems
 
 
-def _materialize_uploads(uploads: Iterable) -> List:
+def _materialize_uploads(uploads: Iterable) -> list:
     temp_files = []
     for item in uploads:
         container = FileContainer(item)
@@ -28,7 +29,7 @@ def _close_silently(handles: Iterable) -> None:
 
 def build_lcms_zip_response_from_uploads(
     uploads: Iterable,
-    params: Optional[dict],
+    params: dict | None,
     download_name: str = 'spectrum.zip',
 ) -> Response:
     upload_list = list(uploads)

@@ -126,4 +126,4 @@ def test_every_refusal_uses_one_status_and_one_shape(client):
         seen.add(response.status_code)
         assert set(_refusal(response)) == {'error'}, (
             'refusal body should carry exactly one key, "error"')
-    assert seen == {REFUSED}, 'refusals disagree on the status: %s' % seen
+    assert seen == {REFUSED}, f'refusals disagree on the status: {seen}'

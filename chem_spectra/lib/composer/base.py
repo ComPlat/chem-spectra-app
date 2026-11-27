@@ -85,12 +85,12 @@ class BaseComposer:
 
     def __header_pk_common(self, category):
         return [
-            '##TITLE={}\n'.format(self.title),
+            f'##TITLE={self.title}\n',
             '##JCAMP-DX=5.00\n',
-            '##DATA TYPE={}PEAKTABLE\n'.format(self.core.typ),
+            f'##DATA TYPE={self.core.typ}PEAKTABLE\n',
             '##DATA CLASS=PEAKTABLE\n',
-            '##$CSCATEGORY={}\n'.format(category),
-            '##$CSTHRESHOLD={}\n'.format(self.core.threshold),
+            f'##$CSCATEGORY={category}\n',
+            f'##$CSTHRESHOLD={self.core.threshold}\n',
             '##MAXX={}\n'.format(self.core.boundary['x']['max']),
             '##MAXY={}\n'.format(self.core.boundary['y']['max']),
             '##MINX={}\n'.format(self.core.boundary['x']['min']),
@@ -132,7 +132,7 @@ class BaseComposer:
                     name = selected_detector.get('name')
                     
                     if name:
-                        spl_desc.append('##$DETECTOR={}\n'.format(name))
+                        spl_desc.append(f'##$DETECTOR={name}\n')
 
         return spl_desc
 
@@ -152,10 +152,10 @@ class BaseComposer:
         derives it.
         """
         return [
-            '##TITLE={}\n'.format(self.title),
+            f'##TITLE={self.title}\n',
             '##JCAMP-DX=5.0\n',
             '##DATA TYPE=LINK\n',
-            '##BLOCKS={}\n'.format(block_count),
+            f'##BLOCKS={block_count}\n',
             '\n'
         ]
 
@@ -186,7 +186,7 @@ class BaseComposer:
                 str_key = str_key[1:]
 
             content.append(
-                '###{}= {}\n'.format(str_key.upper(), str_value)
+                f'###{str_key.upper()}= {str_value}\n'
             )
         content.append('\n\n')
         return content
@@ -198,12 +198,12 @@ class BaseComposer:
 
     def gen_spectrum_orig(self):
         c_spectrum_orig = [
-            '##NPOINTS={}\n'.format(self.core.xs.shape[0]),
+            f'##NPOINTS={self.core.xs.shape[0]}\n',
             TEXT_DATA_TABLE
         ]
         if (self.core.data_format and self.core.data_format == '(XY..XY)'):
             c_spectrum_orig = [
-                '##NPOINTS={}\n'.format(self.core.xs.shape[0]),
+                f'##NPOINTS={self.core.xs.shape[0]}\n',
                 TEXT_DATA_TABLE_XY
             ]
         c_spectrum_orig.extend(self.core.datatable)
@@ -214,7 +214,7 @@ class BaseComposer:
 
     def gen_auto_peaktable(self):
         content = [
-            '##NPOINTS={}\n'.format(calc_npoints(self.core.auto_peaks)),
+            f'##NPOINTS={calc_npoints(self.core.auto_peaks)}\n',
             TEXT_PEAK_TABLE
         ]
         if not self.core.auto_peaks:
@@ -224,7 +224,7 @@ class BaseComposer:
         auto_y = self.core.auto_peaks['y']
         for i, _ in enumerate(auto_x):
             content.append(
-                '{}, {}\n'.format(auto_x[i], auto_y[i])
+                f'{auto_x[i]}, {auto_y[i]}\n'
             )
 
         return content
@@ -237,7 +237,7 @@ class BaseComposer:
 
     def gen_edit_peaktable(self):
         content = [
-            '##NPOINTS={}\n'.format(calc_npoints(self.core.edit_peaks)),
+            f'##NPOINTS={calc_npoints(self.core.edit_peaks)}\n',
             TEXT_PEAK_TABLE
         ]
         if not self.core.edit_peaks:
@@ -247,7 +247,7 @@ class BaseComposer:
         edit_y = self.core.edit_peaks['y']
         for i, _ in enumerate(edit_x):
             content.append(
-                '{}, {}\n'.format(edit_x[i], edit_y[i])
+                f'{edit_x[i]}, {edit_y[i]}\n'
             )
 
         return content
@@ -256,7 +256,7 @@ class BaseComposer:
         for idx, item in enumerate(meta_lines):
             if not isinstance(item, str):
                 raise TypeError(
-                    'meta item at index {} must be str, got {}'.format(idx, type(item).__name__)
+                    f'meta item at index {idx} must be str, got {type(item).__name__}'
                 )
         return ''.join(meta_lines)
 
@@ -395,7 +395,7 @@ class BaseComposer:
         if not core_itg.get('edited'):
             return []
         ref_factor = core_itg.get('refFactor', 1)
-        return ['{}\n'.format(ref_factor)]
+        return [f'{ref_factor}\n']
 
     def gen_csit_area_info(self):
         if len(self.itgs) == 0 or not hasattr(self.core, 'params'):
@@ -404,7 +404,7 @@ class BaseComposer:
         if not core_itg.get('edited'):
             return []
         ref_area = core_itg.get('refArea', 1)
-        return ['{}\n'.format(ref_area)]
+        return [f'{ref_area}\n']
 
     def gen_mpy_integ_info(self):
         if not self._technique().multiplicity:
@@ -453,7 +453,7 @@ class BaseComposer:
         if len(self.core.simu_peaks) > 0:
             table = []
             for simu_peak in self.core.simu_peaks:
-                table.extend(['{}\n'.format(simu_peak)])
+                table.extend([f'{simu_peak}\n'])
             return table
 
         return []

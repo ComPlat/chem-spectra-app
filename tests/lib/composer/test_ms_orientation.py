@@ -58,7 +58,7 @@ def test_an_ms_render_is_ascending(fixture):
     """The measurement the registry value has to agree with."""
     composer = MSComposer(JcampMSConverter(JcampBaseConverter(fixture)))
     low, high = _rendered_xlim(composer)
-    assert low < high, '%s rendered descending' % fixture
+    assert low < high, f'{fixture} rendered descending'
 
 
 def test_ms_composer_never_sets_xlim():

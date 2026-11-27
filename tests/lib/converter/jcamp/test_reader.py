@@ -204,7 +204,7 @@ def test_a_block_with_a_spectrum_and_a_peak_table_draws_the_spectrum(tmp_path):
     xs = [400.0 + 10 * i for i in range(11)]
     ys = [0.02] * 11
     ys[5] = 0.9
-    spectrum = ''.join('{:.1f}, {:.3f}\n'.format(x, y) for x, y in zip(xs, ys))
+    spectrum = ''.join(f'{x:.1f}, {y:.3f}\n' for x, y in zip(xs, ys))
     source = tmp_path / 'both.jdx'
     source.write_text(
         '##TITLE=both\n##JCAMP-DX=5.00\n##DATA TYPE=UV/VIS SPECTRUM\n'

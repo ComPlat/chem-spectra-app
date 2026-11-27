@@ -69,26 +69,6 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["UP"]
 
-# A ratchet, in the same spirit as the mypy overrides below: the whole UP set
-# is selected, and the rules that already fire are muted so the gate is green
-# today and any *new* kind of violation is caught.
-#
-# These are NOT fixed in this branch on purpose. All 289 are mechanical and
-# auto-fixable, but a repo-wide `ruff --fix` would rewrite technique.py,
-# base.py and composer/ -- which every open PR (#299-#305) also rewrites. It
-# runs once that stack has landed.
-#
-# The list only ever gets shorter. Counts are from the run that introduced it;
-# clear a rule with `just lint-fix`, then delete its line in the same commit.
-ignore = [
-    "UP032",  # 95x  f-string instead of str.format
-    "UP006",  # 69x  builtin generics (List -> list)
-    "UP045",  # 61x  X | None instead of Optional[X]
-    "UP015",  # 26x  redundant open() mode
-    "UP031",  # 14x  f-string instead of percent formatting
-    "UP035",  # 9x   deprecated typing imports
-]
-
 [tool.mypy]
 python_version = "3.12"
 ignore_missing_imports = true

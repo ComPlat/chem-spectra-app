@@ -164,8 +164,8 @@ def test_an_mzml_upload_is_not_waited_for(tmp_path, monkeypatch):
     elapsed = time.monotonic() - started
 
     assert elapsed < 5.0, (
-        'an mzML upload waited {:.1f}s on a 60s MZML_WAIT; it should not be '
-        'polled at all'.format(elapsed))
+        f'an mzML upload waited {elapsed:.1f}s on a 60s MZML_WAIT; it should not be '
+        'polled at all')
 
 
 # - - - cleanup - - -

@@ -21,7 +21,7 @@ class MSComposer(BaseComposer):
         return [
             '\n',
             TEXT_SPECTRUM_ORIG,
-            '##TITLE={}\n'.format(self.title),
+            f'##TITLE={self.title}\n',
             '##JCAMP-DX=5.00\n',
             '##DATA TYPE={}\n'.format('MASS SPECTRUM'),
             '##DATA CLASS= NTUPLES\n',
@@ -32,12 +32,10 @@ class MSComposer(BaseComposer):
             '##.INLET={}\n'.format(self.core.dic.get('INLET', '')),  # GC
             '##.IONIZATION MODE={}\n'.format(self.core.dic.get('IONIZATION MODE', '')),  # EI+  # noqa: E501
             '##$CSCATEGORY=SPECTRUM\n',
-            '##$CSSCANAUTOTARGET={}\n'.format(self.core.auto_scan),
-            '##$CSSCANEDITTARGET={}\n'.format(
-                self.core.edit_scan or self.core.auto_scan
-            ),
-            '##$CSSCANCOUNT={}\n'.format(len(self.core.datatables)),
-            '##$CSTHRESHOLD={}\n'.format(self.core.thres / 100),
+            f'##$CSSCANAUTOTARGET={self.core.auto_scan}\n',
+            f'##$CSSCANEDITTARGET={self.core.edit_scan or self.core.auto_scan}\n',
+            f'##$CSSCANCOUNT={len(self.core.datatables)}\n',
+            f'##$CSTHRESHOLD={self.core.thres / 100}\n',
         ]
 
     def __gen_ntuples_begin(self):
@@ -55,7 +53,7 @@ class MSComposer(BaseComposer):
             '##VAR_DIM= , , 3\n',
             '##UNITS= M/Z, RELATIVE ABUNDANCE, SECONDS\n',
             '##FIRST= , , 1\n',
-            '##LAST= , , {}\n'.format(len(self.core.datatables)),
+            f'##LAST= , , {len(self.core.datatables)}\n',
         ]
 
     def __gen_ms_spectra(self):
@@ -64,7 +62,7 @@ class MSComposer(BaseComposer):
         # held twice over, for tables that reach a hundred megabytes.
         lines = []
         for idx, dt in enumerate(self.core.datatables):
-            lines.append('##PAGE={}\n'.format(idx + 1))
+            lines.append(f'##PAGE={idx + 1}\n')
             lines.append('##NPOINTS={}\n'.format(dt['pts']))
             lines.append(TEXT_MS_DATA_TABLE)
             lines.extend(dt['dt'])

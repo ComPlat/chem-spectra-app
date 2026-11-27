@@ -9,12 +9,12 @@ data_type_json_path = os.path.join(script_dir, '../lib/converter/jcamp/data_type
 
 def load_data_types():
     try:
-        with open(data_type_json_path, 'r') as mapping_file:
+        with open(data_type_json_path) as mapping_file:
             return json.load(mapping_file)
     except FileNotFoundError:
         example_json_path = os.path.join(script_dir, '../lib/converter/jcamp/data_type.json.example')
         shutil.copy(example_json_path, data_type_json_path)
-        with open(data_type_json_path, 'r') as mapping_file:
+        with open(data_type_json_path) as mapping_file:
             return json.load(mapping_file)
 
 @spectra_layout_api.route('/api/v1/chemspectra/spectra_layouts', methods=['GET'])

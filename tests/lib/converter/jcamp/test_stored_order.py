@@ -66,7 +66,7 @@ def test_a_reversed_technique_is_stored_descending(datatype, tmp_path):
     converter = _probe(datatype, tmp_path, ascending=True)
     assert converter.technique.store_in_drawn_order is True
     assert converter.xs[0] > converter.xs[-1], (
-        '%s must be stored descending' % datatype)
+        f'{datatype} must be stored descending')
 
 
 @pytest.mark.parametrize('ascending', [False, True])
